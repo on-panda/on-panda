@@ -1,0 +1,65 @@
+﻿# NODE -------------------------------------------------------------
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+.DS_Store
+dist
+dist-ssr
+coverage
+*.local
+
+/cypress/videos/
+/cypress/screenshots/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+*.tsbuildinfo
+
+# OLD -------------------------------------------------------------
+# Customized
+tmp_*
+
+# ignore
+.vscode
+*.pyc
+__pycache__/
+
+# vim swap file
+*.swp
+
+# coverage report
+test-results/
+htmlcov/
+.coverage
+
+# Distribution / packaging
+build/
+dist/
+eggs/
+.eggs/
+*.egg-info/
+
+# sphinx
+/docs/api
+/docs/_build
+
+# mypy cache
+.mypy_cache/
+
+# tmp files
+*~
