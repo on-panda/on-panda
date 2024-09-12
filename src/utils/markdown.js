@@ -4,7 +4,7 @@ import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import 'katex/dist/katex.css'
 
-const markdown = MarkdownIt({
+export const markdown = MarkdownIt({
   html: false,
   breaks: true,
   langPrefix: 'hljs language-',
@@ -14,4 +14,3 @@ const markdown = MarkdownIt({
   }
 }).use(mdKatex)
 
-export default markdown

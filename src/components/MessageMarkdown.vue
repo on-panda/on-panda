@@ -1,10 +1,10 @@
 <template>
-    <div class="md-content"  v-html="htmlContent"></div>
+  <div class="md-content" v-html="htmlContent"></div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import markdown from '@/utils/markdown'
+import { markdown } from '@/utils/markdown'
 
 const props = defineProps({
   content: {
