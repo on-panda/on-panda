@@ -101,7 +101,7 @@ async function main() {
     var delta = (chunk.choices[0]?.delta?.content || "");
     var token = chunk.choices[0];
     token.streamIndex = streamIndex
-    if (chunk.choices && token.delta.content !== undefined) {
+    if (chunk.choices) {
       addProbToToken(token)
       streamIndex++
       tokens.value.push(token);
@@ -109,30 +109,28 @@ async function main() {
   }
 }
 
+function createSpanInPatchSpanHTML(textContent) {
+  const span = document.createElement('span')
+  span.className = 'spanInPatchSpan'  // .spanInPatchSpan CSS not work?
+  span.textContent = textContent
+  span.style['color'] = "rgb(180,180,180)"
+  span.style['size'] = "small"
+  span.style['user-select'] = "none"
+  span.style['margin-left'] = "10px"
+  return span.outerHTML
+}
+
+
 function replaceNewlinesWithSpans(str) {
   const regex = /\n/g;
   return str.replace(regex, (match) => {
-    const span = document.createElement('span')
-    span.className = 'SpanInPatchSpan'  // .SpanInPatchSpan CSS not work?
-    span.textContent = '↵'
-    span.style['color'] = "rgb(180,180,180)"
-    span.style['size'] = "small"
-    span.style['user-select'] = "none"
-
-    return span.outerHTML + '<br>'
+    return createSpanInPatchSpanHTML('↵') + '<br>'
   });
 }
 
 function appendFinishReason(token) {
   if (token.finish_reason) {
-    const span = document.createElement('span')
-    span.className = 'SpanInPatchSpan'  // .SpanInPatchSpan CSS not work?
-    span.textContent = `<|${token.finish_reason}|>`
-    span.style['color'] = "rgb(180,180,180)"
-    span.style['size'] = "small"
-    span.style['user-select'] = "none"
-
-    return span.outerHTML
+    return createSpanInPatchSpanHTML(`<|${token.finish_reason}|>`)
   }
   return ""
 }
@@ -156,10 +154,13 @@ const handleMouseEnterPatchSpan = (event) => {
   const patchIndex = event.target.attributes["patch-index"].value
   const patch = patchs.value[parseInt(patchIndex)]
 
-  console.log(patchIndex, event.target.textContent, patch.prob)
+  patchTokens.value = patch.tokens
+  event.target.classList.add('ActivatePatchSpan')
+  console.log(patchIndex, event.target.textContent, patch.tokens.length, patch.prob)
 }
 const handleMouseLeavePatchSpan = (event) => {
   // console.log(event)
+  event.target.classList.remove('ActivatePatchSpan')
 }
 
 
@@ -169,6 +170,11 @@ var messages = [{ role: "user", content: "just repeat `=🧎🏿‍♂️‍➡�
 // var messages = [{ role: "user", content: "用中文讲一个关于西游记的短笑话，不要有英文" }]
 
 main();
+
+
+// FloatPatchPannel
+const patchTokens = ref([])
+
 </script>
 <template>
   <h2>onPanda: on-Policy Alignment Data Annotator (PoC)</h2>
@@ -177,15 +183,21 @@ main();
 
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
   <MessageMarkdown v-for="message in messages" :content="`### ${message['role']}:\n${message['content']}`" />
-  <div style="background-color: #eee;white-space: pre-wrap;">
-    <MessageMarkdown content="### assistant:"></MessageMarkdown>
+  <h3> {{ tokens ? tokens[0].delta.role:"unknown_role"}}:</h3>
+  <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
     <span class="PatchSpan" v-for="patch in patchs" :style="probToColor(patch.prob)" :patch-index="patch.index"
       v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
       @mouseleave="handleMouseLeavePatchSpan"></span>
 
-    <hr>
   </div>
-  <span class="PatchSpan" v-for="patch in patchs">{{ patch.patch }}</span>
+  <hr>
+  <div class="FloatPatchPannel">
+    <div v-for="token in patchTokens" style="display: inline-block;">{{ token?.delta?.content }}</div>
+  </div>
+
+
+  <!-- <span class="PatchSpan" v-for="patch in patchs">{{ patch.patch }}</span> -->
+
 
   <!-- assistentResponseContent🧎🏿‍♂️‍➡️:
   <div style="background-color: #eee;white-space: pre-wrap;user-select: none;">
@@ -194,21 +206,6 @@ main();
 </template>
 
 <style scoped>
-.PatchSpan2::after {
-  content: "|";
-  display: inline-flex;
-  width: 0px;
-  /* 竖线的宽度 */
-  height: 100%;
-  /* 竖线的高度，这里设置为100%以匹配父元素的高度 */
-  background-color: black;
-  /* 竖线的颜色 */
-  vertical-align: middle;
-  /* 可选：使竖线垂直居中 */
-  /* margin-left: 10px; 可选：增加左边距以避免文本紧贴竖线 */
-}
-
-
 .PatchSpan {
   box-shadow: inset -1px 0 rgb(200, 200, 200);
   /* 使用 inset 将阴影设为内阴影 */
@@ -219,7 +216,11 @@ main();
   margin: 0;
   padding: 0;
   display: inline;
-  /* 或者使用 display: flex; */
+}
+
+.ActivatePatchSpan {
+  background-color: #ccc;
+  border-radius: 4px;
 }
 
 * {
