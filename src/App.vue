@@ -21,8 +21,11 @@ const assistentResponseContent = computed(() => {
 
 const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
 
-const segments = computed(() => {
+const patchs = computed(() => {
   const visableSegments = Array.from(segmenter.segment(assistentResponseContent.value));
+  visableSegments.push({ segment: "" }) // add a empty segment at the end for EOT token
+  visableSegments.push({ segment: "" })
+  var patchs = []
   var tokenToSegmentString = "";
   var segmentIndex = 0;
   var tokenStartIndex = 0;
@@ -30,28 +33,36 @@ const segments = computed(() => {
     const tokenContent = (token.delta?.content || "");
     var tokenIndex = token.streamIndex
     tokenToSegmentString += tokenContent;
-    var segment = visableSegments[segmentIndex].segment
-    if (tokenToSegmentString.length >= segment.length) {
-      if(tokenToSegmentString != segment){ // assert 
-        throw new Error("tokenToSegmentString != segment: " + tokenToSegmentString + " != " + segment)
+    var patchString = visableSegments[segmentIndex].segment
+    if (tokenToSegmentString.length >= patchString.length) {
+      while (tokenToSegmentString.length > patchString.length) {
+        segmentIndex++
+        patchString += visableSegments[segmentIndex].segment
       }
-      visableSegments[segmentIndex].tokenEndIndex = tokenIndex + 1
-      visableSegments[segmentIndex].tokenStartIndex = tokenStartIndex
+      if (tokenToSegmentString != patchString) {
+        // TODO: support segment split inside one token
+        // assert 
+        throw new Error("tokenToSegmentString != segment: " + tokenToSegmentString + " != " + patchString)
+      }
+      var patchTokens = tokens.value.slice(tokenStartIndex, tokenIndex + 1)
+      patchs.push({ patch: patchString, tokens: patchTokens, prob: patchTokens.reduce((acc, token) => acc * token.prob, 1), index: patchs.length })
       tokenStartIndex = tokenIndex + 1
       tokenToSegmentString = ""
       segmentIndex++
     }
   }
-  return visableSegments
+  p(patchs)
+
+  return patchs
 });
 
 
 
 // const assistentResponseByte = computed(() => {
-  //   const bytes = [].concat(...d.map(token => token?.logprobs?.content[0].bytes)).filter(isFinite)
-  //   return new TextDecoder('utf-8').decode(new Uint8Array(bytes))
-  // })
-  
+//   const bytes = [].concat(...d.map(token => token?.logprobs?.content[0].bytes)).filter(isFinite)
+//   return new TextDecoder('utf-8').decode(new Uint8Array(bytes))
+// })
+
 const probToColor = (prob) => {
   // const color = `rgba(255, 32, 0, ${(1 - prob)})`;
   // return { "background-color": color }
@@ -82,18 +93,18 @@ async function main() {
     top_logprobs: 2,
     top_p: 1,
     // top_k: 2,
-    // max_tokens: 4,
+    // max_tokens: 54,
+    // temperature: 4,
   }, { skip_special_tokens: false, prompt_logprobs: 5 });
   var streamIndex = 0
   for await (const chunk of stream) {
     var delta = (chunk.choices[0]?.delta?.content || "");
     var token = chunk.choices[0];
     token.streamIndex = streamIndex
-    if (chunk.choices && token.delta.content!==undefined) {
+    if (chunk.choices && token.delta.content !== undefined) {
       addProbToToken(token)
       streamIndex++
       tokens.value.push(token);
-      p(tokens.value)
     }
   }
 }
@@ -102,7 +113,7 @@ function replaceNewlinesWithSpans(str) {
   const regex = /\n/g;
   return str.replace(regex, (match) => {
     const span = document.createElement('span')
-    span.className = 'SpanInSegmentSpan'  // .SpanInSegmentSpan CSS not work?
+    span.className = 'SpanInPatchSpan'  // .SpanInPatchSpan CSS not work?
     span.textContent = '↵'
     span.style['color'] = "rgb(180,180,180)"
     span.style['size'] = "small"
@@ -115,7 +126,7 @@ function replaceNewlinesWithSpans(str) {
 function appendFinishReason(token) {
   if (token.finish_reason) {
     const span = document.createElement('span')
-    span.className = 'SpanInSegmentSpan'  // .SpanInSegmentSpan CSS not work?
+    span.className = 'SpanInPatchSpan'  // .SpanInPatchSpan CSS not work?
     span.textContent = `<|${token.finish_reason}|>`
     span.style['color'] = "rgb(180,180,180)"
     span.style['size'] = "small"
@@ -137,13 +148,17 @@ const tokenToSpanHTML = (token) => {
   return html
 }
 
-const handleMouseEnterSegmentSpan = (event) => {
-  const streamIndex = event.target.attributes["stream-index"].value
-  const token = tokens.value[parseInt(streamIndex)]
-
-  console.log(streamIndex, event.target.textContent, token.prob)
+const patchToSpanHTML = (patch) => {
+  return patch.tokens.map(token => tokenToSpanHTML(token)).join("")
 }
-const handleMouseLeaveSegmentSpan = (event) => {
+
+const handleMouseEnterPatchSpan = (event) => {
+  const patchIndex = event.target.attributes["patch-index"].value
+  const patch = patchs.value[parseInt(patchIndex)]
+
+  console.log(patchIndex, event.target.textContent, patch.prob)
+}
+const handleMouseLeavePatchSpan = (event) => {
   // console.log(event)
 }
 
@@ -163,11 +178,14 @@ main();
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
   <MessageMarkdown v-for="message in messages" :content="`### ${message['role']}:\n${message['content']}`" />
   <div style="background-color: #eee;white-space: pre-wrap;">
-    <MessageMarkdown content="### assistant:" ></MessageMarkdown>
-    <span class="SegmentSpan" v-for="token in tokens" :style="probToColor(token.prob)" :stream-index="token.streamIndex"
-      v-html="tokenToSpanHTML(token)" @mouseenter="handleMouseEnterSegmentSpan"
-      @mouseleave="handleMouseLeaveSegmentSpan"></span>
+    <MessageMarkdown content="### assistant:"></MessageMarkdown>
+    <span class="PatchSpan" v-for="patch in patchs" :style="probToColor(patch.prob)" :patch-index="patch.index"
+      v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
+      @mouseleave="handleMouseLeavePatchSpan"></span>
+
+    <hr>
   </div>
+  <span class="PatchSpan" v-for="patch in patchs">{{ patch.patch }}</span>
 
   <!-- assistentResponseContent🧎🏿‍♂️‍➡️:
   <div style="background-color: #eee;white-space: pre-wrap;user-select: none;">
@@ -176,7 +194,7 @@ main();
 </template>
 
 <style scoped>
-.SegmentSpan2::after {
+.PatchSpan2::after {
   content: "|";
   display: inline-flex;
   width: 0px;
@@ -191,12 +209,12 @@ main();
 }
 
 
-.SegmentSpan {
+.PatchSpan {
   box-shadow: inset -1px 0 rgb(200, 200, 200);
   /* 使用 inset 将阴影设为内阴影 */
 }
 
-.SegmentSpan {
+.PatchSpan {
   white-space: pre-wrap;
   margin: 0;
   padding: 0;
