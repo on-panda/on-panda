@@ -5,24 +5,53 @@ import { ref, computed } from 'vue'
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  baseURL: "http://127.0.0.1:8001/v1",
+  baseURL: "http://39.105.21.95:12481/v1",
   apiKey: "sk-Nokey",
   dangerouslyAllowBrowser: true
 });
 
 const tokens = ref([]);
 
+
+
 const assistentResponseContent = computed(() => {
-  p(tokens.value)
   return tokens.value.map((token) => token.delta.content).join("");
 });
 
 
-// const assistentResponseByte = computed(() => {
-//   const bytes = [].concat(...d.map(token => token?.logprobs?.content[0].bytes)).filter(isFinite)
-//   return new TextDecoder('utf-8').decode(new Uint8Array(bytes))
-// })
+const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
 
+const segments = computed(() => {
+  const visableSegments = Array.from(segmenter.segment(assistentResponseContent.value));
+  var tokenToSegmentString = "";
+  var segmentIndex = 0;
+  var tokenStartIndex = 0;
+  for (const token of tokens.value) {
+    const tokenContent = (token.delta?.content || "");
+    var tokenIndex = token.streamIndex
+    tokenToSegmentString += tokenContent;
+    var segment = visableSegments[segmentIndex].segment
+    if (tokenToSegmentString.length >= segment.length) {
+      if(tokenToSegmentString != segment){ // assert 
+        throw new Error("tokenToSegmentString != segment: " + tokenToSegmentString + " != " + segment)
+      }
+      visableSegments[segmentIndex].tokenEndIndex = tokenIndex + 1
+      visableSegments[segmentIndex].tokenStartIndex = tokenStartIndex
+      tokenStartIndex = tokenIndex + 1
+      tokenToSegmentString = ""
+      segmentIndex++
+    }
+  }
+  return visableSegments
+});
+
+
+
+// const assistentResponseByte = computed(() => {
+  //   const bytes = [].concat(...d.map(token => token?.logprobs?.content[0].bytes)).filter(isFinite)
+  //   return new TextDecoder('utf-8').decode(new Uint8Array(bytes))
+  // })
+  
 const probToColor = (prob) => {
   // const color = `rgba(255, 32, 0, ${(1 - prob)})`;
   // return { "background-color": color }
@@ -47,15 +76,12 @@ const addProbToToken = (token) => {
 async function main() {
   const stream = await openai.chat.completions.create({
     model: 'meta-llama/Meta-Llama-3-8B-Instruct',
-    // messages: [{ role: "user", content: "just repeat `=🧎🏿‍♂️‍➡️磊<hr>\n蘒    𝒀𝒆𝒔`, no other words" }],
-    // messages: [{ role: "user", content:"just repeat `Yes,🧎🏿‍♂️‍➡️𝒀𝒆𝒔`, no other words" }],
-    // messages: [{ role: "user", content: "just output a random float64 without any words" }],
-    messages: [{ role: "user", content: "用中文说一个关于西游记的笑话，不要有英文" }],
+    messages: messages,
     stream: true,
     logprobs: true,
     top_logprobs: 2,
     top_p: 1,
-    top_k: 2,
+    // top_k: 2,
     // max_tokens: 4,
   }, { skip_special_tokens: false, prompt_logprobs: 5 });
   var streamIndex = 0
@@ -63,10 +89,11 @@ async function main() {
     var delta = (chunk.choices[0]?.delta?.content || "");
     var token = chunk.choices[0];
     token.streamIndex = streamIndex
-    addProbToToken(token)
-    if (chunk.choices) {
+    if (chunk.choices && token.delta.content!==undefined) {
+      addProbToToken(token)
       streamIndex++
       tokens.value.push(token);
+      p(tokens.value)
     }
   }
 }
@@ -75,7 +102,7 @@ function replaceNewlinesWithSpans(str) {
   const regex = /\n/g;
   return str.replace(regex, (match) => {
     const span = document.createElement('span')
-    span.className = 'SpanInPatchSpan'  // .SpanInPatchSpan CSS not work?
+    span.className = 'SpanInSegmentSpan'  // .SpanInSegmentSpan CSS not work?
     span.textContent = '↵'
     span.style['color'] = "rgb(180,180,180)"
     span.style['size'] = "small"
@@ -85,47 +112,71 @@ function replaceNewlinesWithSpans(str) {
   });
 }
 
+function appendFinishReason(token) {
+  if (token.finish_reason) {
+    const span = document.createElement('span')
+    span.className = 'SpanInSegmentSpan'  // .SpanInSegmentSpan CSS not work?
+    span.textContent = `<|${token.finish_reason}|>`
+    span.style['color'] = "rgb(180,180,180)"
+    span.style['size'] = "small"
+    span.style['user-select'] = "none"
+
+    return span.outerHTML
+  }
+  return ""
+}
+
 const tokenToSpanHTML = (token) => {
   const content = token?.delta?.content
+  html = ""
   if (content) {
     var html = escapeHTML(content)
     html = replaceNewlinesWithSpans(html)
-    return html
   }
+  html = html + appendFinishReason(token)
+  return html
 }
 
-const handleMouseEnterPatchSpan = (event) => {
+const handleMouseEnterSegmentSpan = (event) => {
   const streamIndex = event.target.attributes["stream-index"].value
   const token = tokens.value[parseInt(streamIndex)]
 
   console.log(streamIndex, event.target.textContent, token.prob)
 }
-const handleMouseLeavePatchSpan = (event) => {
+const handleMouseLeaveSegmentSpan = (event) => {
   // console.log(event)
 }
+
+
+var messages = [{ role: "user", content: "just repeat `=🧎🏿‍♂️‍➡️磊<hr>\n蘒    𝒀𝒆𝒔`, no other words" }]
+// var messages = [{ role: "user", content:"just repeat `Yes,🧎🏿‍♂️‍➡️𝒀𝒆𝒔`, no other words" }]
+// var messages = [{ role: "user", content: "just output a random float64 without any words" }]
+// var messages = [{ role: "user", content: "用中文讲一个关于西游记的短笑话，不要有英文" }]
 
 main();
 </script>
 <template>
-  <h2>onPanda: on-Policy Alignment Data Annotator</h2>
-  <blockquote>Scaling up your data efficiency before scaling up your data.</blockquote>
+  <h2>onPanda: on-Policy Alignment Data Annotator (PoC)</h2>
+  <code>Scaling up your data efficiency before scaling up your data.</code>
 
 
-  <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" />
+  <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
+  <MessageMarkdown v-for="message in messages" :content="`### ${message['role']}:\n${message['content']}`" />
   <div style="background-color: #eee;white-space: pre-wrap;">
-    <span class="PatchSpan" v-for="token in tokens" :style="probToColor(token.prob)" :stream-index="token.streamIndex"
-      v-html="tokenToSpanHTML(token)" @mouseenter="handleMouseEnterPatchSpan"
-      @mouseleave="handleMouseLeavePatchSpan"></span>
+    <MessageMarkdown content="### assistant:" ></MessageMarkdown>
+    <span class="SegmentSpan" v-for="token in tokens" :style="probToColor(token.prob)" :stream-index="token.streamIndex"
+      v-html="tokenToSpanHTML(token)" @mouseenter="handleMouseEnterSegmentSpan"
+      @mouseleave="handleMouseLeaveSegmentSpan"></span>
   </div>
-  assistentResponseContent🧎🏿‍♂️‍➡️:
+
+  <!-- assistentResponseContent🧎🏿‍♂️‍➡️:
   <div style="background-color: #eee;white-space: pre-wrap;user-select: none;">
     {{ assistentResponseContent }}
-  </div>
-
+  </div> -->
 </template>
 
 <style scoped>
-.PatchSpan2::after {
+.SegmentSpan2::after {
   content: "|";
   display: inline-flex;
   width: 0px;
@@ -140,16 +191,20 @@ main();
 }
 
 
-.PatchSpan {
+.SegmentSpan {
   box-shadow: inset -1px 0 rgb(200, 200, 200);
   /* 使用 inset 将阴影设为内阴影 */
 }
 
-.PatchSpan {
+.SegmentSpan {
   white-space: pre-wrap;
   margin: 0;
   padding: 0;
   display: inline;
   /* 或者使用 display: flex; */
+}
+
+* {
+  font-family: Arial, sans-serif;
 }
 </style>
