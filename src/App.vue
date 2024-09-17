@@ -51,8 +51,6 @@ const patchs = computed(() => {
       segmentIndex++
     }
   }
-  p(patchs)
-
   return patchs
 });
 
@@ -78,11 +76,16 @@ const probToColor = (prob, transparency) => {
   return color
 }
 
-const p = (obj) => {
-  window.d = obj
-  console.log(obj)
+const p = (varName, obj) => {
+  if (typeof varName !== "string" && obj === undefined){
+    obj = varName
+    varName = 'd'
+  }
+  window[varName] = obj
+  console.log(`"${varName}":`, obj)
   return obj
 }
+window.p = p
 
 const addProbToToken = (token) => {
   const logprob = token?.logprobs?.content[0].logprob || 0
@@ -90,6 +93,7 @@ const addProbToToken = (token) => {
 }
 
 async function requestLlmServer(messages) {
+  messages = messages.value === undefined?messages:messages.value
   const body = {
     model: 'meta-llama/Meta-Llama-3-8B-Instruct',
     messages: messages,
@@ -101,14 +105,18 @@ async function requestLlmServer(messages) {
     // max_tokens: 54,
     // temperature: 4,
   }
-  const options = { skip_special_tokens: false, }
+  const options = { add_generation_prompt: false, }
   const continue_final_message = messages[messages.length - 1].role == "assistant"
   if (continue_final_message) {
     options['chat_template_kwargs'] = { continue_final_message: continue_final_message }
   }
+  console.log(body, options)
   const stream = await openai.chat.completions.create(body, options);
   var streamIndex = 0
   for await (const chunk of stream) {
+    if (continue_final_message&& !streamIndex){
+      tokens.value = tokens.value.filter(token=>!token.pruned)
+    }
     var delta = (chunk.choices[0]?.delta?.content || "");
     var token = chunk.choices[0];
     token.streamIndex = streamIndex
@@ -177,7 +185,6 @@ const handleMouseEnterPatchSpan = (event) => {
 
   acitvatePatch.value = patch
   event.target.classList.add('ActivatePatchSpan')
-  console.log(patchIndex, event.target.textContent, patch.tokens.length, patch.prob)
 
   setFloatPatchPannelBelow(event.target)
 
@@ -198,9 +205,24 @@ const handleMouseLeavePatchSpan = (event) => {
 var messages = [{ role: "user", content: "just repeat `=🧎🏿‍♂️‍➡️磊<hr>\n蘒    𝒀𝒆𝒔`, no other words" }]
 // var messages = [{ role: "user", content:"just repeat `Yes,🧎🏿‍♂️‍➡️𝒀𝒆𝒔`, no other words" }]
 // var messages = [{ role: "user", content: "just output a random float64 without any words" }]
-// var messages = [{ role: "user", content: "用中文讲一个关于西游记的短笑话，不要有英文" }]
+var messages = [{ role: "user", content: "用中文讲一个关于西游记的30字短笑话，不要有英文" }]
 // var messages = [{ role: "user", content: "奥数题:已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
 
+const messagesComputed = computed(()=>{
+  const final_message = tokens.value.filter(
+    token=>!token.pruned
+  ).map(
+    token=>(token.delta || {})
+  ).reduce((delta1, delta2)=>{
+    const delta = {...delta1}
+    for(var key in delta2){
+      delta[key] = (delta[key]||"") + delta2[key]
+    }
+    return delta
+  })
+  return messages.concat([final_message])
+})
+p("tokens",tokens.value)
 requestLlmServer(messages);
 
 
@@ -236,15 +258,17 @@ function setFloatPatchPannelBelow(element) {
   floatPatchPannel.value.y = cellRect.bottom - 5
   floatPatchPannel.value.waitingToHide = false;
   floatPatchPannel.value.visible = true;
-  console.log(element, cellRect, floatPatchPannel)
+  // console.log(element, cellRect, floatPatchPannel)
 }
 
 function continueFromToken(token, continuePrefix) {
   continuePrefix = continuePrefix || ""
+  const messageWithContinuePrefix = messagesComputed.value
+  messageWithContinuePrefix[messageWithContinuePrefix.length-1]['content'] += continuePrefix
+  requestLlmServer(messageWithContinuePrefix)
 }
 
 function clickOnLogprobItem(token, logprobItem) {
-  continueFromToken(token, logprobItem.token)
   for (const patch of patchs.value) {
     for (const patchToken of patch.tokens) {
       patchToken.pruned = patchToken.streamIndex >= token.streamIndex
@@ -253,6 +277,7 @@ function clickOnLogprobItem(token, logprobItem) {
       }
     }
   }
+  continueFromToken(token, logprobItem.token)
 }
 
 </script>
@@ -288,7 +313,7 @@ function clickOnLogprobItem(token, logprobItem) {
       <div class="tokenLogprobItems">
         <div v-for="logprobItem in token?.logprobs?.content[0].top_logprobs"
           style="display: block; background-color: #eee;" @click="clickOnLogprobItem(token, logprobItem)"
-          @mouseenter="acitvateLogprobItem = p(logprobItem)">
+          @mouseenter="acitvateLogprobItem = logprobItem">
           <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token) }}</span>
           <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
             style="white-space: pre-wrap;font-family: Monospace;">:{{
