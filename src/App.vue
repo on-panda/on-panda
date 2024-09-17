@@ -5,7 +5,7 @@ import { ref, computed, watch } from 'vue'
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  baseURL: "http://39.105.21.95:12481/v1",
+  baseURL: window.location.origin + "/v1",
   apiKey: "sk-Nokey",
   dangerouslyAllowBrowser: true
 });
