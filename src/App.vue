@@ -75,14 +75,19 @@ const probToColor = (prob, transparency) => {
   }
   return color
 }
+function toLegalVariableName(str) {
+  const cleanedStr = str.replace(/[^a-zA-Z0-9_$]/g, '');
+  return /^\d/.test(cleanedStr) ? '_' + cleanedStr : cleanedStr;
+}
 
 const p = (varName, obj) => {
-  if (typeof varName !== "string" && obj === undefined){
+  if (obj === undefined) {
     obj = varName
     varName = 'd'
   }
-  window[varName] = obj
-  console.log(`"${varName}":`, obj)
+  var legalVarName = toLegalVariableName(varName)
+  window[legalVarName] = obj
+  console.log(`"${varName + (legalVarName === varName ? '' : '(' + legalVarName + ')')}":`, obj)
   return obj
 }
 window.p = p
@@ -92,32 +97,39 @@ const addProbToToken = (token) => {
   token.prob = Math.exp(logprob)
 }
 
+
+const requestBody = ref({
+  model: 'meta-llama/Meta-Llama-3-8B-Instruct',
+  messages: messages,
+  stream: true,
+  logprobs: true,
+  top_logprobs: 20,
+  top_p: 0.99999,
+  // top_k: 2,
+  // max_tokens: 54,
+  temperature: 0,
+})
+
 async function requestLlmServer(messages) {
-  messages = messages.value === undefined?messages:messages.value
-  const body = {
-    model: 'meta-llama/Meta-Llama-3-8B-Instruct',
-    messages: messages,
-    stream: true,
-    logprobs: true,
-    top_logprobs: requestParams.value?.top_logprobs || 5,
-    top_p: 0.99999,
-    // top_k: 2,
-    // max_tokens: 54,
-    // temperature: 4,
-  }
-  const options = { add_generation_prompt: false, }
+  messages = messages.value === undefined ? messages : messages.value
   const continue_final_message = messages[messages.length - 1].role == "assistant"
+  var body = requestBody.value
+  body.messages = messages
   if (continue_final_message) {
-    options['chat_template_kwargs'] = { continue_final_message: continue_final_message }
+    body.add_generation_prompt = false
+    body['chat_template_kwargs'] = { continue_final_message: continue_final_message }
   }
-  console.log(body, options)
-  const stream = await openai.chat.completions.create(body, options);
+  p("body", body)
+  const stream = await openai.chat.completions.create(body);
   var streamIndex = 0
+  var tokensValuePtr = tokens.value
   for await (const chunk of stream) {
-    if (continue_final_message&& !streamIndex){
-      tokens.value = tokens.value.filter(token=>!token.pruned)
+    if (continue_final_message && !streamIndex) { // before affect to tokens
+      tokens.value = tokens.value.filter(token => !token.pruned)
+      tokensValuePtr = tokens.value
+      streamIndex = tokens.value.length
+      continue  // first chunk is role, no more role for continue_final_message
     }
-    var delta = (chunk.choices[0]?.delta?.content || "");
     var token = chunk.choices[0];
     token.streamIndex = streamIndex
     if (chunk.choices) {
@@ -129,14 +141,12 @@ async function requestLlmServer(messages) {
           token.pruned = lastToken.pruned
         }
       }
-      tokens.value.push(token);
+      // tokens.value.push(token);
+      tokensValuePtr.push(token)
+      p(token.delta?.content)
     }
   }
 }
-
-const requestParams = ref({
-  top_logprobs: 20
-})
 
 function createSpanInPatchSpanHTML(textContent) {
   const span = document.createElement('span')
@@ -198,31 +208,41 @@ const handleMouseLeavePatchSpan = (event) => {
       floatPatchPannel.value.visible = false;
       floatPatchPannel.value.waitingToHide = false;
     }
-  }, 200);
+  }, 300);
 }
 
 
 var messages = [{ role: "user", content: "just repeat `=🧎🏿‍♂️‍➡️磊<hr>\n蘒    𝒀𝒆𝒔`, no other words" }]
 // var messages = [{ role: "user", content:"just repeat `Yes,🧎🏿‍♂️‍➡️𝒀𝒆𝒔`, no other words" }]
 // var messages = [{ role: "user", content: "just output a random float64 without any words" }]
-var messages = [{ role: "user", content: "用中文讲一个关于西游记的30字短笑话，不要有英文" }]
+var messages = [{ role: "user", content: "用中文讲一个关于西游记的100字短笑话，不要有英文" }]
 // var messages = [{ role: "user", content: "奥数题:已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
+// var messages = [
+//     {
+//         "role": "user",
+//         "content": "用中文讲一个关于西游记的30字短笑话，不要有英文"
+//     },
+//     {
+//         "role": "assistant",
+//         "content": "孙悟空说：“我要去取经”，唐三藏问：“你带什么？”孙悟空说：“带瓶"
+//     }
+// ]
 
-const messagesComputed = computed(()=>{
+const messagesComputed = computed(() => {
   const final_message = tokens.value.filter(
-    token=>!token.pruned
+    token => !token.pruned
   ).map(
-    token=>(token.delta || {})
-  ).reduce((delta1, delta2)=>{
-    const delta = {...delta1}
-    for(var key in delta2){
-      delta[key] = (delta[key]||"") + delta2[key]
+    token => (token.delta || {})
+  ).reduce((delta1, delta2) => {
+    const delta = { ...delta1 }
+    for (var key in delta2) {
+      delta[key] = (delta[key] || "") + delta2[key]
     }
     return delta
   })
   return messages.concat([final_message])
 })
-p("tokens",tokens.value)
+p("tokens", tokens.value)
 requestLlmServer(messages);
 
 
@@ -263,8 +283,11 @@ function setFloatPatchPannelBelow(element) {
 
 function continueFromToken(token, continuePrefix) {
   continuePrefix = continuePrefix || ""
+  const continuePrefixToken = { delta: { content: continuePrefix }, streamIndex: token.streamIndex, bifurcationPoint: true, logprobs: token.logprobs }
+  tokens.value.splice(token.streamIndex, 0, continuePrefixToken);
   const messageWithContinuePrefix = messagesComputed.value
-  messageWithContinuePrefix[messageWithContinuePrefix.length-1]['content'] += continuePrefix
+
+  // messageWithContinuePrefix[messageWithContinuePrefix.length-1]['content'] += continuePrefix
   requestLlmServer(messageWithContinuePrefix)
 }
 
@@ -289,13 +312,13 @@ function clickOnLogprobItem(token, logprobItem) {
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
   <MessageMarkdown v-for="message in messages" :content="`### ${message['role']}:\n${message['content']}`" />
   <h3> {{ tokens.length ? tokens[0].delta.role : "unknown_role" }}:</h3>
+  <p> by <code>{{ requestBody.model || "unknown_model" }} </code> </p>
   <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
     <span class="PatchSpan" v-for="patch in patchs" :style='{
       "border-bottom": "3px solid " + probToColor(patch.prob),
       ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
       ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {})
-    }' :patch-index="patch.index"
-      v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
+    }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
       @mouseleave="handleMouseLeavePatchSpan"></span>
 
   </div>
@@ -305,8 +328,8 @@ function clickOnLogprobItem(token, logprobItem) {
     left: `${floatPatchPannel.x}px`,
     top: `${floatPatchPannel.y}px`,
   }" v-if="floatPatchPannel.visible">
-    <div v-for="token in acitvatePatch.tokens.filter(token => (token?.delta?.content !== undefined))" class="tokenPannel"
-      style="vertical-align:top; display: inline-block; padding: 5px;">
+    <div v-for="token in acitvatePatch.tokens.filter(token => (token?.delta?.content !== undefined))"
+      class="tokenPannel" style="vertical-align:top; display: inline-block; padding: 5px;">
       <div class="floatPatchPannelHead" style="border-bottom: 2px solid #ccc;">
         <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
       </div>
@@ -317,14 +340,14 @@ function clickOnLogprobItem(token, logprobItem) {
           <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token) }}</span>
           <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
             style="white-space: pre-wrap;font-family: Monospace;">:{{
-              (Math.exp(logprobItem.logprob) * 100).toFixed(1).toString().padStart(5, ' ')}}%</span>
+              (Math.exp(logprobItem.logprob) * 100).toFixed(1).toString().padStart(5, ' ') }}%</span>
         </div>
       </div>
     </div>
     <footer>
       <hr>
       <span v-if="acitvateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;">{{
-        Math.exp(acitvateLogprobItem.logprob) *100 }}%<br></span>
+        Math.exp(acitvateLogprobItem.logprob) * 100 }}%<br></span>
       <span v-if="acitvateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
         [{{ acitvateLogprobItem.bytes.join(',') }}]</span>
       <button @click="floatPatchPannel.visible = false"
