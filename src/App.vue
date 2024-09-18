@@ -4,12 +4,44 @@ import { escapeHTML } from '@/utils/commonUtils'
 import { ref, computed, watch } from 'vue'
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  baseURL: window.location.origin + "/v1",
-  apiKey: "sk-Nokey",
-  dangerouslyAllowBrowser: true
-});
 
+const defaultApiConfig = {
+  "support_continue_final_message": true,
+  "clientConfig": {
+    baseURL: window.location.origin + "/v1",
+    apiKey: "sk-Nokey",
+    dangerouslyAllowBrowser: true
+  },
+  "chatConfig": {
+    model: 'meta-llama/Meta-Llama-3-8B-Instruct',
+    messages: messages,
+    stream: true,
+    logprobs: true,
+    top_logprobs: 2,
+    top_p: 0.99999,
+    // top_k: 2,
+    // max_tokens: 54,
+    temperature: 0,
+  },
+}
+
+var apiConfig_ = {}
+// var apiConfig = await fetch('/src/assets/secret/gpt-4o.json')
+//   .then(response => { response.json() })
+//   .catch(error => { });
+// 
+// import apiConfig_ from '@/assets/secret/gpt-4o.json'
+
+// update apiConfig with defaultApiConfig
+apiConfig_.clientConfig = { ...defaultApiConfig.clientConfig, ...apiConfig_.clientConfig }
+apiConfig_.chatConfig = { ...defaultApiConfig.chatConfig, ...apiConfig_.chatConfig }
+apiConfig = { ...defaultApiConfig, ...apiConfig_ }
+apiConfig.clientConfig.baseURL = apiConfig.clientConfig.baseURL.replace('${origin}', window.location.origin)
+apiConfig = ref(apiConfig)
+
+
+const openai = new OpenAI(apiConfig.value.clientConfig);
+console.log("openai", apiConfig.value.clientConfig, openai)
 const tokens = ref([]);
 
 
@@ -92,28 +124,16 @@ const p = (varName, obj) => {
 }
 window.p = p
 
+
 const addProbToToken = (token) => {
   const logprob = token?.logprobs?.content[0].logprob || 0
   token.prob = Math.exp(logprob)
 }
 
-
-const requestBody = ref({
-  model: 'meta-llama/Meta-Llama-3-8B-Instruct',
-  messages: messages,
-  stream: true,
-  logprobs: true,
-  top_logprobs: 20,
-  top_p: 0.99999,
-  // top_k: 2,
-  // max_tokens: 54,
-  temperature: 0,
-})
-
 async function requestLlmServer(messages) {
   messages = messages.value === undefined ? messages : messages.value
   const continue_final_message = messages[messages.length - 1].role == "assistant"
-  var body = requestBody.value
+  var body = apiConfig.value.chatConfig
   body.messages = messages
   if (continue_final_message) {
     body.add_generation_prompt = false
@@ -307,12 +327,12 @@ function clickOnLogprobItem(token, logprobItem) {
 <template>
   <h2>onPanda: on-Policy Alignment Data Annotator (PoC)</h2>
   <code>Scaling up your data efficiency before scaling up your data.</code>
-
+  <hr>
 
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
   <MessageMarkdown v-for="message in messages" :content="`### ${message['role']}:\n${message['content']}`" />
   <h3> {{ tokens.length ? tokens[0].delta.role : "unknown_role" }}:</h3>
-  <p> by <code>{{ requestBody.model || "unknown_model" }} </code> </p>
+  <p> by <code>{{ apiConfig.chatConfig.model || "unknown_model" }} </code> </p>
   <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
     <span class="PatchSpan" v-for="patch in patchs" :style='{
       "border-bottom": "3px solid " + probToColor(patch.prob),

@@ -19,6 +19,11 @@ export default defineConfig({
         target: 'http://39.105.21.95:12481',
         changeOrigin: true,
         // rewrite: path => path.replace(/^\/api/, '')
+      },
+      '/bypass-CORS': {
+        target: 'https://api.xxx.com',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/bypass-CORS/, '/v1/')
       }
     }
   }
