@@ -19,11 +19,21 @@ const defaultApiConfig = {
     logprobs: true,
     top_logprobs: 20,
     // top_p: 0.99999,
+    top_p: 0.00099999,
     // top_k: 1,
     // max_tokens: 54,
     // temperature: 0.00001,
   },
 }
+
+var messages = [{ role: "user", content: "just repeat `=🧎🏿‍♂️‍➡️磊<hr>\n蘒    𝒀𝒆𝒔`, no other words" }]
+// var messages = [{ role: "user", content:"just repeat `Yes,🧎🏿‍♂️‍➡️𝒀𝒆𝒔`, no other words" }]
+// var messages = [{ role: "user", content: "just output a random float64 without any words" }]
+var messages = [{ role: "user", content: "用中文讲一个关于西游记的100字短笑话，不要有英文" }]
+// var messages = [{ role: "user", content: "Write a blog to introduce about: onPanda: on-Policy Alignment Data Annotator (PoC)\nScaling up your data efficiency before scaling up your data." }]
+// var messages = [{ role: "user", content: "奥数题:已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
+var messages = [{ role: "user", content: "写藏头诗：人工智能，大有可为" }]
+
 
 // var apiConfig = await fetch('/src/assets/secret/gpt-4o.json')
 //   .then(response => { response.json() })
@@ -58,18 +68,19 @@ async function requestLlmServer(messages) {
       body.add_generation_prompt = false
       body['chat_template_kwargs'] = { continue_final_message: continue_final_message }
     } else {
-      if (lastMessageContent.length < 2000) {
-        // messages = messages.slice(0, messages.length - 1).concat([
-        //   { role: "assistant", content: lastMessageContent },
-        //   { role: "user", content: "continue" },
-        // ])
-      } else {
+      const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
+      if (lastMessageContent.length < 20000000) {
+        messages = messages.concat([
+          // { role: "user", content:  CONTINUE_PROMPT},
+          { role: "user", content:  'continue'},
+        ])
+      } else {  // not using
         var middleIndex = Math.floor(lastMessageContent.length / 2)
         messages = messages.slice(0, messages.length - 1).concat([
           { role: "assistant", content: lastMessageContent.slice(0, middleIndex) },
-          { role: "user", content: "continue" },
+          { role: "user", content: CONTINUE_PROMPT },
           { role: "assistant", content: lastMessageContent.slice(middleIndex) },
-          { role: "user", content: "continue" },
+          { role: "user", content: CONTINUE_PROMPT },
         ])
       }
     }
@@ -276,23 +287,6 @@ function closeFloatPatchPannel() {
   activatePatch.value = {}
 }
 
-
-var messages = [{ role: "user", content: "just repeat `=🧎🏿‍♂️‍➡️磊<hr>\n蘒    𝒀𝒆𝒔`, no other words" }]
-// var messages = [{ role: "user", content:"just repeat `Yes,🧎🏿‍♂️‍➡️𝒀𝒆𝒔`, no other words" }]
-// var messages = [{ role: "user", content: "just output a random float64 without any words" }]
-var messages = [{ role: "user", content: "用中文讲一个关于西游记的100字短笑话，不要有英文" }]
-// var messages = [{ role: "user", content: "奥数题:已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
-// var messages = [
-//     {
-//         "role": "user",
-//         "content": "用中文讲一个关于西游记的30字短笑话，不要有英文"
-//     },
-//     {
-//         "role": "assistant",
-//         "content": "孙悟空说：“我要去取经”，唐三藏问：“你带什么？”孙悟空说：“带瓶"
-//     }
-// ]
-
 const messagesComputed = computed(() => {
   const final_message = tokens.value.filter(
     token => !token.pruned
@@ -305,7 +299,11 @@ const messagesComputed = computed(() => {
     }
     return delta
   })
-  return messages.concat([final_message])
+  if(final_message.content){
+    return messages.concat([final_message])
+  }else{
+    return messages
+  }
 })
 p("tokens", tokens.value)
 requestLlmServer(messages);
@@ -395,7 +393,7 @@ function warning(content) {
 
   </div>
   <hr>
-  <div class="floatPatchPannel" @mouseover="floatPatchPannel.waitingToHide = false" :style="{
+  <div class="floatPatchPannel" @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true" :style="{
     position: 'absolute',
     left: `${floatPatchPannel.x}px`,
     top: `${floatPatchPannel.y}px`,
