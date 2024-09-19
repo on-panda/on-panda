@@ -17,25 +17,27 @@ const defaultApiConfig = {
     messages: messages,
     stream: true,
     logprobs: true,
-    top_logprobs: 2,
-    top_p: 0.99999,
-    // top_k: 2,
+    top_logprobs: 20,
+    // top_p: 0.99999,
+    // top_k: 1,
     // max_tokens: 54,
-    temperature: 0,
+    // temperature: 0.00001,
   },
 }
 
-var apiConfig_ = {}
 // var apiConfig = await fetch('/src/assets/secret/gpt-4o.json')
 //   .then(response => { response.json() })
 //   .catch(error => { });
 // 
-// import apiConfig_ from '@/assets/secret/gpt-4o.json'
+import apiConfig_ from '@/assets/secret/gpt-4o.js'
+// import apiConfig_ from '@/assets/secret/step2.json'
+// import apiConfig_ from '@/assets/secret/glm-4-flash.json'
+// var apiConfig_ = {}
 
 // update apiConfig with defaultApiConfig
 apiConfig_.clientConfig = { ...defaultApiConfig.clientConfig, ...apiConfig_.clientConfig }
 apiConfig_.chatConfig = { ...defaultApiConfig.chatConfig, ...apiConfig_.chatConfig }
-apiConfig = { ...defaultApiConfig, ...apiConfig_ }
+var apiConfig = { ...defaultApiConfig, ...apiConfig_ }
 apiConfig.clientConfig.baseURL = apiConfig.clientConfig.baseURL.replace('${origin}', window.location.origin)
 apiConfig = ref(apiConfig)
 
@@ -45,6 +47,77 @@ console.log("openai", apiConfig.value.clientConfig, openai)
 const tokens = ref([]);
 
 
+async function requestLlmServer(messages) {
+  messages = messages.value === undefined ? messages : messages.value
+  const continue_final_message = messages[messages.length - 1].role == "assistant"
+  var body = apiConfig.value.chatConfig
+  if (continue_final_message) {
+    var lastMessageContent = messages[messages.length - 1].content
+    var prefillTokensNumber = tokens.value.filter(token => !token.pruned).length
+    if (apiConfig.value.support_continue_final_message) {
+      body.add_generation_prompt = false
+      body['chat_template_kwargs'] = { continue_final_message: continue_final_message }
+    } else {
+      if (lastMessageContent.length < 2000) {
+        // messages = messages.slice(0, messages.length - 1).concat([
+        //   { role: "assistant", content: lastMessageContent },
+        //   { role: "user", content: "continue" },
+        // ])
+      } else {
+        var middleIndex = Math.floor(lastMessageContent.length / 2)
+        messages = messages.slice(0, messages.length - 1).concat([
+          { role: "assistant", content: lastMessageContent.slice(0, middleIndex) },
+          { role: "user", content: "continue" },
+          { role: "assistant", content: lastMessageContent.slice(middleIndex) },
+          { role: "user", content: "continue" },
+        ])
+      }
+    }
+  }
+  body.messages = messages
+  p("body", body)
+  const stream = await openai.chat.completions.create(body);
+  var streamIndex = 0
+  var generatedContent = ""
+  var tokensValuePtr = tokens.value
+  for await (const chunk of stream) {
+    if (continue_final_message && !streamIndex) { // before affect to tokens
+      tokens.value = tokens.value.filter(token => !token.pruned)
+      tokensValuePtr = tokens.value
+      streamIndex = tokens.value.length
+      continue  // first chunk is role, no more role for continue_final_message
+    }
+    var token = chunk.choices[0];
+    token.streamIndex = streamIndex
+    if (chunk.choices) {
+      streamIndex++
+      if (tokens.value.length) {
+        const lastToken = tokens.value[tokens.value.length - 1]
+        if (lastToken.pruned) {
+          token.pruned = lastToken.pruned
+        }
+      }
+      tokensValuePtr.push(token)
+      generatedContent += token?.delta?.content || ""
+      if (continue_final_message && !apiConfig.value.support_continue_final_message) {
+        // try remove duplicated prefill tokens for API not support continue_final_message
+        if (generatedContent === lastMessageContent) {
+          warning("API not support continue_final_message, remove duplicated prefill tokens")
+          generatedContent = ""
+          streamIndex = 0
+          if (tokens.value === tokensValuePtr) {
+            tokens.value = tokens.value.slice(0, prefillTokensNumber)
+            tokensValuePtr = tokens.value
+          } else {
+            tokensValuePtr = tokens.value.slice(0, prefillTokensNumber)
+          }
+        }
+      }
+      p(token.delta?.content)
+    }
+  }
+}
+
 
 const assistentResponseContent = computed(() => {
   return tokens.value.map((token) => token.delta.content).join("");
@@ -52,6 +125,17 @@ const assistentResponseContent = computed(() => {
 
 
 const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+
+function probOfToken(token) {
+  var prob = Math.exp(token.logprobs?.content[0]?.logprob)
+  if (!isFinite(prob)) {
+    if (token.streamIndex === 0) {
+      // first role token has no prob and will in first patch
+      prob = 1
+    }
+  }
+  return prob
+}
 
 const patchs = computed(() => {
   const visableSegments = Array.from(segmenter.segment(assistentResponseContent.value));
@@ -77,7 +161,7 @@ const patchs = computed(() => {
         throw new Error("tokenToSegmentString != segment: " + tokenToSegmentString + " != " + patchString)
       }
       var patchTokens = tokens.value.slice(tokenStartIndex, tokenIndex + 1)
-      patchs.push({ patch: patchString, tokens: patchTokens, prob: patchTokens.reduce((acc, token) => acc * token.prob, 1), index: patchs.length })
+      patchs.push({ patch: patchString, tokens: patchTokens, prob: patchTokens.reduce((acc, token) => acc * probOfToken(token), 1), index: patchs.length })
       tokenStartIndex = tokenIndex + 1
       tokenToSegmentString = ""
       segmentIndex++
@@ -125,49 +209,6 @@ const p = (varName, obj) => {
 window.p = p
 
 
-const addProbToToken = (token) => {
-  const logprob = token?.logprobs?.content[0].logprob || 0
-  token.prob = Math.exp(logprob)
-}
-
-async function requestLlmServer(messages) {
-  messages = messages.value === undefined ? messages : messages.value
-  const continue_final_message = messages[messages.length - 1].role == "assistant"
-  var body = apiConfig.value.chatConfig
-  body.messages = messages
-  if (continue_final_message) {
-    body.add_generation_prompt = false
-    body['chat_template_kwargs'] = { continue_final_message: continue_final_message }
-  }
-  p("body", body)
-  const stream = await openai.chat.completions.create(body);
-  var streamIndex = 0
-  var tokensValuePtr = tokens.value
-  for await (const chunk of stream) {
-    if (continue_final_message && !streamIndex) { // before affect to tokens
-      tokens.value = tokens.value.filter(token => !token.pruned)
-      tokensValuePtr = tokens.value
-      streamIndex = tokens.value.length
-      continue  // first chunk is role, no more role for continue_final_message
-    }
-    var token = chunk.choices[0];
-    token.streamIndex = streamIndex
-    if (chunk.choices) {
-      addProbToToken(token)
-      streamIndex++
-      if (tokens.value.length) {
-        const lastToken = tokens.value[tokens.value.length - 1]
-        if (lastToken.pruned) {
-          token.pruned = lastToken.pruned
-        }
-      }
-      // tokens.value.push(token);
-      tokensValuePtr.push(token)
-      p(token.delta?.content)
-    }
-  }
-}
-
 function createSpanInPatchSpanHTML(textContent) {
   const span = document.createElement('span')
   span.className = 'spanInPatchSpan'  // .spanInPatchSpan CSS not work?
@@ -213,22 +254,26 @@ const handleMouseEnterPatchSpan = (event) => {
   const patchIndex = event.target.attributes["patch-index"].value
   const patch = patchs.value[parseInt(patchIndex)]
 
-  acitvatePatch.value = patch
   event.target.classList.add('ActivatePatchSpan')
-
+  patch.target = event.target
+  activatePatch.value = patch
   setFloatPatchPannelBelow(event.target)
-
 }
+
 const handleMouseLeavePatchSpan = (event) => {
   // console.log(event)
-  event.target.classList.remove('ActivatePatchSpan')
   floatPatchPannel.value.waitingToHide = true
   setTimeout(() => {
     if (floatPatchPannel.value.waitingToHide) {
-      floatPatchPannel.value.visible = false;
-      floatPatchPannel.value.waitingToHide = false;
+      closeFloatPatchPannel()
     }
   }, 300);
+}
+
+function closeFloatPatchPannel() {
+  floatPatchPannel.value.visible = false;
+  floatPatchPannel.value.waitingToHide = false;
+  activatePatch.value = {}
 }
 
 
@@ -267,8 +312,8 @@ requestLlmServer(messages);
 
 
 // floatPatchPannel
-const acitvatePatch = ref({})
-const acitvateLogprobItem = ref({})
+const activatePatch = ref({})
+const activateLogprobItem = ref({})
 const tokenToHtml = (tokenContent) => {
   if (tokenContent === undefined) {
     return "undefined"
@@ -287,8 +332,9 @@ const floatPatchPannel = ref({
   y: 0,
 })
 
-watch(acitvatePatch, (newValue) => {
-  acitvateLogprobItem.value = {}
+watch(activatePatch, (newValue, oldValue) => {
+  activateLogprobItem.value = {}
+  oldValue.target?.classList.remove('ActivatePatchSpan')
 });
 
 function setFloatPatchPannelBelow(element) {
@@ -323,11 +369,17 @@ function clickOnLogprobItem(token, logprobItem) {
   continueFromToken(token, logprobItem.token)
 }
 
+const warningContent = ref("")
+function warning(content) {
+  warningContent.value += "<p>" + content + "</p>"
+}
+
 </script>
 <template>
   <h2>onPanda: on-Policy Alignment Data Annotator (PoC)</h2>
   <code>Scaling up your data efficiency before scaling up your data.</code>
   <hr>
+  <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
 
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
   <MessageMarkdown v-for="message in messages" :content="`### ${message['role']}:\n${message['content']}`" />
@@ -348,7 +400,7 @@ function clickOnLogprobItem(token, logprobItem) {
     left: `${floatPatchPannel.x}px`,
     top: `${floatPatchPannel.y}px`,
   }" v-if="floatPatchPannel.visible">
-    <div v-for="token in acitvatePatch.tokens.filter(token => (token?.delta?.content !== undefined))"
+    <div v-for="token in activatePatch.tokens.filter(token => (token?.delta?.content !== undefined))"
       class="tokenPannel" style="vertical-align:top; display: inline-block; padding: 5px;">
       <div class="floatPatchPannelHead" style="border-bottom: 2px solid #ccc;">
         <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
@@ -356,7 +408,8 @@ function clickOnLogprobItem(token, logprobItem) {
       <div class="tokenLogprobItems">
         <div v-for="logprobItem in token?.logprobs?.content[0].top_logprobs"
           style="display: block; background-color: #eee;" @click="clickOnLogprobItem(token, logprobItem)"
-          @mouseenter="acitvateLogprobItem = logprobItem">
+          @mouseover="activateLogprobItem = logprobItem" @mouseenter="$event.target.style.backgroundColor = '#ddd'"
+          @mouseleave="$event.target.style.backgroundColor = ''">
           <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token) }}</span>
           <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
             style="white-space: pre-wrap;font-family: Monospace;">:{{
@@ -366,12 +419,12 @@ function clickOnLogprobItem(token, logprobItem) {
     </div>
     <footer>
       <hr>
-      <span v-if="acitvateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;">{{
-        Math.exp(acitvateLogprobItem.logprob) * 100 }}%<br></span>
-      <span v-if="acitvateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
-        [{{ acitvateLogprobItem.bytes.join(',') }}]</span>
-      <button @click="floatPatchPannel.visible = false"
-        style="padding: 0px; margin: 0 5px 5px 5px; float:right">❌</button>
+      <span v-if="activateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;">{{
+        Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
+      <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
+        [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') : activateLogprobItem.bytes
+        }}]</span>
+      <button @click="closeFloatPatchPannel" style="padding: 0px; margin: 0 5px 5px 5px; float:right">❌</button>
     </footer>
   </div>
 
@@ -401,6 +454,7 @@ function clickOnLogprobItem(token, logprobItem) {
   border-radius: 5px;
   background-color: #f9f9f9;
   position: absolute;
+  cursor: default;
 }
 
 .PatchSpan {
