@@ -4,6 +4,9 @@ import { escapeHTML } from '@/utils/commonUtils'
 import { ref, computed, watch } from 'vue'
 import OpenAI from "openai";
 
+const userAgent = navigator.userAgent;
+const mobilePattern = /Mobi|Android/i;
+var isMobile = mobilePattern.test(userAgent);
 
 const defaultApiConfig = {
   "support_continue_final_message": true,
@@ -364,6 +367,9 @@ function clickOnLogprobItem(token, logprobItem) {
     }
   }
   continueFromToken(token, logprobItem.token)
+  if (isMobile){
+    setTimeout(closeFloatPatchPannel, 500)
+  }
 }
 
 const warningContent = ref("")
