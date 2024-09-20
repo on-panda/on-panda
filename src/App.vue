@@ -42,10 +42,10 @@ var messages = [{ role: "user", content: "用中文讲一个关于西游记的10
 //   .then(response => { response.json() })
 //   .catch(error => { });
 // 
-import apiConfig_ from '@/assets/secret/gpt-4o.js'
+// import apiConfig_ from '@/assets/secret/gpt-4o.js'
 // import apiConfig_ from '@/assets/secret/step2.json'
 // import apiConfig_ from '@/assets/secret/glm-4-flash.json'
-// var apiConfig_ = {}
+var apiConfig_ = {}
 
 // update apiConfig with defaultApiConfig
 apiConfig_.clientConfig = { ...defaultApiConfig.clientConfig, ...apiConfig_.clientConfig }
@@ -385,7 +385,10 @@ function warning(content) {
   <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
 
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
-  <MessageMarkdown v-for="message in messages" :content="`### ${message['role']}:\n${message['content']}`" />
+  <template v-for="message in messages">
+    <MessageMarkdown  :content="`### ${message['role']}:\n${message['content']}`" />
+    <textarea v-model="message['content']" style="width: 95%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;" @blur="tokens=[];requestLlmServer(messages)" />
+  </template>
   <h3> {{ tokens.length ? tokens[0].delta.role : "unknown_role" }}:</h3>
   <p> by <code>{{ apiConfig.chatConfig.model || "unknown_model" }} </code> </p>
   <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
