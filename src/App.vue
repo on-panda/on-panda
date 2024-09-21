@@ -2,11 +2,49 @@
 import MessageMarkdown from './components/MessageMarkdown.vue'
 import { escapeHTML } from '@/utils/commonUtils'
 import { ref, computed, watch } from 'vue'
-import OpenAI from "openai";
+import { OpenAI } from './utils/fetchOpenaiApi.js'
 
 const userAgent = navigator.userAgent;
 const mobilePattern = /Mobi|Android/i;
 var isMobile = mobilePattern.test(userAgent);
+
+function toLegalVariableName(str) {
+  const cleanedStr = str.replace(/[^a-zA-Z0-9_$]/g, '');
+  return /^\d/.test(cleanedStr) ? '_' + cleanedStr : cleanedStr;
+}
+
+const p = (varName, obj) => {
+  if (obj === undefined) {
+    obj = varName
+    varName = 'd'
+  }
+  var legalVarName = toLegalVariableName(varName)
+  window[legalVarName] = obj
+  console.log(`"${varName + (legalVarName === varName ? '' : '(' + legalVarName + ')')}":`, obj)
+  return obj
+}
+window.p = p
+
+const warningContent = ref("")
+
+function warning(content) {
+  if (content instanceof Error) {
+
+    let errorMessage = `
+    <h2>Error Details</h2>
+                    <strong>Error Name:</strong> ${error.name} <br>
+                    <strong>Error Message:</strong> ${error.message} <br>
+                    <strong>Error Type:</strong> ${error.constructor.name} <br>
+                    <strong>Is Custom Error:</strong> ${error instanceof Error} <br>
+                    ${error.fileName ? `<strong>File Name:</strong> ${error.fileName} <br>` : ''}
+                    ${error.lineNumber ? `<strong>Line Number:</strong> ${error.lineNumber} <br>` : ''}
+                    <strong>Error Stack:</strong> <pre>${error.stack}</pre>
+                `;
+
+    content = errorMessage
+  }
+  warningContent.value += "<p>" + content + "</p>"
+}
 
 const defaultApiConfig = {
   "support_continue_final_message": true,
@@ -22,12 +60,14 @@ const defaultApiConfig = {
     logprobs: true,
     top_logprobs: 20,
     // top_p: 0.99999,
-    top_p: 0.00099999,
-    // top_k: 1,
-    // max_tokens: 54,
-    // temperature: 0.00001,
+    top_p: 0.0001,
+    // top_k: 2,
+    // max_tokens: 4,
+    // temperature: 0.5,
   },
 }
+
+
 
 var messages = [{ role: "user", content: "just repeat `=🧎🏿‍♂️‍➡️磊<hr>\n蘒    𝒀𝒆𝒔`, no other words" }]
 // var messages = [{ role: "user", content:"just repeat `Yes,🧎🏿‍♂️‍➡️𝒀𝒆𝒔`, no other words" }]
@@ -42,10 +82,10 @@ var messages = [{ role: "user", content: "用中文讲一个关于西游记的10
 //   .then(response => { response.json() })
 //   .catch(error => { });
 // 
-// import apiConfig_ from '@/assets/secret/gpt-4o.js'
+import apiConfig_ from '@/assets/secret/gpt-4o.js'
 // import apiConfig_ from '@/assets/secret/step2.json'
 // import apiConfig_ from '@/assets/secret/glm-4-flash.json'
-var apiConfig_ = {}
+// var apiConfig_ = {}
 
 // update apiConfig with defaultApiConfig
 apiConfig_.clientConfig = { ...defaultApiConfig.clientConfig, ...apiConfig_.clientConfig }
@@ -56,7 +96,6 @@ apiConfig = ref(apiConfig)
 
 
 const openai = new OpenAI(apiConfig.value.clientConfig);
-console.log("openai", apiConfig.value.clientConfig, openai)
 const tokens = ref([]);
 
 
@@ -74,7 +113,7 @@ async function requestLlmServer(messages) {
       const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
       if (lastMessageContent.length < 20000000) {
         messages = messages.concat([
-          { role: "user", content:  CONTINUE_PROMPT},
+          { role: "user", content: CONTINUE_PROMPT },
         ])
       } else {  // not using
         var middleIndex = Math.floor(lastMessageContent.length / 2)
@@ -88,8 +127,13 @@ async function requestLlmServer(messages) {
     }
   }
   body.messages = messages
-  p("body", body)
-  const stream = await openai.chat.completions.create(body);
+  try {
+    var stream = await openai.chat.completions.create(body);
+  } catch (error) {
+    warning(error)
+    throw error
+  }
+
   var streamIndex = 0
   var generatedContent = ""
   var tokensValuePtr = tokens.value
@@ -126,7 +170,7 @@ async function requestLlmServer(messages) {
           }
         }
       }
-      p(token.delta?.content)
+      // p(token.delta?.content, token)
     }
   }
 }
@@ -184,12 +228,6 @@ const patchs = computed(() => {
 });
 
 
-
-// const assistentResponseByte = computed(() => {
-//   const bytes = [].concat(...d.map(token => token?.logprobs?.content[0].bytes)).filter(isFinite)
-//   return new TextDecoder('utf-8').decode(new Uint8Array(bytes))
-// })
-
 const probToColor = (prob, transparency) => {
   const green = Math.floor((prob) * (255 - 128))
   var rgb = `${255 - green}, ${128 + green}, 128`;
@@ -204,23 +242,6 @@ const probToColor = (prob, transparency) => {
   }
   return color
 }
-function toLegalVariableName(str) {
-  const cleanedStr = str.replace(/[^a-zA-Z0-9_$]/g, '');
-  return /^\d/.test(cleanedStr) ? '_' + cleanedStr : cleanedStr;
-}
-
-const p = (varName, obj) => {
-  if (obj === undefined) {
-    obj = varName
-    varName = 'd'
-  }
-  var legalVarName = toLegalVariableName(varName)
-  window[legalVarName] = obj
-  console.log(`"${varName + (legalVarName === varName ? '' : '(' + legalVarName + ')')}":`, obj)
-  return obj
-}
-window.p = p
-
 
 function createSpanInPatchSpanHTML(textContent) {
   const span = document.createElement('span')
@@ -301,9 +322,9 @@ const messagesComputed = computed(() => {
     }
     return delta
   })
-  if(final_message.content){
+  if (final_message.content) {
     return messages.concat([final_message])
-  }else{
+  } else {
     return messages
   }
 })
@@ -367,14 +388,9 @@ function clickOnLogprobItem(token, logprobItem) {
     }
   }
   continueFromToken(token, logprobItem.token)
-  if (isMobile){
+  if (isMobile) {
     setTimeout(closeFloatPatchPannel, 500)
   }
-}
-
-const warningContent = ref("")
-function warning(content) {
-  warningContent.value += "<p>" + content + "</p>"
 }
 
 </script>
@@ -386,8 +402,10 @@ function warning(content) {
 
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
   <template v-for="message in messages">
-    <MessageMarkdown  :content="`### ${message['role']}:\n${message['content']}`" />
-    <textarea v-model="message['content']" style="width: 95%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;" @blur="tokens=[];requestLlmServer(messages)" />
+    <MessageMarkdown :content="`### ${message['role']}:\n${message['content']}`" />
+    <textarea v-model="message['content']"
+      style="width: 95%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;"
+      @blur="tokens = []; requestLlmServer(messages)" />
   </template>
   <h3> {{ tokens.length ? tokens[0].delta.role : "unknown_role" }}:</h3>
   <p> by <code>{{ apiConfig.chatConfig.model || "unknown_model" }} </code> </p>
@@ -401,11 +419,12 @@ function warning(content) {
 
   </div>
   <hr>
-  <div class="floatPatchPannel" @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true" :style="{
-    position: 'absolute',
-    left: `${floatPatchPannel.x}px`,
-    top: `${floatPatchPannel.y}px`,
-  }" v-if="floatPatchPannel.visible">
+  <div class="floatPatchPannel" @mouseover="floatPatchPannel.waitingToHide = false"
+    @mouseleave="floatPatchPannel.waitingToHide = true" :style="{
+      position: 'absolute',
+      left: `${floatPatchPannel.x}px`,
+      top: `${floatPatchPannel.y}px`,
+    }" v-if="floatPatchPannel.visible">
     <div v-for="token in activatePatch.tokens.filter(token => (token?.delta?.content !== undefined))"
       class="tokenPannel" style="vertical-align:top; display: inline-block; padding: 5px;">
       <div class="floatPatchPannelHead" style="border-bottom: 2px solid #ccc;">
@@ -428,7 +447,8 @@ function warning(content) {
       <span v-if="activateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;">{{
         Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
       <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
-        [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') : activateLogprobItem.bytes
+        [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') :
+          activateLogprobItem.bytes
         }}]</span>
       <button @click="closeFloatPatchPannel" style="padding: 0px; margin: 0 5px 5px 5px; float:right">❌</button>
     </footer>
