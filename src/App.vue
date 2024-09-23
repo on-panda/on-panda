@@ -63,6 +63,7 @@ const defaultApiConfig = {
     // top_p: 0.0001,
     // top_k: 2,
     // max_tokens: 4,
+    max_tokens: 1024,
     temperature: 0.5,
   },
 }
@@ -70,23 +71,24 @@ const defaultApiConfig = {
 
 
 var messages = [{ role: "user", content: "just repeat `=🧎🏿‍♂️‍➡️磊<hr>\n蘒    𝒀𝒆𝒔`, no other words" }]
-// var messages = [{ role: "user", content:"just repeat `Yes,🧎🏿‍♂️‍➡️𝒀𝒆𝒔`, no other words" }]
-// var messages = [{ role: "user", content: "just output a random float64 without any words" }]
+// var messages = [{ role: "user", content: "just output a random float128 number without any words, no code" }]
 var messages = [{ role: "user", content: "用中文讲一个关于西游记的100字短笑话，不要有英文" }]
 // var messages = [{ role: "user", content: "Write a blog to introduce about: onPanda: on-Policy Alignment Data Annotator (PoC)\nScaling up your data efficiency before scaling up your data." }]
 // var messages = [{ role: "user", content: "奥数题:已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
 // var messages = [{ role: "user", content: "写藏头诗：人工智能，大有可为" }]
+// var messages = [{ role: "user", content: "just reply `Y`" }]
+
 
 
 // var apiConfig = await fetch('/src/assets/secret/gpt-4o.json')
 //   .then(response => { response.json() })
 //   .catch(error => { });
 // 
+// var apiConfig_ = {}
 // import apiConfig_ from '@/assets/secret/gpt-4o.js'
 // import apiConfig_ from '@/assets/secret/step2.json'
 // import apiConfig_ from '@/assets/secret/glm-4-flash.json'
 import apiConfig_ from '@/assets/secret/cast.js'
-// var apiConfig_ = {}
 
 // update apiConfig with defaultApiConfig
 apiConfig_.clientConfig = { ...defaultApiConfig.clientConfig, ...apiConfig_.clientConfig }
@@ -225,6 +227,7 @@ const patchs = computed(() => {
       segmentIndex++
     }
   }
+  p("patchs", patchs)
   return patchs
 });
 
