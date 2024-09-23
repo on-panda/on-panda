@@ -60,10 +60,10 @@ const defaultApiConfig = {
     logprobs: true,
     top_logprobs: 20,
     // top_p: 0.99999,
-    top_p: 0.0001,
+    // top_p: 0.0001,
     // top_k: 2,
     // max_tokens: 4,
-    // temperature: 0.5,
+    temperature: 0.5,
   },
 }
 
@@ -82,9 +82,10 @@ var messages = [{ role: "user", content: "用中文讲一个关于西游记的10
 //   .then(response => { response.json() })
 //   .catch(error => { });
 // 
-import apiConfig_ from '@/assets/secret/gpt-4o.js'
+// import apiConfig_ from '@/assets/secret/gpt-4o.js'
 // import apiConfig_ from '@/assets/secret/step2.json'
 // import apiConfig_ from '@/assets/secret/glm-4-flash.json'
+import apiConfig_ from '@/assets/secret/cast.js'
 // var apiConfig_ = {}
 
 // update apiConfig with defaultApiConfig
@@ -318,7 +319,7 @@ const messagesComputed = computed(() => {
   ).reduce((delta1, delta2) => {
     const delta = { ...delta1 }
     for (var key in delta2) {
-      delta[key] = (delta[key] || "") + delta2[key]
+      delta[key] = (delta[key] || "") + (delta2[key] || "")
     }
     return delta
   })

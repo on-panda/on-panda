@@ -24,6 +24,11 @@ export default defineConfig({
         target: 'https://api.xxx.com',
         changeOrigin: true,
         rewrite: path => path.replace(/^\/bypass-CORS/, '/v1/')
+      },
+      '/cast': {
+        target: 'http://127.0.0.1:9200',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/cast/, '/')
       }
     }
   }
