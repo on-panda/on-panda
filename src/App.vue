@@ -32,13 +32,13 @@ function warning(content) {
 
     let errorMessage = `
     <h2>Error Details</h2>
-                    <strong>Error Name:</strong> ${error.name} <br>
-                    <strong>Error Message:</strong> ${error.message} <br>
-                    <strong>Error Type:</strong> ${error.constructor.name} <br>
+                    <strong>Error Name:</strong> ${content.name} <br>
+                    <strong>Error Message:</strong> ${content.message} <br>
+                    <strong>Error Type:</strong> ${content.constructor.name} <br>
                     <strong>Is Custom Error:</strong> ${error instanceof Error} <br>
-                    ${error.fileName ? `<strong>File Name:</strong> ${error.fileName} <br>` : ''}
-                    ${error.lineNumber ? `<strong>Line Number:</strong> ${error.lineNumber} <br>` : ''}
-                    <strong>Error Stack:</strong> <pre>${error.stack}</pre>
+                    ${content.fileName ? `<strong>File Name:</strong> ${content.fileName} <br>` : ''}
+                    ${content.lineNumber ? `<strong>Line Number:</strong> ${content.lineNumber} <br>` : ''}
+                    <strong>Error Stack:</strong> <pre>${content.stack}</pre>
                 `;
 
     content = errorMessage
