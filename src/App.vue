@@ -89,6 +89,7 @@ var messages = [{ role: "user", content: "用中文讲一个关于西游记的10
 // import apiConfig_ from '@/assets/secret/step2.json'
 // import apiConfig_ from '@/assets/secret/glm-4-flash.json'
 import apiConfig_ from '@/assets/secret/cast.js'
+// import apiConfig_ from '@/assets/secret/debug.js'
 
 // update apiConfig with defaultApiConfig
 apiConfig_.clientConfig = { ...defaultApiConfig.clientConfig, ...apiConfig_.clientConfig }
@@ -227,7 +228,6 @@ const patchs = computed(() => {
       segmentIndex++
     }
   }
-  p("patchs", patchs)
   return patchs
 });
 
@@ -295,7 +295,12 @@ const handleMouseEnterPatchSpan = (event) => {
   event.target.classList.add('ActivatePatchSpan')
   patch.target = event.target
   activatePatch.value = patch
-  setFloatPatchPannelBelow(event.target)
+  if (isMobile) {
+    // Prevents false touches due to web size changes
+    setTimeout(() => setFloatPatchPannelBelow(event.target), 1)
+  } else {
+    setFloatPatchPannelBelow(event.target)
+  }
 }
 
 const handleMouseLeavePatchSpan = (event) => {
@@ -314,8 +319,8 @@ function closeFloatPatchPannel() {
   activatePatch.value = {}
 }
 
-const messagesComputed = computed(() => {
-  const final_message = tokens.value.filter(
+const finalMessage = computed(() => {
+  return tokens.value.filter(
     token => !token.pruned
   ).map(
     token => (token.delta || {})
@@ -325,15 +330,20 @@ const messagesComputed = computed(() => {
       delta[key] = (delta[key] || "") + (delta2[key] || "")
     }
     return delta
-  })
-  if (final_message.content) {
-    return messages.concat([final_message])
+  }, {})
+})
+
+const messagesComputed = computed(() => {
+  if (finalMessage.value.content) {
+    return messages.concat([finalMessage.value])
   } else {
     return messages
   }
 })
-p("tokens", tokens.value)
+
 requestLlmServer(messages);
+p("tokens", tokens.value)
+p("patchs", patchs)
 
 
 // floatPatchPannel
@@ -365,8 +375,8 @@ watch(activatePatch, (newValue, oldValue) => {
 function setFloatPatchPannelBelow(element) {
   const cellRect = element.getBoundingClientRect();
   // const containerRect = $el.querySelector('.table-container').getBoundingClientRect();
-  floatPatchPannel.value.x = cellRect.left - 10
-  floatPatchPannel.value.y = cellRect.bottom - 5
+  floatPatchPannel.value.x = cellRect.left + window.scrollX - 10
+  floatPatchPannel.value.y = cellRect.bottom + window.scrollY - 5
   floatPatchPannel.value.waitingToHide = false;
   floatPatchPannel.value.visible = true;
   // console.log(element, cellRect, floatPatchPannel)
@@ -412,16 +422,27 @@ function clickOnLogprobItem(token, logprobItem) {
       @blur="tokens = []; requestLlmServer(messages)" />
   </template>
   <h3> {{ tokens.length ? tokens[0].delta.role : "unknown_role" }}:</h3>
-  <p> by <code>{{ apiConfig.chatConfig.model || "unknown_model" }} </code> </p>
-  <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
-    <span class="PatchSpan" v-for="patch in patchs" :style='{
-      "border-bottom": "3px solid " + probToColor(patch.prob),
-      ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
-      ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {})
-    }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
-      @mouseleave="handleMouseLeavePatchSpan"></span>
+  <div :style="isMobile ? '' : 'display: flex; justify-content: space-between;'">
+    <div :class="{ 'final-message-half-pannel': !isMobile }">
+      <p> by <code>{{ apiConfig.chatConfig.model || "unknown_model" }} </code> </p>
+      <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
+        <span class="PatchSpan" v-for="patch in patchs" :style='{
+          "border-bottom": "3px solid " + probToColor(patch.prob),
+          ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
+          ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {})
+        }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
+          @mouseleave="handleMouseLeavePatchSpan"></span>
+      </div>
+      <br>
+    </div>
 
+    <div :class="{ 'final-message-half-pannel': !isMobile }"
+      style="border: 1px solid #ccc; padding: 5px; background-color: #f9f9f9;">
+      <small style="color: #888;">rendered markdown:</small>
+      <MessageMarkdown :content="finalMessage.content || '<|null|>'" />
+    </div>
   </div>
+  <br>
   <hr>
   <div class="floatPatchPannel" @mouseover="floatPatchPannel.waitingToHide = false"
     @mouseleave="floatPatchPannel.waitingToHide = true" :style="{
@@ -439,7 +460,8 @@ function clickOnLogprobItem(token, logprobItem) {
           style="display: block; background-color: #eee;" @click="clickOnLogprobItem(token, logprobItem)"
           @mouseover="activateLogprobItem = logprobItem" @mouseenter="$event.target.style.backgroundColor = '#ddd'"
           @mouseleave="$event.target.style.backgroundColor = ''">
-          <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token) }}</span>
+          <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token_piece || logprobItem.token)
+            }}</span>
           <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
             style="white-space: pre-wrap;font-family: Monospace;">:{{
               (Math.exp(logprobItem.logprob) * 100).toFixed(1).toString().padStart(5, ' ') }}%</span>
@@ -469,6 +491,12 @@ function clickOnLogprobItem(token, logprobItem) {
 </template>
 
 <style scoped>
+.final-message-half-pannel {
+  display: inline-block;
+  width: 49%;
+}
+
+
 .floatPatchPannelHead .tokenLogprobItems {
   display: block;
 }
