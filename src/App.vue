@@ -4,9 +4,18 @@ import { escapeHTML } from '@/utils/commonUtils'
 import { ref, computed, watch } from 'vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 
-const userAgent = navigator.userAgent;
-const mobilePattern = /Mobi|Android/i;
-var isMobile = mobilePattern.test(userAgent);
+// const userAgent = navigator.userAgent;
+// const mobilePattern = /Mobi|Android/i;
+// var isMobile = mobilePattern.test(userAgent);
+
+
+const innerWidth = ref(window.innerWidth)
+function handleResize() {
+  innerWidth.value = window.innerWidth
+  }
+
+var isMobile = computed(()=>innerWidth.value <700)
+
 
 function toLegalVariableName(str) {
   const cleanedStr = str.replace(/[^a-zA-Z0-9_$]/g, '');
@@ -35,11 +44,11 @@ function warning(content) {
                     <strong>Error Name:</strong> ${content.name} <br>
                     <strong>Error Message:</strong> ${content.message} <br>
                     <strong>Error Type:</strong> ${content.constructor.name} <br>
-                    <strong>Is Custom Error:</strong> ${error instanceof Error} <br>
                     ${content.fileName ? `<strong>File Name:</strong> ${content.fileName} <br>` : ''}
                     ${content.lineNumber ? `<strong>Line Number:</strong> ${content.lineNumber} <br>` : ''}
                     <strong>Error Stack:</strong> <pre>${content.stack}</pre>
                 `;
+                // <strong>Is Custom Error:</strong> ${error instanceof Error} <br>
 
     content = errorMessage
   }
@@ -295,7 +304,7 @@ const handleMouseEnterPatchSpan = (event) => {
   event.target.classList.add('ActivatePatchSpan')
   patch.target = event.target
   activatePatch.value = patch
-  if (isMobile) {
+  if (isMobile.value) {
     // Prevents false touches due to web size changes
     setTimeout(() => setFloatPatchPannelBelow(event.target), 1)
   } else {
@@ -402,10 +411,22 @@ function clickOnLogprobItem(token, logprobItem) {
     }
   }
   continueFromToken(token, logprobItem.token)
-  if (isMobile) {
+  if (isMobile.value) {
     setTimeout(closeFloatPatchPannel, 500)
   }
 }
+
+
+import {onMounted, onBeforeUnmount} from 'vue'
+
+onMounted(async () => {
+		handleResize();
+    window.addEventListener('resize', handleResize);
+})
+
+onBeforeUnmount(async () => {
+		window.removeEventListener('resize', handleResize);
+})
 
 </script>
 <template>
@@ -421,29 +442,36 @@ function clickOnLogprobItem(token, logprobItem) {
       style="width: 95%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;"
       @blur="tokens = []; requestLlmServer(messages)" />
   </template>
-  <h3> {{ tokens.length ? tokens[0].delta.role : "unknown_role" }}:</h3>
-  <div :style="isMobile ? '' : 'display: flex; justify-content: space-between;'">
-    <div :class="{ 'final-message-half-pannel': !isMobile }">
-      <p> by <code>{{ apiConfig.chatConfig.model || "unknown_model" }} </code> </p>
-      <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
-        <span class="PatchSpan" v-for="patch in patchs" :style='{
-          "border-bottom": "3px solid " + probToColor(patch.prob),
-          ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
-          ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {})
-        }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
-          @mouseleave="handleMouseLeavePatchSpan"></span>
-      </div>
-      <br>
-    </div>
 
-    <div :class="{ 'final-message-half-pannel': !isMobile }"
-      style="border: 1px solid #ccc; padding: 5px; background-color: #f9f9f9;">
+
+  <h3> {{ tokens.length ? tokens[0].delta.role : "unknown_role" }}:</h3>
+  <div style="width: 100%;overflow:scroll">
+    <hr style="margin-top:0px;color:#ccc">
+    <div style="display: flex; justify-content: space-between;" :style="{'width':isMobile?'195%':'100%'}" >
+      <div class="final-message-half-pannel">
+        <small style="color: #888;"> by <code>{{ apiConfig.chatConfig.model || "unknown_model" }} </code> </small>
+        <br>
+        <br>
+        <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
+          <span class="PatchSpan" v-for="patch in patchs" :style='{
+            "border-bottom": "3px solid " + probToColor(patch.prob),
+            ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
+            ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {})
+          }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
+            @mouseleave="handleMouseLeavePatchSpan"></span>
+        </div>
+        <br>
+      </div>
+      <hr style="color:#eee">
+      <div 
+      class="final-message-half-pannel">
       <small style="color: #888;">rendered markdown:</small>
-      <MessageMarkdown :content="finalMessage.content || '<|null|>'" />
+      <MessageMarkdown :content="finalMessage.content || '<|null|>'" style="background-color: #eee;" />
+      </div>
     </div>
+    <hr style="color:#ccc">
   </div>
   <br>
-  <hr>
   <div class="floatPatchPannel" @mouseover="floatPatchPannel.waitingToHide = false"
     @mouseleave="floatPatchPannel.waitingToHide = true" :style="{
       position: 'absolute',
@@ -493,7 +521,7 @@ function clickOnLogprobItem(token, logprobItem) {
 <style scoped>
 .final-message-half-pannel {
   display: inline-block;
-  width: 49%;
+  width: 49.5%;
 }
 
 
