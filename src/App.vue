@@ -389,17 +389,8 @@ function setFloatPatchPannelBelow(element) {
   floatPatchPannel.value.visible = true;
 }
 
-function continueFromToken(token, continuePrefix) {
-  continuePrefix = continuePrefix || ""
-  const continuePrefixToken = { delta: { content: continuePrefix }, streamIndex: token.streamIndex, bifurcationPoint: true, logprobs: token.logprobs }
-  tokens.value.splice(token.streamIndex, 0, continuePrefixToken);
-  const messageWithContinuePrefix = messagesComputed.value
-
-  // messageWithContinuePrefix[messageWithContinuePrefix.length-1]['content'] += continuePrefix
-  requestLlmServer(messageWithContinuePrefix)
-}
-
-function clickOnLogprobItem(token, logprobItem) {
+function continueFromToken(token, continuePrefix, continuePrefixLogprob) {
+  console.log(token, continuePrefix, continuePrefixLogprob)
   for (const patch of patchs.value) {
     for (const patchToken of patch.tokens) {
       patchToken.pruned = patchToken.streamIndex >= token.streamIndex
@@ -408,7 +399,23 @@ function clickOnLogprobItem(token, logprobItem) {
       }
     }
   }
-  continueFromToken(token, logprobItem.token)
+  continuePrefix = continuePrefix || ""
+  // const continuePrefixToken = { delta: { content: continuePrefix }, streamIndex: token.streamIndex, bifurcationPoint: true, logprobs: token.logprobs }
+  token = JSON.parse(JSON.stringify(token)) // deep copy
+  token.delta.content = continuePrefix
+  token.bifurcationPoint = true
+  token.pruned = false
+  token.logprobs.content[0].logprob = isFinite(continuePrefixLogprob) ? continuePrefixLogprob : -9999
+  token.logprobs.content[0].token =
+    tokens.value.splice(token.streamIndex, 0, token);
+  const messageWithContinuePrefix = messagesComputed.value
+
+  // messageWithContinuePrefix[messageWithContinuePrefix.length-1]['content'] += continuePrefix
+  requestLlmServer(messageWithContinuePrefix)
+}
+
+function clickOnLogprobItem(token, logprobItem) {
+  continueFromToken(token, logprobItem.token, logprobItem.logprob)
   if (isMobile.value) {
     setTimeout(closeFloatPatchPannel, 500)
   }
@@ -417,15 +424,30 @@ function clickOnLogprobItem(token, logprobItem) {
 
 const floatInputPatch = ref({
   visible: false,
+  attachedPatch: undefined,
   x: 0,
   y: 0,
 })
 
-function setFloatInputPatch(element) {
-  const cellRect = element.getBoundingClientRect();
-  floatInputPatch.value.x = cellRect.right + window.scrollX
+function setFloatInputPatch(event, patch) {
+  // keep floatPatchPannel on， don‘t know why need setTimeout
+  setTimeout(() => {
+    activatePatch.value = patch
+    floatPatchPannel.value.waitingToHide = false;
+    floatPatchPannel.value.visible = true;
+  }, 20)
+
+  const cellRect = event.target.getBoundingClientRect();
+  floatInputPatch.value.attachedPatch = patch
+
+  floatInputPatch.value.x = cellRect.left + window.scrollX
   floatInputPatch.value.y = cellRect.top + window.scrollY
   floatInputPatch.value.visible = true;
+  setTimeout(() => {
+    document.querySelector('.floatInputPatchInput').value = patch?.patch;
+    document.querySelector('.floatInputPatchInput').focus()
+  }, 2)
+
 }
 
 
@@ -477,7 +499,7 @@ onBeforeUnmount(async () => {
             ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
             ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {})
           }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
-            @mouseleave="handleMouseLeavePatchSpan"></span>
+            @mouseleave="handleMouseLeavePatchSpan" @dblclick.prevent="setFloatInputPatch($event, patch)"></span>
         </div>
         <br>
       </div>
@@ -525,6 +547,17 @@ onBeforeUnmount(async () => {
       <button @click="closeFloatPatchPannel" style="padding: 0px; margin: 0 5px 5px 5px; float:right">❌</button>
     </footer>
   </div>
+  <div class="floatInputPatch" v-show="floatInputPatch.visible" :style="{
+    position: 'absolute',
+    left: `${floatInputPatch.x}px`,
+    top: `${floatInputPatch.y}px`,
+  }" style="display: flex;">
+    <input type="text" style="flex: 1; width:auto" class="floatInputPatchInput" @focus="$event.target.select()"
+      @keydown.esc.prevent="floatInputPatch.visible = false"
+      @keydown.enter.prevent="continueFromToken(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false"
+      @blur="floatInputPatch.visible = false; closeFloatPatchPannel()"></input>
+  </div>
+  <br v-for="_ in isMobile ? 30 : apiConfig.chatConfig.top_logprobs">
 
 
   <!-- <span class="PatchSpan" v-for="patch in patchs">{{ patch.patch }}</span> -->
@@ -537,6 +570,16 @@ onBeforeUnmount(async () => {
 </template>
 
 <style scoped>
+/* Avoid automatic enlargement of mobile Web pages */
+@media (max-width: 600px) {
+
+  input,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+
 .final-message-half-pannel {
   display: inline-block;
   width: 49.5%;
