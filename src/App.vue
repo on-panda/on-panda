@@ -12,9 +12,9 @@ import { OpenAI } from './utils/fetchOpenaiApi.js'
 const innerWidth = ref(window.innerWidth)
 function handleResize() {
   innerWidth.value = window.innerWidth
-  }
+}
 
-var isMobile = computed(()=>innerWidth.value <700)
+var isMobile = computed(() => innerWidth.value < 700)
 
 
 function toLegalVariableName(str) {
@@ -48,7 +48,7 @@ function warning(content) {
                     ${content.lineNumber ? `<strong>Line Number:</strong> ${content.lineNumber} <br>` : ''}
                     <strong>Error Stack:</strong> <pre>${content.stack}</pre>
                 `;
-                // <strong>Is Custom Error:</strong> ${error instanceof Error} <br>
+    // <strong>Is Custom Error:</strong> ${error instanceof Error} <br>
 
     content = errorMessage
   }
@@ -417,15 +417,15 @@ function clickOnLogprobItem(token, logprobItem) {
 }
 
 
-import {onMounted, onBeforeUnmount} from 'vue'
+import { onMounted, onBeforeUnmount } from 'vue'
 
 onMounted(async () => {
-		handleResize();
-    window.addEventListener('resize', handleResize);
+  handleResize();
+  window.addEventListener('resize', handleResize);
 })
 
 onBeforeUnmount(async () => {
-		window.removeEventListener('resize', handleResize);
+  window.removeEventListener('resize', handleResize);
 })
 
 </script>
@@ -438,16 +438,23 @@ onBeforeUnmount(async () => {
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
   <template v-for="message in messages">
     <MessageMarkdown :content="`### ${message['role']}:\n${message['content']}`" />
-    <textarea v-model="message['content']"
-      style="width: 95%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;"
-      @blur="tokens = []; requestLlmServer(messages)" />
+    <div style="display: flex; justify-content: space-between;">
+
+      <textarea v-model="message['content']"
+        style="width: 100%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;resize: vertical;height: 60px;"
+        @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" />
+
+      <button @click="tokens = []; requestLlmServer(messages)"
+        style="margin: 5px; background-color: lightskyblue; color:aliceblue; padding: 8px;"> <b>Send➡️</b><br>
+        (ctrl+enter) </button>
+    </div>
   </template>
 
 
   <h3> {{ tokens.length ? tokens[0].delta.role : "unknown_role" }}:</h3>
   <div style="width: 100%;overflow:scroll">
     <hr style="margin-top:0px;color:#ccc">
-    <div style="display: flex; justify-content: space-between;" :style="{'width':isMobile?'195%':'100%'}" >
+    <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
       <div class="final-message-half-pannel">
         <small style="color: #888;"> by <code>{{ apiConfig.chatConfig.model || "unknown_model" }} </code> </small>
         <br>
@@ -463,10 +470,9 @@ onBeforeUnmount(async () => {
         <br>
       </div>
       <hr style="color:#eee">
-      <div 
-      class="final-message-half-pannel">
-      <small style="color: #888;">rendered markdown:</small>
-      <MessageMarkdown :content="finalMessage.content || '<|null|>'" style="background-color: #eee;" />
+      <div class="final-message-half-pannel">
+        <small style="color: #888;">rendered markdown:</small>
+        <MessageMarkdown :content="finalMessage.content || '<|null|>'" style="background-color: #eee;" />
       </div>
     </div>
     <hr style="color:#ccc">
