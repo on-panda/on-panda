@@ -383,12 +383,10 @@ watch(activatePatch, (newValue, oldValue) => {
 
 function setFloatPatchPannelBelow(element) {
   const cellRect = element.getBoundingClientRect();
-  // const containerRect = $el.querySelector('.table-container').getBoundingClientRect();
   floatPatchPannel.value.x = cellRect.left + window.scrollX - 10
   floatPatchPannel.value.y = cellRect.bottom + window.scrollY - 5
   floatPatchPannel.value.waitingToHide = false;
   floatPatchPannel.value.visible = true;
-  // console.log(element, cellRect, floatPatchPannel)
 }
 
 function continueFromToken(token, continuePrefix) {
@@ -414,6 +412,20 @@ function clickOnLogprobItem(token, logprobItem) {
   if (isMobile.value) {
     setTimeout(closeFloatPatchPannel, 500)
   }
+}
+
+
+const floatInputPatch = ref({
+  visible: false,
+  x: 0,
+  y: 0,
+})
+
+function setFloatInputPatch(element) {
+  const cellRect = element.getBoundingClientRect();
+  floatInputPatch.value.x = cellRect.right + window.scrollX
+  floatInputPatch.value.y = cellRect.top + window.scrollY
+  floatInputPatch.value.visible = true;
 }
 
 
