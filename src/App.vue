@@ -474,7 +474,7 @@ onBeforeUnmount(async () => {
       <code>Scaling up your data efficiency before scaling up your data.</code>
     </details>
   </del>
-  <h2>onPanda coWriter: LLM-native collaborative writing tool </h2>
+  <h2>onPanda coWriter: LLM-Native Collaborative Writing Tool </h2>
   <code>Precision byte-level control for LLM writing.</code>
 
   <details>
@@ -493,11 +493,12 @@ onBeforeUnmount(async () => {
     <p class="role-name"> {{ message['role'] }}:</p>
     <div style="display: flex; justify-content: space-between;">
       <textarea v-model="message['content']"
-        style="width: 100%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;resize: vertical;height: 60px;"
+        style="width: 100%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;resize: vertical;height: 60px;; border-radius: 5px;"
         @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" />
 
       <button @click="tokens = []; requestLlmServer(messages)"
-        style="margin: 5px; background-color: lightskyblue; color:aliceblue; padding: 8px;"> <b>Send➡️</b><br>
+        style="margin: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
+        <b>Send➡️</b><br>
         <small>ctrl+enter</small> </button>
     </div>
     <details>
@@ -505,8 +506,8 @@ onBeforeUnmount(async () => {
         <small style="color: #888;">rendered markdown:</small>
       </summary>
       <MessageMarkdown :content="`${message['content']}`" />
+      <hr style="margin-top:0px;color:#ccc">
     </details>
-    <!-- <hr style="margin-top:0px;color:#ccc"> -->
   </template>
 
 
