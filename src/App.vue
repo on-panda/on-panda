@@ -491,7 +491,7 @@ onBeforeUnmount(async () => {
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
   <template v-for="message in messages">
     <p class="role-name"> {{ message['role'] }}:</p>
-    <div style="display: flex; justify-content: space-between;">
+    <div style="display: flex; justify-content: space-between;max-width: 1024px;">
       <textarea v-model="message['content']"
         style="width: 100%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;resize: vertical;height: 60px;; border-radius: 5px;"
         @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" />
