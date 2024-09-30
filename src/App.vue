@@ -81,7 +81,7 @@ const defaultApiConfig = {
 
 var messages = [{ role: "user", content: "just repeat `=🧎🏿‍♂️‍➡️磊<hr>\n蘒    𝒀𝒆𝒔`, no other words" }]
 // var messages = [{ role: "user", content: "just output a random float128 number without any words, no code" }]
-var messages = [{ role: "user", content: "用中文讲一个关于西游记的100字短笑话，不要有英文" }]
+var messages = [{ role: "system", content: "" }, { role: "user", content: "讲一个关于西游记的100字短笑话" }]
 // var messages = [{ role: "user", content: "Write a blog to introduce about: onPanda: on-Policy Alignment Data Annotator (PoC)\nScaling up your data efficiency before scaling up your data." }]
 // var messages = [{ role: "user", content: "奥数题:已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
 // var messages = [{ role: "user", content: "写藏头诗：人工智能，大有可为" }]
@@ -114,6 +114,7 @@ const tokens = ref([]);
 
 async function requestLlmServer(messages) {
   messages = messages.value === undefined ? messages : messages.value
+  messages = messages.filter(message => message.content)
   const continue_final_message = messages[messages.length - 1].role == "assistant"
   var body = apiConfig.value.chatConfig
   if (continue_final_message) {
@@ -440,8 +441,8 @@ function setFloatInputPatch(event, patch) {
   const cellRect = event.target.getBoundingClientRect();
   floatInputPatch.value.attachedPatch = patch
 
-  floatInputPatch.value.x = cellRect.left + window.scrollX
-  floatInputPatch.value.y = cellRect.top + window.scrollY
+  floatInputPatch.value.x = cellRect.left + window.scrollX - 3
+  floatInputPatch.value.y = cellRect.top + window.scrollY - 5
   floatInputPatch.value.visible = true;
   setTimeout(() => {
     document.querySelector('.floatInputPatchInput').value = patch?.patch;
@@ -464,30 +465,53 @@ onBeforeUnmount(async () => {
 
 </script>
 <template>
-  <h2>onPanda: on-Policy Alignment Data Annotator (PoC)</h2>
-  <code>Scaling up your data efficiency before scaling up your data.</code>
+  <del>
+    <details>
+      <summary>
+        <small style="color: #888;">as Data Annotator:</small>
+      </summary>
+      <h2>onPanda: on-Policy Alignment Data Annotator (PoC)</h2>
+      <code>Scaling up your data efficiency before scaling up your data.</code>
+    </details>
+  </del>
+  <h2>onPanda coWriter: LLM-native collaborative writing tool </h2>
+  <code>Precision byte-level control for LLM writing.</code>
+
+  <details>
+    <summary>
+      <small style="color: #888;">usage:</small>
+    </summary>
+    - Move to the bad word, and alternative candidates will appear. <br>
+    - Click a candidate to continue generating text based on the chosen word. <br>
+    - Double-click a word to modify it, and the LLM will seamlessly continue writing. <br>
+  </details>
   <hr>
   <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
 
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
   <template v-for="message in messages">
-    <MessageMarkdown :content="`### ${message['role']}:\n${message['content']}`" />
+    <p class="role-name"> {{ message['role'] }}:</p>
     <div style="display: flex; justify-content: space-between;">
-
       <textarea v-model="message['content']"
         style="width: 100%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;resize: vertical;height: 60px;"
         @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" />
 
       <button @click="tokens = []; requestLlmServer(messages)"
         style="margin: 5px; background-color: lightskyblue; color:aliceblue; padding: 8px;"> <b>Send➡️</b><br>
-        (ctrl+enter) </button>
+        <small>ctrl+enter</small> </button>
     </div>
+    <details>
+      <summary>
+        <small style="color: #888;">rendered markdown:</small>
+      </summary>
+      <MessageMarkdown :content="`${message['content']}`" />
+    </details>
+    <!-- <hr style="margin-top:0px;color:#ccc"> -->
   </template>
 
 
-  <h3> {{ tokens.length ? tokens[0].delta.role : "unknown_role" }}:</h3>
+  <p class="role-name"> {{ tokens.length ? tokens[0].delta.role : "unknown_role" }}:</p>
   <div style="width: 100%;overflow:scroll">
-    <hr style="margin-top:0px;color:#ccc">
     <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
       <div class="final-message-half-pannel">
         <small style="color: #888;"> by <code>{{ apiConfig.chatConfig.model || "unknown_model" }} </code> </small>
@@ -552,10 +576,11 @@ onBeforeUnmount(async () => {
     left: `${floatInputPatch.x}px`,
     top: `${floatInputPatch.y}px`,
   }" style="display: flex;">
-    <input type="text" style="flex: 1; width:auto" class="floatInputPatchInput" @focus="$event.target.select()"
+    <textarea type="text" placeholder="submit: `↵`; newline: `shift+↵`" style="height: 25px; width:auto;"
+      class="floatInputPatchInput" @focus="$event.target.select()"
       @keydown.esc.prevent="floatInputPatch.visible = false"
-      @keydown.enter.prevent="continueFromToken(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false"
-      @blur="floatInputPatch.visible = false; closeFloatPatchPannel()"></input>
+      @keydown.enter="if (!$event.shiftKey) { continueFromToken(floatInputPatch.attachedPatch.tokens.find(x => x.logprobs?.content.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }"
+      @blur="floatInputPatch.visible = false; closeFloatPatchPannel()"></textarea>
   </div>
   <br v-for="_ in isMobile ? 30 : apiConfig.chatConfig.top_logprobs">
 
@@ -579,6 +604,13 @@ onBeforeUnmount(async () => {
   }
 }
 
+.role-name {
+  color: #888;
+  font-size: larger;
+  font-weight: bold;
+  margin-bottom: 2px;
+  margin-top: 10px;
+}
 
 .final-message-half-pannel {
   display: inline-block;
