@@ -16,7 +16,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/v1': {
-        target: 'http://39.105.21.95:12481',
+        target: 'http://39.105.21.95:12482',
         changeOrigin: true,
         // rewrite: path => path.replace(/^\/api/, '')
       },

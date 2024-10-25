@@ -1,7 +1,7 @@
 <script setup>
 import MessageMarkdown from './components/MessageMarkdown.vue'
 import { escapeHTML } from '@/utils/commonUtils'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, watchEffect } from 'vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 
 // const userAgent = navigator.userAgent;
@@ -63,7 +63,8 @@ const defaultApiConfig = {
     dangerouslyAllowBrowser: true
   },
   "chatConfig": {
-    model: 'meta-llama/Meta-Llama-3-8B-Instruct',
+    // model: 'meta-llama/Meta-Llama-3-8B-Instruct',
+    model: 'Qwen/Qwen2.5-1.5B-Instruct',
     messages: messages,
     stream: true,
     logprobs: true,
@@ -79,13 +80,14 @@ const defaultApiConfig = {
 
 
 
-var messages = [{ role: "user", content: "just repeat `=🧎🏿‍♂️‍➡️磊<hr>\n蘒    𝒀𝒆𝒔`, no other words" }]
+// var messages = [{ role: "user", content: "Repeat only once: `=🧎🏿‍♂️‍➡️磊<hr>\n蘒    𝒀𝒆𝒔`, no other words" }]
 // var messages = [{ role: "user", content: "just output a random float128 number without any words, no code" }]
-var messages = [{ role: "system", content: "" }, { role: "user", content: "讲一个关于西游记的100字短笑话" }]
+var messages = [{ role: "system", content: "" }, { role: "user", content: "用中文讲一个关于西游记的100字短笑话" }]
 // var messages = [{ role: "user", content: "Write a blog to introduce about: onPanda: on-Policy Alignment Data Annotator (PoC)\nScaling up your data efficiency before scaling up your data." }]
 // var messages = [{ role: "user", content: "奥数题:已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
 // var messages = [{ role: "user", content: "写藏头诗：人工智能，大有可为" }]
-// var messages = [{ role: "user", content: "just reply `Y`" }]
+// var messages = [{ role: "user", content: "just reply `🧎🏿‍♂️‍➡️`" }]
+// var messages = [{ role: "user", content: "just repeat 1 time: `पत्नी`" }]
 
 
 
@@ -100,15 +102,62 @@ var messages = [{ role: "system", content: "" }, { role: "user", content: "讲�
 import apiConfig_ from '@/assets/secret/cast.js'
 // import apiConfig_ from '@/assets/secret/debug.js'
 
-// update apiConfig with defaultApiConfig
-apiConfig_.clientConfig = { ...defaultApiConfig.clientConfig, ...apiConfig_.clientConfig }
-apiConfig_.chatConfig = { ...defaultApiConfig.chatConfig, ...apiConfig_.chatConfig }
-var apiConfig = { ...defaultApiConfig, ...apiConfig_ }
-apiConfig.clientConfig.baseURL = apiConfig.clientConfig.baseURL.replace('${origin}', window.location.origin)
-apiConfig = ref(apiConfig)
+
+var emptyModelConfig = JSON.parse(JSON.stringify(apiConfig_));
+delete emptyModelConfig.chatConfig.model
+var metaApiConfigs = ref([defaultApiConfig, apiConfig_, emptyModelConfig])
+
+const apiConfigs = ref([]);
 
 
-const openai = new OpenAI(apiConfig.value.clientConfig);
+
+watchEffect(async () => {
+  const configs = [];
+  for (let apiConfig of metaApiConfigs.value) {
+    apiConfig = JSON.parse(JSON.stringify(apiConfig));
+    if (apiConfig.chatConfig.model) {
+      configs.push(apiConfig);
+    } else {
+      try {
+        const openai = new OpenAI(apiConfig.clientConfig);
+        const list = await openai.models.list();
+        for await (const model of list) {
+          const apiConfigWithModel = JSON.parse(JSON.stringify(apiConfig));
+          apiConfigWithModel.chatConfig.model = model.id;
+          configs.push(apiConfigWithModel);
+        }
+      } catch (error) {
+        warning(error);
+      }
+    }
+  }
+  apiConfigs.value = configs.reduce((obj, config, index) => {
+    obj[`${index + 1} ` + (config.chatConfig.model || '<|None|>')] = config;
+    return obj;
+  }, {});
+});
+
+const modelName = ref('step-1-8k')
+
+const apiConfig = computed(() => {
+  var apiConfig = defaultApiConfig
+  for (const [key, config] of Object.entries(apiConfigs.value)) {
+    if (key.endsWith(modelName.value)) {
+      apiConfig = config
+    }
+  }
+  // update apiConfig with defaultApiConfig
+  apiConfig.clientConfig = { ...defaultApiConfig.clientConfig, ...apiConfig.clientConfig }
+  apiConfig.chatConfig = { ...defaultApiConfig.chatConfig, ...apiConfig.chatConfig }
+  apiConfig = { ...defaultApiConfig, ...apiConfig }
+  apiConfig.clientConfig.baseURL = apiConfig.clientConfig.baseURL.replace('${origin}', window.location.origin)
+  return apiConfig
+})
+
+
+const openai = computed(() =>
+  new OpenAI(apiConfig.value.clientConfig)
+)
 const tokens = ref([]);
 
 
@@ -142,7 +191,7 @@ async function requestLlmServer(messages) {
   }
   body.messages = messages
   try {
-    var stream = await openai.chat.completions.create(body);
+    var stream = await openai.value.chat.completions.create(body);
   } catch (error) {
     warning(error)
     throw error
@@ -210,8 +259,8 @@ function probOfToken(token) {
 
 const patchs = computed(() => {
   const visableSegments = Array.from(segmenter.segment(assistentResponseContent.value));
-  visableSegments.push({ segment: "" }) // add a empty segment at the end for EOT token
-  visableSegments.push({ segment: "" })
+  // add a empty segment at the end for EOT token
+  Array.from({ length: 4 }, (_, i) => visableSegments.push({ segment: "" }));
   var patchs = []
   var tokenToSegmentString = "";
   var segmentIndex = 0;
@@ -351,7 +400,9 @@ const messagesComputed = computed(() => {
   }
 })
 
-requestLlmServer(messages);
+setTimeout(() => {
+  requestLlmServer(messages)
+}, 1000)
 p("tokens", tokens.value)
 p("patchs", patchs)
 
@@ -492,9 +543,15 @@ onBeforeUnmount(async () => {
   <template v-for="message in messages">
     <p class="role-name"> {{ message['role'] }}:</p>
     <div style="display: flex; justify-content: space-between;max-width: 1024px;">
-      <textarea v-model="message['content']"
+      <!-- <textarea v-model="message['content']"
         style="width: 100%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;resize: vertical;height: 60px;; border-radius: 5px;"
+        @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" /> -->
+      <el-input v-model="message['content']" type="textarea" autosize
         @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" />
+      <!-- <el-input class="user-input" v-model="apiConfig2" autosize type="textarea" placeholder="Ctrl-Enter: submit"
+    @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" /> -->
+
+      <!-- style="width: 100%; box-sizing: border-box; padding: 5px; border-radius: 5px;" -->
 
       <button @click="tokens = []; requestLlmServer(messages)"
         style="margin: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
@@ -537,8 +594,10 @@ onBeforeUnmount(async () => {
     <hr style="color:#ccc">
   </div>
   <br>
+
+
   <div class="floatPatchPannel" @mouseover="floatPatchPannel.waitingToHide = false"
-    @mouseleave="floatPatchPannel.waitingToHide = true" :style="{
+    @mouseleave="floatPatchPannel.waitingToHide = true" style="z-index:10;" :style="{
       position: 'absolute',
       left: `${floatPatchPannel.x}px`,
       top: `${floatPatchPannel.y}px`,
@@ -576,34 +635,36 @@ onBeforeUnmount(async () => {
     position: 'absolute',
     left: `${floatInputPatch.x}px`,
     top: `${floatInputPatch.y}px`,
-  }" style="display: flex;">
+  }" style="display: flex">
     <textarea type="text" placeholder="submit: `↵`; newline: `shift+↵`" style="height: 25px; width:auto;"
       class="floatInputPatchInput" @focus="$event.target.select()"
       @keydown.esc.prevent="floatInputPatch.visible = false"
       @keydown.enter="if (!$event.shiftKey) { continueFromToken(floatInputPatch.attachedPatch.tokens.find(x => x.logprobs?.content.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }"
       @blur="floatInputPatch.visible = false; closeFloatPatchPannel()"></textarea>
   </div>
+
+
+  <el-select v-model="modelName" filter placeholder="选择模型">
+    <el-option v-for="[key, config] in Object.entries(apiConfigs)" :key="key" :label="key" :value="key" />
+  </el-select>
+
+  <el-col>
+  </el-col>
+
+
   <br v-for="_ in isMobile ? 30 : apiConfig.chatConfig.top_logprobs">
 
-
-  <!-- <span class="PatchSpan" v-for="patch in patchs">{{ patch.patch }}</span> -->
-
-
-  <!-- assistentResponseContent🧎🏿‍♂️‍➡️:
-  <div style="background-color: #eee;white-space: pre-wrap;user-select: none;">
-    {{ assistentResponseContent }}
-  </div> -->
 </template>
 
 <style scoped>
 /* Avoid automatic enlargement of mobile Web pages */
-@media (max-width: 600px) {
+/* @media (max-width: 600px) {
 
   input,
   textarea {
     font-size: 16px;
   }
-}
+} */
 
 .role-name {
   color: #888;
