@@ -4,10 +4,6 @@ import { escapeHTML } from '@/utils/commonUtils'
 import { ref, computed, watch, watchEffect } from 'vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 
-// const userAgent = navigator.userAgent;
-// const mobilePattern = /Mobi|Android/i;
-// var isMobile = mobilePattern.test(userAgent);
-
 
 const innerWidth = ref(window.innerWidth)
 function handleResize() {
@@ -89,31 +85,19 @@ var messages = [{ role: "system", content: "" }, { role: "user", content: "用�
 // var messages = [{ role: "user", content: "just reply `🧎🏿‍♂️‍➡️`" }]
 // var messages = [{ role: "user", content: "just repeat 1 time: `पत्नी`" }]
 
+var messages = ref(messages)
 
 
-// var apiConfig = await fetch('/src/assets/secret/gpt-4o.json')
-//   .then(response => { response.json() })
-//   .catch(error => { });
-// 
-// var apiConfig_ = {}
-// import apiConfig_ from '@/assets/secret/gpt-4o.js'
-// import apiConfig_ from '@/assets/secret/step2.json'
-// import apiConfig_ from '@/assets/secret/glm-4-flash.json'
-import apiConfig_ from '@/assets/secret/cast.js'
-// import apiConfig_ from '@/assets/secret/debug.js'
+import apiConfigList from '@/assets/secret/apiConfigList.js'
+// list of apiConfigs, if model is not set, fetch all models.
 
+var metaApiConfigs = ref([defaultApiConfig, ...apiConfigList])
 
-var emptyModelConfig = JSON.parse(JSON.stringify(apiConfig_));
-delete emptyModelConfig.chatConfig.model
-var metaApiConfigs = ref([defaultApiConfig, apiConfig_, emptyModelConfig])
+const apiConfigs = ref({});
 
-const apiConfigs = ref([]);
-
-
-
-watchEffect(async () => {
+watch(metaApiConfigs, async (newValue) => {
   const configs = [];
-  for (let apiConfig of metaApiConfigs.value) {
+  for (let apiConfig of newValue) {
     apiConfig = JSON.parse(JSON.stringify(apiConfig));
     if (apiConfig.chatConfig.model) {
       configs.push(apiConfig);
@@ -127,17 +111,18 @@ watchEffect(async () => {
           configs.push(apiConfigWithModel);
         }
       } catch (error) {
-        warning(error);
+        console.log("Error in fetching models list");
+        console.log(error);
       }
     }
   }
   apiConfigs.value = configs.reduce((obj, config, index) => {
-    obj[`${index + 1} ` + (config.chatConfig.model || '<|None|>')] = config;
+    obj[`${index + 1}—` + (config.endpoint_name ? config.endpoint_name + "—" : "") + (config.chatConfig.model || '<|None|>')] = config;
     return obj;
   }, {});
-});
+}, { immediate: true });
 
-const modelName = ref('step-1-8k')
+const modelName = ref('release-step2-merged-ppo-4in1-2207')
 
 const apiConfig = computed(() => {
   var apiConfig = defaultApiConfig
@@ -394,15 +379,16 @@ const finalMessage = computed(() => {
 
 const messagesComputed = computed(() => {
   if (finalMessage.value.content) {
-    return messages.concat([finalMessage.value])
+    return messages.value.concat([finalMessage.value])
   } else {
-    return messages
+    return messages.value
   }
 })
 
 setTimeout(() => {
   requestLlmServer(messages)
 }, 1000)
+
 p("tokens", tokens.value)
 p("patchs", patchs)
 
@@ -514,6 +500,7 @@ onBeforeUnmount(async () => {
   window.removeEventListener('resize', handleResize);
 })
 
+
 </script>
 <template>
   <del>
@@ -536,6 +523,14 @@ onBeforeUnmount(async () => {
     - Click a candidate to continue generating text based on the chosen word. <br>
     - Double-click a word to modify it, and the LLM will seamlessly continue writing. <br>
   </details>
+
+  <hr>
+  <h3>control parameter</h3>
+  model: <el-select-v2 v-model="modelName" filterable :options="Object.keys(apiConfigs).map((x, idx) => ({
+    value: x,
+    label: x,
+  }))" placeholder="Select model" style="width: 440px" />
+
   <hr>
   <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
 
@@ -546,12 +541,8 @@ onBeforeUnmount(async () => {
       <!-- <textarea v-model="message['content']"
         style="width: 100%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;resize: vertical;height: 60px;; border-radius: 5px;"
         @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" /> -->
-      <el-input v-model="message['content']" type="textarea" autosize
+      <el-input v-model="message['content']" type="textarea" :autosize="{ minRows: 3, maxRows: 50 }"
         @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" />
-      <!-- <el-input class="user-input" v-model="apiConfig2" autosize type="textarea" placeholder="Ctrl-Enter: submit"
-    @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" /> -->
-
-      <!-- style="width: 100%; box-sizing: border-box; padding: 5px; border-radius: 5px;" -->
 
       <button @click="tokens = []; requestLlmServer(messages)"
         style="margin: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
@@ -644,27 +635,19 @@ onBeforeUnmount(async () => {
   </div>
 
 
-  <el-select v-model="modelName" filter placeholder="选择模型">
-    <el-option v-for="[key, config] in Object.entries(apiConfigs)" :key="key" :label="key" :value="key" />
-  </el-select>
-
-  <el-col>
-  </el-col>
-
-
   <br v-for="_ in isMobile ? 30 : apiConfig.chatConfig.top_logprobs">
 
 </template>
 
 <style scoped>
 /* Avoid automatic enlargement of mobile Web pages */
-/* @media (max-width: 600px) {
+@media (max-width: 600px) {
 
   input,
   textarea {
     font-size: 16px;
   }
-} */
+}
 
 .role-name {
   color: #888;
