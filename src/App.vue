@@ -525,11 +525,31 @@ onBeforeUnmount(async () => {
   </details>
 
   <hr>
-  <h3>control parameter</h3>
-  model: <el-select-v2 v-model="modelName" filterable :options="Object.keys(apiConfigs).map((x, idx) => ({
-    value: x,
-    label: x,
-  }))" placeholder="Select model" style="width: 440px" />
+  <h3>control parameter:</h3>
+
+  <el-form class="toolbar options" label-width="100px">
+    <el-form-item label="temperature">
+      <el-input-number v-model="apiConfig.chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
+    </el-form-item>
+
+    <el-form-item label="top_p">
+      <el-input-number v-model="apiConfig.chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
+    </el-form-item>
+
+    <el-form-item label="Freq. Penalty">
+      <el-input-number v-model="apiConfig.chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01" size="small" />
+    </el-form-item>
+
+    <el-form-item label="max_tokens">
+      <el-input-number v-model="apiConfig.chatConfig.max_tokens" :min="1" :max="65536" :step="1" size="small" />
+    </el-form-item>
+    <el-form-item label="model">
+      <el-select-v2 v-model="modelName" filterable :options="Object.keys(apiConfigs).map((x, idx) => ({
+        value: x,
+        label: x,
+      }))" placeholder="Select model" style="width: 440px" size="small" />
+    </el-form-item>
+  </el-form>
 
   <hr>
   <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
