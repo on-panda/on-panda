@@ -1,26 +1,26 @@
 <template>
 
-    <p class="role-name"> {{ props.message['role'] }}:</p>
-    <div style="display: flex; justify-content: space-between;max-width: 1024px;">
-        <el-input v-model="props.message['content']" type="textarea" :autosize="{ minRows: 3, maxRows: 50 }"
-        @keydown.ctrl.enter="$emit('sendButton')" />
+  <p class="role-name" :style="messageRoleNameStyle(props.message)"> {{ props.message['role'] }}:</p>
+  <div style="display: flex; justify-content: space-between;max-width: 1024px;">
+    <el-input v-model="props.message['content']" type="textarea" :autosize="{ minRows: 3, maxRows: 50 }"
+      @keydown.ctrl.enter="$emit('sendButton')" />
 
-        <button @click="$emit('sendButton')"
-        style="margin: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
-        <b>Send➡️</b><br>
-        <small>ctrl+enter</small> </button>
-    </div>
-    <details>
-        <summary>
-        <small style="color: #888;">rendered markdown:</small>
-        </summary>
-        <MessageMarkdown :content="`${props.message['content']}`" />
-        <hr style="margin-top:0px;color:#ccc">
-    </details>
+    <button @click="$emit('sendButton')"
+      style="margin: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
+      <b>Send➡️</b><br>
+      <small>ctrl+enter</small> </button>
+  </div>
+  <details>
+    <summary>
+      <small style="color: #888;">rendered markdown:</small>
+    </summary>
+    <MessageMarkdown :content="`${props.message['content']}`" />
+    <hr style="margin-top:0px;color:#ccc">
+  </details>
 </template>
-  
-<script setup>
 
+<script setup>
+import { messageRoleNameStyle } from '@/utils/styleUtils'
 import MessageMarkdown from './MessageMarkdown.vue'
 
 const props = defineProps({
@@ -34,13 +34,4 @@ const props = defineProps({
 const emit = defineEmits(['sendButton'])
 
 </script>
-<style scoped>
-.role-name {
-  color: #888;
-  font-size: larger;
-  font-weight: bold;
-  margin-bottom: 2px;
-  margin-top: 10px;
-}
-
-</style>
+<style scoped></style>

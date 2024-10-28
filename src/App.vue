@@ -2,9 +2,9 @@
 import MessageMarkdown from './components/MessageMarkdown.vue'
 import Message from './components/Message.vue'
 import { escapeHTML } from '@/utils/commonUtils'
+import { messageRoleNameStyle } from '@/utils/styleUtils'
 import { ref, computed, watch, watchEffect } from 'vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
-
 
 const innerWidth = ref(window.innerWidth)
 function handleResize() {
@@ -66,7 +66,7 @@ const defaultApiConfig = {
     stream: true,
     logprobs: true,
     top_logprobs: 20,
-    // top_p: 0.99999,
+    top_p: 0.9,
     // top_p: 0.0001,
     // top_k: 2,
     // max_tokens: 4,
@@ -365,6 +365,8 @@ function closeFloatPatchPannel() {
   activatePatch.value = {}
 }
 
+const newTurnMessage = ref({ role: 'user', content: '' })
+
 const finalMessage = computed(() => {
   return tokens.value.filter(
     token => !token.pruned
@@ -502,7 +504,6 @@ onBeforeUnmount(async () => {
   window.removeEventListener('resize', handleResize);
 })
 
-const newTurnMessage = ref({role:'user',content:''})
 
 </script>
 <template>
@@ -528,41 +529,6 @@ const newTurnMessage = ref({role:'user',content:''})
   </details>
 
   <hr>
-  <h3>control parameter:</h3>
-
-  <el-form class="toolbar options" label-width="140px">
-    <el-form-item label="temperature">
-      <el-input-number v-model="apiConfig.chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
-    </el-form-item>
-
-    <el-form-item label="top_p">
-      <el-input-number v-model="apiConfig.chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
-    </el-form-item>
-
-    <el-form-item label="Freq. Penalty">
-      <el-input-number v-model="apiConfig.chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01" size="small" />
-    </el-form-item>
-
-    <el-form-item label="max_tokens">
-      <el-input-number v-model="apiConfig.chatConfig.max_tokens" :min="1" :max="65536" :step="1" size="small" />
-    </el-form-item>
-    <el-form-item label="model">
-      <el-select-v2 v-model="modelName" filterable :options="Object.keys(apiConfigs).map((x, idx) => ({
-        value: x,
-        label: x,
-      }))" placeholder="Select model" style="width: 440px" size="small" />
-    </el-form-item>
-    <el-form-item label="continue generating">
-      <small>
-        <el-tag :type="apiConfig.support_continue_final_message?'success':'danger'">
-          {{ apiConfig.support_continue_final_message ? "native" : "prompt engineering" }}
-        </el-tag>
-      </small>
-    </el-form-item>
-    
-  </el-form>
-
-  <hr>
   <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
 
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
@@ -572,8 +538,10 @@ const newTurnMessage = ref({role:'user',content:''})
 
 
 
-  <p class="role-name"> {{ tokens.length ? tokens[0].delta.role : "unknown_role" }}:</p>
-  <div style="width: 100%;overflow:scroll">
+  <p class="role-name" :style="messageRoleNameStyle(tokens.length && finalMessage)"> {{ tokens.length ?
+    tokens[0].delta.role :
+    "unknown_role" }}:</p>
+  <div style="width: 100%;overflow:scroll;overflow-y:hidden">
     <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
       <div class="final-message-half-pannel">
         <small style="color: #888;"> by <code>{{ apiConfig.chatConfig.model || "unknown_model" }} </code> </small>
@@ -648,12 +616,51 @@ const newTurnMessage = ref({role:'user',content:''})
   </div>
 
 
-  <el-divider content-position="left">new turn:</el-divider>
-  <div :style="{opacity: newTurnMessage.content?1:0.5}">
-    
-    <Message :message="newTurnMessage" @send-button="messages=messagesComputed.concat([newTurnMessage]);tokens = [];newTurnMessage={role:'user',content:''};requestLlmServer(messages)" />
+  <el-divider content-position="left">new dialogue:</el-divider>
+  <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
+
+    <Message :message="newTurnMessage"
+      @send-button="messages = messagesComputed.concat([newTurnMessage]); tokens = []; newTurnMessage = { role: 'user', content: '' }; requestLlmServer(messages)" />
   </div>
 
+
+  <el-divider content-position="left">
+    <h4>control parameter:</h4>
+  </el-divider>
+
+
+  <el-form class="toolbar options" label-width="140px">
+    <el-form-item label="model">
+      <el-select-v2 v-model="modelName" filterable :options="Object.keys(apiConfigs).map((x, idx) => ({
+        value: x,
+        label: x,
+      }))" placeholder="Select model" style="width: 440px" size="small" />
+    </el-form-item>
+
+    <el-form-item label="temperature">
+      <el-input-number v-model="apiConfig.chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
+    </el-form-item>
+
+    <el-form-item label="max_tokens">
+      <el-input-number v-model="apiConfig.chatConfig.max_tokens" :min="1" :max="65536" :step="1" size="small" />
+    </el-form-item>
+
+    <el-form-item label="top_p">
+      <el-input-number v-model="apiConfig.chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
+    </el-form-item>
+
+    <el-form-item label="Freq. Penalty">
+      <el-input-number v-model="apiConfig.chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01" size="small" />
+    </el-form-item>
+
+    <el-form-item label="continue generating">
+      <small>
+        <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
+          {{ apiConfig.support_continue_final_message ? "native" : "prompt engineering" }}
+        </el-tag>
+      </small>
+    </el-form-item>
+  </el-form>
 
   <br v-for="_ in isMobile ? 30 : apiConfig.chatConfig.top_logprobs">
 
