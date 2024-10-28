@@ -54,7 +54,7 @@ function warning(content) {
 const defaultApiConfig = {
   "support_continue_final_message": true,
   "clientConfig": {
-    baseURL: window.location.origin + "/v1",
+    baseURL: "http://39.105.21.95:12482/v1",
     apiKey: "sk-Nokey",
     dangerouslyAllowBrowser: true
   },
@@ -84,6 +84,7 @@ var messages = [{ role: "system", content: "" }, { role: "user", content: "用�
 // var messages = [{ role: "user", content: "写藏头诗：人工智能，大有可为" }]
 // var messages = [{ role: "user", content: "just reply `🧎🏿‍♂️‍➡️`" }]
 // var messages = [{ role: "user", content: "just repeat 1 time: `पत्नी`" }]
+var messages = [{ role: "system", content: "" }, { role: "user", content: "草莓的英文单词有几个 r ?" }]
 
 var messages = ref(messages)
 
@@ -527,7 +528,7 @@ onBeforeUnmount(async () => {
   <hr>
   <h3>control parameter:</h3>
 
-  <el-form class="toolbar options" label-width="100px">
+  <el-form class="toolbar options" label-width="140px">
     <el-form-item label="temperature">
       <el-input-number v-model="apiConfig.chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
     </el-form-item>
@@ -549,6 +550,14 @@ onBeforeUnmount(async () => {
         label: x,
       }))" placeholder="Select model" style="width: 440px" size="small" />
     </el-form-item>
+    <el-form-item label="continue generating">
+      <small>
+        <el-tag :type="apiConfig.support_continue_final_message?'success':'danger'">
+          {{ apiConfig.support_continue_final_message ? "native" : "prompt engineering" }}
+        </el-tag>
+      </small>
+    </el-form-item>
+    
   </el-form>
 
   <hr>
