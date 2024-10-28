@@ -1,5 +1,6 @@
 <script setup>
 import MessageMarkdown from './components/MessageMarkdown.vue'
+import Message from './components/Message.vue'
 import { escapeHTML } from '@/utils/commonUtils'
 import { ref, computed, watch, watchEffect } from 'vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
@@ -566,24 +567,9 @@ const newTurnMessage = ref({role:'user',content:''})
 
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
   <template v-for="message in messages">
-    <p class="role-name"> {{ message['role'] }}:</p>
-    <div style="display: flex; justify-content: space-between;max-width: 1024px;">
-      <el-input v-model="message['content']" type="textarea" :autosize="{ minRows: 3, maxRows: 50 }"
-        @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" />
-
-      <button @click="tokens = []; requestLlmServer(messages)"
-        style="margin: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
-        <b>Send➡️</b><br>
-        <small>ctrl+enter</small> </button>
-    </div>
-    <details>
-      <summary>
-        <small style="color: #888;">rendered markdown:</small>
-      </summary>
-      <MessageMarkdown :content="`${message['content']}`" />
-      <hr style="margin-top:0px;color:#ccc">
-    </details>
+    <Message :message="message" @send-button="tokens = []; requestLlmServer(messages)" />
   </template>
+
 
 
   <p class="role-name"> {{ tokens.length ? tokens[0].delta.role : "unknown_role" }}:</p>
@@ -662,7 +648,13 @@ const newTurnMessage = ref({role:'user',content:''})
   </div>
 
 
-  <el-button @click="messages=messagesComputed.concat([{role:'user',content:''}]);tokens = [];" type="primary"> Add Message</el-button>
+  <el-divider content-position="left">new turn:</el-divider>
+  <div :style="{opacity: newTurnMessage.content?1:0.5}">
+    
+    <Message :message="newTurnMessage" @send-button="messages=messagesComputed.concat([newTurnMessage]);tokens = [];newTurnMessage={role:'user',content:''};requestLlmServer(messages)" />
+  </div>
+
+
   <br v-for="_ in isMobile ? 30 : apiConfig.chatConfig.top_logprobs">
 
 </template>
@@ -675,14 +667,6 @@ const newTurnMessage = ref({role:'user',content:''})
   textarea {
     font-size: 16px;
   }
-}
-
-.role-name {
-  color: #888;
-  font-size: larger;
-  font-weight: bold;
-  margin-bottom: 2px;
-  margin-top: 10px;
 }
 
 .final-message-half-pannel {
