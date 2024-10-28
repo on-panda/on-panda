@@ -54,7 +54,7 @@ function warning(content) {
 const defaultApiConfig = {
   "support_continue_final_message": true,
   "clientConfig": {
-    baseURL: "http://39.105.21.95:12482/v1",
+    baseURL: window.location.origin + "/v1",
     apiKey: "sk-Nokey",
     dangerouslyAllowBrowser: true
   },
@@ -501,6 +501,7 @@ onBeforeUnmount(async () => {
   window.removeEventListener('resize', handleResize);
 })
 
+const newTurnMessage = ref({role:'user',content:''})
 
 </script>
 <template>
@@ -567,9 +568,6 @@ onBeforeUnmount(async () => {
   <template v-for="message in messages">
     <p class="role-name"> {{ message['role'] }}:</p>
     <div style="display: flex; justify-content: space-between;max-width: 1024px;">
-      <!-- <textarea v-model="message['content']"
-        style="width: 100%; box-sizing: border-box; padding: 5px; border: 1px solid #ccc;resize: vertical;height: 60px;; border-radius: 5px;"
-        @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" /> -->
       <el-input v-model="message['content']" type="textarea" :autosize="{ minRows: 3, maxRows: 50 }"
         @keydown.ctrl.enter="tokens = []; requestLlmServer(messages)" />
 
@@ -664,6 +662,7 @@ onBeforeUnmount(async () => {
   </div>
 
 
+  <el-button @click="messages=messagesComputed.concat([{role:'user',content:''}]);tokens = [];" type="primary"> Add Message</el-button>
   <br v-for="_ in isMobile ? 30 : apiConfig.chatConfig.top_logprobs">
 
 </template>
