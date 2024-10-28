@@ -66,7 +66,7 @@ const defaultApiConfig = {
     stream: true,
     logprobs: true,
     top_logprobs: 20,
-    top_p: 0.9,
+    // top_p: 0.9,
     // top_p: 0.0001,
     // top_k: 2,
     // max_tokens: 4,
