@@ -13,6 +13,11 @@ function handleResize() {
 
 var isMobile = computed(() => innerWidth.value < 700)
 
+import { useScrollSwitchSync } from '@/utils/scrollSwitch.js'
+
+const scrollDiv = ref(null)
+const scrollSwitch = useScrollSwitchSync(scrollDiv); // { isSwitched, scrollToPosition }
+
 
 function toLegalVariableName(str) {
   const cleanedStr = str.replace(/[^a-zA-Z0-9_$]/g, '');
@@ -516,6 +521,7 @@ onBeforeUnmount(async () => {
 })
 
 
+
 </script>
 <template>
   <del>
@@ -547,11 +553,16 @@ onBeforeUnmount(async () => {
   </template>
 
 
+  <div style="display: flex; justify-content: space-between;">
+    <p class="role-name" :style="messageRoleNameStyle(tokens.length && finalMessage)"> {{ tokens.length ?
+      tokens[0].delta.role :
+      "unknown_role" }}:</p>
+    <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt active-text="md"
+      inactive-text="raw" @change="scrollSwitch.scrollToPosition"
+      style="margin-right: 20px;--el-switch-on-color: #aaa; --el-switch-off-color: #191" />
 
-  <p class="role-name" :style="messageRoleNameStyle(tokens.length && finalMessage)"> {{ tokens.length ?
-    tokens[0].delta.role :
-    "unknown_role" }}:</p>
-  <div style="width: 100%;overflow:scroll;overflow-y:hidden">
+  </div>
+  <div style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
     <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
       <div class="final-message-half-pannel">
         <small style="color: #888;"> by <code>{{ apiConfig.chatConfig.model || "unknown_model" }} </code> </small>
@@ -573,9 +584,10 @@ onBeforeUnmount(async () => {
         <MessageMarkdown :content="finalMessage.content || '<|null|>'" style="background-color: #eee;" />
       </div>
     </div>
-    <hr style="color:#ccc">
   </div>
   <br>
+
+
   <div @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true"
     style="position: absolute; padding-top: 4px;" :style="{
       position: 'absolute',
@@ -614,6 +626,8 @@ onBeforeUnmount(async () => {
       </footer>
     </div>
   </div>
+
+
   <div class="floatInputPatch" v-show="floatInputPatch.visible" :style="{
     position: 'absolute',
     left: `${floatInputPatch.x}px`,
