@@ -436,8 +436,8 @@ watch(activatePatch, (newValue, oldValue) => {
 
 function setFloatPatchPannelBelow(element) {
   const cellRect = element.getBoundingClientRect();
-  floatPatchPannel.value.x = cellRect.left + window.scrollX - 10
-  floatPatchPannel.value.y = cellRect.bottom + window.scrollY - 5
+  floatPatchPannel.value.x = cellRect.left + window.scrollX - 3
+  floatPatchPannel.value.y = cellRect.bottom + window.scrollY - 4
   floatPatchPannel.value.waitingToHide = false;
   floatPatchPannel.value.visible = true;
 }
@@ -576,42 +576,43 @@ onBeforeUnmount(async () => {
     <hr style="color:#ccc">
   </div>
   <br>
-
-
-  <div class="floatPatchPannel" @mouseover="floatPatchPannel.waitingToHide = false"
-    @mouseleave="floatPatchPannel.waitingToHide = true" style="z-index:10;" :style="{
+  <div @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true"
+    style="position: absolute; padding-top: 4px;" :style="{
       position: 'absolute',
       left: `${floatPatchPannel.x}px`,
       top: `${floatPatchPannel.y}px`,
     }" v-if="floatPatchPannel.visible">
-    <div v-for="token in activatePatch?.tokens?.filter(token => (token?.delta?.content !== undefined))"
-      class="tokenPannel" style="vertical-align:top; display: inline-block; padding: 5px;">
-      <div class="floatPatchPannelHead" style="border-bottom: 2px solid #ccc;">
-        <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
-      </div>
-      <div class="tokenLogprobItems">
-        <div v-for="logprobItem in token?.logprobs?.content[0].top_logprobs"
-          style="display: block; background-color: #eee;" @click="clickOnLogprobItem(token, logprobItem)"
-          @mouseover="activateLogprobItem = logprobItem" @mouseenter="$event.target.style.backgroundColor = '#ddd'"
-          @mouseleave="$event.target.style.backgroundColor = ''">
-          <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token_piece || logprobItem.token)
-            }}</span>
-          <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
-            style="white-space: pre-wrap;font-family: Monospace;">:{{
-              (Math.exp(logprobItem.logprob) * 100).toFixed(1).toString().padStart(5, ' ') }}%</span>
+    <!-- `padding-top: 4px` to avoid next line's token activate @mouseover  -->
+    <div class="floatPatchPannel" style="position: relative; z-index: 10;">
+      <div v-for="token in activatePatch?.tokens?.filter(token => (token?.delta?.content !== undefined))"
+        class="tokenPannel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
+        <div class="floatPatchPannelHead" style="border-bottom: 2px solid #ccc;">
+          <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
+        </div>
+        <div class="tokenLogprobItems">
+          <div v-for="logprobItem in token?.logprobs?.content[0].top_logprobs"
+            style="display: block; background-color: #eee;" @click="clickOnLogprobItem(token, logprobItem)"
+            @mouseover="activateLogprobItem = logprobItem" @mouseenter="$event.target.style.backgroundColor = '#ddd'"
+            @mouseleave="$event.target.style.backgroundColor = ''">
+            <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token_piece || logprobItem.token)
+              }}</span>
+            <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
+              style="white-space: pre-wrap;font-family: Monospace;">:{{
+                (Math.exp(logprobItem.logprob) * 100).toFixed(1).toString().padStart(5, ' ') }}%</span>
+          </div>
         </div>
       </div>
+      <footer>
+        <hr>
+        <span v-if="activateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;">{{
+          Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
+        <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
+          [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') :
+            activateLogprobItem.bytes
+          }}]</span>
+        <button @click="closeFloatPatchPannel" style="padding: 0px; margin: 0 5px 5px 5px; float:right">❌</button>
+      </footer>
     </div>
-    <footer>
-      <hr>
-      <span v-if="activateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;">{{
-        Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
-      <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
-        [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') :
-          activateLogprobItem.bytes
-        }}]</span>
-      <button @click="closeFloatPatchPannel" style="padding: 0px; margin: 0 5px 5px 5px; float:right">❌</button>
-    </footer>
   </div>
   <div class="floatInputPatch" v-show="floatInputPatch.visible" :style="{
     position: 'absolute',
@@ -704,7 +705,6 @@ onBeforeUnmount(async () => {
 }
 
 .floatPatchPannel {
-  margin: 5px;
   border: 1px solid #ccc;
   border-radius: 5px;
   background-color: #f9f9f9;
