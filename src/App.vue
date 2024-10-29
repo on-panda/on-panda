@@ -371,7 +371,7 @@ function closeFloatPatchPannel() {
 const newTurnMessage = ref({ role: 'user', content: '' })
 
 const finalMessage = computed(() => {
-  return tokens.value.filter(
+  var finalMessage = tokens.value.filter(
     token => !token.pruned
   ).map(
     token => (token.delta || {})
@@ -382,6 +382,14 @@ const finalMessage = computed(() => {
     }
     return delta
   }, {})
+  // Compatible with different models for continuation generating
+  // For keys other than assistant and user, if v is the empty string, then delete
+  for (var key in finalMessage) {
+    if (key !== "role" && key !== "content" && finalMessage[key] === "") {
+      delete finalMessage[key]
+    }
+  }
+  return finalMessage
 })
 
 const messagesComputed = computed(() => {
