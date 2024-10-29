@@ -15,10 +15,15 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/v1': {
+      '/llama-cpu': {
+        target: 'http://39.105.21.95:12481',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/llama-cpu/, '/v1/')
+      },
+      '/qwen-cpu': {
         target: 'http://39.105.21.95:12482',
         changeOrigin: true,
-        // rewrite: path => path.replace(/^\/api/, '')
+        rewrite: path => path.replace(/^\/qwen-cpu/, '/v1/')
       },
       '/bypass-CORS': {
         target: 'https://api.xxx.com',

@@ -63,13 +63,14 @@ function warning(content) {
 const defaultApiConfig = {
   "support_continue_final_message": true,
   "clientConfig": {
-    baseURL: window.location.origin + "/v1",
+    baseURL: window.location.origin + "/llama-cpu",
+    // baseURL: window.location.origin + "/qwen-cpu",
     apiKey: "sk-Nokey",
     dangerouslyAllowBrowser: true
   },
   "chatConfig": {
-    // model: 'meta-llama/Meta-Llama-3-8B-Instruct',
-    model: 'Qwen/Qwen2.5-1.5B-Instruct',
+    model: 'meta-llama/Meta-Llama-3-8B-Instruct',
+    // model: 'Qwen/Qwen2.5-1.5B-Instruct',
     messages: messages,
     stream: true,
     logprobs: true,
