@@ -32,24 +32,27 @@ const p = (varName, obj) => {
 window.p = p
 
 const warningContent = ref("")
+const warningNumber = ref(0)
 
 function warning(content) {
   if (content instanceof Error) {
 
     let errorMessage = `
-    <h2>Error Details</h2>
-                    <strong>Error Name:</strong> ${content.name} <br>
-                    <strong>Error Message:</strong> ${content.message} <br>
-                    <strong>Error Type:</strong> ${content.constructor.name} <br>
-                    ${content.fileName ? `<strong>File Name:</strong> ${content.fileName} <br>` : ''}
-                    ${content.lineNumber ? `<strong>Line Number:</strong> ${content.lineNumber} <br>` : ''}
-                    <strong>Error Stack:</strong> <pre>${content.stack}</pre>
+    <strong>Error Name:</strong> ${content.name} <br>
+    <strong>Error Message:</strong> ${content.message} <br>
+    <strong>Error Type:</strong> ${content.constructor.name} <br>
+    ${content.fileName ? `<strong>File Name:</strong> ${content.fileName} <br>` : ''}
+    ${content.lineNumber ? `<strong>Line Number:</strong> ${content.lineNumber} <br>` : ''}
+    <strong>Error Stack:</strong> <pre>${content.stack}</pre>
                 `;
     // <strong>Is Custom Error:</strong> ${error instanceof Error} <br>
 
     content = errorMessage
   }
-  warningContent.value += "<p>" + content + "</p>"
+  const now = new Date();
+  const dateTimeString = now.toLocaleString();
+  warningNumber.value += 1
+  warningContent.value = "<b>" + warningNumber.value + ' th error, ' + "</b>" + dateTimeString + "<p>" + content + "</p><hr>" + warningContent.value
 }
 
 const defaultApiConfig = {
@@ -529,7 +532,6 @@ onBeforeUnmount(async () => {
   </details>
 
   <hr>
-  <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
 
   <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
   <template v-for="message in messages">
@@ -661,6 +663,8 @@ onBeforeUnmount(async () => {
       </small>
     </el-form-item>
   </el-form>
+
+  <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
 
   <br v-for="_ in isMobile ? 30 : apiConfig.chatConfig.top_logprobs">
 
