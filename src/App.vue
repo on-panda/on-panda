@@ -155,7 +155,7 @@ async function requestLlmServer(messages) {
   messages = messages.value === undefined ? messages : messages.value
   messages = messages.filter(message => message.content)
   const continue_final_message = messages[messages.length - 1].role == "assistant"
-  var body = apiConfig.value.chatConfig
+  var body = JSON.parse(JSON.stringify(apiConfig.value.chatConfig))
   if (continue_final_message) {
     var lastMessageContent = messages[messages.length - 1].content
     var prefillTokensNumber = tokens.value.filter(token => !token.pruned).length
