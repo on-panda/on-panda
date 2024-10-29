@@ -574,7 +574,7 @@ onBeforeUnmount(async () => {
       left: `${floatPatchPannel.x}px`,
       top: `${floatPatchPannel.y}px`,
     }" v-if="floatPatchPannel.visible">
-    <div v-for="token in activatePatch.tokens.filter(token => (token?.delta?.content !== undefined))"
+    <div v-for="token in activatePatch?.tokens?.filter(token => (token?.delta?.content !== undefined))"
       class="tokenPannel" style="vertical-align:top; display: inline-block; padding: 5px;">
       <div class="floatPatchPannelHead" style="border-bottom: 2px solid #ccc;">
         <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
