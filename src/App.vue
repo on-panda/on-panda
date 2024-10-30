@@ -43,6 +43,7 @@
       <div class="final-message-half-pannel">
         <br>
         <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
+          <p v-if="!tokens.length">⏳ waiting response...</p>
           <span class="PatchSpan" v-for="patch in patchs" :style='{
             "border-bottom": "3px solid " + probToColor(patch.prob),
             ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
@@ -55,7 +56,7 @@
       <hr style="color:#eee">
       <div class="final-message-half-pannel">
         <!-- <small style="color: #888;">rendered markdown:</small> -->
-        <MessageMarkdown :content="finalMessage.content || '<|null|>'" style="background-color: #eee;" />
+        <MessageMarkdown :content="finalMessage.content || '⏳ waiting response...'" style="background-color: #eee;" />
       </div>
     </div>
   </div>

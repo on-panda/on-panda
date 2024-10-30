@@ -13,7 +13,7 @@ export function useScrollSwitchSync(scrollDiv) {
     const scrollDiv = ref(null);
     const scrollSwitch = useScrollSwitchSync(scrollDiv); // { isSwitched, scrollToPosition }
     */
-    const isSwitched = ref(false);
+    const isSwitched = ref(true);
 
     // 滚动到相应位置
     const scrollToPosition = () => {
