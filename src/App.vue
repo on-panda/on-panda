@@ -31,16 +31,16 @@
     <p class="role-name" :style="messageRoleNameStyle(tokens.length && finalMessage)"> {{ tokens.length ?
       tokens[0].delta.role :
       "unknown_role" }}:</p>
-    <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt active-text="MD"
-      inactive-text="raw" @change="scrollSwitch.scrollToPosition"
+    <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt active-text="raw"
+      inactive-text="MD" @change="scrollSwitch.scrollToPosition"
       style="margin-right: 20px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa" />
-
   </div>
+
+  <small style="color: #888;"> by <code>{{ tokensModelNames }}</code> </small>
+
   <div style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
     <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
       <div class="final-message-half-pannel">
-        <small style="color: #888;"> by <code>{{ tokensModelNames }}</code> </small>
-        <br>
         <br>
         <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
           <span class="PatchSpan" v-for="patch in patchs" :style='{
@@ -54,12 +54,11 @@
       </div>
       <hr style="color:#eee">
       <div class="final-message-half-pannel">
-        <small style="color: #888;">rendered markdown:</small>
+        <!-- <small style="color: #888;">rendered markdown:</small> -->
         <MessageMarkdown :content="finalMessage.content || '<|null|>'" style="background-color: #eee;" />
       </div>
     </div>
   </div>
-  <br>
 
 
   <div @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true"

@@ -22,7 +22,7 @@ export function useScrollSwitchSync(scrollDiv) {
 
         // 滚动到对应位置
         scrollDiv.value.scrollTo({
-            left: isSwitched.value ? scrollDiv.value.scrollWidth : 0,
+            left: isSwitched.value ? 0: scrollDiv.value.scrollWidth,
             behavior: 'smooth'
         });
 
@@ -33,7 +33,7 @@ export function useScrollSwitchSync(scrollDiv) {
     // 同步 Switch 和滚动位置
     const syncSwitchWithScroll = () => {
         const maxScrollLeft = scrollDiv.value.scrollWidth - scrollDiv.value.clientWidth;
-        isSwitched.value = scrollDiv.value.scrollLeft >= maxScrollLeft / 2;
+        isSwitched.value = scrollDiv.value.scrollLeft <= maxScrollLeft / 2;
     };
 
     // 初始挂载时设置滚动位置
