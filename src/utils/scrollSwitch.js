@@ -22,7 +22,7 @@ export function useScrollSwitchSync(scrollDiv) {
 
         // 滚动到对应位置
         scrollDiv.value.scrollTo({
-            left: isSwitched.value ? 0: scrollDiv.value.scrollWidth,
+            left: isSwitched.value ? 0 : scrollDiv.value.scrollWidth,
             behavior: 'smooth'
         });
 
