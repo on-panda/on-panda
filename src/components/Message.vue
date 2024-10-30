@@ -2,8 +2,8 @@
 
   <p class="role-name" :style="messageRoleNameStyle(props.message)"> {{ props.message['role'] }}:</p>
   <div style="display: flex; justify-content: space-between;max-width: 1024px;">
-    <el-input v-model="props.message['content']" type="textarea" :autosize="{ minRows: 3, maxRows: 50 }"
-      @keydown.ctrl.enter="$emit('sendButton')" />
+    <el-input class="message-content" v-model="props.message['content']" type="textarea"
+      :autosize="{ minRows: 3, maxRows: 50 }" @keydown.ctrl.enter="$emit('sendButton')" />
 
     <button @click="$emit('sendButton')"
       style="margin: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
@@ -34,4 +34,10 @@ const props = defineProps({
 const emit = defineEmits(['sendButton'])
 
 </script>
-<style scoped></style>
+<style scoped>
+@media (max-width: 600px) {
+  .message-content {
+    font-size: 16px;
+  }
+}
+</style>

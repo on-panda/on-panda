@@ -22,7 +22,6 @@
 
   <hr>
 
-  <!-- <MessageMarkdown content="**Hello** _world_ $E=mc^2$!" /> -->
   <template v-for="message in messages">
     <Message :message="message" @send-button="tokens = []; requestLlmServer(messages)" />
   </template>
@@ -32,15 +31,15 @@
     <p class="role-name" :style="messageRoleNameStyle(tokens.length && finalMessage)"> {{ tokens.length ?
       tokens[0].delta.role :
       "unknown_role" }}:</p>
-    <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt active-text="md"
+    <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt active-text="MD"
       inactive-text="raw" @change="scrollSwitch.scrollToPosition"
-      style="margin-right: 20px;--el-switch-on-color: #aaa; --el-switch-off-color: #191" />
+      style="margin-right: 20px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa" />
 
   </div>
   <div style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
     <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
       <div class="final-message-half-pannel">
-        <small style="color: #888;"> by <code>{{ apiConfig.chatConfig.model || "unknown_model" }} </code> </small>
+        <small style="color: #888;"> by <code>{{ tokensModelNames }}</code> </small>
         <br>
         <br>
         <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
@@ -128,7 +127,7 @@
     <h4>control parameter:</h4>
   </el-divider>
 
-
+  <!-- <pre>{{JSON.stringify(apiConfigs, null, 2)}}</pre> -->
   <el-form class="toolbar options" label-width="140px">
     <el-form-item label="model">
       <el-select-v2 v-model="modelName" filterable :options="Object.keys(apiConfigs).map((x, idx) => ({
@@ -300,13 +299,18 @@ watch(metaApiConfigs, async (newValue) => {
           configs.push(apiConfigWithModel);
         }
       } catch (error) {
+        warning(error)
         console.log("Error in fetching models list");
         console.log(error);
       }
     }
   }
   apiConfigs.value = configs.reduce((obj, config, index) => {
-    obj[`${index + 1}—` + (config.endpoint_name ? config.endpoint_name + "—" : "") + (config.chatConfig.model || '<|None|>')] = config;
+    var key = `${index + 1}—` + (config.endpoint_name ? config.endpoint_name + "—" : "") + (config.chatConfig.model || '<|None|>')
+    if (isMobile.value) {
+      key = `${index + 1} | ` + (config.chatConfig.model || '<|None|>') + ' | ' + (config.endpoint_name ? config.endpoint_name : "")
+    }
+    obj[key] = config;
     return obj;
   }, {});
 }, { immediate: true });
@@ -316,7 +320,7 @@ const modelName = ref('release-step2-merged-ppo-4in1-2207')
 const apiConfig = computed(() => {
   var apiConfig = defaultApiConfig
   for (const [key, config] of Object.entries(apiConfigs.value)) {
-    if (key.endsWith(modelName.value)) {
+    if (key.includes(modelName.value)) {
       apiConfig = config
     }
   }
@@ -334,6 +338,20 @@ const openai = computed(() =>
 )
 const tokens = ref([]);
 
+const tokensModelNames = computed(() => {
+
+  var tokensModelNames = []
+  tokens.value.map(token => {
+    if (token.model && !tokensModelNames.includes(token.model)) {
+      tokensModelNames.push(token.model)
+    }
+  })
+
+  if (tokensModelNames.length === 0) {
+    return "unknown_model"
+  }
+  return tokensModelNames.join(", ")
+})
 
 async function requestLlmServer(messages) {
   messages = messages.value === undefined ? messages : messages.value
@@ -383,6 +401,9 @@ async function requestLlmServer(messages) {
     }
     var token = chunk.choices[0];
     token.streamIndex = streamIndex
+    if (chunk.model) {
+      token.model = chunk.model
+    }
     if (chunk.choices) {
       streamIndex++
       if (tokens.value.length) {
