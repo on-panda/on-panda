@@ -239,6 +239,7 @@ function warning(content) {
 
 const defaultApiConfig = {
   "support_continue_final_message": true,
+  "endpoint_name": "endpoint-name",
   "clientConfig": {
     baseURL: window.location.origin + "/llama-cpu",
     // baseURL: window.location.origin + "/qwen-cpu",
@@ -315,7 +316,7 @@ watch(metaApiConfigs, async (newValue) => {
   }, {});
 }, { immediate: true });
 
-const modelName = ref('release-step2-merged-ppo-4in1-2207')
+const modelName = ref('on-panda')  // using endpoint_name == 'on-panda' as default model
 
 const apiConfig = computed(() => {
   var apiConfig = defaultApiConfig
