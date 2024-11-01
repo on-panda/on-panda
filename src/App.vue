@@ -124,7 +124,7 @@
 
 
   <el-divider content-position="left">
-    <h4>control parameter:</h4>
+    <b>control parameter:</b>
   </el-divider>
 
   <!-- <pre>{{JSON.stringify(apiConfigs, null, 2)}}</pre> -->
@@ -135,6 +135,17 @@
         label: x,
       }))" placeholder="Select model" style="width: 440px" size="small" />
     </el-form-item>
+
+    <span v-for="_ in (isMobile ? 10 : 20)">&nbsp;</span>
+    <template v-for="(value, key) in modelNameTags">
+      <el-tag :type="modelName.includes(value) ? 'primary' : 'info'" @click="modelName = value"
+        style="cursor: pointer;">
+        {{ key }}
+      </el-tag>
+      &nbsp;
+    </template>
+    <br>
+    <br>
 
     <el-form-item label="temperature">
       <el-input-number v-model="apiConfig.chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
@@ -163,7 +174,7 @@
 
   <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
 
-  <br v-for="_ in isMobile ? 30 : apiConfig.chatConfig.top_logprobs">
+  <br v-for="_ in isMobile ? 12 : apiConfig.chatConfig.top_logprobs">
 
 </template>
 
@@ -318,11 +329,20 @@ watch(metaApiConfigs, async (newValue) => {
 
 const modelName = ref('on-panda')  // using endpoint_name == 'on-panda' as default model
 
+const modelNameTags = {
+  'on-panda': 'on-panda',
+  'llama3.1': 'others-llama3p1-70b-chat',
+  'qwen2.5': 'others-qwen2p5-math-72b-chat',
+  'gpt4o': 'chatgpt-4o-latest',
+  'claude3.5': 'claude-3-5-sonnet-20241022',
+}
+
 const apiConfig = computed(() => {
   var apiConfig = defaultApiConfig
   for (const [key, config] of Object.entries(apiConfigs.value)) {
     if (key.includes(modelName.value)) {
       apiConfig = config
+      break
     }
   }
   // update apiConfig with defaultApiConfig
@@ -577,6 +597,7 @@ function closeFloatPatchPannel() {
 const newTurnMessage = ref({ role: 'user', content: '' })
 
 const finalMessage = computed(() => {
+  var role = null  // Compatible with Claude that each token has a role
   var finalMessage = tokens.value.filter(
     token => !token.pruned
   ).map(
@@ -585,9 +606,15 @@ const finalMessage = computed(() => {
     const delta = { ...delta1 }
     for (var key in delta2) {
       delta[key] = (delta[key] || "") + (delta2[key] || "")
+      if (key === "role") {
+        role = delta2.role
+      }
     }
     return delta
   }, {})
+  if (role) {
+    finalMessage.role = role
+  }
   // Compatible with different models for continuation generating
   // For keys other than assistant and user, if v is the empty string, then delete
   for (var key in finalMessage) {

@@ -3,10 +3,11 @@
   <p class="role-name" :style="messageRoleNameStyle(props.message)"> {{ props.message['role'] }}:</p>
   <div style="display: flex; justify-content: space-between;max-width: 1024px;">
     <el-input class="message-content" v-model="props.message['content']" type="textarea"
-      :autosize="{ minRows: 3, maxRows: 50 }" @keydown.ctrl.enter="$emit('sendButton')" />
+      placeholder="Empty message will be ignored" :autosize="{ minRows: 2, maxRows: 50 }"
+      @keydown.ctrl.enter="$emit('sendButton')" />
 
     <button @click="$emit('sendButton')"
-      style="margin: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
+      style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
       <b>Send➡️</b><br>
       <small>ctrl+enter</small> </button>
   </div>
