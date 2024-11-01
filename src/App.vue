@@ -63,7 +63,7 @@
 
 
   <div @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true"
-    style="position: absolute; padding-top: 4px;" :style="{
+    ref="floatPatchPannelRef" style="position: absolute; padding-top: 4px;" :style="{
       position: 'absolute',
       left: `${floatPatchPannel.x}px`,
       top: `${floatPatchPannel.y}px`,
@@ -102,16 +102,14 @@
   </div>
 
 
-  <div class="floatInputPatch" v-show="floatInputPatch.visible" :style="{
+  <div ref="floatInputPatchRef" class="floatInputPatch" v-show="floatInputPatch.visible" :style="{
     position: 'absolute',
     left: `${floatInputPatch.x}px`,
     top: `${floatInputPatch.y}px`,
   }" style="display: flex">
     <textarea type="text" placeholder="submit: `↵`; newline: `shift+↵`" style="height: 25px; width:auto;"
       class="floatInputPatchInput" @focus="$event.target.select()"
-      @keydown.esc.prevent="floatInputPatch.visible = false"
-      @keydown.enter="if (!$event.shiftKey) { continueFromToken(floatInputPatch.attachedPatch.tokens.find(x => x.logprobs?.content.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }"
-      @blur="floatInputPatch.visible = false; closeFloatPatchPannel()"></textarea>
+      @keydown.enter="if (!$event.shiftKey) { continueFromToken(floatInputPatch.attachedPatch.tokens.find(x => x.logprobs?.content.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }"></textarea>
   </div>
 
 
@@ -184,14 +182,18 @@ import { ElMessage } from 'element-plus'
 import Message from './components/Message.vue'
 import MessageMarkdown from './components/MessageMarkdown.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
+import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils'
 import { escapeHTML } from '@/utils/commonUtils'
 import { messageRoleNameStyle } from '@/utils/styleUtils'
 
 
 const innerWidth = ref(window.innerWidth)
+
 function handleResize() {
   innerWidth.value = window.innerWidth
 }
+useEventListener(window, 'resize', handleResize)
+handleResize()
 
 var isMobile = computed(() => innerWidth.value < 700)
 
@@ -662,6 +664,11 @@ const floatPatchPannel = ref({
   y: 0,
 })
 
+
+const floatPatchPannelRef = ref(null)
+
+closeFloatPannelMeta(floatPatchPannelRef, closeFloatPatchPannel)
+
 watch(activatePatch, (newValue, oldValue) => {
   activateLogprobItem.value = {}
   oldValue.target?.classList.remove('ActivatePatchSpan')
@@ -715,6 +722,13 @@ const floatInputPatch = ref({
   y: 0,
 })
 
+const floatInputPatchRef = ref(null)
+
+closeFloatPannelMeta(floatInputPatchRef, () => {
+  floatInputPatch.value.visible = false
+  closeFloatPatchPannel()
+})
+
 function setFloatInputPatch(event, patch) {
   // keep floatPatchPannel on， don‘t know why need setTimeout
   setTimeout(() => {
@@ -740,12 +754,9 @@ function setFloatInputPatch(event, patch) {
 import { onMounted, onBeforeUnmount } from 'vue'
 
 onMounted(async () => {
-  handleResize();
-  window.addEventListener('resize', handleResize);
 })
 
 onBeforeUnmount(async () => {
-  window.removeEventListener('resize', handleResize);
 })
 
 
