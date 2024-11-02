@@ -5,7 +5,7 @@ export function toLegalVariableName(str) {
   return /^\d/.test(cleanedStr) ? '_' + cleanedStr : cleanedStr;
 }
 
-export function p(varName, obj){
+export function p(varName, obj) {
   if (obj === undefined) {
     obj = varName
     varName = 'd'
@@ -36,19 +36,32 @@ export function useEventListener(target, event, callback) {
 }
 
 
-export function closeFloatPannelMeta(refElement, closeFunction, usingEscapeKey = true) {
+export function closeFloatPannelMeta(refElement, closeFunction, usingEscapeKey = true, exceptTouch = false) {
   function handleKeyDown(event) {
     if (usingEscapeKey && event.key === 'Escape') {
       closeFunction()
     }
   }
   useEventListener(window, 'keydown', handleKeyDown)
+
+  // Complex logic for compatibility
+  var supportsPointerEvent = exceptTouch && window.PointerEvent !== undefined;
+  supportsPointerEvent = supportsPointerEvent && ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)
   function handleMouseClick(event) {
     if (refElement.value && !refElement.value.contains(event.target)) {
-      closeFunction()
+      // 如果支持 PointerEvent 且 exceptTouch 为 true，且 support touch 进一步判断 pointerType
+      if (supportsPointerEvent) {
+        // 只在 pointerType 为 'mouse' 时才触发 closeFunction
+        if (event.pointerType === 'mouse') {
+          closeFunction();
+        }
+      } else {
+        // 如果不支持 PointerEvent, touch 或者 exceptTouch 为 false，则直接触发 closeFunction
+        closeFunction();
+      }
     }
   }
-  useEventListener(window, 'click', handleMouseClick)
+  useEventListener(window, supportsPointerEvent ? 'PointerEvent' : 'click', handleMouseClick)
 }
 
 

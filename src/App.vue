@@ -149,7 +149,8 @@
           <el-button size=small :icon="Edit" />
         </el-tooltip>
         <el-tooltip content="Improve by AI" placement="bottom">
-          <el-button size=small :icon="ChatLineRound" @click="floatSelectedOpreationPannel.improveInputVisible = true" />
+          <el-button size=small :icon="ChatLineRound"
+            @click="floatSelectedOpreationPannel.improveInputVisible = true" />
         </el-tooltip>
         <el-tooltip content="Explain by AI" placement="bottom">
           <el-button size=small :icon="QuestionFilled" />
@@ -176,6 +177,7 @@
         @send-button="messages = messagesComputed.concat([newTurnMessage]); tokens = []; newTurnMessage = { role: 'user', content: '' }; requestLlmServer(messages)" />
     </div>
 
+    <!-- <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div> -->
 
     <pre v-show="false">{{ JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2) }}</pre>
 
@@ -351,6 +353,8 @@ useEventListener(window, 'resize', handleResize)
 handleResize()
 
 var isMobile = computed(() => innerWidth.value < 700)
+var isMobileByUserAgent = (/Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i).test(navigator.userAgent) && ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)
+
 
 import { useScrollSwitchSync } from '@/utils/scrollSwitch.js'
 
@@ -381,6 +385,8 @@ function warning(content) {
     // <strong>Is Custom Error:</strong> ${error instanceof Error} <br>
 
     content = errorMessage
+  } else {
+    content = '<pre>' + JSON.stringify(content, null, 2) + '</pre>'
   }
   const now = new Date();
   const dateTimeString = now.toLocaleString();
@@ -725,7 +731,7 @@ const handleMouseEnterPatchSpan = (event) => {
   }
 }
 
-const handleMouseLeavePatchSpan = (event) => {
+function handleMouseLeavePatchSpan(event) {
   // console.log(event)
   floatPatchPannel.value.waitingToHide = true
   setTimeout(() => {
@@ -809,10 +815,11 @@ const floatPatchPannel = ref({
   y: 0,
 })
 
-
 const floatPatchPannelRef = ref(null)
 
-closeFloatPannelMeta(floatPatchPannelRef, closeFloatPatchPannel)
+
+// exceptTouch=true to avoide touch device close floatPatchPannel by click on another patchSpan
+closeFloatPannelMeta(floatPatchPannelRef, closeFloatPatchPannel, true, true)
 
 watch(activatePatch, (newValue, oldValue) => {
   activateLogprobItem.value = {}
@@ -875,7 +882,6 @@ const floatInputPatchRef = ref(null)
 
 closeFloatPannelMeta(floatInputPatchRef, () => {
   floatInputPatch.value.visible = false
-  closeFloatPatchPannel()
 })
 
 function setFloatInputPatch(event, patch) {
