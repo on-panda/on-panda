@@ -38,19 +38,21 @@
   </div>
 
   <small style="color: #888;"> by <code>{{ tokensModelNames }}</code> </small>
-
   <div style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
     <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
       <div class="final-message-half-pannel">
         <br>
         <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
           <p v-if="!tokens.length">⏳ waiting response...</p>
-          <span class="PatchSpan" v-for="patch in patchs" :style='{
-            "border-bottom": "3px solid " + probToColor(patch.prob),
-            ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
-            ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {})
-          }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
-            @mouseleave="handleMouseLeavePatchSpan" @dblclick.prevent="setFloatInputPatch($event, patch)"></span>
+          <div ref="rawOnPandaPannelRef">
+            <span class="PatchSpan" v-for="patch in patchs" :style='{
+              "border-bottom": "3px solid " + probToColor(patch.prob),
+              ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
+              ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
+              ...(patch.tokens.some(t => t.selected) ? { "background-color": "#0078d7", "color": "#fff" } : {}),
+            }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
+              @mouseleave="handleMouseLeavePatchSpan" @dblclick.prevent="setFloatInputPatch($event, patch)"></span>
+          </div>
         </div>
         <br>
       </div>
@@ -128,7 +130,38 @@
   }" style="display: flex">
     <textarea type="text" placeholder="submit: `↵`; newline: `shift+↵`" style="height: 25px; width:auto;"
       class="floatInputPatchInput" @focus="$event.target.select()"
-      @keydown.enter="if (!$event.shiftKey) { continueFromToken(floatInputPatch.attachedPatch.tokens.find(x => x.logprobs?.content.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }"></textarea>
+      @keydown.enter="if (!$event.shiftKey) { continueFromToken(floatInputPatch.attachedPatch.tokens.find(x => x.logprobs?.content.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
+  </div>
+
+  <div ref='floatSelectedOpreationPannelRef' class="floatSelectedOpreationPannel" v-show="floatSelectedOpreationPannel.visible && !floatInputPatch.visible || floatSelectedOpreationPannel.improveInputVisible" :style="{
+    position: 'absolute',
+    left: `${floatSelectedOpreationPannel.x}px`,
+    top: `${floatSelectedOpreationPannel.y}px`,
+  }">
+    <el-button-group class="floatSelectedOpreationPannelButtons" v-show="!floatSelectedOpreationPannel.improveInputVisible" style="z-index: 15;"
+    @click="selectedTokens.map(
+      token => token.selected = true
+    )">
+      <el-tooltip content="Manually edit" placement="bottom">
+        <el-button size=small :icon="Edit" />
+      </el-tooltip>
+      <el-tooltip content="Improve by AI" placement="bottom">
+        <el-button size=small :icon="ChatLineRound" @click="floatSelectedOpreationPannel.improveInputVisible=true"  />
+      </el-tooltip>
+      <el-tooltip content="Explain by AI" placement="bottom">
+        <el-button size=small :icon="QuestionFilled" />
+      </el-tooltip>
+      <!-- <el-tooltip content="Try again" placement="bottom">
+        <el-button size=small :icon="Refresh" />
+      </el-tooltip> -->
+    </el-button-group>
+    <div v-show="floatSelectedOpreationPannel.improveInputVisible" style="display: flex; justify-content: space-between;">
+      <textarea v-model="floatSelectedOpreationPannel.improveInputText" type="text" placeholder="Instruction for AI to improve" style="height: 25px; width:auto;"
+        @focus="$event.target.select()"
+        @keydown.enter="improveSelectedText" />
+
+      <el-button :icon='Promotion' size="" @click="improveSelectedText"></el-button>
+    </div>
   </div>
 
 
@@ -139,6 +172,8 @@
       @send-button="messages = messagesComputed.concat([newTurnMessage]); tokens = []; newTurnMessage = { role: 'user', content: '' }; requestLlmServer(messages)" />
   </div>
 
+
+  <!-- <pre>{{JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2)}}</pre> -->
 
   <el-divider content-position="left">
     <b>control parameter:</b>
@@ -156,13 +191,13 @@
     <div style="display :flex">
       <span class="stretch" style="margin-right: auto" v-if="isMobile" />
       <span v-for="_ in (isMobile ? 0 : 31)">&nbsp;</span>
-    <template v-for="(value, key) in modelNameTags">
-      <el-tag :type="modelName.includes(value) ? 'primary' : 'info'" @click="modelName = value"
-        style="cursor: pointer;">
-        {{ key }}
-      </el-tag>
-      &nbsp;
-    </template>
+      <template v-for="(value, key) in modelNameTags">
+        <el-tag :type="modelName.includes(value) ? 'primary' : 'info'" @click="modelName = value"
+          style="cursor: pointer;">
+          {{ key }}
+        </el-tag>
+        &nbsp;
+      </template>
     </div>
     <br>
 
@@ -204,11 +239,103 @@ import Message from './components/Message.vue'
 import MessageMarkdown from './components/MessageMarkdown.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils'
-import { escapeHTML, copyToClipboard } from '@/utils/commonUtils'
+import { p, escapeHTML, copyToClipboard } from '@/utils/commonUtils'
 import { messageRoleNameStyle } from '@/utils/styleUtils'
 
-import { DocumentCopy, Edit, Refresh, DArrowRight } from '@element-plus/icons-vue'
+import { DocumentCopy, Edit, Refresh, DArrowRight, ChatLineRound, QuestionFilled, Promotion } from '@element-plus/icons-vue'
 
+function useSelectedNodes(containerRef) {
+  const selectedNodes = ref({ startNode: null, endNode: null });
+
+  const mouseUpUpdateSelectedNodes = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      selectedNodes.value = { startNode: null, endNode: null };
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    let startNode = range.startContainer;
+    let endNode = range.endContainer;
+    // If startNode or endNode is a text node (nodeType 3), get their parentElement
+    if (startNode.nodeType === 3) {
+      startNode = startNode.parentElement;
+    }
+    if (endNode.nodeType === 3) {
+      endNode = endNode.parentElement;
+    }
+
+    // Check if startNode and endNode are within containerRef
+    if (
+      containerRef &&
+      containerRef.value &&
+      containerRef.value.contains(startNode) &&
+      containerRef.value.contains(endNode)
+    ) {
+      selectedNodes.value = { startNode, endNode };
+    } else {
+      selectedNodes.value = { startNode: null, endNode: null };
+    }
+    // console.log('text node', startNode, endNode, selection, range);
+  }
+
+  useEventListener(document, 'mouseup', mouseUpUpdateSelectedNodes);
+  useEventListener(document, 'touchend', mouseUpUpdateSelectedNodes);
+
+  return selectedNodes;
+}
+
+const rawOnPandaPannelRef = ref(null);
+const selectedNodes = useSelectedNodes(rawOnPandaPannelRef);
+
+
+const selectedTokens = computed(() => {
+  floatSelectedOpreationPannel.value.visible = false
+  if (!selectedNodes.value.startNode || !selectedNodes.value.endNode) {
+    return [];
+  }
+  // avoid select the span-in-span patch
+  var startNode = selectedNodes.value.startNode
+  startNode = ('patch-index' in startNode.attributes) ? startNode : startNode.parentElement
+
+  var endNode = selectedNodes.value.endNode
+  endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
+
+  //set FloatSelectedOpreationPannel
+  floatSelectedOpreationPannel.value.visible = true
+
+  var endNodeRect = endNode.getBoundingClientRect()
+  floatSelectedOpreationPannel.value.x = endNodeRect.right + window.scrollX - 35 * document.querySelectorAll('.floatSelectedOpreationPannelButtons button').length
+  floatSelectedOpreationPannel.value.x = Math.max(floatSelectedOpreationPannel.value.x, 10)
+  floatSelectedOpreationPannel.value.y = endNodeRect.bottom + window.scrollY + 2
+
+  const startPatchIndex = Number(startNode.attributes['patch-index'].value)
+  const endPatchIndex = Number(endNode.attributes['patch-index'].value)
+
+  const startTokenIndex = patchs.value[startPatchIndex].tokens[0].streamIndex
+  const endPatch = patchs.value[endPatchIndex]
+  const endTokenIndex = endPatch.tokens[endPatch.tokens.length - 1].streamIndex
+  return tokens.value.slice(startTokenIndex, endTokenIndex + 1)
+});
+ 
+
+
+const floatSelectedOpreationPannel = ref({
+  visible: false,
+  improveInputText: "",
+  improveInputVisible: false,
+  x: 0,
+  y: 0,
+})
+
+const floatSelectedOpreationPannelRef = ref(null)
+closeFloatPannelMeta(floatSelectedOpreationPannelRef, ()=>{floatSelectedOpreationPannel.value.improveInputVisible = false})
+
+function improveSelectedText() {
+  const selectedText = selectedTokens.value.map(token => token.delta.content).join("")
+  console.log('improveSelectedText', floatSelectedOpreationPannel.value.improveInputText, selectedText)
+  floatSelectedOpreationPannel.value.improveInputVisible = false
+}
 
 const innerWidth = ref(window.innerWidth)
 
@@ -225,23 +352,6 @@ import { useScrollSwitchSync } from '@/utils/scrollSwitch.js'
 const scrollDiv = ref(null)
 const scrollSwitch = useScrollSwitchSync(scrollDiv); // { isSwitched, scrollToPosition }
 
-
-function toLegalVariableName(str) {
-  const cleanedStr = str.replace(/[^a-zA-Z0-9_$]/g, '');
-  return /^\d/.test(cleanedStr) ? '_' + cleanedStr : cleanedStr;
-}
-
-const p = (varName, obj) => {
-  if (obj === undefined) {
-    obj = varName
-    varName = 'd'
-  }
-  var legalVarName = toLegalVariableName(varName)
-  window[legalVarName] = obj
-  console.log(`"${varName + (legalVarName === varName ? '' : '(' + legalVarName + ')')}":`, obj)
-  return obj
-}
-window.p = p
 
 const warningContent = ref("")
 const warningNumber = ref(0)
@@ -667,7 +777,7 @@ const messagesComputed = computed(() => {
 
 setTimeout(() => {
   requestLlmServer(messages)
-}, 1000)
+}, 1500)
 
 p("tokens", tokens.value)
 p("patchs", patchs)
@@ -708,6 +818,10 @@ function setFloatPatchPannelBelow(element) {
   const cellRect = element.getBoundingClientRect();
   floatPatchPannel.value.x = cellRect.left + window.scrollX - 3
   floatPatchPannel.value.y = cellRect.bottom + window.scrollY - 4
+  if(floatPatchPannel.value.x + 85 > window.innerWidth){
+    // avoid floatPatchPannel out of window
+    floatPatchPannel.value.x = floatPatchPannel.value.x - 85
+  }
   floatPatchPannel.value.waitingToHide = false;
   floatPatchPannel.value.visible = true;
 }

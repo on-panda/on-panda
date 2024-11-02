@@ -1,3 +1,23 @@
+
+
+export function toLegalVariableName(str) {
+  const cleanedStr = str.replace(/[^a-zA-Z0-9_$]/g, '');
+  return /^\d/.test(cleanedStr) ? '_' + cleanedStr : cleanedStr;
+}
+
+export function p(varName, obj){
+  if (obj === undefined) {
+    obj = varName
+    varName = 'd'
+  }
+  var legalVarName = toLegalVariableName(varName)
+  window[legalVarName] = obj
+  console.log(`"${varName + (legalVarName === varName ? '' : '(' + legalVarName + ')')}":`, obj)
+  return obj
+}
+
+window.p = p
+
 export const escapeHTML = (s) => {
   return s
     .replaceAll(/&/g, '&amp;')
