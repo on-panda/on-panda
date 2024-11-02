@@ -173,7 +173,7 @@
   </div>
 
 
-  <!-- <pre>{{JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2)}}</pre> -->
+  <pre v-show="false">{{JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2)}}</pre>
 
   <el-divider content-position="left">
     <b>control parameter:</b>
@@ -317,7 +317,7 @@ const selectedTokens = computed(() => {
   const endTokenIndex = endPatch.tokens[endPatch.tokens.length - 1].streamIndex
   return tokens.value.slice(startTokenIndex, endTokenIndex + 1)
 });
- 
+
 
 
 const floatSelectedOpreationPannel = ref({
@@ -818,7 +818,7 @@ function setFloatPatchPannelBelow(element) {
   const cellRect = element.getBoundingClientRect();
   floatPatchPannel.value.x = cellRect.left + window.scrollX - 3
   floatPatchPannel.value.y = cellRect.bottom + window.scrollY - 4
-  if(floatPatchPannel.value.x + 85 > window.innerWidth){
+  if(floatPatchPannel.value.x + 120 > window.innerWidth){
     // avoid floatPatchPannel out of window
     floatPatchPannel.value.x = floatPatchPannel.value.x - 85
   }
