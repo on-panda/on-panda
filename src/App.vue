@@ -18,6 +18,7 @@
     - Move to the bad word, and alternative candidates will appear. <br>
     - Click a candidate to continue generating text based on the chosen word. <br>
     - Double-click a word to modify it, and the LLM will seamlessly continue writing. <br>
+    - Select a piece of text and then manually edit it or have the LLM optimize it. <br>
   </details>
 
   <hr>
@@ -60,7 +61,25 @@
       </div>
     </div>
   </div>
-
+  <br>
+  <footer style="display :flex">
+    <span class="stretch" style="margin-right: auto" v-if="isMobile" />
+    <el-tooltip content="copy" placement="bottom">
+      <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
+        @click="copyToClipboard(finalMessage.content)" />
+    </el-tooltip>
+    <el-tooltip content="edit" placement="bottom">
+      <el-button :icon="Edit" size="small" :disabled="!finalMessage.content" />
+    </el-tooltip>
+    <el-tooltip content="continue" placement="bottom">
+      <el-button :icon="DArrowRight" size="small"
+        :disabled="tokens.length === 0 || !tokens[tokens.length - 1].finish_reason"
+        @click="requestLlmServer(messagesComputed)" />
+    </el-tooltip>
+    <el-tooltip content="try again" placement="bottom">
+      <el-button :icon="Refresh" size="small" @click="tokens = []; requestLlmServer(messages)" />
+    </el-tooltip>
+  </footer>
 
   <div @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true"
     ref="floatPatchPannelRef" style="position: absolute; padding-top: 4px;" :style="{
@@ -134,7 +153,9 @@
       }))" placeholder="Select model" style="width: 440px" size="small" />
     </el-form-item>
 
-    <span v-for="_ in (isMobile ? 10 : 20)">&nbsp;</span>
+    <div style="display :flex">
+      <span class="stretch" style="margin-right: auto" v-if="isMobile" />
+      <span v-for="_ in (isMobile ? 0 : 31)">&nbsp;</span>
     <template v-for="(value, key) in modelNameTags">
       <el-tag :type="modelName.includes(value) ? 'primary' : 'info'" @click="modelName = value"
         style="cursor: pointer;">
@@ -142,7 +163,7 @@
       </el-tag>
       &nbsp;
     </template>
-    <br>
+    </div>
     <br>
 
     <el-form-item label="temperature">
@@ -183,8 +204,10 @@ import Message from './components/Message.vue'
 import MessageMarkdown from './components/MessageMarkdown.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils'
-import { escapeHTML } from '@/utils/commonUtils'
+import { escapeHTML, copyToClipboard } from '@/utils/commonUtils'
 import { messageRoleNameStyle } from '@/utils/styleUtils'
+
+import { DocumentCopy, Edit, Refresh, DArrowRight } from '@element-plus/icons-vue'
 
 
 const innerWidth = ref(window.innerWidth)
@@ -382,6 +405,13 @@ async function requestLlmServer(messages) {
   const continue_final_message = messages[messages.length - 1].role == "assistant"
   var body = JSON.parse(JSON.stringify(apiConfig.value.chatConfig))
   if (continue_final_message) {
+    // to remove the last token's finish_reason
+    if (tokens.value.length) {
+      while (tokens.value[tokens.value.length - 1].delta.content === "") {
+        tokens.value.pop()
+      }
+      tokens.value[tokens.value.length - 1].finish_reason = null
+    }
     var lastMessageContent = messages[messages.length - 1].content
     var prefillTokensNumber = tokens.value.filter(token => !token.pruned).length
     if (apiConfig.value.support_continue_final_message) {

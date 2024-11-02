@@ -30,3 +30,17 @@ export function closeFloatPannelMeta(refElement, closeFunction, usingEscapeKey =
   }
   useEventListener(window, 'click', handleMouseClick)
 }
+
+
+import { ElMessage } from 'element-plus'
+
+export async function copyToClipboard(string) {
+
+  await navigator.clipboard.writeText(string)
+  ElMessage({
+    showClose: true,
+    message: 'Copied to clipboard',
+    type: 'success',
+    duration: 2000,
+  })
+}
