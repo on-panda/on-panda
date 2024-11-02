@@ -1,235 +1,240 @@
 <template>
-  <del>
+  <div :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }">
+    <del>
+      <details>
+        <summary>
+          <small style="color: #888;">as Data Annotator:</small>
+        </summary>
+        <h2>onPanda: on-Policy Alignment Data Annotator (PoC)</h2>
+        <code>Scaling up your data efficiency before scaling up your data.</code>
+      </details>
+    </del>
+    <h2>onPanda coWriter: LLM-Native Collaborative Writing Tool </h2>
+    <code>Precision byte-level control for LLM writing.</code>
+
     <details>
       <summary>
-        <small style="color: #888;">as Data Annotator:</small>
+        <small style="color: #888;">usage:</small>
       </summary>
-      <h2>onPanda: on-Policy Alignment Data Annotator (PoC)</h2>
-      <code>Scaling up your data efficiency before scaling up your data.</code>
+      - Move to the bad word, and alternative candidates will appear. <br>
+      - Click a candidate to continue generating text based on the chosen word. <br>
+      - Double-click a word to modify it, and the LLM will seamlessly continue writing. <br>
+      - Select a piece of text and then manually edit it or have the LLM optimize it. <br>
     </details>
-  </del>
-  <h2>onPanda coWriter: LLM-Native Collaborative Writing Tool </h2>
-  <code>Precision byte-level control for LLM writing.</code>
 
-  <details>
-    <summary>
-      <small style="color: #888;">usage:</small>
-    </summary>
-    - Move to the bad word, and alternative candidates will appear. <br>
-    - Click a candidate to continue generating text based on the chosen word. <br>
-    - Double-click a word to modify it, and the LLM will seamlessly continue writing. <br>
-    - Select a piece of text and then manually edit it or have the LLM optimize it. <br>
-  </details>
+    <hr>
 
-  <hr>
-
-  <template v-for="message in messages">
-    <Message :message="message" @send-button="tokens = []; requestLlmServer(messages)" />
-  </template>
+    <template v-for="message in messages">
+      <Message :message="message" @send-button="tokens = []; requestLlmServer(messages)" />
+    </template>
 
 
-  <div style="display: flex; justify-content: space-between;">
-    <p class="role-name" :style="messageRoleNameStyle(tokens.length && finalMessage)"> {{ tokens.length ?
-      tokens[0].delta.role :
-      "unknown_role" }}:</p>
-    <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt active-text="raw"
-      inactive-text="MD" @change="scrollSwitch.scrollToPosition"
-      style="margin-right: 20px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa" />
-  </div>
+    <div style="display: flex; justify-content: space-between;">
+      <p class="role-name" :style="messageRoleNameStyle(tokens.length && finalMessage)"> {{ tokens.length ?
+        tokens[0].delta.role :
+        "unknown_role" }}:</p>
+      <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt active-text="raw"
+        inactive-text="MD" @change="scrollSwitch.scrollToPosition"
+        style="margin-right: 20px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa" />
+    </div>
 
-  <small style="color: #888;"> by <code>{{ tokensModelNames }}</code> </small>
-  <div style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
-    <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
-      <div class="final-message-half-pannel">
-        <br>
-        <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
-          <p v-if="!tokens.length">⏳ waiting response...</p>
-          <div ref="rawOnPandaPannelRef">
-            <span class="PatchSpan" v-for="patch in patchs" :style='{
-              "border-bottom": "3px solid " + probToColor(patch.prob),
-              ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
-              ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
-              ...(patch.tokens.some(t => t.selected) ? { "background-color": "#0078d7", "color": "#fff" } : {}),
-            }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
-              @mouseleave="handleMouseLeavePatchSpan" @dblclick.prevent="setFloatInputPatch($event, patch)"></span>
+    <small style="color: #888;"> by <code>{{ tokensModelNames }}</code> </small>
+    <div style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
+      <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
+        <div class="final-message-half-pannel">
+          <br>
+          <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
+            <p v-if="!tokens.length">⏳ waiting response...</p>
+            <div ref="rawOnPandaPannelRef">
+              <span class="PatchSpan" v-for="patch in patchs" :style='{
+                "border-bottom": "3px solid " + probToColor(patch.prob),
+                ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
+                ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
+                ...(patch.tokens.some(t => t.selected) ? { "background-color": "#0078d7", "color": "#fff" } : {}),
+              }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
+                @mouseleave="handleMouseLeavePatchSpan" @dblclick.prevent="setFloatInputPatch($event, patch)"></span>
+            </div>
           </div>
+          <br>
         </div>
-        <br>
-      </div>
-      <hr style="color:#eee">
-      <div class="final-message-half-pannel">
-        <!-- <small style="color: #888;">rendered markdown:</small> -->
-        <MessageMarkdown :content="finalMessage.content || '⏳ waiting response...'" style="background-color: #eee;" />
-      </div>
-    </div>
-  </div>
-  <br>
-  <footer style="display :flex">
-    <span class="stretch" style="margin-right: auto" v-if="isMobile" />
-    <el-tooltip content="copy" placement="bottom">
-      <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
-        @click="copyToClipboard(finalMessage.content)" />
-    </el-tooltip>
-    <el-tooltip content="edit" placement="bottom">
-      <el-button :icon="Edit" size="small" :disabled="!finalMessage.content" />
-    </el-tooltip>
-    <el-tooltip content="continue" placement="bottom">
-      <el-button :icon="DArrowRight" size="small"
-        :disabled="tokens.length === 0 || !tokens[tokens.length - 1].finish_reason"
-        @click="requestLlmServer(messagesComputed)" />
-    </el-tooltip>
-    <el-tooltip content="try again" placement="bottom">
-      <el-button :icon="Refresh" size="small" @click="tokens = []; requestLlmServer(messages)" />
-    </el-tooltip>
-  </footer>
-
-  <div @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true"
-    ref="floatPatchPannelRef" style="position: absolute; padding-top: 4px;" :style="{
-      position: 'absolute',
-      left: `${floatPatchPannel.x}px`,
-      top: `${floatPatchPannel.y}px`,
-    }" v-if="floatPatchPannel.visible">
-    <!-- `padding-top: 4px` to avoid next line's token activate @mouseover  -->
-    <div class="floatPatchPannel" style="position: relative; z-index: 10;">
-      <div v-for="token in activatePatch?.tokens?.filter(token => (token?.delta?.content !== undefined))"
-        class="tokenPannel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
-        <div class="floatPatchPannelHead" style="border-bottom: 2px solid #ccc;">
-          <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
-        </div>
-        <div class="tokenLogprobItems">
-          <div v-for="logprobItem in token?.logprobs?.content[0].top_logprobs"
-            style="display: block; background-color: #eee;" @click="clickOnLogprobItem(token, logprobItem)"
-            @mouseover="activateLogprobItem = logprobItem" @mouseenter="$event.target.style.backgroundColor = '#ddd'"
-            @mouseleave="$event.target.style.backgroundColor = ''">
-            <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token_piece || logprobItem.token)
-              }}</span>
-            <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
-              style="white-space: pre-wrap;font-family: Monospace;">:{{
-                (Math.exp(logprobItem.logprob) * 100).toFixed(1).toString().padStart(5, ' ') }}%</span>
-          </div>
+        <hr style="color:#eee">
+        <div class="final-message-half-pannel">
+          <!-- <small style="color: #888;">rendered markdown:</small> -->
+          <MessageMarkdown :content="finalMessage.content || '⏳ waiting response...'" style="background-color: #eee;" />
         </div>
       </div>
-      <footer>
-        <hr>
-        <span v-if="activateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;">{{
-          Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
-        <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
-          [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') :
-            activateLogprobItem.bytes
-          }}]</span>
-        <button @click="closeFloatPatchPannel" style="padding: 0px; margin: 0 5px 5px 5px; float:right">❌</button>
-      </footer>
-    </div>
-  </div>
-
-
-  <div ref="floatInputPatchRef" class="floatInputPatch" v-show="floatInputPatch.visible" :style="{
-    position: 'absolute',
-    left: `${floatInputPatch.x}px`,
-    top: `${floatInputPatch.y}px`,
-  }" style="display: flex">
-    <textarea type="text" placeholder="submit: `↵`; newline: `shift+↵`" style="height: 25px; width:auto;"
-      class="floatInputPatchInput" @focus="$event.target.select()"
-      @keydown.enter="if (!$event.shiftKey) { continueFromToken(floatInputPatch.attachedPatch.tokens.find(x => x.logprobs?.content.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
-  </div>
-
-  <div ref='floatSelectedOpreationPannelRef' class="floatSelectedOpreationPannel" v-show="floatSelectedOpreationPannel.visible && !floatInputPatch.visible || floatSelectedOpreationPannel.improveInputVisible" :style="{
-    position: 'absolute',
-    left: `${floatSelectedOpreationPannel.x}px`,
-    top: `${floatSelectedOpreationPannel.y}px`,
-  }">
-    <el-button-group class="floatSelectedOpreationPannelButtons" v-show="!floatSelectedOpreationPannel.improveInputVisible" style="z-index: 15;"
-    @click="selectedTokens.map(
-      token => token.selected = true
-    )">
-      <el-tooltip content="Manually edit" placement="bottom">
-        <el-button size=small :icon="Edit" />
-      </el-tooltip>
-      <el-tooltip content="Improve by AI" placement="bottom">
-        <el-button size=small :icon="ChatLineRound" @click="floatSelectedOpreationPannel.improveInputVisible=true"  />
-      </el-tooltip>
-      <el-tooltip content="Explain by AI" placement="bottom">
-        <el-button size=small :icon="QuestionFilled" />
-      </el-tooltip>
-      <!-- <el-tooltip content="Try again" placement="bottom">
-        <el-button size=small :icon="Refresh" />
-      </el-tooltip> -->
-    </el-button-group>
-    <div v-show="floatSelectedOpreationPannel.improveInputVisible" style="display: flex; justify-content: space-between;">
-      <textarea v-model="floatSelectedOpreationPannel.improveInputText" type="text" placeholder="Instruction for AI to improve" style="height: 25px; width:auto;"
-        @focus="$event.target.select()"
-        @keydown.enter="improveSelectedText" />
-
-      <el-button :icon='Promotion' size="" @click="improveSelectedText"></el-button>
-    </div>
-  </div>
-
-
-  <el-divider content-position="left">new dialogue:</el-divider>
-  <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
-
-    <Message :message="newTurnMessage"
-      @send-button="messages = messagesComputed.concat([newTurnMessage]); tokens = []; newTurnMessage = { role: 'user', content: '' }; requestLlmServer(messages)" />
-  </div>
-
-
-  <pre v-show="false">{{JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2)}}</pre>
-
-  <el-divider content-position="left">
-    <b>control parameter:</b>
-  </el-divider>
-
-  <!-- <pre>{{JSON.stringify(apiConfigs, null, 2)}}</pre> -->
-  <el-form class="toolbar options" label-width="140px">
-    <el-form-item label="model">
-      <el-select-v2 v-model="modelName" filterable :options="Object.keys(apiConfigs).map((x, idx) => ({
-        value: x,
-        label: x,
-      }))" placeholder="Select model" style="width: 440px" size="small" />
-    </el-form-item>
-
-    <div style="display :flex">
-      <span class="stretch" style="margin-right: auto" v-if="isMobile" />
-      <span v-for="_ in (isMobile ? 0 : 31)">&nbsp;</span>
-      <template v-for="(value, key) in modelNameTags">
-        <el-tag :type="modelName.includes(value) ? 'primary' : 'info'" @click="modelName = value"
-          style="cursor: pointer;">
-          {{ key }}
-        </el-tag>
-        &nbsp;
-      </template>
     </div>
     <br>
+    <footer style="display :flex">
+      <span class="stretch" style="margin-right: auto" v-if="isMobile" />
+      <el-tooltip content="copy" placement="bottom">
+        <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
+          @click="copyToClipboard(finalMessage.content)" />
+      </el-tooltip>
+      <el-tooltip content="edit" placement="bottom">
+        <el-button :icon="Edit" size="small" :disabled="!finalMessage.content" />
+      </el-tooltip>
+      <el-tooltip content="continue" placement="bottom">
+        <el-button :icon="DArrowRight" size="small"
+          :disabled="tokens.length === 0 || !tokens[tokens.length - 1].finish_reason"
+          @click="requestLlmServer(messagesComputed)" />
+      </el-tooltip>
+      <el-tooltip content="try again" placement="bottom">
+        <el-button :icon="Refresh" size="small" @click="tokens = []; requestLlmServer(messages)" />
+      </el-tooltip>
+    </footer>
 
-    <el-form-item label="temperature">
-      <el-input-number v-model="apiConfig.chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
-    </el-form-item>
+    <div @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true"
+      ref="floatPatchPannelRef" style="position: absolute; padding-top: 4px;" :style="{
+        position: 'absolute',
+        left: `${floatPatchPannel.x}px`,
+        top: `${floatPatchPannel.y}px`,
+      }" v-if="floatPatchPannel.visible">
+      <!-- `padding-top: 4px` to avoid next line's token activate @mouseover  -->
+      <div class="floatPatchPannel" style="position: relative; z-index: 10;">
+        <div v-for="token in activatePatch?.tokens?.filter(token => (token?.delta?.content !== undefined))"
+          class="tokenPannel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
+          <div class="floatPatchPannelHead" style="border-bottom: 2px solid #ccc;">
+            <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
+          </div>
+          <div class="tokenLogprobItems">
+            <div v-for="logprobItem in token?.logprobs?.content[0].top_logprobs"
+              style="display: block; background-color: #eee;" @click="clickOnLogprobItem(token, logprobItem)"
+              @mouseover="activateLogprobItem = logprobItem" @mouseenter="$event.target.style.backgroundColor = '#ddd'"
+              @mouseleave="$event.target.style.backgroundColor = ''">
+              <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token_piece || logprobItem.token)
+                }}</span>
+              <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
+                style="white-space: pre-wrap;font-family: Monospace;">:{{
+                  (Math.exp(logprobItem.logprob) * 100).toFixed(1).toString().padStart(5, ' ') }}%</span>
+            </div>
+          </div>
+        </div>
+        <footer>
+          <hr>
+          <span v-if="activateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;">{{
+            Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
+          <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
+            [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') :
+              activateLogprobItem.bytes
+            }}]</span>
+          <button @click="closeFloatPatchPannel" style="padding: 0px; margin: 0 5px 5px 5px; float:right">❌</button>
+        </footer>
+      </div>
+    </div>
 
-    <el-form-item label="max_tokens">
-      <el-input-number v-model="apiConfig.chatConfig.max_tokens" :min="1" :max="65536" :step="1" size="small" />
-    </el-form-item>
 
-    <el-form-item label="top_p">
-      <el-input-number v-model="apiConfig.chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
-    </el-form-item>
+    <div ref="floatInputPatchRef" class="floatInputPatch" v-show="floatInputPatch.visible" :style="{
+      position: 'absolute',
+      left: `${floatInputPatch.x}px`,
+      top: `${floatInputPatch.y}px`,
+    }" style="display: flex">
+      <textarea type="text" placeholder="submit: `↵`; newline: `shift+↵`" style="height: 25px; width:auto;"
+        class="floatInputPatchInput" @focus="$event.target.select()"
+        @keydown.enter="if (!$event.shiftKey) { continueFromToken(floatInputPatch.attachedPatch.tokens.find(x => x.logprobs?.content.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
+    </div>
 
-    <el-form-item label="Freq. Penalty">
-      <el-input-number v-model="apiConfig.chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01" size="small" />
-    </el-form-item>
+    <div ref='floatSelectedOpreationPannelRef' class="floatSelectedOpreationPannel"
+      v-show="floatSelectedOpreationPannel.visible && !floatInputPatch.visible || floatSelectedOpreationPannel.improveInputVisible"
+      :style="{
+        position: 'absolute',
+        left: `${floatSelectedOpreationPannel.x}px`,
+        top: `${floatSelectedOpreationPannel.y}px`,
+      }">
+      <el-button-group class="floatSelectedOpreationPannelButtons"
+        v-show="!floatSelectedOpreationPannel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
+          token => token.selected = true
+        )">
+        <el-tooltip content="Manually edit" placement="bottom">
+          <el-button size=small :icon="Edit" />
+        </el-tooltip>
+        <el-tooltip content="Improve by AI" placement="bottom">
+          <el-button size=small :icon="ChatLineRound" @click="floatSelectedOpreationPannel.improveInputVisible = true" />
+        </el-tooltip>
+        <el-tooltip content="Explain by AI" placement="bottom">
+          <el-button size=small :icon="QuestionFilled" />
+        </el-tooltip>
+        <!-- <el-tooltip content="Try again" placement="bottom">
+        <el-button size=small :icon="Refresh" />
+      </el-tooltip> -->
+      </el-button-group>
+      <div v-show="floatSelectedOpreationPannel.improveInputVisible"
+        style="display: flex; justify-content: space-between;">
+        <textarea v-model="floatSelectedOpreationPannel.improveInputText" type="text"
+          placeholder="Instruction for AI to improve" style="height: 25px; width:auto;" @focus="$event.target.select()"
+          @keydown.enter="improveSelectedText" />
 
-    <el-form-item label="continue generating">
-      <small>
-        <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
-          {{ apiConfig.support_continue_final_message ? "native" : "prompt engineering" }}
-        </el-tag>
-      </small>
-    </el-form-item>
-  </el-form>
+        <el-button :icon='Promotion' size="" @click="improveSelectedText"></el-button>
+      </div>
+    </div>
 
-  <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
 
-  <br v-for="_ in isMobile ? 12 : apiConfig.chatConfig.top_logprobs">
+    <el-divider content-position="left">new dialogue:</el-divider>
+    <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
 
+      <Message :message="newTurnMessage"
+        @send-button="messages = messagesComputed.concat([newTurnMessage]); tokens = []; newTurnMessage = { role: 'user', content: '' }; requestLlmServer(messages)" />
+    </div>
+
+
+    <pre v-show="false">{{ JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2) }}</pre>
+
+    <el-divider content-position="left">
+      <b>control parameter:</b>
+    </el-divider>
+
+    <!-- <pre>{{JSON.stringify(apiConfigs, null, 2)}}</pre> -->
+    <el-form class="toolbar options" label-width="140px">
+      <el-form-item label="model">
+        <el-select-v2 v-model="modelName" filterable :options="Object.keys(apiConfigs).map((x, idx) => ({
+          value: x,
+          label: x,
+        }))" placeholder="Select model" style="width: 440px" size="small" />
+      </el-form-item>
+
+      <div style="display :flex">
+        <span class="stretch" style="margin-right: auto" v-if="isMobile" />
+        <span v-for="_ in (isMobile ? 0 : 31)">&nbsp;</span>
+        <template v-for="(value, key) in modelNameTags">
+          <el-tag :type="modelName.includes(value) ? 'primary' : 'info'" @click="modelName = value"
+            style="cursor: pointer;">
+            {{ key }}
+          </el-tag>
+          &nbsp;
+        </template>
+      </div>
+      <br>
+
+      <el-form-item label="temperature">
+        <el-input-number v-model="apiConfig.chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
+      </el-form-item>
+
+      <el-form-item label="max_tokens">
+        <el-input-number v-model="apiConfig.chatConfig.max_tokens" :min="1" :max="65536" :step="1" size="small" />
+      </el-form-item>
+
+      <el-form-item label="top_p">
+        <el-input-number v-model="apiConfig.chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
+      </el-form-item>
+
+      <el-form-item label="Freq. Penalty">
+        <el-input-number v-model="apiConfig.chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01"
+          size="small" />
+      </el-form-item>
+
+      <el-form-item label="continue generating">
+        <small>
+          <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
+            {{ apiConfig.support_continue_final_message ? "native" : "prompt engineering" }}
+          </el-tag>
+        </small>
+      </el-form-item>
+    </el-form>
+
+    <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
+
+    <br v-for="_ in isMobile ? 12 : apiConfig.chatConfig.top_logprobs">
+  </div>
 </template>
 
 <script setup>
@@ -329,7 +334,7 @@ const floatSelectedOpreationPannel = ref({
 })
 
 const floatSelectedOpreationPannelRef = ref(null)
-closeFloatPannelMeta(floatSelectedOpreationPannelRef, ()=>{floatSelectedOpreationPannel.value.improveInputVisible = false})
+closeFloatPannelMeta(floatSelectedOpreationPannelRef, () => { floatSelectedOpreationPannel.value.improveInputVisible = false })
 
 function improveSelectedText() {
   const selectedText = selectedTokens.value.map(token => token.delta.content).join("")
@@ -818,7 +823,7 @@ function setFloatPatchPannelBelow(element) {
   const cellRect = element.getBoundingClientRect();
   floatPatchPannel.value.x = cellRect.left + window.scrollX - 3
   floatPatchPannel.value.y = cellRect.bottom + window.scrollY - 4
-  if(floatPatchPannel.value.x + 120 > window.innerWidth){
+  if (floatPatchPannel.value.x + 120 > window.innerWidth) {
     // avoid floatPatchPannel out of window
     floatPatchPannel.value.x = floatPatchPannel.value.x - 85
   }
