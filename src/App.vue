@@ -1,16 +1,28 @@
 <template>
   <div :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }">
-    <del>
-      <details>
-        <summary>
-          <small style="color: #888;">as Data Annotator:</small>
-        </summary>
-        <h2>onPanda: on-Policy Alignment Data Annotator (PoC)</h2>
-        <code>Scaling up your data efficiency before scaling up your data.</code>
-      </details>
-    </del>
-    <h2>onPanda coWriter: LLM-Native Collaborative Writing Tool </h2>
-    <code>Precision byte-level control for LLM writing.</code>
+    <details>
+      <summary>
+        <small style="color: #888;">as Data Annotator:</small>
+      </summary>
+      <h2>onPanda: on-Policy Alignment Data Annotator (PoC)</h2>
+      <code>Scaling up your data efficiency before scaling up your data.</code>
+    </details>
+
+    <details>
+      <summary>
+        <small style="color: #888;">as Writing Tool:</small>
+      </summary>
+      <h2>onPanda: LLM-Native Collaborative Writing Tool </h2>
+      <code>Precision byte-level control for LLM writing.</code>
+    </details>
+
+    <div style="text-align: center;">
+      <img width="128" src="/img/on-panda-logo.png">
+      <br>
+      <b :style="isMobile ? {} : { fontSize: '20px' }">onPanda: LLM-Native Interaction Design</b>
+      <br>
+      <br>
+    </div>
 
     <details>
       <summary>
@@ -37,8 +49,11 @@
         inactive-text="MD" @change="scrollSwitch.scrollToPosition"
         style="margin-right: 20px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa" />
     </div>
+    <div style="display: flex; justify-content: space-between;">
+      <small style="color: #888;"> by <code>{{ tokensModelNames }}</code> </small>
+      <small style="color: #888;" v-if="!isMobile"> rendered markdown </small>
+    </div>
 
-    <small style="color: #888;"> by <code>{{ tokensModelNames }}</code> </small>
     <div style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
       <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
         <div class="final-message-half-pannel">
@@ -72,7 +87,7 @@
           @click="copyToClipboard(finalMessage.content)" />
       </el-tooltip>
       <el-tooltip content="edit" placement="bottom">
-        <el-button :icon="Edit" size="small" :disabled="!finalMessage.content" />
+        <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
       </el-tooltip>
       <el-tooltip content="continue" placement="bottom">
         <el-button :icon="DArrowRight" size="small"
@@ -146,17 +161,17 @@
           token => token.selected = true
         )" :size="isMobile ? '' : 'small'">
         <el-tooltip content="Manually edit" placement="bottom">
-          <el-button :icon="Edit" />
+          <el-button :disabled="true" :icon="Edit" />
         </el-tooltip>
         <el-tooltip content="Improve by AI" placement="bottom">
           <el-button :icon="ChatLineRound" @click="floatSelectedOpreationPannel.improveInputVisible = true" />
         </el-tooltip>
         <el-tooltip content="Explain by AI" placement="bottom">
-          <el-button :icon="QuestionFilled" />
+          <el-button :disabled="true" :icon="QuestionFilled" />
         </el-tooltip>
-        <!-- <el-tooltip content="Try again" placement="bottom">
-        <el-button :icon="Refresh" />
-      </el-tooltip> -->
+        <el-tooltip content="Try again" placement="bottom">
+          <el-button :disabled="true" :icon="Refresh" />
+        </el-tooltip>
       </el-button-group>
       <div v-show="floatSelectedOpreationPannel.improveInputVisible"
         style="display: flex; justify-content: space-between;">
