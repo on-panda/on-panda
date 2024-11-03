@@ -29,7 +29,9 @@
         <small style="color: #888;">usage:</small>
       </summary>
 
-      <img width="384" src="/img/onPanda-demo-candidate.gif">
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src="/img/onPanda-demo-candidate.gif" style="box-shadow: 0 0px 8px rgba(0, 0, 0, 0.5);width: 406px;max-width: 90%;">
+      <br>
       <br>
       - Move to the bad word, and alternative candidates will appear. <br>
       - Click a candidate to continue generating text based on the chosen word. <br>
