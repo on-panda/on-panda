@@ -30,8 +30,8 @@ export const escapeHTML = (s) => {
 
 import { onMounted, onUnmounted } from 'vue'
 
-export function useEventListener(target, event, callback) {
-  onMounted(() => target.addEventListener(event, callback))
+export function useEventListener(target, event, callback, options) {
+  onMounted(() => target.addEventListener(event, callback, options))
   onUnmounted(() => target.removeEventListener(event, callback))
 }
 

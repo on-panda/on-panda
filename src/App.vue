@@ -144,19 +144,18 @@
       <el-button-group class="floatSelectedOpreationPannelButtons"
         v-show="!floatSelectedOpreationPannel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
           token => token.selected = true
-        )">
+        )" :size="isMobile ? '' : 'small'">
         <el-tooltip content="Manually edit" placement="bottom">
-          <el-button size=small :icon="Edit" />
+          <el-button :icon="Edit" />
         </el-tooltip>
         <el-tooltip content="Improve by AI" placement="bottom">
-          <el-button size=small :icon="ChatLineRound"
-            @click="floatSelectedOpreationPannel.improveInputVisible = true" />
+          <el-button :icon="ChatLineRound" @click="floatSelectedOpreationPannel.improveInputVisible = true" />
         </el-tooltip>
         <el-tooltip content="Explain by AI" placement="bottom">
-          <el-button size=small :icon="QuestionFilled" />
+          <el-button :icon="QuestionFilled" />
         </el-tooltip>
         <!-- <el-tooltip content="Try again" placement="bottom">
-        <el-button size=small :icon="Refresh" />
+        <el-button :icon="Refresh" />
       </el-tooltip> -->
       </el-button-group>
       <div v-show="floatSelectedOpreationPannel.improveInputVisible"
@@ -241,6 +240,7 @@
 
 <script setup>
 import { ref, computed, watch, watchEffect } from 'vue'
+import { onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import Message from './components/Message.vue'
 import MessageMarkdown from './components/MessageMarkdown.vue'
@@ -309,12 +309,8 @@ const selectedTokens = computed(() => {
   endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
 
   //set FloatSelectedOpreationPannel
+  setFloatSelectedOpreationPannelBelow()
   floatSelectedOpreationPannel.value.visible = true
-
-  var endNodeRect = endNode.getBoundingClientRect()
-  floatSelectedOpreationPannel.value.x = endNodeRect.right + window.scrollX - 35 * document.querySelectorAll('.floatSelectedOpreationPannelButtons button').length
-  floatSelectedOpreationPannel.value.x = Math.max(floatSelectedOpreationPannel.value.x, 10)
-  floatSelectedOpreationPannel.value.y = endNodeRect.bottom + window.scrollY + 2
 
   const startPatchIndex = Number(startNode.attributes['patch-index'].value)
   const endPatchIndex = Number(endNode.attributes['patch-index'].value)
@@ -324,6 +320,19 @@ const selectedTokens = computed(() => {
   const endTokenIndex = endPatch.tokens[endPatch.tokens.length - 1].streamIndex
   return tokens.value.slice(startTokenIndex, endTokenIndex + 1)
 });
+
+function setFloatSelectedOpreationPannelBelow() {
+  var endNode = selectedNodes.value.endNode
+  if (!endNode) {
+    return
+  }
+  endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
+  var endNodeRect = endNode.getBoundingClientRect()
+  const pixelsPerButton = isMobile.value ? 45 : 35
+  floatSelectedOpreationPannel.value.x = endNodeRect.right + window.scrollX - pixelsPerButton * document.querySelectorAll('.floatSelectedOpreationPannelButtons button').length
+  floatSelectedOpreationPannel.value.x = Math.max(floatSelectedOpreationPannel.value.x, 10)
+  floatSelectedOpreationPannel.value.y = endNodeRect.bottom + window.scrollY + 2
+}
 
 
 
@@ -336,7 +345,12 @@ const floatSelectedOpreationPannel = ref({
 })
 
 const floatSelectedOpreationPannelRef = ref(null)
-closeFloatPannelMeta(floatSelectedOpreationPannelRef, () => { floatSelectedOpreationPannel.value.improveInputVisible = false })
+closeFloatPannelMeta(floatSelectedOpreationPannelRef, () => {
+  // On mobile devices it disappears immediately after clicking, rendering the tool tip position invalid.
+  setTimeout(() => {
+    floatSelectedOpreationPannel.value.improveInputVisible = false
+  }, 10)
+})
 
 function improveSelectedText() {
   const selectedText = selectedTokens.value.map(token => token.delta.content).join("")
@@ -386,7 +400,9 @@ function warning(content) {
 
     content = errorMessage
   } else {
-    content = '<pre>' + JSON.stringify(content, null, 2) + '</pre>'
+    console.log('warning:', content)
+    var json = JSON.stringify(content, null, 2)
+    content = '<pre>' + json + '</pre>'
   }
   const now = new Date();
   const dateTimeString = now.toLocaleString();
@@ -827,6 +843,10 @@ watch(activatePatch, (newValue, oldValue) => {
 });
 
 function setFloatPatchPannelBelow(element) {
+  element = element || document.querySelector('.ActivatePatchSpan')
+  if (!element) {
+    return
+  }
   const cellRect = element.getBoundingClientRect();
   floatPatchPannel.value.x = cellRect.left + window.scrollX - 3
   floatPatchPannel.value.y = cellRect.bottom + window.scrollY - 4
@@ -905,10 +925,13 @@ function setFloatInputPatch(event, patch) {
 
 }
 
-
-import { onMounted, onBeforeUnmount } from 'vue'
+function handleReactiveFunctions() {
+  setFloatPatchPannelBelow()
+  setFloatSelectedOpreationPannelBelow()
+}
 
 onMounted(async () => {
+  scrollDiv.value.addEventListener('scroll', handleReactiveFunctions);
 })
 
 onBeforeUnmount(async () => {
