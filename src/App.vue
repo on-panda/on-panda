@@ -28,6 +28,9 @@
       <summary>
         <small style="color: #888;">usage:</small>
       </summary>
+
+      <img width="384" src="/img/onPanda-demo-candidate.gif">
+      <br>
       - Move to the bad word, and alternative candidates will appear. <br>
       - Click a candidate to continue generating text based on the chosen word. <br>
       - Double-click a word to modify it, and the LLM will seamlessly continue writing. <br>
