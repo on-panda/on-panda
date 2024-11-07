@@ -336,9 +336,9 @@ const selectedTokens = computed(() => {
   const startPatchIndex = Number(startNode.attributes['patch-index'].value)
   const endPatchIndex = Number(endNode.attributes['patch-index'].value)
 
-  const startTokenIndex = patchs.value[startPatchIndex].tokens[0].streamIndex
+  const startTokenIndex = patchs.value[startPatchIndex].tokens[0].tokenIndex
   const endPatch = patchs.value[endPatchIndex]
-  const endTokenIndex = endPatch.tokens[endPatch.tokens.length - 1].streamIndex
+  const endTokenIndex = endPatch.tokens[endPatch.tokens.length - 1].tokenIndex
   return tokens.value.slice(startTokenIndex, endTokenIndex + 1)
 });
 
@@ -574,7 +574,10 @@ async function requestLlmServer(messages) {
     var prefillTokensNumber = tokens.value.filter(token => !token.pruned).length
     if (apiConfig.value.support_continue_final_message) {
       body.add_generation_prompt = false
-      body['chat_template_kwargs'] = { continue_final_message: continue_final_message }
+      // body['chat_template_kwargs'] = { continue_final_message: continue_final_message }
+      body['continue_final_message'] = continue_final_message
+      body['echo'] = false
+
     } else {
       const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
       if (lastMessageContent.length < 20000000) {
@@ -600,23 +603,30 @@ async function requestLlmServer(messages) {
     throw error
   }
 
-  var streamIndex = 0
+  var tokenIndex = 0
+  var streamIndex = -1
   var generatedContent = ""
   var tokensValuePtr = tokens.value
   for await (const chunk of stream) {
-    if (continue_final_message && !streamIndex) { // before affect to tokens
+    streamIndex++
+    if (continue_final_message && !tokenIndex) { // before affect to tokens
       tokens.value = tokens.value.filter(token => !token.pruned)
       tokensValuePtr = tokens.value
-      streamIndex = tokens.value.length
+      tokenIndex = tokens.value.length
       continue  // first chunk is role, no more role for continue_final_message
     }
     var token = chunk.choices[0];
-    token.streamIndex = streamIndex
+    if (continue_final_message && streamIndex == 1 && token.delta.content == lastMessageContent) {
+      // avoid vllm echo bug https://github.com/vllm-project/vllm/issues/10111
+      // TODO: remove this after vllm fix the bug
+      continue
+    }
+    token.tokenIndex = tokenIndex
     if (chunk.model) {
       token.model = chunk.model
     }
     if (chunk.choices) {
-      streamIndex++
+      tokenIndex++
       if (tokens.value.length) {
         const lastToken = tokens.value[tokens.value.length - 1]
         if (lastToken.pruned) {
@@ -630,7 +640,7 @@ async function requestLlmServer(messages) {
         if (generatedContent === lastMessageContent) {
           warning("API not support continue_final_message, remove duplicated prefill tokens")
           generatedContent = ""
-          streamIndex = 0
+          tokenIndex = 0
           if (tokens.value === tokensValuePtr) {
             tokens.value = tokens.value.slice(0, prefillTokensNumber)
             tokensValuePtr = tokens.value
@@ -655,7 +665,7 @@ const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
 function probOfToken(token) {
   var prob = Math.exp(token.logprobs?.content[0]?.logprob)
   if (!isFinite(prob)) {
-    if (token.streamIndex === 0) {
+    if (token.tokenIndex === 0) {
       // first role token has no prob and will in first patch
       prob = 1
     }
@@ -673,7 +683,7 @@ const patchs = computed(() => {
   var tokenStartIndex = 0;
   for (const token of tokens.value) {
     const tokenContent = (token.delta?.content || "");
-    var tokenIndex = token.streamIndex
+    var tokenIndex = token.tokenIndex
     tokenToSegmentString += tokenContent;
     var patchString = visableSegments[segmentIndex].segment
     if (tokenToSegmentString.length >= patchString.length) {
@@ -883,21 +893,21 @@ function continueFromToken(token, continuePrefix, continuePrefixLogprob) {
   console.log(token, continuePrefix, continuePrefixLogprob)
   for (const patch of patchs.value) {
     for (const patchToken of patch.tokens) {
-      patchToken.pruned = patchToken.streamIndex >= token.streamIndex
-      if (patchToken.streamIndex == token.streamIndex) {
+      patchToken.pruned = patchToken.tokenIndex >= token.tokenIndex
+      if (patchToken.tokenIndex == token.tokenIndex) {
         patchToken.bifurcationPoint = true
       }
     }
   }
   continuePrefix = continuePrefix || ""
-  // const continuePrefixToken = { delta: { content: continuePrefix }, streamIndex: token.streamIndex, bifurcationPoint: true, logprobs: token.logprobs }
+  // const continuePrefixToken = { delta: { content: continuePrefix }, tokenIndex: token.tokenIndex, bifurcationPoint: true, logprobs: token.logprobs }
   token = JSON.parse(JSON.stringify(token)) // deep copy
   token.delta.content = continuePrefix
   token.bifurcationPoint = true
   token.pruned = false
   token.logprobs.content[0].logprob = isFinite(continuePrefixLogprob) ? continuePrefixLogprob : -9999
   token.logprobs.content[0].token =
-    tokens.value.splice(token.streamIndex, 0, token);
+    tokens.value.splice(token.tokenIndex, 0, token);
   const messageWithContinuePrefix = messagesComputed.value
 
   // messageWithContinuePrefix[messageWithContinuePrefix.length-1]['content'] += continuePrefix
