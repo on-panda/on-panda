@@ -30,7 +30,8 @@
       </summary>
 
       <br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src="/img/onPanda-demo-candidate.gif" style="box-shadow: 0 0px 8px rgba(0, 0, 0, 0.5);width: 406px;max-width: 90%;">
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src="/img/onPanda-demo-candidate.gif"
+        style="box-shadow: 0 0px 8px rgba(0, 0, 0, 0.5);width: 406px;max-width: 90%;">
       <br>
       <br>
       - Move to the bad word, and alternative candidates will appear. <br>
@@ -465,7 +466,7 @@ var messages = [{ role: "system", content: "" }, { role: "user", content: "用�
 // var messages = [{ role: "user", content: "写藏头诗：人工智能，大有可为" }]
 // var messages = [{ role: "user", content: "just reply `🧎🏿‍♂️‍➡️`" }]
 // var messages = [{ role: "user", content: "just repeat 1 time: `पत्नी`" }]
-var messages = [{ role: "system", content: "" }, { role: "user", content: "草莓的英文单词有几个 r ?" }]
+var messages = [{ role: "system", content: "" }, { role: "user", content: "🍓草莓的英文单词有几个 R ?" }]
 
 var messages = ref(messages)
 

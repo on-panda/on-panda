@@ -6,8 +6,9 @@
       placeholder="Empty message will be ignored" :autosize="{ minRows: 2, maxRows: 50 }"
       @keydown.ctrl.enter="$emit('sendButton')" />
 
-    <button @click="$emit('sendButton')"
-      style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
+    <button @click="$emit('sendButton')" :disabled="!props.message['content']" :style="{
+      cursor: props.message['content'] ? 'pointer' : 'not-allowed'
+    }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
       <b>Send➡️</b><br>
       <small>ctrl+enter</small> </button>
   </div>
