@@ -56,7 +56,11 @@
         style="margin-right: 20px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa" />
     </div>
     <div style="display: flex; justify-content: space-between;">
-      <small style="color: #888;"> by <code>{{ tokensModelNames }}</code> </small>
+      <small style="color: #888;"> by
+        <code>{{ tokensModelNames }}</code>
+        <span v-if="tokens.length && tokens[tokens.length - 1]?.usage?.prompt_tokens"> | tokens: {{ tokens[tokens.length
+          - 1]?.usage?.prompt_tokens }} + {{ tokens[tokens.length - 1]?.usage?.completion_tokens }} </span>
+      </small>
       <small style="color: #888;" v-if="!isMobile"> rendered markdown </small>
     </div>
 
@@ -453,6 +457,9 @@ const defaultApiConfig = {
     // max_tokens: 4,
     max_tokens: 1024,
     temperature: 0.5,
+    stream_options: {
+      include_usage: true,
+    },
   },
 }
 
@@ -616,6 +623,9 @@ async function requestLlmServer(messages) {
       continue  // first chunk is role, no more role for continue_final_message
     }
     var token = chunk.choices[0];
+    if (!token?.delta) {
+      continue
+    }
     if (continue_final_message && streamIndex == 1 && token.delta.content == lastMessageContent) {
       // avoid vllm echo bug https://github.com/vllm-project/vllm/issues/10111
       // TODO: remove this after vllm fix the bug
@@ -625,6 +635,10 @@ async function requestLlmServer(messages) {
     if (chunk.model) {
       token.model = chunk.model
     }
+    if (chunk.usage) {
+      token.usage = chunk.usage
+    }
+
     if (chunk.choices) {
       tokenIndex++
       if (tokens.value.length) {
