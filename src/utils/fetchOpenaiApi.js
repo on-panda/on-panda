@@ -32,7 +32,7 @@ export class OpenAI {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch completions: ${response.statusText}`);
+      throw new Error(`Failed to fetch completions: ${response.statusText}\n${await response?.text()}`);
     }
 
     // 如果是流模式，我们要解析 EventStream 响应
@@ -89,7 +89,7 @@ export class OpenAI {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch models: ${response.statusText}`);
+      throw new Error(`Failed to fetch models: ${response.statusText}\n${await response?.text()}`);
     }
 
     const json = await response.json();
