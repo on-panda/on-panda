@@ -42,8 +42,9 @@
 
     <hr>
 
-    <template v-for="message in messages">
-      <Message :message="message" @send-button="tokens = []; requestLlmServer(messages)" />
+    <template v-for="(message, index) in messages">
+      <Message :message="message" @send-button="tokens = []; requestLlmServer(messages)"
+        @delete-message="messages.splice(index, 1)" />
     </template>
 
 
