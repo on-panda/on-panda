@@ -58,7 +58,7 @@
     <div style="display: flex; justify-content: space-between;">
       <small style="color: #888;"> by
         <code>{{ tokensModelNames }}</code>
-        <span v-if="tokens.length && tokens[tokens.length - 1]?.usage?.prompt_tokens"> | tokens: {{ tokens[tokens.length
+        <span v-if="tokens.length && tokens[tokens.length - 1]?.usage?.prompt_tokens"> ｜ tokens: {{ tokens[tokens.length
           - 1]?.usage?.prompt_tokens }} + {{ tokens[tokens.length - 1]?.usage?.completion_tokens }} </span>
       </small>
       <small style="color: #888;" v-if="!isMobile"> rendered markdown </small>
@@ -90,22 +90,23 @@
       </div>
     </div>
     <br>
-    <footer style="display :flex">
-      <span class="stretch" style="margin-right: auto" v-if="isMobile" />
-      <el-tooltip content="copy" placement="bottom">
-        <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
-          @click="copyToClipboard(finalMessage.content)" />
+    <footer style="display :flex" :style="isMobile ? {} : { width: '49%' }">
+      <span class="stretch" style="margin-right: auto" />
+      <el-tooltip v-if="!requestStatus.generating" content="continue" placement="bottom">
+        <el-button :icon="DArrowRight" size="small" @click="requestLlmServer(messagesComputed)" />
+      </el-tooltip>
+      <el-tooltip v-if="requestStatus.generating" content="stop generating" placement="bottom">
+        <el-button :icon="VideoPause" size="small" @click="requestStatus.generating = false" />
+      </el-tooltip>
+      <el-tooltip content="try again" placement="bottom">
+        <el-button :icon="Refresh" size="small" @click="tokens = []; requestLlmServer(messages)" />
       </el-tooltip>
       <el-tooltip content="edit" placement="bottom">
         <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
       </el-tooltip>
-      <el-tooltip content="continue" placement="bottom">
-        <el-button :icon="DArrowRight" size="small"
-          :disabled="tokens.length === 0 || !tokens[tokens.length - 1].finish_reason"
-          @click="requestLlmServer(messagesComputed)" />
-      </el-tooltip>
-      <el-tooltip content="try again" placement="bottom">
-        <el-button :icon="Refresh" size="small" @click="tokens = []; requestLlmServer(messages)" />
+      <el-tooltip content="copy" placement="bottom">
+        <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
+          @click="copyToClipboard(finalMessage.content)" />
       </el-tooltip>
     </footer>
 
@@ -274,7 +275,7 @@ import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils'
 import { p, escapeHTML, copyToClipboard } from '@/utils/commonUtils'
 import { messageRoleNameStyle } from '@/utils/styleUtils'
 
-import { DocumentCopy, Edit, Refresh, DArrowRight, ChatLineRound, QuestionFilled, Promotion } from '@element-plus/icons-vue'
+import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion } from '@element-plus/icons-vue'
 
 function useSelectedNodes(containerRef) {
   const selectedNodes = ref({ startNode: null, endNode: null });
@@ -564,6 +565,11 @@ const tokensModelNames = computed(() => {
   return tokensModelNames.join(", ")
 })
 
+const requestStatus = ref({
+  requestTimes: 0,
+  generating: false,
+})
+
 async function requestLlmServer(messages) {
   messages = messages.value === undefined ? messages : messages.value
   messages = messages.filter(message => message.content)
@@ -604,67 +610,79 @@ async function requestLlmServer(messages) {
   }
   body.messages = messages
   try {
+    requestStatus.value.generating = true
+    requestStatus.value.requestTimes++
+    var requestNumber = requestStatus.value.requestTimes
     var stream = await openai.value.chat.completions.create(body);
-  } catch (error) {
-    warning(error)
-    throw error
-  }
 
-  var tokenIndex = 0
-  var streamIndex = -1
-  var generatedContent = ""
-  var tokensValuePtr = tokens.value
-  for await (const chunk of stream) {
-    streamIndex++
-    if (continue_final_message && !tokenIndex) { // before affect to tokens
-      tokens.value = tokens.value.filter(token => !token.pruned)
-      tokensValuePtr = tokens.value
-      tokenIndex = tokens.value.length
-      continue  // first chunk is role, no more role for continue_final_message
-    }
-    var token = chunk.choices[0];
-    if (!token?.delta) {
-      continue
-    }
-    if (continue_final_message && streamIndex == 1 && token.delta.content == lastMessageContent) {
-      // avoid vllm echo bug https://github.com/vllm-project/vllm/issues/10111
-      // TODO: remove this after vllm fix the bug
-      continue
-    }
-    token.tokenIndex = tokenIndex
-    if (chunk.model) {
-      token.model = chunk.model
-    }
-    if (chunk.usage) {
-      token.usage = chunk.usage
-    }
-
-    if (chunk.choices) {
-      tokenIndex++
-      if (tokens.value.length) {
-        const lastToken = tokens.value[tokens.value.length - 1]
-        if (lastToken.pruned) {
-          token.pruned = lastToken.pruned
-        }
+    var tokenIndex = 0
+    var streamIndex = -1
+    var generatedContent = ""
+    var tokensValuePtr = tokens.value
+    for await (const chunk of stream) {
+      streamIndex++
+      if (requestNumber !== requestStatus.value.requestTimes) {
+        console.log(new Error("Request number mismatch"))
+        return
       }
-      tokensValuePtr.push(token)
-      generatedContent += token?.delta?.content || ""
-      if (continue_final_message && !apiConfig.value.support_continue_final_message) {
-        // try remove duplicated prefill tokens for API not support continue_final_message
-        if (generatedContent === lastMessageContent) {
-          warning("API not support continue_final_message, remove duplicated prefill tokens")
-          generatedContent = ""
-          tokenIndex = 0
-          if (tokens.value === tokensValuePtr) {
-            tokens.value = tokens.value.slice(0, prefillTokensNumber)
-            tokensValuePtr = tokens.value
-          } else {
-            tokensValuePtr = tokens.value.slice(0, prefillTokensNumber)
+      if (!requestStatus.value.generating) {
+        return
+      }
+      if (continue_final_message && !tokenIndex) { // before affect to tokens
+        tokens.value = tokens.value.filter(token => !token.pruned)
+        tokensValuePtr = tokens.value
+        tokenIndex = tokens.value.length
+        continue  // first chunk is role, no more role for continue_final_message
+      }
+      var token = chunk.choices[0];
+      if (!token?.delta) {
+        continue
+      }
+      if (continue_final_message && streamIndex == 1 && token.delta.content == lastMessageContent) {
+        // avoid vllm echo bug https://github.com/vllm-project/vllm/issues/10111
+        // TODO: remove this after vllm fix the bug
+        continue
+      }
+      token.tokenIndex = tokenIndex
+      if (chunk.model) {
+        token.model = chunk.model
+      }
+      if (chunk.usage) {
+        token.usage = chunk.usage
+      }
+
+      if (chunk.choices) {
+        tokenIndex++
+        if (tokens.value.length) {
+          const lastToken = tokens.value[tokens.value.length - 1]
+          if (lastToken.pruned) {
+            token.pruned = lastToken.pruned
           }
         }
+        tokensValuePtr.push(token)
+        generatedContent += token?.delta?.content || ""
+        if (continue_final_message && !apiConfig.value.support_continue_final_message) {
+          // try remove duplicated prefill tokens for API not support continue_final_message
+          if (generatedContent === lastMessageContent) {
+            warning("API not support continue_final_message, remove duplicated prefill tokens")
+            generatedContent = ""
+            tokenIndex = 0
+            if (tokens.value === tokensValuePtr) {
+              tokens.value = tokens.value.slice(0, prefillTokensNumber)
+              tokensValuePtr = tokens.value
+            } else {
+              tokensValuePtr = tokens.value.slice(0, prefillTokensNumber)
+            }
+          }
+        }
+        // p(token.delta?.content, token)
       }
-      // p(token.delta?.content, token)
     }
+    requestStatus.value.generating = false
+  } catch (error) {
+    requestStatus.value.generating = false
+    warning(error)
+    throw error
   }
 }
 
