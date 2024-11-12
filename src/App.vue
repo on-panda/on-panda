@@ -76,7 +76,7 @@
       </footer>
       <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt active-text="raw"
         inactive-text="MD" @change="scrollSwitch.scrollToPosition"
-        style="margin-right: 8px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa" />
+        style="margin-right: 8px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa; width:45px" />
     </div>
     <div style="display: flex; justify-content: space-between;">
       <small style="color: #888;"> by
@@ -999,6 +999,8 @@ function handleReactiveFunctions() {
   setFloatPatchPannelBelow()
   setFloatSelectedOpreationPannelBelow()
 }
+
+useEventListener(window, 'resize', handleReactiveFunctions)
 
 onMounted(async () => {
   scrollDiv.value.addEventListener('scroll', handleReactiveFunctions);
