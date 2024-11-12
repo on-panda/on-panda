@@ -48,10 +48,32 @@
     </template>
 
 
-    <div style="display: flex; justify-content: space-between;">
+    <div style="display: flex; justify-content: space-between;" :style="isMobile ? {} : { width: '50%' }">
       <p class="role-name" :style="messageRoleNameStyle(tokens.length && finalMessage)"> {{ tokens.length ?
         tokens[0].delta.role :
         "unknown_role" }}:</p>
+      <span class="stretch" style="margin-right: auto" />
+      <footer style="display :flex; margin-top:5px; margin-bottom:-5px">
+        <span class="stretch" style="margin-right: auto" />
+        <el-tooltip v-if="!requestStatus.generating" content="continue" placement="bottom">
+          <el-button :icon="DArrowRight" size="small" @click="requestLlmServer(messagesComputed)" />
+        </el-tooltip>
+        <el-tooltip v-if="requestStatus.generating" content="stop generating" placement="bottom">
+          <el-button :icon="VideoPause" size="small" @click="requestStatus.generating = false" />
+        </el-tooltip>
+        <el-tooltip content="try again" placement="bottom">
+          <el-button :icon="Refresh" size="small" @click="tokens = []; requestLlmServer(messages)" />
+        </el-tooltip>
+        <el-tooltip content="edit" placement="bottom">
+          <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
+        </el-tooltip>
+        <el-tooltip content="copy" placement="bottom">
+          <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
+            @click="copyToClipboard(finalMessage.content)" />
+        </el-tooltip>
+        &nbsp;&nbsp;&nbsp;
+        <hr v-if="!isMobile" style="color:#eee; margin-top: -5px; margin-bottom: 4px">
+      </footer>
       <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt active-text="raw"
         inactive-text="MD" @change="scrollSwitch.scrollToPosition"
         style="margin-right: 20px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa" />
@@ -90,26 +112,6 @@
         </div>
       </div>
     </div>
-    <br>
-    <footer style="display :flex" :style="isMobile ? {} : { width: '49%' }">
-      <span class="stretch" style="margin-right: auto" />
-      <el-tooltip v-if="!requestStatus.generating" content="continue" placement="bottom">
-        <el-button :icon="DArrowRight" size="small" @click="requestLlmServer(messagesComputed)" />
-      </el-tooltip>
-      <el-tooltip v-if="requestStatus.generating" content="stop generating" placement="bottom">
-        <el-button :icon="VideoPause" size="small" @click="requestStatus.generating = false" />
-      </el-tooltip>
-      <el-tooltip content="try again" placement="bottom">
-        <el-button :icon="Refresh" size="small" @click="tokens = []; requestLlmServer(messages)" />
-      </el-tooltip>
-      <el-tooltip content="edit" placement="bottom">
-        <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
-      </el-tooltip>
-      <el-tooltip content="copy" placement="bottom">
-        <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
-          @click="copyToClipboard(finalMessage.content)" />
-      </el-tooltip>
-    </footer>
 
     <div @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true"
       ref="floatPatchPannelRef" style="position: absolute; padding-top: 4px;" :style="{
