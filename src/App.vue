@@ -199,7 +199,7 @@
     <el-divider content-position="left">new dialogue:</el-divider>
     <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
 
-      <Message :message="newTurnMessage"
+      <Message :message="newTurnMessage" @delete-message="newTurnMessage.content = ''"
         @send-button="messages = messagesComputed.concat([newTurnMessage]); tokens = []; newTurnMessage = { role: 'user', content: '' }; requestLlmServer(messages)" />
     </div>
 
@@ -315,6 +315,7 @@ function useSelectedNodes(containerRef) {
 
   useEventListener(document, 'mouseup', mouseUpUpdateSelectedNodes);
   useEventListener(document, 'touchend', mouseUpUpdateSelectedNodes);
+  useEventListener(document, 'focusin', mouseUpUpdateSelectedNodes);  // Close when double click
 
   return selectedNodes;
 }
@@ -341,6 +342,7 @@ const selectedTokens = computed(() => {
 
   const startPatchIndex = Number(startNode.attributes['patch-index'].value)
   const endPatchIndex = Number(endNode.attributes['patch-index'].value)
+  // console.log('selectedNodes', startPatchIndex, endPatchIndex)
 
   const startTokenIndex = patchs.value[startPatchIndex].tokens[0].tokenIndex
   const endPatch = patchs.value[endPatchIndex]
@@ -476,6 +478,8 @@ var messages = [{ role: "system", content: "" }, { role: "user", content: "用�
 // var messages = [{ role: "user", content: "just reply `🧎🏿‍♂️‍➡️`" }]
 // var messages = [{ role: "user", content: "just repeat 1 time: `पत्नी`" }]
 var messages = [{ role: "system", content: "" }, { role: "user", content: "🍓草莓的英文单词有几个 R ?" }]
+
+// var messages = [{ role: "system", content: "" }, { role: "user", content: "tell me a common saying" }, {"role": "assistant", "content": "Here is a common saying about apple. An apple a day, keeps"}]
 
 var messages = ref(messages)
 
