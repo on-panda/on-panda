@@ -3,9 +3,10 @@
     <div style="display :flex;">
       <p class="role-name" :style="messageRoleNameStyle(props.message)"> {{ props.message['role'] }}:</p>
       <span class="stretch" style="margin-right: auto" />
-      <el-tooltip content="Delete" placement="top">
-        <el-button :icon="Close" size="small" style="width: 24px;height: 15px; margin-top: 13px; margin-right: 5px;"
-          @click="$emit('deleteMessage')" />
+      <el-tooltip :content="props.message['content'] ? 'Clear' : 'Delete'" placement="top">
+        <el-button :icon="props.message['content'] ? Delete : Close" size="small"
+          style="width: 24px;height: 15px; margin-top: 13px; margin-right: 5px;"
+          @click="props.message['content'] ? (props.message['content'] = '') : $emit('deleteMessage')" />
       </el-tooltip>
     </div>
     <div style="display: flex; justify-content: space-between">
@@ -33,7 +34,7 @@
 import { messageRoleNameStyle } from '@/utils/styleUtils'
 import MessageMarkdown from './MessageMarkdown.vue'
 
-import { Close } from '@element-plus/icons-vue'
+import { Close, Delete } from '@element-plus/icons-vue'
 
 const props = defineProps({
   message: {

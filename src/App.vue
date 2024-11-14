@@ -88,7 +88,7 @@
         <code>{{ tokensModelNames }}</code>
         <span v-if="tokens.length && tokens[tokens.length - 1]?.usage?.prompt_tokens"> ｜ tokens: {{ tokens[tokens.length
           - 1]?.usage?.prompt_tokens }} + {{ tokens[tokens.length - 1]?.usage?.completion_tokens }} </span>
-        <span v-if="entropyTokens.length > 1"> ｜ entropy: {{ Math.round(entropyTotal) }} ÷ {{ entropyTokens.length }} =
+        <span v-if="entropyTokens.length > 1"> ｜ entropy: {{ entropyTotal.toFixed(1) }} ÷ {{ entropyTokens.length }} =
           {{ (entropyTotal / entropyTokens.length).toFixed(2) }} bit </span>
 
       </small>
@@ -155,10 +155,10 @@
         </div>
         <footer>
           <hr>
-          <span v-if="activateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;">{{
-            (-Math.log2(Math.exp(activateLogprobItem.logprob))).toFixed(2) }} bit<br></span>
-          <span v-if="activateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;">{{
-            Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
+          <span v-if="activateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;"> entropy: {{
+            (-Math.log2(Math.exp(activateLogprobItem.logprob))).toFixed(2) }} bit<br>
+            {{
+              Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
           <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
             [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') :
               activateLogprobItem.bytes
@@ -319,14 +319,14 @@ async function requestPromptLogprobs() {
     top_logprobs: apiConfig.value.chatConfig.top_logprobs,
     prompt_logprobs: apiConfig.value.chatConfig.top_logprobs,
   }
-  try{
+  try {
 
     var json = await openai.value.chat.completions.create(body);
-  
+
     var lastMessageContent = messages[messages.length - 1].content
     var lastMessageContent_ = ''
     var tokensNew = []
-    if(!json.prompt_logprobs_list){
+    if (!json.prompt_logprobs_list) {
       ElMessage({
         showClose: true,
         message: 'No prompt_logprobs in response, maybe the model does not support prompt_logprobs',
@@ -338,7 +338,7 @@ async function requestPromptLogprobs() {
     for (var i = json.prompt_logprobs_list.length - 1; i >= 0; i--) {
       var logprobs = json.prompt_logprobs_list[i]
       var token_content = logprobs.content[0].token
-  
+
       if ((token_content + lastMessageContent_).length > lastMessageContent.length) {
         break
       }
@@ -363,15 +363,15 @@ async function requestPromptLogprobs() {
       })
       usage.completion_tokens += 1
     }
-  
+
     lastToken = tokensNew[tokensNew.length - 1]
     lastToken.model = json.model
     lastToken.usage = usage
-  
+
     tokensNew.map((token, tokenIndex) => {
       token.tokenIndex = tokenIndex
     })
-  
+
     tokens.value = tokensNew
     ElMessage({
       showClose: true,
@@ -380,7 +380,7 @@ async function requestPromptLogprobs() {
       duration: 5000,
     })
   }
-  catch(error){
+  catch (error) {
     warning(error)
   }
 }
