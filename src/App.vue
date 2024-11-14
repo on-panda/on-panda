@@ -373,6 +373,12 @@ async function requestPromptLogprobs() {
     })
   
     tokens.value = tokensNew
+    ElMessage({
+      showClose: true,
+      message: 'Response probability and entropy refreshed',
+      type: 'success',
+      duration: 5000,
+    })
   }
   catch(error){
     warning(error)
