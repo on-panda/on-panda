@@ -691,6 +691,19 @@ async function requestLlmServer(messages) {
         // p(token.delta?.content, token)
       }
     }
+    if (tokens.value.length > 2) {  // workround for last token is empty and only have finish_reason
+      const lastToken = tokens.value[tokens.value.length - 1]
+      const lastToken2 = tokens.value[tokens.value.length - 2]
+      if (lastToken.finish_reason && !lastToken.logprobs && lastToken2.logprobs) {
+        lastToken2.finish_reason = lastToken.finish_reason
+        for (var key in ['stop_reason', 'usage']) {
+          if (lastToken[key]) {
+            lastToken2[key] = lastToken[key]
+          }
+        }
+        tokens.value.pop()
+      }
+    }
     requestStatus.value.generating = false
   } catch (error) {
     requestStatus.value.generating = false
