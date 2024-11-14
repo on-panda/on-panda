@@ -64,8 +64,13 @@
         <el-tooltip content="try again" placement="top">
           <el-button :icon="Refresh" size="small" @click="tokens = []; requestLlmServer(messages)" />
         </el-tooltip>
-        <el-tooltip content="edit" placement="top">
+        <el-tooltip v-if="0" content="edit (TBD)" placement="top">
           <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
+        </el-tooltip>
+        <el-tooltip content="refresh probability (only llama, qwen)" placement="top">
+          <el-button :icon="View" size="small" :disabled="!finalMessage.content || requestStatus.generating"
+            @click="requestPromptLogprobs" />
+          @click="requestPromptLogprobs" />
         </el-tooltip>
         <el-tooltip content="copy" placement="top">
           <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
@@ -83,6 +88,9 @@
         <code>{{ tokensModelNames }}</code>
         <span v-if="tokens.length && tokens[tokens.length - 1]?.usage?.prompt_tokens"> ｜ tokens: {{ tokens[tokens.length
           - 1]?.usage?.prompt_tokens }} + {{ tokens[tokens.length - 1]?.usage?.completion_tokens }} </span>
+        <span v-if="entropyTokens.length > 1"> ｜ entropy: {{ Math.round(entropyTotal) }} ÷ {{ entropyTokens.length }} =
+          {{ (entropyTotal / entropyTokens.length).toFixed(2) }} bit </span>
+
       </small>
       <small style="color: #888;" v-if="!isMobile"> rendered markdown </small>
     </div>
@@ -147,6 +155,8 @@
         </div>
         <footer>
           <hr>
+          <span v-if="activateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;">{{
+            (-Math.log2(Math.exp(activateLogprobItem.logprob))).toFixed(2) }} bit<br></span>
           <span v-if="activateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;">{{
             Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
           <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
@@ -284,7 +294,91 @@ import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils'
 import { p, escapeHTML, copyToClipboard } from '@/utils/commonUtils'
 import { messageRoleNameStyle } from '@/utils/styleUtils'
 
-import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion } from '@element-plus/icons-vue'
+import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View } from '@element-plus/icons-vue'
+
+
+var entropyTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content[0]?.logprob === "number"))
+
+var entropyTotal = computed(
+  () => entropyTokens.value.reduce((sum, token) => sum + - Math.log2(probOfToken(token)), 0)
+)
+
+async function requestPromptLogprobs() {
+  // TODO auto run when chatConfig is changed
+  var messages = messagesComputed.value
+  messages = messages.filter(message => message.content)
+  console.assert(messages[messages.length - 1].role == "assistant", "last message should be assistant", messages)
+  var body = {
+    messages: messages,
+    model: apiConfig.value.chatConfig.model,
+    temperature: apiConfig.value.chatConfig.temperature,
+    logprobs: true,
+    add_generation_prompt: false,
+    continue_final_message: true,
+    max_tokens: 1,
+    top_logprobs: apiConfig.value.chatConfig.top_logprobs,
+    prompt_logprobs: apiConfig.value.chatConfig.top_logprobs,
+  }
+  try{
+
+    var json = await openai.value.chat.completions.create(body);
+  
+    var lastMessageContent = messages[messages.length - 1].content
+    var lastMessageContent_ = ''
+    var tokensNew = []
+    if(!json.prompt_logprobs_list){
+      ElMessage({
+        showClose: true,
+        message: 'No prompt_logprobs in response, maybe the model does not support prompt_logprobs',
+        type: 'error',
+        duration: 10000,
+      })
+      return
+    }
+    for (var i = json.prompt_logprobs_list.length - 1; i >= 0; i--) {
+      var logprobs = json.prompt_logprobs_list[i]
+      var token_content = logprobs.content[0].token
+  
+      if ((token_content + lastMessageContent_).length > lastMessageContent.length) {
+        break
+      }
+      tokensNew.unshift({
+        delta: { role: tokens.value[0].delta.role, content: token_content },
+        logprobs: logprobs,
+        model: tokens.value[0].model,
+      })
+      lastMessageContent_ = token_content + lastMessageContent_
+    }
+    var lastToken = json.choices[0]
+    var usage = {
+      prompt_tokens: json.prompt_logprobs_list.length - tokensNew.length + 2,
+      completion_tokens: tokensNew.length,
+    }
+    if (lastToken.finish_reason == "stop") {  // if finish_reason is stop, add to tokensNew
+      tokensNew.push({
+        delta: { role: tokens.value[0].role, content: "" },
+        logprobs: lastToken.logprobs,
+        model: json.model,
+        finish_reason: lastToken.finish_reason,
+      })
+      usage.completion_tokens += 1
+    }
+  
+    lastToken = tokensNew[tokensNew.length - 1]
+    lastToken.model = json.model
+    lastToken.usage = usage
+  
+    tokensNew.map((token, tokenIndex) => {
+      token.tokenIndex = tokenIndex
+    })
+  
+    tokens.value = tokensNew
+  }
+  catch(error){
+    warning(error)
+  }
+}
+
 
 function useSelectedNodes(containerRef) {
   const selectedNodes = ref({ startNode: null, endNode: null });
@@ -531,7 +625,9 @@ watch(metaApiConfigs, async (newValue) => {
   }, {});
 }, { immediate: true });
 
-const modelName = ref('on-panda')  // using endpoint_name == 'on-panda' as default model
+var modelName = ref('on-panda')  // using endpoint_name == 'on-panda' as default model
+// var modelName = ref('llama3')
+// setTimeout(requestPromptLogprobs, 3000)
 
 const modelNameTags = {
   'on-panda': 'on-panda',
@@ -721,10 +817,12 @@ const assistentResponseContent = computed(() => {
 const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
 
 function probOfToken(token) {
-  var prob = Math.exp(token.logprobs?.content[0]?.logprob)
-  if (!isFinite(prob)) {
-    if (token.tokenIndex === 0) {
-      // first role token has no prob and will in first patch
+  var logprob = token.logprobs?.content[0]?.logprob
+  var prob = Math.exp(logprob)
+
+  if (typeof logprob !== 'number') {
+    if (token.tokenIndex === 0 && !('content' in token.delta)) {
+      // if first role token has no prob and will in first patch
       prob = 1
     }
   }
@@ -864,7 +962,7 @@ const finalMessage = computed(() => {
     const delta = { ...delta1 }
     for (var key in delta2) {
       delta[key] = (delta[key] || "") + (delta2[key] || "")
-      if (key === "role") {
+      if (key === "role" && delta2.role) {
         role = delta2.role
       }
     }

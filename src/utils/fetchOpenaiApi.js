@@ -70,8 +70,46 @@ export class OpenAI {
         },
       };
     } else {
-      // 非流式响应，直接返回 JSON 数据
-      const json = await response.json();
+      var raw = await response.text();
+      const json = JSON.parse(raw);
+      if (json.prompt_logprobs) {
+        // workround for unknow which token is chosen in prompt_logprobs (vLLM BUG)
+        // list of {token_id: obj} => same as top_logprobs
+        var prompt_logprobs_raw = raw.split("prompt_logprobs")[1]
+
+        const regex = /}},\{"(\d+)":/g;
+        const allMatches = prompt_logprobs_raw.match(regex);
+        const chosens = allMatches.map(match => match.match(/(\d+)/)[1])
+
+
+        json.prompt_logprobs_list = chosens.map((chosenTokenId, index) => {
+          var reverseIndex = index - chosens.length;
+          var promptLogprob = json.prompt_logprobs[json.prompt_logprobs.length + reverseIndex];
+          var sortPrompt = (a, b) => {
+            if (a == chosenTokenId) {
+              return -1;
+            }
+            if (b == chosenTokenId) {
+              return 1;
+            }
+            return promptLogprob[a].rank - promptLogprob[b].rank;
+          }
+          var sortedTokenIds = Object.keys(promptLogprob).sort(sortPrompt);
+
+          var top_logprobs = sortedTokenIds.map(tokenId => {
+            let logprob = promptLogprob[tokenId]
+            logprob.token = logprob.decoded_token
+            logprob.token_id = tokenId
+            return logprob
+          });
+          var logprobChosen = JSON.parse(JSON.stringify(top_logprobs[0]))
+          logprobChosen.top_logprobs = top_logprobs
+          var logprobs = {
+            content: [logprobChosen]
+          }
+          return logprobs
+        });
+      }
       return json;
     }
   }
