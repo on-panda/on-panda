@@ -55,19 +55,19 @@
       <span class="stretch" style="margin-right: auto" />
       <footer style="display :flex; margin-top:5px; margin-bottom:-5px">
         <span class="stretch" style="margin-right: auto" />
-        <el-tooltip v-if="!requestStatus.generating" content="continue" placement="bottom">
+        <el-tooltip v-if="!requestStatus.generating" content="continue" placement="top">
           <el-button :icon="DArrowRight" size="small" @click="requestLlmServer(messagesComputed)" />
         </el-tooltip>
-        <el-tooltip v-if="requestStatus.generating" content="stop generating" placement="bottom">
+        <el-tooltip v-if="requestStatus.generating" content="stop generating" placement="top">
           <el-button :icon="VideoPause" size="small" @click="requestStatus.generating = false" />
         </el-tooltip>
-        <el-tooltip content="try again" placement="bottom">
+        <el-tooltip content="try again" placement="top">
           <el-button :icon="Refresh" size="small" @click="tokens = []; requestLlmServer(messages)" />
         </el-tooltip>
-        <el-tooltip content="edit" placement="bottom">
+        <el-tooltip content="edit" placement="top">
           <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
         </el-tooltip>
-        <el-tooltip content="copy" placement="bottom">
+        <el-tooltip content="copy" placement="top">
           <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
             @click="copyToClipboard(finalMessage.content)" />
         </el-tooltip>
@@ -101,6 +101,12 @@
                 ...(patch.tokens.some(t => t.selected) ? { "background-color": "#0078d7", "color": "#fff" } : {}),
               }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
                 @mouseleave="handleMouseLeavePatchSpan" @dblclick.prevent="setFloatInputPatch($event, patch)"></span>
+              <el-tooltip
+                v-if="apiConfig.support_continue_final_message && tokens.length && tokens[tokens.length - 1].finish_reason == 'length'"
+                content="native continue generating" placement="bottom">
+                <el-button :icon="DArrowRight" size="small" @click="requestLlmServer(messagesComputed)"
+                  style="margin-left: 10px;height: 16px" />
+              </el-tooltip>
             </div>
           </div>
           <br>
