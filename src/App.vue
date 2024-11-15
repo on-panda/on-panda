@@ -84,12 +84,18 @@
         style="margin-right: 8px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa; width:45px" />
     </div>
     <div style="display: flex; justify-content: space-between;">
-      <small style="color: #888;"> by
+      <small style="color: #888;"> model:
         <code>{{ tokensModelNames }}</code>
         <span v-if="tokens.length && tokens[tokens.length - 1]?.usage?.prompt_tokens"> ｜ tokens: {{ tokens[tokens.length
           - 1]?.usage?.prompt_tokens }} + {{ tokens[tokens.length - 1]?.usage?.completion_tokens }} </span>
-        <span v-if="entropyTokens.length > 1"> ｜ entropy: {{ entropyTotal.toFixed(1) }} ÷ {{ entropyTokens.length }} =
-          {{ (entropyTotal / entropyTokens.length).toFixed(2) }} bit </span>
+        <span v-if="bitTokens.length > 1"> ｜ bits / token
+          : {{ bitTotal.toFixed(1) }} ÷ {{ bitTokens.length }} =
+          {{ (bitTotal / bitTokens.length).toFixed(2) }}
+          <!-- <el-icon>
+            <QuestionFilled style="height: 11px;" />
+          </el-icon> -->
+        </span>
+
 
       </small>
       <small style="color: #888;" v-if="!isMobile"> rendered markdown </small>
@@ -153,17 +159,18 @@
             </div>
           </div>
         </div>
-        <footer>
-          <hr>
-          <span v-if="activateLogprobItem.logprob" style="white-space: pre-wrap;font-family: Monospace;"> entropy: {{
-            (-Math.log2(Math.exp(activateLogprobItem.logprob))).toFixed(2) }} bit<br>
+        <footer class="tokenPannel" style="min-height: 24px; padding: 5px;">
+          <button :icon="Close" @click="closeFloatPatchPannel"
+            style="padding: 0px; margin: 0 0px -5px 0px; float:right;">❌</button>
+          <span v-if="activateLogprobItem.logprob" style="font-family: Monospace;"> {{
+            (-Math.log2(Math.exp(activateLogprobItem.logprob))).toFixed(2) }} bit
+            <br>
             {{
               Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
           <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
             [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') :
               activateLogprobItem.bytes
             }}]</span>
-          <button @click="closeFloatPatchPannel" style="padding: 0px; margin: 0 5px 5px 5px; float:right">❌</button>
         </footer>
       </div>
     </div>
@@ -256,16 +263,20 @@
       </el-form-item>
 
       <el-form-item label="max_tokens">
-        <el-input-number v-model="apiConfig.chatConfig.max_tokens" :min="1" :max="65536" :step="1" size="small" />
+        <el-input-number v-model="apiConfig.chatConfig.max_tokens" :min="1" :max="1048576" :step="1" size="small" />
       </el-form-item>
 
       <el-form-item label="top_p">
         <el-input-number v-model="apiConfig.chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
       </el-form-item>
 
-      <el-form-item label="Freq. Penalty">
+      <!-- <el-form-item label="Freq. Penalty">
         <el-input-number v-model="apiConfig.chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01"
           size="small" />
+      </el-form-item> -->
+
+      <el-form-item label="top_logprobs">
+        <el-input-number v-model="apiConfig.chatConfig.top_logprobs" :min="0" :max="50" :step="1" size="small" />
       </el-form-item>
 
       <el-form-item label="continue generating">
@@ -294,13 +305,13 @@ import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils'
 import { p, escapeHTML, copyToClipboard } from '@/utils/commonUtils'
 import { messageRoleNameStyle } from '@/utils/styleUtils'
 
-import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View } from '@element-plus/icons-vue'
+import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close } from '@element-plus/icons-vue'
 
 
-var entropyTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content[0]?.logprob === "number"))
+var bitTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content[0]?.logprob === "number"))
 
-var entropyTotal = computed(
-  () => entropyTokens.value.reduce((sum, token) => sum + - Math.log2(probOfToken(token)), 0)
+var bitTotal = computed(
+  () => bitTokens.value.reduce((sum, token) => sum + - Math.log2(probOfToken(token)), 0)
 )
 
 async function requestPromptLogprobs() {
@@ -375,7 +386,7 @@ async function requestPromptLogprobs() {
     tokens.value = tokensNew
     ElMessage({
       showClose: true,
-      message: 'Response probability and entropy refreshed',
+      message: 'Response probability refreshed',
       type: 'success',
       duration: 5000,
     })
@@ -735,6 +746,9 @@ async function requestLlmServer(messages) {
     var generatedContent = ""
     var tokensValuePtr = tokens.value
     for await (const chunk of stream) {
+      if ("error" in chunk) {
+        throw new Error(JSON.stringify(chunk))
+      }
       streamIndex++
       if (requestNumber !== requestStatus.value.requestTimes) {
         console.log(new Error("Request number mismatch"))
@@ -1159,12 +1173,12 @@ onBeforeUnmount(async () => {
 .tokenPannel {
   border: 1px solid #ccc;
   padding: 0px;
-}
-
-.floatPatchPannel {
   border: 1px solid #ccc;
   border-radius: 5px;
   background-color: #f9f9f9;
+}
+
+.floatPatchPannel {
   position: absolute;
   cursor: default;
 }
