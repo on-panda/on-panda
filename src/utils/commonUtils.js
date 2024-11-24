@@ -77,3 +77,36 @@ export async function copyToClipboard(string) {
     duration: 2000,
   })
 }
+
+
+export async function convertImageUrlToBase64(imageUrl) {
+  try {
+    // Fetch the image as a Blob
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.statusText}`);
+    }
+    const blob = await response.blob();
+
+    // Get the image type (e.g., image/jpeg, image/png)
+    const contentType = blob.type || "image/jpeg";
+
+    // Convert the Blob to Base64
+    const base64Image = await blobToBase64(blob);
+
+    // Construct the JSON object
+    return `data:${contentType};base64,${base64Image}`
+  } catch (error) {
+    console.error("Error converting image to Base64 JSON:", error);
+    throw error;
+  }
+}
+
+export function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(",")[1]); // Extract Base64 part
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}

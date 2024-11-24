@@ -600,6 +600,19 @@ var messages = [{ role: "system", content: "" }, { role: "user", content: "ðŸ“è
 
 // var messages = [{ role: "system", content: "" }, { role: "user", content: "tell me a common saying" }, {"role": "assistant", "content": "Here is a common saying about apple. An apple a day, keeps"}]
 
+// VLM
+var messagesVlm = [{ role: "system", content: "" }, {
+  role: "user", content: [
+    { type: "text", text: "What are in these images?" },
+    {
+      type: "image_url", image_url: {
+        url: "https://docs.vllm.ai/en/latest/_static/vllm-logo-text-light.png"
+      },
+    }
+  ]
+}]
+
+
 var messages = ref(messages)
 
 
@@ -644,10 +657,13 @@ watch(metaApiConfigs, async (newValue) => {
 
 var modelName = ref('on-panda')  // using endpoint_name == 'on-panda' as default model
 // var modelName = ref('llama3')
+// var modelName = ref('vlm')
+
 // setTimeout(requestPromptLogprobs, 3000)
 
 const modelNameTags = {
   'on-panda': 'on-panda',
+  'vlm': 'vlm',
   'llama3.1': 'others-llama3p1-70b-chat',
   'qwen2.5': 'others-qwen2p5-math-72b-chat',
   'gpt4o': 'chatgpt-4o-latest',

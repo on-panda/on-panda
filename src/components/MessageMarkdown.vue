@@ -36,3 +36,15 @@ const htmlContent = computed(() => {
   return markdown.render(content)
 })
 </script>
+<style>
+
+.md-content img {
+  max-width: 100%;
+  max-height: 100%;
+  max-width: 512px;
+  max-height: 512px;
+  box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 8px;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+</style>
