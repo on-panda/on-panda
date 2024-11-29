@@ -38,6 +38,7 @@
       - Click a candidate to continue generating text based on the chosen word. <br>
       - Double-click a word to modify it, and the LLM will seamlessly continue writing. <br>
       - Select a piece of text and then manually edit it or have the LLM optimize it. <br>
+      - Double click the role to edit role name. <br>
     </details>
 
     <hr>
@@ -49,9 +50,7 @@
 
 
     <div style="display: flex; justify-content: space-between;" :style="isMobile ? {} : { width: '50%' }">
-      <p class="role-name" :style="messageRoleNameStyle(tokens.length && finalMessage)"> {{ tokens.length ?
-        tokens[0].delta.role :
-        "unknown" }}:</p>
+      <MessageRole :message="finalMessage" />
       <span class="stretch" style="margin-right: auto" />
       <footer style="display :flex; margin-top:5px; margin-bottom:-5px">
         <span class="stretch" style="margin-right: auto" />
@@ -67,7 +66,7 @@
         <el-tooltip v-if="0" content="edit (TBD)" placement="top">
           <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
         </el-tooltip>
-        <el-tooltip content="refresh probability (only llama, qwen)" placement="top">
+        <el-tooltip content="refresh probability" placement="top">
           <el-button :icon="View" size="small" :disabled="!finalMessage.content || requestStatus.generating"
             @click="requestPromptLogprobs" />
           @click="requestPromptLogprobs" />
@@ -299,11 +298,11 @@ import { ref, computed, watch, watchEffect } from 'vue'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import Message from './components/Message.vue'
+import MessageRole from './components/MessageRole.vue'
 import MessageMarkdown from './components/MessageMarkdown.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils'
 import { p, escapeHTML, copyToClipboard } from '@/utils/commonUtils'
-import { messageRoleNameStyle } from '@/utils/styleUtils'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close } from '@element-plus/icons-vue'
 
@@ -603,7 +602,7 @@ var messages = [{ role: "system", content: "" }, { role: "user", content: "🍓�
 // VLM
 var messagesVlm = [{ role: "system", content: "" }, {
   role: "user", content: [
-    { type: "text", text: "What are in these images?" },
+    { type: "text", text: "“v” 是由什么形状构成？" },
     {
       type: "image_url", image_url: {
         url: "https://docs.vllm.ai/en/latest/_static/vllm-logo-text-light.png"
@@ -612,7 +611,7 @@ var messagesVlm = [{ role: "system", content: "" }, {
   ]
 }]
 
-
+// messages = messagesVlm
 var messages = ref(messages)
 
 

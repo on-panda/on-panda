@@ -1,7 +1,7 @@
 <template>
   <div style="max-width: 1024px;">
     <div style="display :flex;">
-      <p class="role-name" :style="messageRoleNameStyle(props.message)"> {{ props.message['role'] }}:</p>
+      <MessageRole :message="props.message" />
       <span class="stretch" style="margin-right: auto" />
       <el-tooltip :content="props.message['content'] ? 'Clear' : 'Delete'" placement="top">
         <el-button :icon="props.message['content'] ? Delete : Close" size="small"
@@ -31,7 +31,7 @@
 </template>
 
 <script setup>
-import { messageRoleNameStyle } from '@/utils/styleUtils'
+import MessageRole from './MessageRole.vue'
 import MessageMarkdown from './MessageMarkdown.vue'
 
 import { Close, Delete } from '@element-plus/icons-vue'
