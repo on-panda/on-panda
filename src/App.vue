@@ -34,11 +34,12 @@
         style="box-shadow: 0 0px 8px rgba(0, 0, 0, 0.5);width: 406px;max-width: 90%;">
       <br>
       <br>
-      - Move to the bad word, and alternative candidates will appear. <br>
+      - Move to the problematic word, and alternative candidates will appear. <br>
       - Click a candidate to continue generating text based on the chosen word. <br>
-      - Double-click a word to modify it, and the LLM will seamlessly continue writing. <br>
+      - Double-click a word to edit it, and the LLM will seamlessly continue writing. <br>
       - Select a piece of text and then manually edit it or have the LLM optimize it. <br>
-      - Double click the role to edit role name. <br>
+      - Support pasting image on message editing area to enable VLM. <br>
+      - Double click the role to edit the role name. <br>
     </details>
 
     <hr>
