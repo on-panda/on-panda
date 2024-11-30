@@ -8,7 +8,7 @@
 
 </template>
 <script setup>
-import { defineProps, ref, toValue } from 'vue'
+import { ref, toValue } from 'vue'
 
 const props = defineProps({
     message: {

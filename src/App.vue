@@ -612,7 +612,24 @@ var messagesVlm = [{ role: "system", content: "" }, {
   ]
 }]
 
+var messagesAudio = [
+  {
+    "role": "system",
+    "content": "请用口语化的文字回答"
+  },
+  {
+    "role": "human",
+    "content": [
+      {
+        "type": "audio_token",
+        "audio_token": "<audio_667><audio_667><audio_4390><audio_1326><audio_3886><audio_993><audio_689><audio_4171><audio_1367><audio_1349><audio_194><audio_853><audio_3690><audio_1044><audio_3123><audio_759><audio_776><audio_2449><audio_2502><audio_3738><audio_573><audio_573><audio_1226><audio_3270><audio_2377><audio_72><audio_35><audio_4106><audio_2267><audio_2930><audio_321><audio_321><audio_1155><audio_3274><audio_3450><audio_866><audio_54><audio_3317><audio_1535><audio_1484><audio_54><audio_925><audio_2264><audio_3593><audio_1089><audio_925><audio_133><audio_1484><audio_1768><audio_1146><audio_634><audio_634><audio_3074><audio_3311><audio_4329><audio_123><audio_936><audio_2265><audio_3172><audio_2317><audio_866><audio_72><audio_1048><audio_5080><audio_2377><audio_72><audio_936><audio_3211><audio_1795><audio_1039><audio_571><audio_431><audio_3186><audio_3186><audio_3186>"
+      }
+    ]
+  }
+]
+
 // messages = messagesVlm
+// messages = messagesAudio
 var messages = ref(messages)
 
 
@@ -658,14 +675,16 @@ watch(metaApiConfigs, async (newValue) => {
 var modelName = ref('on-panda')  // using endpoint_name == 'on-panda' as default model
 // var modelName = ref('llama3')
 // var modelName = ref('vlm')
+// var modelName = ref('omni')
 
 // setTimeout(requestPromptLogprobs, 3000)
 
 const modelNameTags = {
   'on-panda': 'on-panda',
   'vlm': 'vlm',
+  'omni': 'omni',
   'llama3.1': 'others-llama3p1-70b-chat',
-  'qwen2.5': 'others-qwen2p5-math-72b-chat',
+  // 'qwen2.5': 'others-qwen2p5-math-72b-chat',
   'gpt4o': 'chatgpt-4o-latest',
   'claude3.5': 'claude-3-5-sonnet-20241022',
 }

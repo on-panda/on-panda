@@ -35,7 +35,7 @@ import MessageRole from './MessageRole.vue'
 import MessageMarkdown from './MessageMarkdown.vue'
 
 import { Close, Delete } from '@element-plus/icons-vue'
-import { computed, defineProps, defineEmits, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { convertImageUrlToBase64 } from '@/utils/commonUtils'
 const props = defineProps({
   message: {
