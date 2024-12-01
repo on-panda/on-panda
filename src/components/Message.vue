@@ -1,5 +1,5 @@
 <template>
-  <div style="max-width: 1024px;">
+  <div class="message" style="max-width: 1024px;">
     <div style="display :flex;">
       <MessageRole :message="props.message" />
       <span class="stretch" style="margin-right: auto" />
@@ -20,6 +20,10 @@
         <b>Send➡️</b><br>
         <small>ctrl+enter</small> </button>
     </div>
+    <editableStringAttribute title="description: " :content="props.message['description']" :editable="false"
+      v-if="props.message['description']" />
+    <editableStringAttribute title="comment: &nbsp;&nbsp;&nbsp;&nbsp;" :content="props.message['comment']"
+      :editable="true" v-if="props.message['comment']" />
     <details>
       <summary>
         <small style="color: #888;">rendered markdown:</small>
@@ -33,6 +37,7 @@
 <script setup>
 import MessageRole from './MessageRole.vue'
 import MessageMarkdown from './MessageMarkdown.vue'
+import editableStringAttribute from './editableStringAttribute.vue'
 
 import { Close, Delete } from '@element-plus/icons-vue'
 import { computed, ref } from 'vue'

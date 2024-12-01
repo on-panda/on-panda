@@ -41,7 +41,7 @@ const htmlContent = computed(() => {
 .md-content img {
   max-width: 100%;
   max-height: 100%;
-  max-width: 386px;
+  max-width: 322px;
   max-height: 386px;
   box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 8px;
   margin-left: 10px;

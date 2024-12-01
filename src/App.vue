@@ -42,7 +42,22 @@
       - Double click the role to edit the role name. <br>
     </details>
 
-    <hr>
+    <el-divider content-position="left">
+      examples:
+    </el-divider>
+
+    <div style="line-height: 2">
+      <template v-for="(func, name) in exampleNameToFunc">
+        <el-tag type="info" @click="func()" style="cursor: pointer;">
+          {{ name }}
+        </el-tag>
+        &nbsp;
+      </template>
+    </div>
+
+    <el-divider content-position="left">
+      <b> messages:</b>
+    </el-divider>
 
     <template v-for="(message, index) in messages">
       <Message :message="message" @send-button="tokens = []; requestLlmServer(messages)"
@@ -221,7 +236,7 @@
     </div>
 
 
-    <el-divider content-position="left">new dialogue:</el-divider>
+    <el-divider content-position="left">new message:</el-divider>
     <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
 
       <Message :message="newTurnMessage" @delete-message="newTurnMessage.content = ''"
@@ -586,24 +601,79 @@ const defaultApiConfig = {
   },
 }
 
+function openAllDetails() {
+  document.querySelectorAll('.message details').forEach(details => {
+    details.open = true;
+  });
+}
 
+const exampleNameToFunc = {
+  "R in 🍓": () => {
+    messages.value = [{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`coment` is editable for annotator" }]
+    tokens.value = []
+    requestLlmServer(messages)
+  },
+  "VLM": () => {
+    modelName.value = "vlm"
+    messages.value = messagesVlmExample
+    openAllDetails()
+    tokens.value = []
+    requestLlmServer(messages)
+  },
+  "audio": () => {
+    modelName.value = "audio"
+    messages.value = messagesAudioExample
+    tokens.value = []
+    requestLlmServer(messages)
+  },
+  "tokenizer": () => {
+    messages.value = messagesTokenizerExample
+    tokens.value = []
+    requestLlmServer(messages)
+  },
+  "random": () => {
+    messages.value = [{ role: "user", content: "just output a random float128 number without any words, no code" }]
+    tokens.value = []
+    requestLlmServer(messages)
+  },
+  "笑话": () => {
+    messages.value = [{ role: "user", content: "讲一个关于西游记的笑话, 100字" }]
+    tokens.value = []
+    requestLlmServer(messages)
+  },
+  "诗": () => {
+    messages.value = [{ role: "user", content: "写藏头诗：\n人工智能，大有可为" }]
+    tokens.value = []
+    requestLlmServer(messages)
+  },
+  "计算": () => {
+    messages.value = [{ role: "system", content: "" }, { role: "user", content: "已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
+    tokens.value = []
+    requestLlmServer(messages)
+  },
+  "AIME": () => {
+    messages.value = [{ role: "system", content: "" }, { role: "user", content: "Real numbers $x$ and $y$ with $x,y>1$ satisfy $\log_x(y^x)=\log_y(x^{4y})=10.$ What is the value of $xy$?", description: "Answer is 25" }]
+    tokens.value = []
+    requestLlmServer(messages)
+  },
+  "continue": () => {
+    messages.value = messagesContinueExample
+    tokens.value = []
+    requestLlmServer(messages)
+  },
+}
 
-// var messages = [{ role: "user", content: "Repeat only once: `=🧎🏿‍♂️‍➡️磊<hr>\n蘒    𝒀𝒆𝒔`, no other words" }]
-// var messages = [{ role: "user", content: "just output a random float128 number without any words, no code" }]
-var messages = [{ role: "system", content: "" }, { role: "user", content: "用中文讲一个关于西游记的100字短笑话" }]
-// var messages = [{ role: "user", content: "Write a blog to introduce about: onPanda: on-Policy Alignment Data Annotator (PoC)\nScaling up your data efficiency before scaling up your data." }]
-// var messages = [{ role: "user", content: "奥数题:已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
-// var messages = [{ role: "user", content: "写藏头诗：人工智能，大有可为" }]
-// var messages = [{ role: "user", content: "just reply `🧎🏿‍♂️‍➡️`" }]
 // var messages = [{ role: "user", content: "just repeat 1 time: `पत्नी`" }]
 var messages = [{ role: "system", content: "" }, { role: "user", content: "🍓草莓的英文单词有几个 R ?" }]
 
-// var messages = [{ role: "system", content: "" }, { role: "user", content: "tell me a common saying" }, {"role": "assistant", "content": "Here is a common saying about apple. An apple a day, keeps"}]
+var messagesTokenizerExample = [{ role: "user", content: "Repeat only once, no other words:\n`<|磊|>🧎🏿‍♂️‍➡️\\n<hr>\n蘒    𝒀𝒆𝒔पत्नी`" }]
+
+var messagesContinueExample = [{ role: "user", content: "Tell me a common saying" }, { "role": "assistant", "content": "An apple a day, keeps", "description": "continue example is not ready yet" }]
 
 // VLM
-var messagesVlm = [{ role: "system", content: "" }, {
+var messagesVlmExample = [{ role: "system", content: "" }, {
   role: "user", content: [
-    { type: "text", text: "“v” 是由什么形状构成？" },
+    { type: "text", text: "图中的 “v” 是由什么形状构成？\n" },
     {
       type: "image_url", image_url: {
         url: "https://docs.vllm.ai/en/latest/_static/vllm-logo-text-light.png"
@@ -612,14 +682,15 @@ var messagesVlm = [{ role: "system", content: "" }, {
   ]
 }]
 
-var messagesAudio = [
+var messagesAudioExample = [
   {
     "role": "system",
-    "content": "请用口语化的文字回答"
+    "content": ""
   },
   {
-    "role": "human",
+    "role": "user",
     "content": [
+      { type: "text", text: "分两步:\n1. 把语音转换为文字\n2.回答语音问题\n" },
       {
         "type": "audio_token",
         "audio_token": "<audio_667><audio_667><audio_4390><audio_1326><audio_3886><audio_993><audio_689><audio_4171><audio_1367><audio_1349><audio_194><audio_853><audio_3690><audio_1044><audio_3123><audio_759><audio_776><audio_2449><audio_2502><audio_3738><audio_573><audio_573><audio_1226><audio_3270><audio_2377><audio_72><audio_35><audio_4106><audio_2267><audio_2930><audio_321><audio_321><audio_1155><audio_3274><audio_3450><audio_866><audio_54><audio_3317><audio_1535><audio_1484><audio_54><audio_925><audio_2264><audio_3593><audio_1089><audio_925><audio_133><audio_1484><audio_1768><audio_1146><audio_634><audio_634><audio_3074><audio_3311><audio_4329><audio_123><audio_936><audio_2265><audio_3172><audio_2317><audio_866><audio_72><audio_1048><audio_5080><audio_2377><audio_72><audio_936><audio_3211><audio_1795><audio_1039><audio_571><audio_431><audio_3186><audio_3186><audio_3186>"
@@ -628,8 +699,8 @@ var messagesAudio = [
   }
 ]
 
-// messages = messagesVlm
-// messages = messagesAudio
+// messages = messagesVlmExample
+// messages = messagesAudioExample
 var messages = ref(messages)
 
 
@@ -675,14 +746,14 @@ watch(metaApiConfigs, async (newValue) => {
 var modelName = ref('on-panda')  // using endpoint_name == 'on-panda' as default model
 // var modelName = ref('llama3')
 // var modelName = ref('vlm')
-// var modelName = ref('omni')
+// var modelName = ref('audio')
 
 // setTimeout(requestPromptLogprobs, 3000)
 
 const modelNameTags = {
   'on-panda': 'on-panda',
   'vlm': 'vlm',
-  'omni': 'omni',
+  'audio': 'audio',
   'llama3.1': 'others-llama3p1-70b-chat',
   // 'qwen2.5': 'others-qwen2p5-math-72b-chat',
   'gpt4o': 'chatgpt-4o-latest',
