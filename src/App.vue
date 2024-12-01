@@ -48,10 +48,9 @@
 
     <div style="line-height: 2">
       <template v-for="(func, name) in exampleNameToFunc">
-        <el-tag type="info" @click="func()" style="cursor: pointer;">
+        <el-tag type="info" @click="func()" style="cursor: pointer; margin-left: 5px;">
           {{ name }}
         </el-tag>
-        &nbsp;
       </template>
     </div>
 
@@ -59,10 +58,10 @@
       <b> messages:</b>
     </el-divider>
 
-    <template v-for="(message, index) in messages">
-      <Message :message="message" @send-button="tokens = []; requestLlmServer(messages)"
-        @delete-message="messages.splice(index, 1)" />
-    </template>
+    <div class="promptMessages">
+      <Message v-for="(message, index) in messages" :message="message"
+        @send-button="tokens = []; requestLlmServer(messages)" @delete-message="messages.splice(index, 1)" />
+    </div>
 
 
     <div style="display: flex; justify-content: space-between;" :style="isMobile ? {} : { width: '50%' }">
@@ -589,10 +588,7 @@ const defaultApiConfig = {
     stream: true,
     logprobs: true,
     top_logprobs: 20,
-    // top_p: 0.9,
-    // top_p: 0.0001,
     // top_k: 2,
-    // max_tokens: 4,
     max_tokens: 1024,
     temperature: 0.5,
     stream_options: {
@@ -602,12 +598,19 @@ const defaultApiConfig = {
 }
 
 function openAllDetails() {
-  document.querySelectorAll('.message details').forEach(details => {
+  document.querySelectorAll('.promptMessages details').forEach(details => {
     details.open = true;
   });
 }
 
 const exampleNameToFunc = {
+  "default": () => {
+    modelName.value = "on-panda"
+    messages.value = messagesDefaultExample
+    tokens.value = []
+    requestLlmServer(messages)
+    // location.reload()
+  },
   "R in 🍓": () => {
     messages.value = [{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`coment` is editable for annotator" }]
     tokens.value = []
@@ -616,7 +619,7 @@ const exampleNameToFunc = {
   "VLM": () => {
     modelName.value = "vlm"
     messages.value = messagesVlmExample
-    openAllDetails()
+    setTimeout(openAllDetails, 100)
     tokens.value = []
     requestLlmServer(messages)
   },
@@ -651,6 +654,11 @@ const exampleNameToFunc = {
     tokens.value = []
     requestLlmServer(messages)
   },
+  "count": () => {
+    messages.value = [{ role: "system", content: "" }, { role: "user", content: "How many 1 in 01011010101111011011?", description: "Answer is 13" }]
+    tokens.value = []
+    requestLlmServer(messages)
+  },
   "AIME": () => {
     messages.value = [{ role: "system", content: "" }, { role: "user", content: "Real numbers $x$ and $y$ with $x,y>1$ satisfy $\log_x(y^x)=\log_y(x^{4y})=10.$ What is the value of $xy$?", description: "Answer is 25" }]
     tokens.value = []
@@ -662,16 +670,18 @@ const exampleNameToFunc = {
     requestLlmServer(messages)
   },
 }
-
+var messages
 // var messages = [{ role: "user", content: "just repeat 1 time: `पत्नी`" }]
-var messages = [{ role: "system", content: "" }, { role: "user", content: "🍓草莓的英文单词有几个 R ?" }]
+var messagesDefaultExample = [{ role: "system", content: "" }, { role: "user", content: "🍓草莓的英文单词有几个 R ?" }]
+
+messages = messagesDefaultExample
 
 var messagesTokenizerExample = [{ role: "user", content: "Repeat only once, no other words:\n`<|磊|>🧎🏿‍♂️‍➡️\\n<hr>\n蘒    𝒀𝒆𝒔पत्नी`" }]
 
 var messagesContinueExample = [{ role: "user", content: "Tell me a common saying" }, { "role": "assistant", "content": "An apple a day, keeps", "description": "continue example is not ready yet" }]
 
 // VLM
-var messagesVlmExample = [{ role: "system", content: "" }, {
+var messagesVlmExample = [{
   role: "user", content: [
     { type: "text", text: "图中的 “v” 是由什么形状构成？\n" },
     {
@@ -690,7 +700,7 @@ var messagesAudioExample = [
   {
     "role": "user",
     "content": [
-      { type: "text", text: "分两步:\n1. 把语音转换为文字\n2.回答语音问题\n" },
+      { type: "text", text: "分两步:\n1. 把这段语音转换为文字\n2. 回答语音中的问题\n" },
       {
         "type": "audio_token",
         "audio_token": "<audio_667><audio_667><audio_4390><audio_1326><audio_3886><audio_993><audio_689><audio_4171><audio_1367><audio_1349><audio_194><audio_853><audio_3690><audio_1044><audio_3123><audio_759><audio_776><audio_2449><audio_2502><audio_3738><audio_573><audio_573><audio_1226><audio_3270><audio_2377><audio_72><audio_35><audio_4106><audio_2267><audio_2930><audio_321><audio_321><audio_1155><audio_3274><audio_3450><audio_866><audio_54><audio_3317><audio_1535><audio_1484><audio_54><audio_925><audio_2264><audio_3593><audio_1089><audio_925><audio_133><audio_1484><audio_1768><audio_1146><audio_634><audio_634><audio_3074><audio_3311><audio_4329><audio_123><audio_936><audio_2265><audio_3172><audio_2317><audio_866><audio_72><audio_1048><audio_5080><audio_2377><audio_72><audio_936><audio_3211><audio_1795><audio_1039><audio_571><audio_431><audio_3186><audio_3186><audio_3186>"
