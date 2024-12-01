@@ -676,7 +676,7 @@ var messagesDefaultExample = [{ role: "system", content: "" }, { role: "user", c
 
 messages = messagesDefaultExample
 
-var messagesTokenizerExample = [{ role: "user", content: "Repeat only once, no other words:\n`<|磊|>🧎🏿‍♂️‍➡️\\n<hr>\n蘒    𝒀𝒆𝒔पत्नी`" }]
+var messagesTokenizerExample = [{ role: "user", content: "Repeat only once, no other words:\n```\n<|磊|>🧎🏿‍♂️‍➡️\\n<hr>\n蘒    𝒀𝒆𝒔पत्नी\n```" }]
 
 var messagesContinueExample = [{ role: "user", content: "Tell me a common saying" }, { "role": "assistant", "content": "An apple a day, keeps", "description": "continue example is not ready yet" }]
 
@@ -759,6 +759,12 @@ var modelName = ref('on-panda')  // using endpoint_name == 'on-panda' as default
 // var modelName = ref('audio')
 
 // setTimeout(requestPromptLogprobs, 3000)
+
+watch(modelName, async (newValue) => {  // set modelName to page title
+  if (document.title.endsWith("onPanda")) {
+    document.title = newValue + " | onPanda"
+  }
+})
 
 const modelNameTags = {
   'on-panda': 'on-panda',
