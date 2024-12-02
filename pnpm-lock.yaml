@@ -32,6 +32,9 @@ importers:
       openai:
         specifier: ^4.58.1
         version: 4.58.1
+      pinia:
+        specifier: ^2.1.7
+        version: 2.2.8(vue@3.5.0)
       vue:
         specifier: ^3.4.29
         version: 3.5.0
@@ -396,6 +399,9 @@ packages:
 
   '@vue/compiler-ssr@3.5.0':
     resolution: {integrity: sha512-E263QZmA1dqRd7c3u/sWTLRMpQOT0aZ8av/L9SoD/v/BVMZaWFHPUUBswS+bzrfvG2suJF8vSLKx6k6ba5SUdA==}
+
+  '@vue/devtools-api@6.6.4':
+    resolution: {integrity: sha512-sGhTPMuXqZ1rVOk32RylztWkfXTRhuS7vgAKv0zjqk8gbsHkJ7xfFf+jbySxt7tWObEJwyKaHMikV/WGDiQm8g==}
 
   '@vue/reactivity@3.5.0':
     resolution: {integrity: sha512-Ew3F5riP3B3ZDGjD3ZKb9uZylTTPSqt8hAf4sGbvbjrjDjrFb3Jm15Tk1/w7WwTE5GbQ2Qhwxx1moc9hr8A/OQ==}
@@ -907,6 +913,18 @@ packages:
   picocolors@1.1.0:
     resolution: {integrity: sha512-TQ92mBOW0l3LeMeyLV6mzy/kWr8lkd/hp3mTg7wYK7zJhuBStmGMBG0BdeDZS/dZx1IukaX6Bk11zcln25o1Aw==}
 
+  pinia@2.2.8:
+    resolution: {integrity: sha512-NRTYy2g+kju5tBRe0oNlriZIbMNvma8ZJrpHsp3qudyiMEA8jMmPPKQ2QMHg0Oc4BkUyQYWagACabrwriCK9HQ==}
+    peerDependencies:
+      '@vue/composition-api': ^1.4.0
+      typescript: '>=4.4.4'
+      vue: ^2.6.14 || ^3.5.11
+    peerDependenciesMeta:
+      '@vue/composition-api':
+        optional: true
+      typescript:
+        optional: true
+
   postcss-selector-parser@6.1.2:
     resolution: {integrity: sha512-Q8qQfPiZ+THO/3ZrOrO0cJJKfpYCagtMUkXbnEfmgUjwXg6z/WBeOyS9APBBPCTSiDV+s4SwQGu8yFsiMRIudg==}
     engines: {node: '>=4'}
@@ -1368,6 +1386,8 @@ snapshots:
     dependencies:
       '@vue/compiler-dom': 3.5.0
       '@vue/shared': 3.5.0
+
+  '@vue/devtools-api@6.6.4': {}
 
   '@vue/reactivity@3.5.0':
     dependencies:
@@ -1929,6 +1949,12 @@ snapshots:
   path-key@3.1.1: {}
 
   picocolors@1.1.0: {}
+
+  pinia@2.2.8(vue@3.5.0):
+    dependencies:
+      '@vue/devtools-api': 6.6.4
+      vue: 3.5.0
+      vue-demi: 0.14.10(vue@3.5.0)
 
   postcss-selector-parser@6.1.2:
     dependencies:
