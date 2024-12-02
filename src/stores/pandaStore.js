@@ -11,13 +11,17 @@ const dialogExample = {
     }
 }
 
-var dialogOpExample = {
+var dialogExample0 = {
     operation: {
         type: "send",
     }
 }
+
+dialogExample0.message = [{ role: "user", content: "1+1=" }]
+
+
 const pandaExample = {
-    historys: [dialogExample, dialogExample, dialogExample],
+    historys: [dialogExample0, dialogExample],
     info: {
         description: "Uneditable description",
         comment: "editable comment",
@@ -48,8 +52,8 @@ const pandaExample = {
         }
     ]
 }
-export const useMainStore = defineStore('panda', () => {
-    const historys = ref([])
-    return {}
+export const usePandaStore = defineStore('panda', () => {
+    const panda = ref(pandaExample)
+    return { panda }
 })
 
