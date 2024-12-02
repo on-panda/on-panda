@@ -20,10 +20,12 @@
         <b>Send➡️</b><br>
         <small>ctrl+enter</small> </button>
     </div>
-    <editableStringAttribute title="description: " :content="props.message['description']" :editable="false"
-      v-if="props.message['description']" />
-    <editableStringAttribute title="comment: &nbsp;&nbsp;&nbsp;&nbsp;" :content="props.message['comment']"
-      :editable="true" v-if="props.message['comment']" />
+    <div style="padding-left:12px;padding-right:12px;">
+      <editableStringAttribute :obj="props.message" attr="description" :editable="false"
+        v-if="props.message['description']" />
+      <editableStringAttribute :obj="props.message" attr="comment" :editable="true" v-if="props.message['comment']"
+        title="comment:&nbsp;&nbsp;&nbsp;" />
+    </div>
     <details>
       <summary>
         <small style="color: #888;">rendered markdown:</small>

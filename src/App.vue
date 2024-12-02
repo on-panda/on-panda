@@ -233,6 +233,16 @@
         <el-button :icon='Promotion' size="" @click="improveSelectedText"></el-button>
       </div>
     </div>
+    <br>
+    <div class="messagesInfoPannel" v-if="dialog?.info">
+      <div style="background-color:antiquewhite; padding: 12px; border-radius: 10px;">
+        <b style="color: #aaa">dialog info</b>
+        <editableStringAttribute :obj="dialog?.info" attr="description" :editable="false"
+          v-if="dialog?.info?.description" />
+        <editableStringAttribute :obj="dialog?.info" attr="comment" :editable="true" v-if="dialog?.info?.comment"
+          title="comment:&nbsp;&nbsp;&nbsp;" />
+      </div>
+    </div>
 
 
     <el-divider content-position="left">new message:</el-divider>
@@ -315,6 +325,7 @@ import { ElMessage } from 'element-plus'
 import Message from './components/Message.vue'
 import MessageRole from './components/MessageRole.vue'
 import MessageMarkdown from './components/MessageMarkdown.vue'
+import editableStringAttribute from './components/editableStringAttribute.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils'
 import { p, escapeHTML, copyToClipboard } from '@/utils/commonUtils'
@@ -711,6 +722,15 @@ var messagesAudioExample = [
 // messages = messagesImageExample
 // messages = messagesAudioExample
 var messages = ref(messages)
+
+var dialog = ref({}) // info, custom
+
+// dialog.value.info = {
+//   description: "Uneditable description",
+//   comment: "editable comment",
+//   title: "The Title",
+// }
+
 
 function loadMessages(newMessages) {
   tokens.value = []
