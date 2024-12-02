@@ -612,13 +612,13 @@ const exampleNameToFunc = {
     // location.reload()
   },
   "R in 🍓": () => {
-    messages.value = [{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`coment` is editable for annotator" }]
+    messages.value = [{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }]
     tokens.value = []
     requestLlmServer(messages)
   },
-  "VLM": () => {
-    modelName.value = "vlm"
-    messages.value = messagesVlmExample
+  "image": () => {
+    modelName.value = "image"
+    messages.value = messagesImageExample
     setTimeout(openAllDetails, 100)
     tokens.value = []
     requestLlmServer(messages)
@@ -681,9 +681,9 @@ var messagesTokenizerExample = [{ role: "user", content: "Repeat only once, no o
 var messagesContinueExample = [{ role: "user", content: "Tell me a common saying" }, { "role": "assistant", "content": "An apple a day, keeps", "description": "continue example is not ready yet" }]
 
 // VLM
-var messagesVlmExample = [{
+var messagesImageExample = [{
   role: "user", content: [
-    { type: "text", text: "图中的 “v” 是由什么形状构成？\n" },
+    { type: "text", text: "图中左侧的 “v” 是由什么形状构成？\n" },
     {
       type: "image_url", image_url: {
         url: "https://docs.vllm.ai/en/latest/_static/vllm-logo-text-light.png"
@@ -709,7 +709,7 @@ var messagesAudioExample = [
   }
 ]
 
-// messages = messagesVlmExample
+// messages = messagesImageExample
 // messages = messagesAudioExample
 var messages = ref(messages)
 
@@ -755,7 +755,7 @@ watch(metaApiConfigs, async (newValue) => {
 
 var modelName = ref('on-panda')  // using endpoint_name == 'on-panda' as default model
 // var modelName = ref('llama3')
-// var modelName = ref('vlm')
+// var modelName = ref('image')
 // var modelName = ref('audio')
 
 // setTimeout(requestPromptLogprobs, 3000)
@@ -768,12 +768,12 @@ watch(modelName, async (newValue) => {  // set modelName to page title
 
 const modelNameTags = {
   'on-panda': 'on-panda',
-  'vlm': 'vlm',
+  'image': 'image',
   'audio': 'audio',
-  'llama3.1': 'others-llama3p1-70b-chat',
-  // 'qwen2.5': 'others-qwen2p5-math-72b-chat',
+  'llama': 'others-llama3p1-70b-chat',
+  // 'qwen': 'others-qwen2p5-72b-chat',
   'gpt4o': 'chatgpt-4o-latest',
-  'claude3.5': 'claude-3-5-sonnet-20241022',
+  'claude': 'claude-3-5-sonnet-20241022',
 }
 
 const apiConfig = computed(() => {
