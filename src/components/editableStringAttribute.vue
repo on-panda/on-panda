@@ -4,7 +4,7 @@
             {{ props.title }}
         </div>
         <el-input type="textarea" v-model="props.content" size="small" style="display: inline;padding-top: 5px;"
-            autosize="true" :disabled="!props.editable" />
+            :autosize="true" :disabled="!props.editable" />
     </small>
 </template>
 

@@ -665,9 +665,8 @@ const exampleNameToFunc = {
     requestLlmServer(messages)
   },
   "continue": () => {
-    messages.value = messagesContinueExample
-    tokens.value = []
-    requestLlmServer(messages)
+    loadMessages(messagesContinueExample)
+    setTimeout(() => requestLlmServer(messagesComputed), 2000)
   },
 }
 var messages
@@ -678,7 +677,7 @@ messages = messagesDefaultExample
 
 var messagesTokenizerExample = [{ role: "user", content: "Repeat only once, no other words:\n```\n<|磊|>🧎🏿‍♂️‍➡️\\n<hr>\n蘒    𝒀𝒆𝒔पत्नी\n```" }]
 
-var messagesContinueExample = [{ role: "user", content: "Tell me a common saying" }, { "role": "assistant", "content": "An apple a day, keeps", "description": "continue example is not ready yet" }]
+var messagesContinueExample = [{ role: "user", content: "Tell me a common saying" }, { "role": "assistant", "content": "An apple a day, keeps", "finish_reason": "stop" }]
 
 // VLM
 var messagesImageExample = [{
@@ -712,6 +711,35 @@ var messagesAudioExample = [
 // messages = messagesImageExample
 // messages = messagesAudioExample
 var messages = ref(messages)
+
+function loadMessages(newMessages) {
+  tokens.value = []
+  if (newMessages[newMessages.length - 1].role == "assistant") {
+    var lastMessage = newMessages[newMessages.length - 1]
+    tokens.value = convertMessageToTokens(lastMessage)
+    newMessages = newMessages.slice(0, newMessages.length - 1)
+  }
+  messages.value = newMessages
+}
+
+function convertMessageToTokens(message) {
+  if (message.role == "assistant") {
+    var content = message.content
+    var tokens = Array.from(segmenter.segment(content)).map((token, tokenIndex) => {
+      return {
+        delta: { content: token.segment },
+        tokenIndex: tokenIndex,
+      }
+    })
+
+    tokens[0].delta.role = "assistant"
+    tokens[tokens.length - 1].bifurcationPoint = true
+    if (message.finish_reason) {
+      tokens[tokens.length - 1].finish_reason = message.finish_reason
+    }
+  }
+  return tokens
+}
 
 
 import apiConfigList from '@/assets/secret/apiConfigList.js'
@@ -860,7 +888,7 @@ async function requestLlmServer(messages) {
   try {
     requestStatus.value.generating = true
     requestStatus.value.requestTimes++
-    var requestNumber = requestStatus.value.requestTimes
+    var requestID = requestStatus.value.requestTimes
     var stream = await openai.value.chat.completions.create(body);
 
     var tokenIndex = 0
@@ -872,8 +900,8 @@ async function requestLlmServer(messages) {
         throw new Error(JSON.stringify(chunk))
       }
       streamIndex++
-      if (requestNumber !== requestStatus.value.requestTimes) {
-        console.log(new Error("Request number mismatch"))
+      if (requestID !== requestStatus.value.requestTimes) {
+        console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
         return
       }
       if (!requestStatus.value.generating) {
