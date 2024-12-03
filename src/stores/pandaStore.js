@@ -8,20 +8,7 @@ const dialogExample = {
         type: "continue",
         from_candidate: true,
         time: 1733147962,
-    }
-}
-
-var dialogExample0 = {
-    operation: {
-        type: "send",
-    }
-}
-
-dialogExample0.message = [{ role: "user", content: "1+1=" }]
-
-
-const pandaExample = {
-    historys: [dialogExample0, dialogExample],
+    },
     info: {
         description: "Uneditable description",
         comment: "editable comment",
@@ -33,7 +20,6 @@ const pandaExample = {
             tip: "annotation status, default is done",
             type: "single_choice", value: "", options: ["done", "skip", "undetermined"],
         },
-
         {
             name: "tool_using",
             tip: "tools should use in this prompt",
@@ -51,6 +37,19 @@ const pandaExample = {
             tip: "What may be the follow up prompt by user?"
         }
     ]
+}
+
+var dialogExample0 = {
+    operation: {
+        type: "send",
+    }
+}
+
+dialogExample0.message = [{ role: "user", content: "1+1=" }]
+
+
+const pandaExample = {
+    historys: [dialogExample0, dialogExample],
 }
 export const usePandaStore = defineStore('panda', () => {
     const panda = ref(pandaExample)
