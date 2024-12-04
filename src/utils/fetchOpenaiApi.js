@@ -1,3 +1,6 @@
+import { useGlobalStore } from '@/stores/globalStore'
+
+
 export class OpenAI {
   // imitate openai-node without x-stainless-os 
   // x-stainless-os in header may not allowed in browser
@@ -16,9 +19,16 @@ export class OpenAI {
     this.models = {
       list: this.listModels.bind(this)
     };
+    this.globalStore = useGlobalStore()
   }
 
-  async createChatCompletion(chatConfig) {
+  async createChatCompletion(body) {
+    if (this.globalStore.hooks?.beforeCreateChatCompletion?.length) {
+      for (let hook of this.globalStore.hooks.beforeCreateChatCompletion) {
+        body = await hook(body)
+      }
+    }
+
     const url = `${this.baseURL}/chat/completions`;
     const headers = {
       'Content-Type': 'application/json',
@@ -28,7 +38,7 @@ export class OpenAI {
     const response = await fetch(url, {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify(chatConfig)
+      body: JSON.stringify(body)
     });
 
     if (!response.ok) {
@@ -36,7 +46,7 @@ export class OpenAI {
     }
 
     // 如果是流模式，我们要解析 EventStream 响应
-    if (chatConfig.stream) {
+    if (body.stream) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let buffer = ''; // 用于存储未完整的 chunk

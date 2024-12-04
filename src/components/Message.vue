@@ -62,17 +62,17 @@ const contentAsText = computed({
     // if is list, VLM message, convert to markdown
     if (Array.isArray(content)) {
       for (let i = 0; i < content.length; i++) {
-        const item = content[i]
-        if (item['type'] === 'text') {
-          str += item['text']
-        } else if (item['type'] === 'image_url') {
-          var imageUrlShow = item['image_url']['url']
-          if (item['blobUrl']) {
-            imageUrlShow = item['blobUrl']
+        const chunk = content[i]
+        if (chunk['type'] === 'text') {
+          str += chunk['text']
+        } else if (chunk['type'] === 'image_url') {
+          var imageUrlShow = chunk['image_url']['url']
+          if (chunk['blobUrl']) {
+            imageUrlShow = chunk['blobUrl']
           }
           str += `![<|ON_PANDA_IMAGE|>](${imageUrlShow})`
         } else {
-          str += '<|ON_PANDA_OBJECT_START|>' + JSON.stringify(item) + '<|ON_PANDA_OBJECT_END|>'
+          str += '<|ON_PANDA_OBJECT_START|>' + JSON.stringify(chunk) + '<|ON_PANDA_OBJECT_END|>'
         }
       }
     }
@@ -144,6 +144,7 @@ async function handlePaste(event) {
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
+    // console.log('clipboardData.items',item, JSON.parse(JSON.stringify([item.type, item.getAsFile(), item.getAsFile()?.type, item.kind,])))
     if (item.type.indexOf("image") !== -1) {
       event.preventDefault(); // 阻止默认粘贴行为
       const file = item.getAsFile();

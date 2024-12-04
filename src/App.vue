@@ -732,6 +732,14 @@ var dialog = ref({}) // info, custom
 // }
 
 
+var exampleFunc = exampleNameToFunc['default']
+// var exampleFunc = exampleNameToFunc['image']
+setTimeout(exampleFunc, 1500)
+
+p("tokens", tokens.value)
+p("patchs", patchs)
+
+
 function loadMessages(newMessages) {
   tokens.value = []
   if (newMessages[newMessages.length - 1].role == "assistant") {
@@ -1179,12 +1187,6 @@ const messagesComputed = computed(() => {
   }
 })
 
-setTimeout(() => {
-  requestLlmServer(messages)
-}, 1500)
-
-p("tokens", tokens.value)
-p("patchs", patchs)
 
 
 // floatPatchPannel
@@ -1311,6 +1313,12 @@ useEventListener(window, 'resize', handleReactiveFunctions)
 
 onMounted(async () => {
   scrollDiv.value.addEventListener('scroll', handleReactiveFunctions);
+
+  try {
+    await import('@/assets/secret/workaround.js');
+  } catch (error) {
+    console.error('Failed to load workaround.js:', error);
+  }
 })
 
 onBeforeUnmount(async () => {
