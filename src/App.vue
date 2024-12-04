@@ -736,9 +736,6 @@ var exampleFunc = exampleNameToFunc['default']
 // var exampleFunc = exampleNameToFunc['image']
 setTimeout(exampleFunc, 1500)
 
-p("tokens", tokens.value)
-p("patchs", patchs)
-
 
 function loadMessages(newMessages) {
   tokens.value = []
@@ -1319,6 +1316,9 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to load workaround.js:', error);
   }
+
+  p("tokens", tokens.value)
+  p("patchs", patchs)
 })
 
 onBeforeUnmount(async () => {
