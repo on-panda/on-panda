@@ -26,9 +26,18 @@ export default defineConfig({
         rewrite: path => path.replace(/^\/qwen-cpu/, '/v1/')
       },
       '/bypass-CORS': {
-        target: 'https://api.xxx.com',
+        target: 'https://place.holder.com',
         changeOrigin: true,
-        rewrite: path => path.replace(/^\/bypass-CORS/, '/v1/')
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            // console.log('proxy:', proxy, proxy.options, req.url);
+            var url = new URL(req.url.replace(/^\/bypass-CORS\//, ''))
+            // console.log(proxy.options)
+            // console.log('url:', url)
+            proxy.options.target = url.origin;
+            proxyReq.path = url.pathname
+          });
+        },
       },
       '/cast': {
         target: 'http://127.0.0.1:9200',

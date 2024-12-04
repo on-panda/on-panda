@@ -79,10 +79,11 @@ export async function copyToClipboard(string) {
 }
 
 
-export async function convertImageUrlToBase64(imageUrl, fetchOptions = {}) {
+export async function convertImageUrlToBase64(imageUrl, fetchCall) {
+  fetchCall = fetchCall || fetch // Use the default fetch if not provided
   try {
     // Fetch the image as a Blob
-    const response = await fetch(imageUrl, fetchOptions);
+    const response = await fetchCall(imageUrl);
     if (!response.ok) {
       throw new Error(`Failed to fetch image: ${response.statusText}`);
     }
@@ -110,3 +111,4 @@ export function blobToBase64(blob) {
     reader.readAsDataURL(blob);
   });
 }
+
