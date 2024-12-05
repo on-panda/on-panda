@@ -26,7 +26,7 @@ export default defineConfig({
         rewrite: path => path.replace(/^\/qwen-cpu/, '/v1/')
       },
       '/bypass-CORS': {
-        target: 'https://place.holder.com',
+        target: 'https://api.github.com/',  // placeholder
         changeOrigin: true,
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
