@@ -64,7 +64,8 @@
     </div>
 
 
-    <div style="display: flex; justify-content: space-between;" :style="isMobile ? {} : { width: '50%' }">
+    <div class="ReplyControlButtons" style="display: flex; justify-content: space-between;"
+      :style="isMobile ? {} : { width: '50%' }">
       <MessageRole :message="finalMessage" />
       <span class="stretch" style="margin-right: auto" />
       <footer style="display :flex; margin-top:5px; margin-bottom:-5px">
@@ -234,13 +235,25 @@
       </div>
     </div>
     <br>
-    <div class="messagesInfoPannel" v-if="dialog?.info">
+    <div class="dialogControlPannel">
+      <footer style="display :flex; margin-top:-10px; margin-bottom:10px">
+        <!-- <span class="stretch" style="margin-right: auto" /> -->
+        <el-tooltip content="Previous modification<br>(Shortcut key: left)" raw-content placement="bottom">
+          <el-button id="switchToPreviousDialog" :icon="Back" size="small" @click="pandaState.switchToPreviousDialog" />
+        </el-tooltip>
+        <el-tooltip content="Next modification<br>(Shortcut key: right)" raw-content placement="bottom">
+          <el-button id="switchToNextDialog" :icon="Right" size="small" @click="pandaState.switchToNextDialog" />
+        </el-tooltip>
+      </footer>
+    </div>
+
+    <div class="messagesInfoPannel" v-if="pandaState.dialog?.info">
       <div style="background-color:antiquewhite; padding: 12px; border-radius: 10px;">
-        <b style="color: #aaa">dialog info</b>
-        <editableStringAttribute :obj="dialog?.info" attr="description" :editable="false"
-          v-if="dialog?.info?.description" />
-        <editableStringAttribute :obj="dialog?.info" attr="comment" :editable="true" v-if="dialog?.info?.comment"
-          title="comment:&nbsp;&nbsp;&nbsp;" />
+        <b style="color: #aaa">pandaState.dialog info</b>
+        <editableStringAttribute :obj="pandaState.dialog?.info" attr="description" :editable="false"
+          v-if="pandaState.dialog?.info?.description" />
+        <editableStringAttribute :obj="pandaState.dialog?.info" attr="comment" :editable="true"
+          v-if="pandaState.dialog?.info?.comment" title="comment:&nbsp;&nbsp;&nbsp;" />
       </div>
     </div>
 
@@ -327,10 +340,12 @@ import MessageRole from './components/MessageRole.vue'
 import MessageMarkdown from './components/MessageMarkdown.vue'
 import editableStringAttribute from './components/editableStringAttribute.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
-import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils'
+import { useEventListener, registerKeyActions, closeFloatPannelMeta } from '@/utils/commonUtils'
 import { p, escapeHTML, copyToClipboard } from '@/utils/commonUtils'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close } from '@element-plus/icons-vue'
+
+import { Back, Right, RefreshLeft, RefreshRight } from '@element-plus/icons-vue'
 
 
 var bitTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content[0]?.logprob === "number"))
@@ -723,18 +738,6 @@ var messagesAudioExample = [
 // messages = messagesAudioExample
 var messages = ref(messages)
 
-var dialog = ref({}) // info, custom
-
-// dialog.value.info = {
-//   description: "Uneditable description",
-//   comment: "editable comment",
-//   title: "The Title",
-// }
-
-
-var exampleFunc = exampleNameToFunc['default']
-// var exampleFunc = exampleNameToFunc['image']
-setTimeout(exampleFunc, 1500)
 
 
 function loadMessages(newMessages) {
@@ -1307,6 +1310,31 @@ function handleReactiveFunctions() {
 }
 
 useEventListener(window, 'resize', handleReactiveFunctions)
+
+
+
+import { pandaState } from './stores/pandaState'
+import { sleep } from '@/utils/commonUtils'
+
+watchEffect(() => {
+  if (pandaState.dialog.value.messages) {
+    loadMessages(pandaState.dialog.value.messages)
+  }
+})
+
+registerKeyActions({
+  ArrowLeft: pandaState.switchToPreviousDialog,
+  ArrowRight: pandaState.switchToNextDialog,
+})
+
+var exampleFunc = async () => {
+  pandaState.dialogIndex.value = 1
+  await sleep(100)
+  requestLlmServer(messagesComputed)
+}
+var exampleFunc = exampleNameToFunc['default']
+// var exampleFunc = exampleNameToFunc['image']
+setTimeout(exampleFunc, 1500)
 
 onMounted(async () => {
   scrollDiv.value.addEventListener('scroll', handleReactiveFunctions);

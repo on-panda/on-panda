@@ -1,4 +1,11 @@
 
+export function deepCopy(obj) {
+  return JSON.parse(JSON.stringify(obj))
+}
+
+export async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
 
 export function toLegalVariableName(str) {
   const cleanedStr = str.replace(/[^a-zA-Z0-9_$]/g, '');
@@ -112,3 +119,22 @@ export function blobToBase64(blob) {
   });
 }
 
+export const registerKeyActions = (keyActions) => {  // : { [key: string]: () => void }
+  const handleKeyDown = (event) => { // : KeyboardEvent
+    const isCtrl = event.ctrlKey || event.metaKey
+    const eventKey = (isCtrl ? "Ctrl+" : "") + event.key
+    // console.log(eventKey)
+    if (eventKey in keyActions) {
+      const target = event.target // as HTMLElement
+      // 判断是否在编辑区域内，按下了 ctrl 就不用管编辑区了
+      const notEditable = isCtrl ? true : (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable)
+      if (notEditable) {
+        // console.log("keyActions:", eventKey, keyActions[eventKey].name)
+        event.preventDefault()
+        keyActions[eventKey]()
+      }
+    }
+  }
+  useEventListener(document, 'keydown', handleKeyDown)
+  return handleKeyDown
+}
