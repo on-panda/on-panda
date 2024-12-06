@@ -684,6 +684,12 @@ const exampleNameToFunc = {
     loadMessages(messagesContinueExample)
     setTimeout(() => requestLlmServer(messagesComputed), 2000)
   },
+  "annotate": async () => {
+    pandaState.panda.value = pandaState.pandaExample.value
+    pandaState.dialogIndex.value = 1
+    await sleep(100)
+    requestLlmServer(messagesComputed)
+  }
 }
 var messages
 // var messages = [{ role: "user", content: "just repeat 1 time: `पत्नी`" }]
@@ -1317,14 +1323,9 @@ registerKeyActions({
   ArrowRight: pandaState.switchToNextDialog,
 })
 
-var exampleFunc = async () => {
-  pandaState.panda.value = pandaState.pandaExample.value
-  pandaState.dialogIndex.value = 1
-  await sleep(100)
-  requestLlmServer(messagesComputed)
-}
 
 var exampleFunc = exampleNameToFunc['default']
+// var exampleFunc = exampleNameToFunc['annotate']
 // var exampleFunc = exampleNameToFunc['image']
 setTimeout(exampleFunc, 1500)
 
