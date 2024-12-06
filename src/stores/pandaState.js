@@ -19,11 +19,10 @@ const dialogExample = {
         // The data structure includes user interface logic
         // recommend set null as default value, so could know the value is not set
         {
-            name: "bad_prompt",
+            name: "qualified_prompt",
             type: "checkbox",
             checkbox: null,   // support null for default value
-            tip: "Is this a bad prompt?",
-            required: true, // default is false
+            tip: "Is this a qualified prompt?",
         },
         {
             name: "annotation_status",
@@ -47,6 +46,7 @@ const dialogExample = {
                 { k: "draw", v: null },
             ],
             tip: "Tools should use in this prompt",
+            required: true, // default is false
         },
         {
             name: "follow_up_prompt",
