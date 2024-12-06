@@ -247,16 +247,7 @@
       </footer>
     </div>
 
-    <div class="messagesInfoPannel" v-if="pandaState.dialog?.info">
-      <div style="background-color:antiquewhite; padding: 12px; border-radius: 10px;">
-        <b style="color: #aaa">pandaState.dialog info</b>
-        <editableStringAttribute :obj="pandaState.dialog?.info" attr="description" :editable="false"
-          v-if="pandaState.dialog?.info?.description" />
-        <editableStringAttribute :obj="pandaState.dialog?.info" attr="comment" :editable="true"
-          v-if="pandaState.dialog?.info?.comment" title="comment:&nbsp;&nbsp;&nbsp;" />
-      </div>
-    </div>
-
+    <AnnotatorPanel />
 
     <el-divider content-position="left">new message:</el-divider>
     <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
@@ -273,7 +264,6 @@
       <b>control parameter:</b>
     </el-divider>
 
-    <!-- <pre>{{JSON.stringify(apiConfigs, null, 2)}}</pre> -->
     <el-form class="toolbar options" label-width="140px">
       <el-form-item label="model">
         <el-select-v2 v-model="modelName" filterable :options="Object.keys(apiConfigs).map((x, idx) => ({
@@ -338,7 +328,7 @@ import { ElMessage } from 'element-plus'
 import Message from './components/Message.vue'
 import MessageRole from './components/MessageRole.vue'
 import MessageMarkdown from './components/MessageMarkdown.vue'
-import editableStringAttribute from './components/editableStringAttribute.vue'
+import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useEventListener, registerKeyActions, closeFloatPannelMeta } from '@/utils/commonUtils'
 import { p, escapeHTML, copyToClipboard } from '@/utils/commonUtils'
@@ -1328,10 +1318,12 @@ registerKeyActions({
 })
 
 var exampleFunc = async () => {
+  pandaState.panda.value = pandaState.pandaExample.value
   pandaState.dialogIndex.value = 1
   await sleep(100)
   requestLlmServer(messagesComputed)
 }
+
 var exampleFunc = exampleNameToFunc['default']
 // var exampleFunc = exampleNameToFunc['image']
 setTimeout(exampleFunc, 1500)

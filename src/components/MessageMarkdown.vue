@@ -24,14 +24,14 @@ const htmlContent = computed(() => {
   var content = props.content
   if (props.replaceBBCodeLatexDelimiters) {
     content = content
-    .replace(/\\\[ /g, "$$")
-    .replace(/ \\]/g, "$$")
-    .replace(/\\\(\s/g, "$")
-    .replace(/\s\\\)/g, "$")
-    .replace(/\\\[/g, "$$")
-    .replace(/\\\]/g, "$$")
-    .replace(/\\\(/g, "$")
-    .replace(/\\\)/g, "$");
+      .replace(/\\\[ /g, "$$")
+      .replace(/ \\]/g, "$$")
+      .replace(/\\\(\s/g, "$")
+      .replace(/\s\\\)/g, "$")
+      .replace(/\\\[/g, "$$")
+      .replace(/\\\]/g, "$$")
+      .replace(/\\\(/g, "$")
+      .replace(/\\\)/g, "$");
   }
   return markdown.render(content)
 })

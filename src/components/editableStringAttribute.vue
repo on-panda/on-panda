@@ -4,9 +4,8 @@
             {{ props.title || ((props.attr
                 || 'unknow') + ':') }}
         </div>
-        <el-input type="textarea" v-model="props.obj[props.attr]" size="small"
-            style="display: inline;padding-top: 5px;color: #aaa !important" :input-style="{ color: '#888' }"
-            :autosize="true" :disabled="!props.editable" />
+        <el-input type="textarea" v-model="props.obj[props.attr]" size="small" style="display: inline;padding-top: 5px;"
+            :input-style="{ color: '#888' }" :autosize="true" :disabled="!props.editable" />
     </small>
 
 </template>

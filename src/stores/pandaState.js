@@ -12,46 +12,46 @@ const dialogExample = {
         description: "Uneditable description",
         comment: "editable comment",
         title: "The Title",
+        chosen: null, // if null, the last messages is chosen, others are rejected
+        // tip: "Preference of current messages (chosen or reject), default the last messages is chosen, others are rejected",
     },
     custom: [
+        // The data structure includes user interface logic
         // recommend set null as default value, so could know the value is not set
+        {
+            name: "bad_prompt",
+            type: "checkbox",
+            checkbox: null,   // support null for default value
+            tip: "Is this a bad prompt?",
+            required: true, // default is false
+        },
         {
             name: "annotation_status",
             type: "single_choice",
-            value: [
-                { name: "done", value: null },
-                { name: "skip", value: null },
-                { name: "undetermined", value: null },
+            single_choice: [  // why not name, value? because it will confuse with tool.name, ref().value
+                { k: "done", v: null },
+                { k: "skip", v: null },
+                { k: "undetermined", v: null },
             ],
             tip: "Annotation status, if not chosen, **default is done**",
             // markdown is supported
             // if tip is too long, you should using a URL to avoid the redundancy in json
-            must: false, // default is false
-        },
-        { // Use single_choice to implement checkbox functionality
-            name: "chosen",
-            type: "single_choice",
-            value: [
-                { name: "Y", value: null },
-                { name: "N", value: null },
-            ],
-            tip: "Preference of current messages (chosen or reject), default the last messages is chosen, others are rejected",
         },
         {
             name: "tool_using",
             type: "multiple_choice",
-            value: [
-                { name: "image", value: null },
-                { name: "search", value: null },
-                { name: "think", value: null },
-                { name: "draw", value: null },
+            multiple_choice: [
+                { k: "image", v: null },
+                { k: "search", v: null },
+                { k: "think", v: null },
+                { k: "draw", v: null },
             ],
             tip: "Tools should use in this prompt",
         },
         {
             name: "follow_up_prompt",
             type: "text",
-            value: "",
+            text: "",
             tip: "What may be the follow up prompt by user?"
         }
     ]
@@ -66,9 +66,10 @@ var dialogExample0 = {
 dialogExample0.messages = [{ role: "user", content: "1+1=" }]
 
 export class PandaStateV1Plane {
-    panda = ref({
+    pandaExample = ref({
         historys: [dialogExample0, dialogExample],
     })
+    panda = ref({ historys: [{}] })
     dialogIndex = ref(-1)
     dialog = computed(() => this.panda.value.historys[(this.panda.value.historys.length * 20 + this.dialogIndex.value) % this.panda.value.historys.length])
     switchToNextDialog = () => {
