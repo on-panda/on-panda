@@ -1171,6 +1171,9 @@ const finalMessage = computed(() => {
       delete finalMessage[key]
     }
   }
+  if (tokens.value[tokens.value.length - 1]?.finish_reason) {
+    finalMessage.finish_reason = tokens.value[tokens.value.length - 1].finish_reason
+  }
   return finalMessage
 })
 
@@ -1312,8 +1315,8 @@ import { pandaState } from './stores/pandaState'
 import { sleep } from '@/utils/commonUtils'
 
 watchEffect(() => {
-  if (pandaState.dialog.value.messages) {
-    loadMessages(pandaState.dialog.value.messages)
+  if (pandaState.dialogCache.value.messages) {
+    loadMessages(pandaState.dialogCache.value.messages)
   }
 })
 

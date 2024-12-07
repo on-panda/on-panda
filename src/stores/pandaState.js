@@ -1,4 +1,5 @@
-import { ref, computed } from 'vue'
+import { deepCopy } from '@/utils/commonUtils'
+import { ref, computed, watchEffect } from 'vue'
 // import { hashObjectSHA256Base64 } from '@/utils/commonUtils'
 
 const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "1+1=" }, { role: "assistant", content: "Answer is", finish_reason: "length" }]
@@ -68,12 +69,18 @@ var dialogExample0 = {
 dialogExample0.messages = [{ role: "user", content: "1+1=" }]
 
 var pandaExample = {
+    panda_version: "1.0",
     dialogs: { 1: dialogExample0, 2: dialogExample }, // key start from 1
-    hash_map: {},
+    hash_map: {},  // to support 'hash:4LKUXH3IuMhn4cti0hjpzqcA5Zv0bCZu+zBi2+buU30=' key 要不要加上 hash 前缀？(加上吧，更加一致，也给人一眼看出作用) 为什么不用 obj.hash?(繁琐了，不用)
     deleted_dialogs: {},
 }
 
 export class PandaState {
+    constructor() {
+    }
+    registerDialogComputed = (dialogComputed) => {
+        this.dialogComputed = dialogComputed
+    }
     panda = ref({ dialogs: {} })
     // panda = ref(pandaExample)
     allDialogs = computed(() => ({ ...this.panda.value.dialogs, ...this.panda.value.deleted_dialogs }))
@@ -95,18 +102,42 @@ export class PandaState {
         }
         return keys[(keys.length * 20 + this.currentDialogIndex.value) % keys.length]
     })
-    dialog = computed(() => {
+    currentDialogData = computed(() => {
         return this.currentDialogKey.value ? this.allDialogs.value[this.currentDialogKey.value] : {}
     })
+    dialogCache = ref(deepCopy(this.currentDialogData.value))
+    _ = watchEffect(() => {
+        this.dialogCache.value = deepCopy(this.currentDialogData.value)
+    })
+
     switchToNextDialog = () => {
+        this.lazyCheck()
         this.currentDialogIndex.value = (this.currentDialogIndex.value + 1) % this.dialogKeys.value.length
     }
     switchToPreviousDialog = () => {
+        this.lazyCheck()
         this.currentDialogIndex.value = (this.currentDialogIndex.value - 1 + this.dialogKeys.value.length) % this.dialogKeys.value.length
     }
     setExample = () => {
         this.panda.value = pandaExample
         this.currentDialogIndex.value = 1
+    }
+
+    writeBack = () => {
+    }
+    fork = () => {
+    }
+    delete = () => {
+    }
+    undo = () => {
+    }
+    redo = () => {
+    }
+    save = () => {
+    }
+    load = () => {
+    }
+    lazyCheck = () => {
     }
 }
 
