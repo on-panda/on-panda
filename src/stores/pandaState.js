@@ -15,8 +15,8 @@ const dialogExample = {
         prefix_messages_num: 2,
     },
     annotate: {
-        chosen: null, // if null, the last messages is chosen, others are rejected
-        // tip: "Preference of current messages (chosen or reject), default the last messages is chosen, others are rejected",
+        is_good: null,  // different from chosen, which will be SFT training data
+        // tip: "Preference of current messages (good or bad), default the last messages is good, others are bad",
         customs: [
             // The data structure includes user interface logic
             // recommend set null as default value, so could know the value is not set

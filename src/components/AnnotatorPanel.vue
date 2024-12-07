@@ -10,9 +10,9 @@
 
             <br>
             <el-form label-width="auto" size="small">
-                <el-form-item label="chosen">
-                    <CheckboxWidgetSupportNull :checkboxValue="pandaState.dialogCache.value?.annotate?.chosen"
-                        @updateCheckboxValue="(v) => { pandaState.dialogCache.value.annotate.chosen = v }">
+                <el-form-item label="is_good">
+                    <CheckboxWidgetSupportNull :checkboxValue="pandaState.dialogCache.value?.annotate?.is_good"
+                        @updateCheckboxValue="(v) => { pandaState.dialogCache.value.annotate.is_good = v }">
                     </CheckboxWidgetSupportNull>
                 </el-form-item>
                 <CustomAnnotatorTool v-for="tool in pandaState.dialogCache.value.annotate.customs" :tool="tool">

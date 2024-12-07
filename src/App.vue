@@ -1320,6 +1320,18 @@ watchEffect(() => {
   }
 })
 
+const dialogComputed = computed(() => {
+  const dialog = {...pandaState.dialogCache.value}
+  dialog.messages = [...messagesComputed.value]
+  // TODO should add new newTurnMessage?
+  // Should panda include whole mulit-turn dialog?
+  if (newTurnMessage.value.content) {
+    dialog.messages.push(newTurnMessage.value)
+  }
+})
+
+pandaState.registerDialogComputed(dialogComputed)
+
 registerKeyActions({
   ArrowLeft: pandaState.switchToPreviousDialog,
   ArrowRight: pandaState.switchToNextDialog,
