@@ -685,8 +685,7 @@ const exampleNameToFunc = {
     setTimeout(() => requestLlmServer(messagesComputed), 2000)
   },
   "annotate": async () => {
-    pandaState.panda.value = pandaState.pandaExample.value
-    pandaState.dialogIndex.value = 1
+    pandaState.setExample()
     await sleep(100)
     requestLlmServer(messagesComputed)
   }

@@ -65,11 +65,11 @@ var dialogExample0 = {
 }
 
 dialogExample0.messages = [{ role: "user", content: "1+1=" }]
+var pandaExample = {
+    historys: [dialogExample0, dialogExample],
+}
 
-export class PandaStateV1Plane {
-    pandaExample = ref({
-        historys: [dialogExample0, dialogExample],
-    })
+export class PandaState {
     panda = ref({ historys: [{}] })
     dialogIndex = ref(-1)
     dialog = computed(() => this.panda.value.historys[(this.panda.value.historys.length * 20 + this.dialogIndex.value) % this.panda.value.historys.length])
@@ -79,9 +79,13 @@ export class PandaStateV1Plane {
     switchToPreviousDialog = () => {
         this.dialogIndex.value = (this.dialogIndex.value - 1 + this.panda.value.historys.length) % this.panda.value.historys.length
     }
+    setExample = () => {
+        this.panda.value = pandaExample
+        this.dialogIndex.value = 1
+    }
 }
 
-export const pandaState = new PandaStateV1Plane()
+export const pandaState = new PandaState()
 
 // export const panda = ref({
 //     historys: [dialogExample0, dialogExample],
