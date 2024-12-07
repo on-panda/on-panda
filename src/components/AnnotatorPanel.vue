@@ -1,20 +1,22 @@
 <template>
-    <div class="messagesInfoPannel" v-if="pandaState.dialog.value?.info">
+    <div class="messagesInfoPannel"
+        v-if="pandaState.dialog.value?.annotate || pandaState.dialog.value?.description || pandaState.dialog.value?.comment">
         <div style="background-color:antiquewhite; padding: 12px; border-radius: 10px;">
             <b style="color: #aaa">Dialog Pannel</b>
-            <editableStringAttribute :obj="pandaState.dialog.value?.info" attr="description" :editable="false"
-                v-if="pandaState.dialog.value?.info?.description" />
-            <editableStringAttribute :obj="pandaState.dialog.value?.info" attr="comment" :editable="true"
-                v-if="pandaState.dialog.value?.info?.comment" title="comment:&nbsp;&nbsp;&nbsp;" />
+            <editableStringAttribute :obj="pandaState.dialog.value" attr="description" :editable="false"
+                v-if="pandaState.dialog.value?.description" />
+            <editableStringAttribute :obj="pandaState.dialog.value" attr="comment" :editable="true"
+                v-if="pandaState.dialog.value?.comment" title="comment:&nbsp;&nbsp;&nbsp;" />
 
             <br>
             <el-form label-width="auto" size="small">
                 <el-form-item label="chosen">
-                    <CheckboxWidgetSupportNull :checkboxValue="pandaState.dialog.value?.info?.chosen"
-                        @updateCheckboxValue="(v) => { pandaState.dialog.value.info.chosen = v }">
+                    <CheckboxWidgetSupportNull :checkboxValue="pandaState.dialog.value?.annotate?.chosen"
+                        @updateCheckboxValue="(v) => { pandaState.dialog.value.annotate.chosen = v }">
                     </CheckboxWidgetSupportNull>
                 </el-form-item>
-                <CustomAnnotatorTool v-for="tool in pandaState.dialog.value.custom" :tool="tool"></CustomAnnotatorTool>
+                <CustomAnnotatorTool v-for="tool in pandaState.dialog.value.annotate.customs" :tool="tool">
+                </CustomAnnotatorTool>
             </el-form>
             <details>
                 <summary>
