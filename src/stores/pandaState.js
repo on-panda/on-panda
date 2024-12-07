@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+// import { hashObjectSHA256Base64 } from '@/utils/commonUtils'
 
 const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "1+1=" }, { role: "assistant", content: "Answer is", finish_reason: "length" }]
 const dialogExample = {
@@ -65,25 +66,50 @@ var dialogExample0 = {
 }
 
 dialogExample0.messages = [{ role: "user", content: "1+1=" }]
+
 var pandaExample = {
-    historys: [dialogExample0, dialogExample],
+    dialogs: { 1: dialogExample0, 2: dialogExample }, // key start from 1
+    hash_map: {},
+    deleted_dialogs: {},
 }
 
 export class PandaState {
-    panda = ref({ historys: [{}] })
-    dialogIndex = ref(-1)
-    dialog = computed(() => this.panda.value.historys[(this.panda.value.historys.length * 20 + this.dialogIndex.value) % this.panda.value.historys.length])
+    panda = ref({ dialogs: {} })
+    // panda = ref(pandaExample)
+    allDialogs = computed(() => ({ ...this.panda.value.dialogs, ...this.panda.value.deleted_dialogs }))
+    dialogKeys = computed(() => Object.keys(this.allDialogs.value).map(Number).sort())
+    dialogMaxKeyAll = computed(() => this.dialogKeys.value[this.dialogKeys.value.length - 1])
+    dialogMaxIndexRemain = computed(() => {
+        for (var i = this.dialogKeys.value.length - 1; i >= 0; i--) {
+            if ((this.dialogKeys.value[i] in this.panda.value.dialogs)) {
+                return i
+            }
+        }
+        return null
+    })
+    currentDialogIndex = ref(1) // index of dialogKeys
+    currentDialogKey = computed(() => {
+        var keys = this.dialogKeys.value
+        if (keys.length === 0) {
+            return null
+        }
+        return keys[(keys.length * 20 + this.currentDialogIndex.value) % keys.length]
+    })
+    dialog = computed(() => {
+        return this.currentDialogKey.value ? this.allDialogs.value[this.currentDialogKey.value] : {}
+    })
     switchToNextDialog = () => {
-        this.dialogIndex.value = (this.dialogIndex.value + 1) % this.panda.value.historys.length
+        this.currentDialogIndex.value = (this.currentDialogIndex.value + 1) % this.dialogKeys.value.length
     }
     switchToPreviousDialog = () => {
-        this.dialogIndex.value = (this.dialogIndex.value - 1 + this.panda.value.historys.length) % this.panda.value.historys.length
+        this.currentDialogIndex.value = (this.currentDialogIndex.value - 1 + this.dialogKeys.value.length) % this.dialogKeys.value.length
     }
     setExample = () => {
         this.panda.value = pandaExample
-        this.dialogIndex.value = 1
+        this.currentDialogIndex.value = 1
     }
 }
+
 
 export const pandaState = new PandaState()
 
