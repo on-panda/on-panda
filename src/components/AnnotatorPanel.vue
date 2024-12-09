@@ -3,6 +3,7 @@
         v-if="pandaState.dialogCache.value?.annotate || pandaState.dialogCache.value?.description || pandaState.dialogCache.value?.comment">
         <div style="background-color:antiquewhite; padding: 12px; border-radius: 10px;">
             <b style="color: #aaa">Dialog Pannel</b>
+            <br>
             <editableStringAttribute :obj="pandaState.dialogCache.value" attr="description" :editable="false"
                 v-if="pandaState.dialogCache.value?.description" />
             <editableStringAttribute :obj="pandaState.dialogCache.value" attr="comment" :editable="true"
@@ -10,7 +11,18 @@
 
             <br>
             <el-form label-width="auto" size="small">
-                <el-form-item label="is_good">
+                <el-form-item>
+                    <template #label>
+                        <el-tooltip class="" effect="dark" placement="top" raw-content>
+                            <template #content>
+                                Type: <b>checkbox</b><br>
+                                Is the last assistant's response good?<br>
+                                If no choice was made, 'Y' is the default if it is the latest dialog, otherwise 'N' is
+                                the default.
+                            </template>
+                            <span>is_good</span>
+                        </el-tooltip>
+                    </template>
                     <CheckboxWidgetSupportNull
                         :checkboxValue="pandaState.dialogCache.value?.annotate?.is_good === null ? pandaState.dialogMaxIndexRemain.value === pandaState.currentDialogIndex.value : pandaState.dialogCache.value?.annotate?.is_good"
                         @updateCheckboxValue="(v) => { pandaState.dialogCache.value.annotate.is_good = v }">
@@ -18,8 +30,8 @@
                     <small style="color: #606266" v-if="pandaState.dialogCache.value?.annotate?.is_good === null">
                         &nbsp; No choice was made,
                         <span v-if="pandaState.dialogMaxIndexRemain.value === pandaState.currentDialogIndex.value"> as
-                            it is the <b>latest</b> conversation, so 'Y' is the default.</span>
-                        <span v-else> as it is <b>NOT</b> the latest conversation, so 'N' is the default.</span>
+                            it is the <b>latest</b> dialog, so 'Y' is the default.</span>
+                        <span v-else> as it is <b>NOT</b> the latest dialog, so 'N' is the default.</span>
                     </small>
 
 
