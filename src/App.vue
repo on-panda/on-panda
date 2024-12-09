@@ -238,16 +238,24 @@
     <div class="dialogControlPannel">
       <footer style="display :flex; margin-top:-10px; margin-bottom:10px">
         <!-- <span class="stretch" style="margin-right: auto" /> -->
-        <el-tooltip content="Previous modification<br>(Shortcut key: left)" raw-content placement="bottom">
+        <el-tooltip content="Previous modification<br>(Shortcut key: left)" raw-content placement="top">
           <el-button id="switchToPreviousDialog" :icon="Back" size="small" @click="pandaState.switchToPreviousDialog" />
         </el-tooltip>
-        <el-tooltip content="Next modification<br>(Shortcut key: right)" raw-content placement="bottom">
+        <el-tooltip content="Next modification<br>(Shortcut key: right)" raw-content placement="top">
           <el-button id="switchToNextDialog" :icon="Right" size="small" @click="pandaState.switchToNextDialog" />
         </el-tooltip>
       </footer>
-    </div>
+      <div style="color:#555">
+        &nbsp;&nbsp;
+        <small v-for="(key, idx) in pandaState.dialogKeys.value" style="cursor: pointer"
+          @click="pandaState.currentDialogIndex.value = idx"
+          :style="idx == pandaState.currentDialogIndex.value ? { color: '#409eff', fontWeight: 700 } : {}">
+          &nbsp; {{ key }} &nbsp;
+        </small>
+      </div>
 
-    <AnnotatorPanel />
+      <AnnotatorPanel />
+    </div>
 
     <el-divider content-position="left">new message:</el-divider>
     <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
@@ -1321,13 +1329,15 @@ watchEffect(() => {
 })
 
 const dialogComputed = computed(() => {
-  const dialog = {...pandaState.dialogCache.value}
+
+  const dialog = { ...pandaState.dialogCache.value }
   dialog.messages = [...messagesComputed.value]
   // TODO should add new newTurnMessage?
   // Should panda include whole mulit-turn dialog?
   if (newTurnMessage.value.content) {
     dialog.messages.push(newTurnMessage.value)
   }
+  return dialog
 })
 
 pandaState.registerDialogComputed(dialogComputed)

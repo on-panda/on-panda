@@ -1,4 +1,4 @@
-import { deepCopy } from '@/utils/commonUtils'
+import { deepCopy, hashObjectSHA256Base64 } from '@/utils/commonUtils'
 import { ref, computed, watchEffect } from 'vue'
 // import { hashObjectSHA256Base64 } from '@/utils/commonUtils'
 
@@ -6,14 +6,14 @@ const messagesExample = [{ role: "system", content: "" }, { role: "user", conten
 const dialogExample = {
     title: "The Title",
     description: "Uneditable description",
-    comment: "editable comment",
+    comment: "Editable comment",
     messages: messagesExample,
-    operation: {
+    operations: [{
         type: "continue",
         from_candidate: true,
         time: 1733147962,
         prefix_messages_num: 2,
-    },
+    }],
     annotate: {
         is_good: null,  // different from chosen, which will be SFT training data
         // tip: "Preference of current messages (good or bad), default the last messages is good, others are bad",
@@ -61,9 +61,9 @@ const dialogExample = {
 }
 
 var dialogExample0 = {
-    operation: {
+    operations: [{
         type: "send",
-    },
+    }],
     annotate: deepCopy(dialogExample.annotate),
 }
 
@@ -108,15 +108,18 @@ export class PandaState {
     })
     dialogCache = ref(deepCopy(this.currentDialogData.value))
     _ = watchEffect(() => {
-        this.dialogCache.value = deepCopy(this.currentDialogData.value)
+        // annotate and comment is saved in time, just ref the value
+        this.dialogCache.value = this.currentDialogData.value
+        // messages should using cache to store current state, so need deep copy
+        this.dialogCache.value.messages = this.currentDialogData.value.messages ? deepCopy(this.currentDialogData.value.messages) : undefined
     })
 
-    switchToNextDialog = () => {
-        this.lazyCheck()
+    switchToNextDialog = async () => {
+        await this.lazyCheck()
         this.currentDialogIndex.value = (this.currentDialogIndex.value + 1) % this.dialogKeys.value.length
     }
-    switchToPreviousDialog = () => {
-        this.lazyCheck()
+    switchToPreviousDialog = async () => {
+        await this.lazyCheck()
         this.currentDialogIndex.value = (this.currentDialogIndex.value - 1 + this.dialogKeys.value.length) % this.dialogKeys.value.length
     }
     setExample = () => {
@@ -124,9 +127,18 @@ export class PandaState {
         this.currentDialogIndex.value = 1
     }
 
+    cutOffPointer = () => {
+        this.pandaTree.value.dialogs[this.currentDialogKey.value] = deepCopy(this.pandaTree.value.dialogs[this.currentDialogKey.value])
+    }
     writeBack = () => {
+        this.pandaTree.value.dialogs[this.currentDialogKey.value] = deepCopy(this.dialogComputed.value)
     }
     fork = () => {
+        self.cutOffPointer()
+
+        // using pinter to track latest dialogComputed
+        this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = this.dialogComputed.value
+        this.currentDialogIndex.value = this.dialogKeys.value.indexOf(this.dialogMaxKeyAll.value)
     }
     delete = () => {
     }
@@ -138,7 +150,27 @@ export class PandaState {
     }
     load = () => {
     }
-    lazyCheck = () => {
+    lazyCheck = async () => {
+        var hashComputed = await hashObjectSHA256Base64(this.dialogComputed.value)
+        var hashCurrent = await hashObjectSHA256Base64(this.currentDialogData.value)
+        console.log('Change:', hashComputed == hashCurrent)
+        console.log(hashComputed, hashCurrent)
+        console.log(this.dialogComputed.value)
+
+        // if new message, fork
+
+        // if both have new message, write back?
+
+        // if prompt same, respone same, do nothing
+
+        // if prompt different, respone same, write back?
+
+        // if respone different, but contiuned write back
+
+        // if respone different, but truncated, fork? (different of EOT and not EOT)
+
+        // if respone different, forked, fork
+
     }
 }
 
