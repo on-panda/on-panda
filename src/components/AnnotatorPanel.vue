@@ -11,9 +11,18 @@
             <br>
             <el-form label-width="auto" size="small">
                 <el-form-item label="is_good">
-                    <CheckboxWidgetSupportNull :checkboxValue="pandaState.dialogCache.value?.annotate?.is_good"
+                    <CheckboxWidgetSupportNull
+                        :checkboxValue="pandaState.dialogCache.value?.annotate?.is_good === null ? pandaState.dialogMaxIndexRemain.value === pandaState.currentDialogIndex.value : pandaState.dialogCache.value?.annotate?.is_good"
                         @updateCheckboxValue="(v) => { pandaState.dialogCache.value.annotate.is_good = v }">
                     </CheckboxWidgetSupportNull>
+                    <small style="color: #606266" v-if="pandaState.dialogCache.value?.annotate?.is_good === null">
+                        &nbsp; No choice was made,
+                        <span v-if="pandaState.dialogMaxIndexRemain.value === pandaState.currentDialogIndex.value"> as
+                            it is the <b>latest</b> conversation, so 'Y' is the default.</span>
+                        <span v-else> as it is <b>NOT</b> the latest conversation, so 'N' is the default.</span>
+                    </small>
+
+
                 </el-form-item>
                 <CustomAnnotatorTool v-for="tool in pandaState.dialogCache.value.annotate.customs" :tool="tool">
                 </CustomAnnotatorTool>

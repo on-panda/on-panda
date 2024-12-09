@@ -63,13 +63,14 @@ const dialogExample = {
 var dialogExample0 = {
     operation: {
         type: "send",
-    }
+    },
+    annotate: deepCopy(dialogExample.annotate),
 }
 
 dialogExample0.messages = [{ role: "user", content: "1+1=" }]
 
-var pandaExample = {
-    panda_version: "1.0",
+var pandaTreeExample = {
+    version: "1.0",
     dialogs: { 1: dialogExample0, 2: dialogExample }, // key start from 1
     hash_map: {},  // to support 'hash:4LKUXH3IuMhn4cti0hjpzqcA5Zv0bCZu+zBi2+buU30=' key 要不要加上 hash 前缀？(加上吧，更加一致，也给人一眼看出作用) 为什么不用 obj.hash?(繁琐了，不用)
     deleted_dialogs: {},
@@ -81,14 +82,14 @@ export class PandaState {
     registerDialogComputed = (dialogComputed) => {
         this.dialogComputed = dialogComputed
     }
-    panda = ref({ dialogs: {} })
-    // panda = ref(pandaExample)
-    allDialogs = computed(() => ({ ...this.panda.value.dialogs, ...this.panda.value.deleted_dialogs }))
+    pandaTree = ref({ dialogs: {} })
+    // pandaTree = ref(pandaTreeExample)
+    allDialogs = computed(() => ({ ...this.pandaTree.value.dialogs, ...this.pandaTree.value.deleted_dialogs }))
     dialogKeys = computed(() => Object.keys(this.allDialogs.value).map(Number).sort())
     dialogMaxKeyAll = computed(() => this.dialogKeys.value[this.dialogKeys.value.length - 1])
     dialogMaxIndexRemain = computed(() => {
         for (var i = this.dialogKeys.value.length - 1; i >= 0; i--) {
-            if ((this.dialogKeys.value[i] in this.panda.value.dialogs)) {
+            if ((this.dialogKeys.value[i] in this.pandaTree.value.dialogs)) {
                 return i
             }
         }
@@ -119,7 +120,7 @@ export class PandaState {
         this.currentDialogIndex.value = (this.currentDialogIndex.value - 1 + this.dialogKeys.value.length) % this.dialogKeys.value.length
     }
     setExample = () => {
-        this.panda.value = pandaExample
+        this.pandaTree.value = pandaTreeExample
         this.currentDialogIndex.value = 1
     }
 
