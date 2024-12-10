@@ -71,10 +71,11 @@
       <footer style="display :flex; margin-top:5px; margin-bottom:-5px">
         <span class="stretch" style="margin-right: auto" />
         <el-tooltip v-if="!requestStatus.generating" content="continue" placement="top">
-          <el-button :icon="DArrowRight" size="small" @click="requestLlmServer(messagesComputed)" />
+          <el-button :icon="DArrowRight" size="small" :disabled="!tokens?.length"
+            @click="opreators.continueGenerating()" />
         </el-tooltip>
         <el-tooltip v-if="requestStatus.generating" content="stop generating" placement="top">
-          <el-button :icon="VideoPause" size="small" @click="requestStatus.generating = false" />
+          <el-button :icon="VideoPause" size="small" @click="opreators.stopGenerating()" />
         </el-tooltip>
         <el-tooltip content="try again" placement="top">
           <el-button :icon="Refresh" size="small" @click="tokens = []; requestLlmServer(messages)" />
@@ -133,7 +134,7 @@
               <el-tooltip
                 v-if="apiConfig.support_continue_final_message && tokens.length && tokens[tokens.length - 1].finish_reason == 'length'"
                 content="native continue generating" placement="bottom">
-                <el-button :icon="DArrowRight" size="small" @click="requestLlmServer(messagesComputed)"
+                <el-button :icon="DArrowRight" size="small" @click="opreators.continueGenerating()"
                   style="margin-left: 10px;height: 16px" />
               </el-tooltip>
             </div>
@@ -163,8 +164,10 @@
           </div>
           <div class="tokenLogprobItems">
             <div v-for="logprobItem in token?.logprobs?.content[0].top_logprobs"
-              style="display: block; background-color: #eee;" @click="clickOnLogprobItem(token, logprobItem)"
-              @mouseover="activateLogprobItem = logprobItem" @mouseenter="$event.target.style.backgroundColor = '#ddd'"
+              style="display: block; background-color: #eee;" @click="() => {
+                opreators.continueWithChosen(token, logprobItem)
+              }" @mouseover="activateLogprobItem = logprobItem"
+              @mouseenter="$event.target.style.backgroundColor = '#ddd'"
               @mouseleave="$event.target.style.backgroundColor = ''">
               <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token_piece || logprobItem.token)
                 }}</span>
@@ -198,7 +201,7 @@
     }" style="display: flex">
       <textarea type="text" placeholder="submit: `↵`; newline: `shift+↵`" style="height: 25px; width:auto;"
         class="floatInputPatchInput" @focus="$event.target.select()"
-        @keydown.enter="if (!$event.shiftKey) { continueFromToken(floatInputPatch.attachedPatch.tokens.find(x => x.logprobs?.content.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
+        @keydown.enter="if (!$event.shiftKey) { opreators.continueWithInput(floatInputPatch.attachedPatch.tokens.find(x => x.logprobs?.content.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
     </div>
 
     <div ref='floatSelectedOpreationPannelRef' class="floatSelectedOpreationPannel"
@@ -691,12 +694,12 @@ const exampleNameToFunc = {
   },
   "continue": () => {
     loadMessages(messagesContinueExample)
-    setTimeout(() => requestLlmServer(messagesComputed), 2000)
+    setTimeout(() => opreators.continueGenerating(), 2000)
   },
   "annotate": async () => {
     pandaState.setExample()
     await sleep(100)
-    requestLlmServer(messagesComputed)
+    opreators.continueGenerating()
   }
 }
 var messages
@@ -1028,6 +1031,45 @@ async function requestLlmServer(messages) {
 }
 
 
+class OpreatorCenter {
+  // continue generating, continue with chosen, continue with input, edit prompt, edit response, refresh, load example, load panda tree, stop.
+  constructor() {
+  }
+  continueGenerating = async () => {
+    await pandaState.beforeOperation()
+    requestLlmServer(messagesComputed.value)
+  }
+
+  stopGenerating = async () => {
+    await pandaState.beforeOperation()
+    requestStatus.value.generating = false
+  }
+
+  continueWithChosen = async (token, logprobItem) => {
+
+    // function clickOnLogprobItem() {
+    await pandaState.beforeOperation()
+    prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob)
+    await pandaState.afterOperation({
+      operator: "continue_with_chosen",
+      on_policy: true,
+    })
+    requestLlmServer(messagesComputed.value)
+    if (isMobile.value) {
+      window.setTimeout(closeFloatPatchPannel, 500)
+    }
+  }
+
+  continueWithInput = (token, continuePrefix, continuePrefixLogprob) => {
+    prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob)
+    requestLlmServer(messagesComputed.value)
+  }
+
+}
+
+const opreators = new OpreatorCenter()
+
+
 const assistentResponseContent = computed(() => {
   return tokens.value.map((token) => token.delta.content).join("");
 });
@@ -1261,7 +1303,7 @@ function setFloatPatchPannelBelow(element) {
   floatPatchPannel.value.visible = true;
 }
 
-function continueFromToken(token, continuePrefix, continuePrefixLogprob) {
+function prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob) {
   console.log(token, continuePrefix, continuePrefixLogprob)
   for (const patch of patchs.value) {
     for (const patchToken of patch.tokens) {
@@ -1278,19 +1320,8 @@ function continueFromToken(token, continuePrefix, continuePrefixLogprob) {
   token.bifurcationPoint = true
   token.pruned = false
   token.logprobs.content[0].logprob = isFinite(continuePrefixLogprob) ? continuePrefixLogprob : -9999
-  token.logprobs.content[0].token =
-    tokens.value.splice(token.tokenIndex, 0, token);
-  const messageWithContinuePrefix = messagesComputed.value
-
-  // messageWithContinuePrefix[messageWithContinuePrefix.length-1]['content'] += continuePrefix
-  requestLlmServer(messageWithContinuePrefix)
-}
-
-function clickOnLogprobItem(token, logprobItem) {
-  continueFromToken(token, logprobItem.token, logprobItem.logprob)
-  if (isMobile.value) {
-    setTimeout(closeFloatPatchPannel, 500)
-  }
+  token.logprobs.content[0].token = continuePrefix
+  tokens.value.splice(token.tokenIndex, 0, token);
 }
 
 
@@ -1350,11 +1381,10 @@ const dialogComputed = computed(() => {
 
   const dialog = { ...pandaState.dialogCache.value }
   dialog.messages = [...messagesComputed.value]
-  // TODO should add new newTurnMessage?
-  // Should panda include whole mulit-turn dialog?
-  if (newTurnMessage.value.content) {
-    dialog.messages.push(newTurnMessage.value)
-  }
+  // TODO should add new newTurnMessage? No, becasue when load again, no more newTurnMessage
+  // if (newTurnMessage.value.content) {
+  //   dialog.messages.push(newTurnMessage.value)
+  // }
   return dialog
 })
 

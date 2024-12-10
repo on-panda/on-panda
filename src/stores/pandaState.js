@@ -9,10 +9,12 @@ const dialogExample = {
     comment: "Editable comment",
     messages: messagesExample,
     operations: [{
-        type: "continue",
+        operator: "continue_with_chosen",
         from_candidate: true,
         time: 1733147962,
         prefix_messages_num: 2,
+        parent: 1,
+        on_policy: true,
     }],
     annotate: {
         is_good: null,  // different from chosen, which will be SFT training data
@@ -126,18 +128,17 @@ export class PandaState {
         this.pandaTree.value = pandaTreeExample
         this.currentDialogIndex.value = 1
     }
-
-    cutOffPointer = () => {
-        this.pandaTree.value.dialogs[this.currentDialogKey.value] = deepCopy(this.pandaTree.value.dialogs[this.currentDialogKey.value])
+    writeBack = (operation) => {
+        var newDialog = deepCopy(this.dialogComputed.value)
+        if (operation) {
+            newDialog.operations.push(operation)
+        }
+        this.pandaTree.value.dialogs[this.currentDialogKey.value] = newDialog
     }
-    writeBack = () => {
-        this.pandaTree.value.dialogs[this.currentDialogKey.value] = deepCopy(this.dialogComputed.value)
-    }
-    fork = () => {
-        self.cutOffPointer()
-
-        // using pinter to track latest dialogComputed
-        this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = this.dialogComputed.value
+    fork = (operation) => {
+        var newDialog = deepCopy(this.dialogComputed.value)
+        newDialog.operations = operation ? [operation] : []
+        this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = newDialog
         this.currentDialogIndex.value = this.dialogKeys.value.indexOf(this.dialogMaxKeyAll.value)
     }
     delete = () => {
@@ -150,6 +151,23 @@ export class PandaState {
     }
     load = () => {
     }
+    // default is on_policy:true
+    parentLastOperationOnPolicy = computed(() => (!this.currentDialogData.value?.operations?.length) || this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1].on_policy)
+    beforeOperation = () => {
+    }
+    afterOperation = (operation) => {
+        Object.assign({
+            time: Date.now(),
+            parent: this.currentDialogKey.value,
+        }, operation)
+
+        // default is on_policy:true
+        if (this.parentLastOperationOnPolicy.value || operation.on_policy) {
+            this.fork(operation)
+        } else {
+            this.writeBack(operation)
+        }
+    }
     lazyCheck = async () => {
         var hashComputed = await hashObjectSHA256Base64(this.dialogComputed.value)
         var hashCurrent = await hashObjectSHA256Base64(this.currentDialogData.value)
@@ -157,20 +175,51 @@ export class PandaState {
         console.log(hashComputed, hashCurrent)
         console.log(this.dialogComputed.value)
 
-        // if new message, fork
+        if ("autoFork" && false) {
+            const isFinalRoleModelRoleComputed = isFinalRoleModelRole(this.dialogComputed.value.messages)
+            const isFinalRoleModelRoleCurrent = isFinalRoleModelRole(this.currentDialogData.value.messages)
+            if (!isFinalRoleModelRoleCurrent) {
+                this.writeBack()
+            } else if (!isFinalRoleModelRoleComputed) {
+                this.fork()
+            } else { // both final role is model role
+                const promptDiff = messagesDifferent(getPromptMessages(this.dialogComputed.value.messages), getPromptMessages(this.currentDialogData.value.messages))
+                const responeDiff = messageDifferent(getResponeMessages(this.dialogComputed.value.messages), getResponeMessages(this.currentDialogData.value.messages))
 
-        // if both have new message, write back?
+                var isPreviousResponseOnPolicy
+                var isNewResponseOnPolicy
+                if (promptDiff.isDifferent) {
+                    if (isPreviousDialogOnPolicy) {
+                        this.fork()
+                    } else {
+                        this.writeBack()
+                    }
+                } else {
+                    if (responeDiff.diffType === "bifurcation") {
+                        this.writeBack()
+                    }
 
-        // if prompt same, respone same, do nothing
+                    if (isNewResponseOnPolicy) {
 
-        // if prompt different, respone same, write back?
+                    }
+                }
 
-        // if respone different, but contiuned write back
+                // if new message, fork
 
-        // if respone different, but truncated, fork? (different of EOT and not EOT)
+                // if both have new message, write back?
 
-        // if respone different, forked, fork
+                // if prompt same, respone same, do nothing
 
+                // if prompt different, respone same, write back?
+
+                // if respone different, but contiuned write back
+
+                // if respone different, but truncated, fork? (different of EOT and not EOT)
+
+                // if respone different, forked, fork
+
+            }
+        }
     }
 }
 

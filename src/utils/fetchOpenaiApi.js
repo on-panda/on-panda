@@ -30,7 +30,6 @@ export class OpenAI {
     }
 
     options = options || {};
-    console.log('options', options)
 
     const url = `${this.baseURL}/chat/completions`;
     const headers = {
