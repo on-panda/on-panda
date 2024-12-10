@@ -599,6 +599,7 @@ function warning(content) {
 const defaultApiConfig = {
   "support_continue_final_message": true,
   "endpoint_name": "endpoint-name",
+  "model_roles": ["assistant"],
   "clientConfig": {
     baseURL: window.location.origin + "/llama-cpu",
     // baseURL: window.location.origin + "/qwen-cpu",
@@ -916,11 +917,22 @@ async function requestLlmServer(messages) {
     }
   }
   body.messages = messages
+
+  const fetchController = new AbortController();
+
+  var FIRST_TOKEN_TIMEOUT_SECOND = 5 * 60
+  let firstTokenTimeoutId = setTimeout(() => {
+    var errorMessage = 'First token timeout error: >= ' + FIRST_TOKEN_TIMEOUT_SECOND + ' secoond, abort request.'
+    fetchController.abort(errorMessage)
+    var error = new Error(errorMessage);
+    warning(error)
+  }, FIRST_TOKEN_TIMEOUT_SECOND * 1000);
+
   try {
     requestStatus.value.generating = true
     requestStatus.value.requestTimes++
     var requestID = requestStatus.value.requestTimes
-    var stream = await openai.value.chat.completions.create(body);
+    var stream = await openai.value.chat.completions.create(body, { signal: fetchController.signal });
 
     var tokenIndex = 0
     var streamIndex = -1
@@ -930,12 +942,14 @@ async function requestLlmServer(messages) {
       if ("error" in chunk) {
         throw new Error(JSON.stringify(chunk))
       }
-      streamIndex++
       if (requestID !== requestStatus.value.requestTimes) {
         console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
+
+        fetchController.abort()  // tell server to stop generating
         return
       }
       if (!requestStatus.value.generating) {
+        fetchController.abort()
         return
       }
       if (continue_final_message && !tokenIndex) { // before affect to tokens
@@ -947,6 +961,10 @@ async function requestLlmServer(messages) {
       var token = chunk.choices[0];
       if (!token?.delta) {
         continue
+      }
+      streamIndex++
+      if (streamIndex === 0) { // first token
+        clearTimeout(firstTokenTimeoutId)
       }
       if (continue_final_message && streamIndex == 1 && token.delta.content == lastMessageContent) {
         // avoid vllm echo bug https://github.com/vllm-project/vllm/issues/10111

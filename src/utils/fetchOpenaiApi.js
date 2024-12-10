@@ -22,12 +22,15 @@ export class OpenAI {
     this.globalStore = useGlobalStore()
   }
 
-  async createChatCompletion(body) {
+  async createChatCompletion(body, options = null) {
     if (this.globalStore.hooks?.beforeCreateChatCompletion?.length) {
       for (let hook of this.globalStore.hooks.beforeCreateChatCompletion) {
         body = await hook(body)
       }
     }
+
+    options = options || {};
+    console.log('options', options)
 
     const url = `${this.baseURL}/chat/completions`;
     const headers = {
@@ -38,7 +41,8 @@ export class OpenAI {
     const response = await fetch(url, {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      ...options
     });
 
     if (!response.ok) {
