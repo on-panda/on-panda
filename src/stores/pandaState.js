@@ -79,6 +79,7 @@ var pandaTreeExample = {
 }
 
 export class PandaState {
+    cacheTree = {}
     constructor() {
     }
     registerDialogComputed = (dialogComputed) => {
@@ -87,6 +88,20 @@ export class PandaState {
     registerApiConfig = (apiConfig) => {
         this.apiConfig = apiConfig
     }
+    registerTokens = (tokens) => {
+        this.tokens = tokens
+    }
+    tryRestoreTokens = () => {
+        // TODO finish
+        var tokensCache = this.cacheTree[this.currentDialogKey.value]?.tokens
+        if (this.tokens?.value?.length && tokensCache) {
+            tokensToSeq = (tokens) => tokens.map(token => token.token).join('') + (tokens[tokens.length - 1].finish_reason ? ('<|' + tokens[tokens.length - 1].finish_reason + '|>') : '')
+            if (tokensToSeq(this.tokens.value) === tokensToSeq(tokensCache)) {
+                this.tokens.value = tokensCache
+            }
+        }
+    }
+
     modelRoles = computed(this?.apiConfig?.value?.model_roles || ["assistant"])
 
     pandaTree = ref({ dialogs: {} })

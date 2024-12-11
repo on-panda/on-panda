@@ -781,7 +781,7 @@ function convertMessageToTokens(message) {
   return tokens
 }
 
-
+// TODO mv to workround and rename to monkeyPatch.js
 import apiConfigList from '@/assets/secret/apiConfigList.js'
 // list of apiConfigs, if model is not set, fetch all models.
 
@@ -1392,6 +1392,7 @@ import { sleep } from '@/utils/commonUtils'
 watchEffect(() => {
   if (pandaState.dialogCache.value.messages) {
     loadMessages(pandaState.dialogCache.value.messages)
+    pandaState.tryRestoreTokens()
   }
 })
 
@@ -1408,6 +1409,7 @@ const dialogComputed = computed(() => {
 
 pandaState.registerDialogComputed(dialogComputed)
 pandaState.registerApiConfig(apiConfig)
+pandaState.registerTokens(tokens)
 
 registerKeyActions({
   ArrowLeft: pandaState.switchToPreviousDialog,
