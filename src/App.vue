@@ -342,7 +342,7 @@ import MessageMarkdown from './components/MessageMarkdown.vue'
 import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useEventListener, registerKeyActions, closeFloatPannelMeta } from '@/utils/commonUtils'
-import { p, escapeHTML, copyToClipboard, deepCopy, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils'
+import { p, escapeHTML, copyToClipboard, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close } from '@element-plus/icons-vue'
 
@@ -752,8 +752,12 @@ function loadMessages(newMessages) {
   tokens.value = []
   if (newMessages[newMessages.length - 1].role == "assistant") {
     var lastMessage = newMessages[newMessages.length - 1]
+    // var isEqual = deepEqual(finalMessage.value , lastMessage)
+    // console.log('loadMessages', finalMessage.value, lastMessage, isEqual)
+    // if(!isEqual){
     var newTokens = convertMessageToTokens(lastMessage)
     tokens.value = newTokens
+    // }
     newMessages = newMessages.slice(0, newMessages.length - 1)
   }
   messages.value = newMessages
@@ -1389,12 +1393,13 @@ useEventListener(window, 'resize', handleReactiveFunctions)
 import { pandaState } from './stores/pandaState'
 import { sleep } from '@/utils/commonUtils'
 
-watchEffect(() => {
-  if (pandaState.dialogCache.value.messages) {
-    loadMessages(pandaState.dialogCache.value.messages)
-    pandaState.tryRestoreTokens()
-  }
-})
+watch(pandaState.dialogCache,
+  (newValue, oldValue) => {
+    if (newValue.messages) {
+      loadMessages(newValue.messages)
+      pandaState.tryRestoreTokens()
+    }
+  })
 
 const dialogComputed = computed(() => {
 

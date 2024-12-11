@@ -95,10 +95,16 @@ export class PandaState {
         // TODO finish
         var tokensCache = this.cacheTree[this.currentDialogKey.value]?.tokens
         if (this.tokens?.value?.length && tokensCache) {
-            tokensToSeq = (tokens) => tokens.map(token => token.token).join('') + (tokens[tokens.length - 1].finish_reason ? ('<|' + tokens[tokens.length - 1].finish_reason + '|>') : '')
+            const tokensToSeq = (tokens) => tokens.map(token => token.token).join('') + (tokens[tokens.length - 1].finish_reason ? ('<|' + tokens[tokens.length - 1].finish_reason + '|>') : '')
             if (tokensToSeq(this.tokens.value) === tokensToSeq(tokensCache)) {
-                this.tokens.value = tokensCache
+                this.tokens.value.length = 0
+                this.tokens.value.push(...tokensCache)
             }
+        }
+    }
+    cacheTokens = () => {
+        this.cacheTree[this.currentDialogKey.value] = {
+            ...this.cacheTree[this.currentDialogKey.value], tokens: deepCopy(this.tokens.value)
         }
     }
 
@@ -137,6 +143,7 @@ export class PandaState {
     })
 
     switchDialogByIndex = async (index) => {
+        this.cacheTokens()
         await this.beforeOperation()
         this.currentDialogIndex.value = (index + this.dialogKeys.value.length) % this.dialogKeys.value.length
     }
@@ -161,7 +168,12 @@ export class PandaState {
         var newDialog = deepCopy(this.dialogComputed.value)
         newDialog.operations = operation ? [operation] : []
         this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = newDialog
+
+        this.cacheTokens()
         this.currentDialogIndex.value = this.dialogKeys.value.indexOf(this.dialogMaxKeyAll.value)
+
+        // will throw recursion error
+        // this.switchDialogByIndex(this.dialogKeys.value.length-1)
     }
     delete = () => {
     }
