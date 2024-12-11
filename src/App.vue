@@ -297,24 +297,24 @@
       <br>
 
       <el-form-item label="temperature">
-        <el-input-number v-model="apiConfig.chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
+        <el-input-number v-model="apiConfig.chat_config.temperature" :min="0" :max="10" :step="0.01" size="small" />
       </el-form-item>
 
       <el-form-item label="max_tokens">
-        <el-input-number v-model="apiConfig.chatConfig.max_tokens" :min="1" :max="1048576" :step="1" size="small" />
+        <el-input-number v-model="apiConfig.chat_config.max_tokens" :min="1" :max="1048576" :step="1" size="small" />
       </el-form-item>
 
       <el-form-item label="top_p">
-        <el-input-number v-model="apiConfig.chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
+        <el-input-number v-model="apiConfig.chat_config.top_p" :min="0" :max="1" :step="0.01" size="small" />
       </el-form-item>
 
       <!-- <el-form-item label="Freq. Penalty">
-        <el-input-number v-model="apiConfig.chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01"
+        <el-input-number v-model="apiConfig.chat_config.frequency_penalty" :min="0" :max="10" :step="0.01"
           size="small" />
       </el-form-item> -->
 
       <el-form-item label="top_logprobs">
-        <el-input-number v-model="apiConfig.chatConfig.top_logprobs" :min="0" :max="50" :step="1" size="small" />
+        <el-input-number v-model="apiConfig.chat_config.top_logprobs" :min="0" :max="50" :step="1" size="small" />
       </el-form-item>
 
       <el-form-item label="continue generating">
@@ -328,7 +328,7 @@
 
     <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
 
-    <br v-for="_ in isMobile ? 12 : apiConfig.chatConfig.top_logprobs">
+    <br v-for="_ in isMobile ? 12 : apiConfig.chat_config.top_logprobs">
   </div>
 </template>
 
@@ -342,7 +342,7 @@ import MessageMarkdown from './components/MessageMarkdown.vue'
 import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useEventListener, registerKeyActions, closeFloatPannelMeta } from '@/utils/commonUtils'
-import { p, escapeHTML, copyToClipboard, deepCopy } from '@/utils/commonUtils'
+import { p, escapeHTML, copyToClipboard, deepCopy, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close } from '@element-plus/icons-vue'
 
@@ -356,20 +356,20 @@ var bitTotal = computed(
 )
 
 async function requestPromptLogprobs() {
-  // TODO auto run when chatConfig is changed
+  // TODO auto run when chat_config is changed
   var messages = messagesComputed.value
   messages = messages.filter(message => message.content)
   console.assert(messages[messages.length - 1].role == "assistant", "last message should be assistant", messages)
   var body = {
     messages: messages,
-    model: apiConfig.value.chatConfig.model,
-    temperature: apiConfig.value.chatConfig.temperature,
+    model: apiConfig.value.chat_config.model,
+    temperature: apiConfig.value.chat_config.temperature,
     logprobs: true,
     add_generation_prompt: false,
     continue_final_message: true,
     max_tokens: 1,
-    top_logprobs: apiConfig.value.chatConfig.top_logprobs,
-    prompt_logprobs: apiConfig.value.chatConfig.top_logprobs,
+    top_logprobs: apiConfig.value.chat_config.top_logprobs,
+    prompt_logprobs: apiConfig.value.chat_config.top_logprobs,
   }
   try {
 
@@ -598,18 +598,18 @@ function warning(content) {
   warningNumber.value += 1
   warningContent.value = "<b>" + warningNumber.value + ' th error, ' + "</b>" + dateTimeString + "<p>" + content + "</p><hr>" + warningContent.value
 }
-// TODO: chage CamelCase naming to underscore
+
 const defaultApiConfig = {
   "support_continue_final_message": true,
   "endpoint_name": "endpoint-name",
   "model_roles": ["assistant"],
-  "clientConfig": {
-    baseURL: window.location.origin + "/llama-cpu",
-    // baseURL: window.location.origin + "/qwen-cpu",
-    apiKey: "sk-Nokey",
+  "client_config": {
+    base_url: window.location.origin + "/llama-cpu",
+    // base_url: window.location.origin + "/qwen-cpu",
+    api_key: "sk-Nokey",
     dangerouslyAllowBrowser: true
   },
-  "chatConfig": {
+  "chat_config": {
     model: 'meta-llama/Meta-Llama-3-8B-Instruct',
     // model: 'Qwen/Qwen2.5-1.5B-Instruct',
     messages: messages,
@@ -793,15 +793,15 @@ watch(metaApiConfigs, async (newValue) => {
   const configs = [];
   for (let apiConfig of newValue) {
     apiConfig = JSON.parse(JSON.stringify(apiConfig));
-    if (apiConfig.chatConfig.model) {
+    if (apiConfig.chat_config.model) {
       configs.push(apiConfig);
     } else {
       try {
-        const openai = new OpenAI(apiConfig.clientConfig);
+        const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.client_config));
         const list = await openai.models.list();
         for await (const model of list) {
           const apiConfigWithModel = JSON.parse(JSON.stringify(apiConfig));
-          apiConfigWithModel.chatConfig.model = model.id;
+          apiConfigWithModel.chat_config.model = model.id;
           configs.push(apiConfigWithModel);
         }
       } catch (error) {
@@ -812,9 +812,9 @@ watch(metaApiConfigs, async (newValue) => {
     }
   }
   apiConfigs.value = configs.reduce((obj, config, index) => {
-    var key = `${index + 1}—` + (config.endpoint_name ? config.endpoint_name + "—" : "") + (config.chatConfig.model || '<|None|>')
+    var key = `${index + 1}—` + (config.endpoint_name ? config.endpoint_name + "—" : "") + (config.chat_config.model || '<|None|>')
     if (isMobile.value) {
-      key = `${index + 1} | ` + (config.chatConfig.model || '<|None|>') + ' | ' + (config.endpoint_name ? config.endpoint_name : "")
+      key = `${index + 1} | ` + (config.chat_config.model || '<|None|>') + ' | ' + (config.endpoint_name ? config.endpoint_name : "")
     }
     obj[key] = config;
     return obj;
@@ -853,16 +853,16 @@ const apiConfig = computed(() => {
     }
   }
   // update apiConfig with defaultApiConfig
-  apiConfig.clientConfig = { ...defaultApiConfig.clientConfig, ...apiConfig.clientConfig }
-  apiConfig.chatConfig = { ...defaultApiConfig.chatConfig, ...apiConfig.chatConfig }
+  apiConfig.client_config = { ...defaultApiConfig.client_config, ...apiConfig.client_config }
+  apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfig.chat_config }
   apiConfig = { ...defaultApiConfig, ...apiConfig }
-  apiConfig.clientConfig.baseURL = apiConfig.clientConfig.baseURL.replace('${origin}', window.location.origin)
+  apiConfig.client_config.base_url = apiConfig.client_config.base_url.replace('${origin}', window.location.origin)
   return apiConfig
 })
 
 
 const openai = computed(() =>
-  new OpenAI(apiConfig.value.clientConfig)
+  new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
 )
 const tokens = ref([]);
 
@@ -891,7 +891,7 @@ async function requestLlmServer(messages) {
   messages = messages.filter(message => message.content)
   const modelRoles = apiConfig.value?.model_roles || ["assistant"]
   const continue_final_message = modelRoles.includes(messages[messages.length - 1].role)
-  var body = JSON.parse(JSON.stringify(apiConfig.value.chatConfig))
+  var body = JSON.parse(JSON.stringify(apiConfig.value.chat_config))
   if (continue_final_message) {
     // to remove the last token's finish_reason
     if (tokens.value.length) {

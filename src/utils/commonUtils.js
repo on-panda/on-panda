@@ -42,6 +42,23 @@ export function toLegalVariableName(str) {
   return /^\d/.test(cleanedStr) ? '_' + cleanedStr : cleanedStr;
 }
 
+export function ObjctKeyToCamelCaseNaming(obj) {
+  obj = JSON.parse(JSON.stringify(obj))
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      var newKey = key.replace(/_([a-z])/g, function (g) { return g[1].toUpperCase(); });
+      if (key == 'base_url') {
+        newKey = 'baseURL'
+      }
+      if (newKey !== key) {
+        obj[newKey] = obj[key];
+        delete obj[key];
+      }
+    }
+  }
+  return obj
+}
+
 export function p(varName, obj) {
   if (obj === undefined) {
     obj = varName
