@@ -201,7 +201,7 @@
     }" style="display: flex">
       <textarea type="text" placeholder="submit: `↵`; newline: `shift+↵`" style="height: 25px; width:auto;"
         class="floatInputPatchInput" @focus="$event.target.select()"
-        @keydown.enter="if (!$event.shiftKey) { opreators.continueWithInput(floatInputPatch.attachedPatch.tokens.find(x => x.logprobs?.content.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
+        @keydown.enter="if (!$event.shiftKey) { opreators.continueWithInput(floatInputPatch.attachedPatch.tokens.find(x => x.delta?.content?.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
     </div>
 
     <div ref='floatSelectedOpreationPannelRef' class="floatSelectedOpreationPannel"
@@ -251,7 +251,7 @@
       <div style="color:#555">
         &nbsp;&nbsp;
         <small v-for="(key, idx) in pandaState.dialogKeys.value" style="cursor: pointer"
-          @click="pandaState.currentDialogIndex.value = idx"
+          @click="pandaState.switchDialogByIndex(idx)"
           :style="idx == pandaState.currentDialogIndex.value ? { color: '#409eff', fontWeight: 700 } : {}">
           &nbsp; {{ key }} &nbsp;
         </small>
@@ -342,7 +342,7 @@ import MessageMarkdown from './components/MessageMarkdown.vue'
 import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useEventListener, registerKeyActions, closeFloatPannelMeta } from '@/utils/commonUtils'
-import { p, escapeHTML, copyToClipboard } from '@/utils/commonUtils'
+import { p, escapeHTML, copyToClipboard, deepCopy } from '@/utils/commonUtils'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close } from '@element-plus/icons-vue'
 
@@ -598,7 +598,7 @@ function warning(content) {
   warningNumber.value += 1
   warningContent.value = "<b>" + warningNumber.value + ' th error, ' + "</b>" + dateTimeString + "<p>" + content + "</p><hr>" + warningContent.value
 }
-
+// TODO: chage CamelCase naming to underscore
 const defaultApiConfig = {
   "support_continue_final_message": true,
   "endpoint_name": "endpoint-name",
@@ -698,6 +698,7 @@ const exampleNameToFunc = {
   },
   "annotate": async () => {
     pandaState.setExample()
+    opreators.pandaState = pandaState
     await sleep(100)
     opreators.continueGenerating()
   }
@@ -751,7 +752,8 @@ function loadMessages(newMessages) {
   tokens.value = []
   if (newMessages[newMessages.length - 1].role == "assistant") {
     var lastMessage = newMessages[newMessages.length - 1]
-    tokens.value = convertMessageToTokens(lastMessage)
+    var newTokens = convertMessageToTokens(lastMessage)
+    tokens.value = newTokens
     newMessages = newMessages.slice(0, newMessages.length - 1)
   }
   messages.value = newMessages
@@ -764,13 +766,16 @@ function convertMessageToTokens(message) {
       return {
         delta: { content: token.segment },
         tokenIndex: tokenIndex,
+        logprobs: { content: [{ token: token.segment, top_logprobs: [] }] },
       }
     })
 
     tokens[0].delta.role = "assistant"
-    tokens[tokens.length - 1].bifurcationPoint = true
     if (message.finish_reason) {
       tokens[tokens.length - 1].finish_reason = message.finish_reason
+    }
+    if (!message.finish_reason || message.finish_reason == "length") {
+      tokens[tokens.length - 1].bifurcationPoint = true
     }
   }
   return tokens
@@ -884,7 +889,8 @@ const requestStatus = ref({
 async function requestLlmServer(messages) {
   messages = messages.value === undefined ? messages : messages.value
   messages = messages.filter(message => message.content)
-  const continue_final_message = messages[messages.length - 1].role == "assistant"
+  const modelRoles = apiConfig.value?.model_roles || ["assistant"]
+  const continue_final_message = modelRoles.includes(messages[messages.length - 1].role)
   var body = JSON.parse(JSON.stringify(apiConfig.value.chatConfig))
   if (continue_final_message) {
     // to remove the last token's finish_reason
@@ -1035,45 +1041,71 @@ class OpreatorCenter {
   // continue generating, continue with chosen, continue with input, edit prompt, edit response, refresh, load example, load panda tree, stop.
   constructor() {
   }
+  pandaState = new Proxy({}, {
+    get: function (target, prop, receiver) {
+      return function () {
+        console.log('call fake pandaState.' + prop + '()', receiver)
+      }
+    }
+  })
   continueGenerating = async () => {
-    await pandaState.beforeOperation()
+    await this.pandaState.beforeOperation()
     requestLlmServer(messagesComputed.value)
   }
 
   stopGenerating = async () => {
-    await pandaState.beforeOperation()
+    await this.pandaState.beforeOperation()
     requestStatus.value.generating = false
   }
 
   continueWithChosen = async (token, logprobItem) => {
 
     // function clickOnLogprobItem() {
-    await pandaState.beforeOperation()
+    await this.pandaState.beforeOperation()
     prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob)
-    await pandaState.afterOperation({
+    await this.pandaState.afterOperation({
       operator: "continue_with_chosen",
       on_policy: true,
-    })
+    }, true)
     requestLlmServer(messagesComputed.value)
     if (isMobile.value) {
       window.setTimeout(closeFloatPatchPannel, 500)
     }
   }
 
-  continueWithInput = (token, continuePrefix, continuePrefixLogprob) => {
+  continueWithInput = async (token, continuePrefix, continuePrefixLogprob) => {
+    await this.pandaState.beforeOperation()
     prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob)
+    await this.pandaState.afterOperation({
+      operator: "continue_with_input",
+      on_policy: true,
+    }, true)
     requestLlmServer(messagesComputed.value)
   }
 
 }
 
+function prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob) {
+  for (const patch of patchs.value) {
+    for (const patchToken of patch.tokens) {
+      patchToken.pruned = patchToken.tokenIndex >= token.tokenIndex
+      if (patchToken.tokenIndex == token.tokenIndex) {
+        patchToken.bifurcationPoint = true
+      }
+    }
+  }
+  continuePrefix = continuePrefix || ""
+  // const continuePrefixToken = { delta: { content: continuePrefix }, tokenIndex: token.tokenIndex, bifurcationPoint: true, logprobs: token.logprobs }
+  token = deepCopy(token)
+  token.delta.content = continuePrefix
+  token.bifurcationPoint = true
+  token.pruned = false
+  token.logprobs.content[0].logprob = isFinite(continuePrefixLogprob) ? continuePrefixLogprob : -9999
+  token.logprobs.content[0].token = continuePrefix
+  tokens.value.splice(token.tokenIndex, 0, token);
+}
+
 const opreators = new OpreatorCenter()
-
-
-const assistentResponseContent = computed(() => {
-  return tokens.value.map((token) => token.delta.content).join("");
-});
-
 
 const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
 
@@ -1091,7 +1123,8 @@ function probOfToken(token) {
 }
 
 const patchs = computed(() => {
-  const visableSegments = Array.from(segmenter.segment(assistentResponseContent.value));
+  const assistentResponseContentAll = tokens.value.map((token) => token.delta.content).join("");
+  const visableSegments = Array.from(segmenter.segment(assistentResponseContentAll));
   // add a empty segment at the end for EOT token
   Array.from({ length: 4 }, (_, i) => visableSegments.push({ segment: "" }));
   var patchs = []
@@ -1215,10 +1248,16 @@ const newTurnMessage = ref({ role: 'user', content: '' })
 
 const finalMessage = computed(() => {
   var role = null  // Compatible with Claude that each token has a role
+  var finish_reason
   var finalMessage = tokens.value.filter(
     token => !token.pruned
   ).map(
-    token => (token.delta || {})
+    token => {
+      if (token.finish_reason) {
+        finish_reason = token.finish_reason
+      }
+      return (token.delta || {})
+    }
   ).reduce((delta1, delta2) => {
     const delta = { ...delta1 }
     for (var key in delta2) {
@@ -1239,8 +1278,8 @@ const finalMessage = computed(() => {
       delete finalMessage[key]
     }
   }
-  if (tokens.value[tokens.value.length - 1]?.finish_reason) {
-    finalMessage.finish_reason = tokens.value[tokens.value.length - 1].finish_reason
+  if (finish_reason) {
+    finalMessage.finish_reason = finish_reason
   }
   return finalMessage
 })
@@ -1301,27 +1340,6 @@ function setFloatPatchPannelBelow(element) {
   }
   floatPatchPannel.value.waitingToHide = false;
   floatPatchPannel.value.visible = true;
-}
-
-function prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob) {
-  console.log(token, continuePrefix, continuePrefixLogprob)
-  for (const patch of patchs.value) {
-    for (const patchToken of patch.tokens) {
-      patchToken.pruned = patchToken.tokenIndex >= token.tokenIndex
-      if (patchToken.tokenIndex == token.tokenIndex) {
-        patchToken.bifurcationPoint = true
-      }
-    }
-  }
-  continuePrefix = continuePrefix || ""
-  // const continuePrefixToken = { delta: { content: continuePrefix }, tokenIndex: token.tokenIndex, bifurcationPoint: true, logprobs: token.logprobs }
-  token = JSON.parse(JSON.stringify(token)) // deep copy
-  token.delta.content = continuePrefix
-  token.bifurcationPoint = true
-  token.pruned = false
-  token.logprobs.content[0].logprob = isFinite(continuePrefixLogprob) ? continuePrefixLogprob : -9999
-  token.logprobs.content[0].token = continuePrefix
-  tokens.value.splice(token.tokenIndex, 0, token);
 }
 
 
@@ -1389,6 +1407,7 @@ const dialogComputed = computed(() => {
 })
 
 pandaState.registerDialogComputed(dialogComputed)
+pandaState.registerApiConfig(apiConfig)
 
 registerKeyActions({
   ArrowLeft: pandaState.switchToPreviousDialog,
@@ -1399,19 +1418,19 @@ registerKeyActions({
 var exampleFunc = exampleNameToFunc['default']
 // var exampleFunc = exampleNameToFunc['annotate']
 // var exampleFunc = exampleNameToFunc['image']
-setTimeout(exampleFunc, 1500)
+setTimeout(async () => {
+  await exampleFunc()
+  p("tokens", tokens.value)
+  p("patchs", patchs)
+}, 1500)
 
 onMounted(async () => {
   scrollDiv.value.addEventListener('scroll', handleReactiveFunctions);
-
   try {
     await import('@/assets/secret/workaround.js');
   } catch (error) {
     console.error('Failed to load workaround.js:', error);
   }
-
-  p("tokens", tokens.value)
-  p("patchs", patchs)
 })
 
 onBeforeUnmount(async () => {

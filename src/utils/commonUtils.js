@@ -3,6 +3,36 @@ export function deepCopy(obj) {
   return JSON.parse(JSON.stringify(obj))
 }
 
+export function deepEqual(obj1, obj2, visited = new Set()) {
+  if (obj1 === obj2) {
+    return true;
+  }
+  if (obj1 == null || typeof obj1 !== "object" ||
+    obj2 == null || typeof obj2 !== "object") {
+    return false;
+  }
+  if (visited.has(obj1) || visited.has(obj2)) {
+    return false;
+  }
+  visited.add(obj1);
+  visited.add(obj2);
+
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+  if (keys1.length !== keys2.length) {
+    return false;
+  }
+  const keys2Set = new Set(keys2);
+  for (const key of keys1) {
+    if (!keys2Set.has(key) || !deepEqual(obj1[key], obj2[key], visited)) {
+      return false;
+    }
+  }
+  visited.delete(obj1);
+  visited.delete(obj2);
+  return true;
+}
+
 export async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
@@ -24,6 +54,10 @@ export function p(varName, obj) {
 }
 
 window.p = p
+
+export function getUnicodeLength(str) {
+  return Array.from(str).length;
+}
 
 export const escapeHTML = (s) => {
   return s

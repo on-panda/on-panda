@@ -1,6 +1,6 @@
-import { deepCopy, hashObjectSHA256Base64 } from '@/utils/commonUtils'
 import { ref, computed, watchEffect } from 'vue'
-// import { hashObjectSHA256Base64 } from '@/utils/commonUtils'
+import { deepCopy, hashObjectSHA256Base64 } from '@/utils/commonUtils'
+import { messagesDifferent } from '@/utils/chatUtils'
 
 const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "1+1=" }, { role: "assistant", content: "Answer is", finish_reason: "length" }]
 const dialogExample = {
@@ -84,10 +84,15 @@ export class PandaState {
     registerDialogComputed = (dialogComputed) => {
         this.dialogComputed = dialogComputed
     }
+    registerApiConfig = (apiConfig) => {
+        this.apiConfig = apiConfig
+    }
+    modelRoles = computed(this?.apiConfig?.value?.model_roles || ["assistant"])
+
     pandaTree = ref({ dialogs: {} })
     // pandaTree = ref(pandaTreeExample)
     allDialogs = computed(() => ({ ...this.pandaTree.value.dialogs, ...this.pandaTree.value.deleted_dialogs }))
-    dialogKeys = computed(() => Object.keys(this.allDialogs.value).map(Number).sort())
+    dialogKeys = computed(() => Object.keys(this.allDialogs.value).map(Number).sort((a, b) => a - b))
     dialogMaxKeyAll = computed(() => this.dialogKeys.value[this.dialogKeys.value.length - 1])
     dialogMaxIndexRemain = computed(() => {
         for (var i = this.dialogKeys.value.length - 1; i >= 0; i--) {
@@ -116,13 +121,15 @@ export class PandaState {
         this.dialogCache.value.messages = this.currentDialogData.value.messages ? deepCopy(this.currentDialogData.value.messages) : undefined
     })
 
+    switchDialogByIndex = async (index) => {
+        await this.beforeOperation()
+        this.currentDialogIndex.value = (index + this.dialogKeys.value.length) % this.dialogKeys.value.length
+    }
     switchToNextDialog = async () => {
-        await this.lazyCheck()
-        this.currentDialogIndex.value = (this.currentDialogIndex.value + 1) % this.dialogKeys.value.length
+        await this.switchDialogByIndex(this.currentDialogIndex.value + 1)
     }
     switchToPreviousDialog = async () => {
-        await this.lazyCheck()
-        this.currentDialogIndex.value = (this.currentDialogIndex.value - 1 + this.dialogKeys.value.length) % this.dialogKeys.value.length
+        await this.switchDialogByIndex(this.currentDialogIndex.value - 1)
     }
     setExample = () => {
         this.pandaTree.value = pandaTreeExample
@@ -151,19 +158,50 @@ export class PandaState {
     }
     load = () => {
     }
-    // default is on_policy:true
+    // default on_policy:true
     parentLastOperationOnPolicy = computed(() => (!this.currentDialogData.value?.operations?.length) || this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1].on_policy)
-    beforeOperation = () => {
+    beforeOperation = (operation) => {
+        this.autoFork(operation)
     }
-    afterOperation = (operation) => {
-        Object.assign({
+
+    setDefaultToOperation = (operation) => {
+        const diff = messagesDifferent(this.currentDialogData.value.messages, this.dialogComputed.value.messages)
+        return Object.assign({
             time: Date.now(),
             parent: this.currentDialogKey.value,
-        }, operation)
+        }, diff, operation)
+    }
+
+    autoFork = (operation) => {
+        operation = operation || { operator: "auto" }
+        if (!operation.response_modified_type) {
+            operation = this.setDefaultToOperation(operation)
+        }
+        if (this.parentLastOperationOnPolicy.value || operation.on_policy) {
+            if (operation.is_prompt_modified) {
+                this.fork(operation)
+            } else {
+                const WRITE_BACK_TYPES = ['continued', 'no_response']
+                if (operation.response_modified_type === 'same') {
+                    // do nothing
+                }
+                else if (WRITE_BACK_TYPES.includes(operation.response_modified_type)) {
+                    this.writeBack(operation)
+                } else {
+                    this.fork(operation)
+                }
+            }
+        } else {
+            this.writeBack(operation)
+        }
+    }
+
+    afterOperation = (operation, forceFork = true) => {
+        this.setDefaultToOperation(operation)
 
         // default is on_policy:true
         if (this.parentLastOperationOnPolicy.value || operation.on_policy) {
-            this.fork(operation)
+            forceFork ? this.fork(operation) : this.autoFork(operation)
         } else {
             this.writeBack(operation)
         }
