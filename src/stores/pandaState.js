@@ -103,7 +103,7 @@ export class PandaState {
                 this.tokens.value.length = 0
                 this.tokens.value.push(...tokensCache)
             } else {
-                console.log('Warning! Unexpected seqNow !== seqCache:', seqNow === seqCache, '\n', seqNow, '\n----\n', seqCache, '\npruned now:', this.tokens.value.filter(token => token.pruned).length, 'pruned cache:', tokensCache.filter(token => token.pruned).length)
+                console.log('Warning! When tryRestoreTokens, unexpected seqNow !== seqCache:', seqNow === seqCache, '\n', seqNow, '\n----\n', seqCache, '\npruned now:', this.tokens.value.filter(token => token.pruned).length, 'pruned cache:', tokensCache.filter(token => token.pruned).length)
             }
         }
     }

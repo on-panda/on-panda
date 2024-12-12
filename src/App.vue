@@ -1436,7 +1436,7 @@ registerKeyActions({
 
 
 var exampleFunc = exampleNameToFunc['default']
-var exampleFunc = exampleNameToFunc['annotate']
+// var exampleFunc = exampleNameToFunc['annotate']
 // var exampleFunc = exampleNameToFunc['image']
 setTimeout(async function launchExampleFunc() {
   await exampleFunc()

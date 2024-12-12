@@ -60,6 +60,6 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
 
 
 export function tokensToSeq(tokens) {
-    return tokens.map(token => token.delta.content + ((token.finish_reason && token.finish_reason !== 'length') ? ('<|' + token.finish_reason + '|>') : '')).join('')
+    return tokens.map(token => (token.delta.content || "") + ((token.finish_reason && token.finish_reason !== 'length') ? ('<|' + token.finish_reason + '|>') : '')).join('')
 }
 
