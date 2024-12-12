@@ -355,6 +355,7 @@ import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useEventListener, registerKeyActions, closeFloatPannelMeta } from '@/utils/commonUtils'
 import { p, escapeHTML, copyToClipboard, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils'
+import { tokensToSeq } from './utils/chatUtils'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close } from '@element-plus/icons-vue'
 
@@ -909,13 +910,6 @@ async function requestLlmServer(messages) {
   const continue_final_message = modelRoles.includes(messages[messages.length - 1].role)
   var body = JSON.parse(JSON.stringify(apiConfig.value.chat_config))
   if (continue_final_message) {
-    // to remove the last token's finish_reason
-    if (tokens.value.length) {
-      while (tokens.value[tokens.value.length - 1].delta.content === "") {
-        tokens.value.pop()
-      }
-      tokens.value[tokens.value.length - 1].finish_reason = null
-    }
     var lastMessageContent = messages[messages.length - 1].content
     var prefillTokensNumber = tokens.value.filter(token => !token.pruned).length
     if (apiConfig.value.support_continue_final_message) {
@@ -978,6 +972,14 @@ async function requestLlmServer(messages) {
         return
       }
       if (continue_final_message && !tokenIndex) { // before affect to tokens
+        // to remove the last token's finish_reason
+        if (tokens.value.length) {
+          while (tokens.value[tokens.value.length - 1].delta.content === "") {
+            tokens.value.pop()
+          }
+          delete tokens.value[tokens.value.length - 1].finish_reason
+        }
+        // remove all pruned tokens
         tokens.value = tokens.value.filter(token => !token.pruned)
         tokensValuePtr = tokens.value
         tokenIndex = tokens.value.length
@@ -1066,6 +1068,13 @@ class OpreatorCenter {
   })
   continueGenerating = () => {
     this.pandaState.beforeOperation()
+    var isTryGeneratingOnEot = tokens.value.length && tokens.value[tokens.value.length - 1].finish_reason === "stop"
+    if (isTryGeneratingOnEot) {
+      pandaState.nextNotSameOperationCache = {
+        operator: "continue_generating",
+        on_policy: true,
+      }
+    }
     requestLlmServer(messagesComputed.value)
   }
 
@@ -1075,7 +1084,6 @@ class OpreatorCenter {
   }
 
   continueWithChosen = (token, logprobItem) => {
-
     // function clickOnLogprobItem() {
     this.pandaState.beforeOperation()
     prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob)
@@ -1411,6 +1419,8 @@ watch(pandaState.dialogCache,
     if (newValue.messages) {
       loadMessages(newValue.messages)
       pandaState.tryRestoreTokens()
+      // p(tokensToSeq(tokens.value))
+      // console.trace()
     }
   })
 
@@ -1440,7 +1450,7 @@ var exampleFunc = exampleNameToFunc['default']
 // var exampleFunc = exampleNameToFunc['image']
 setTimeout(async function launchExampleFunc() {
   await exampleFunc()
-  p("tokens", tokens.value)
+  p("tokens", tokens)
   p("patchs", patchs)
 }, 1500)
 

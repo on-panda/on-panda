@@ -39,7 +39,7 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
             }
             var seq1 = responeToSeq(response1)
             var seq2 = responeToSeq(response2)
-            // console.log(seq1, seq2, response1, response2)
+            // console.log('response diff:', seq1, seq2, response1, response2)
             if (seq1 == seq2) {
                 var response_modified_type = 'same'
                 is_response_modified = false

@@ -149,8 +149,13 @@ export class PandaState {
     })
 
     switchDialogByIndex = async (index) => {
-        await this.beforeOperation()
-        this.currentDialogIndex.value = (index + this.dialogKeys.value.length) % this.dialogKeys.value.length
+        var oldIndex = this.currentDialogIndex.value
+        this.beforeOperation()
+        if (oldIndex != index) {
+            // setTimeout(this.tryRestoreTokens)
+            this.currentDialogIndex.value = (index + this.dialogKeys.value.length) % this.dialogKeys.value.length
+        }
+        // this.tryRestoreTokens()
     }
     switchToNextDialog = async () => {
         await this.switchDialogByIndex(this.currentDialogIndex.value + 1)
@@ -190,7 +195,7 @@ export class PandaState {
     load = () => {
     }
     // default on_policy:true
-    parentLastOperationOnPolicy = computed(() => (!this.currentDialogData.value?.operations?.length) || this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1].on_policy)
+    isPreviousOperationOnPolicy = computed(() => (!this.currentDialogData.value?.operations?.length) || this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1].on_policy)
     beforeOperation = (operation) => {
         this.cacheTokens()
         this.autoFork(operation)
@@ -198,6 +203,7 @@ export class PandaState {
 
     setDefaultToOperation = (operation) => {
         const diff = messagesDifferent(this.currentDialogData.value.messages, this.dialogComputed.value.messages)
+        // console.log('diff:', diff)
         return Object.assign({
             time: Date.now(),
             parent: this.currentDialogKey.value,
@@ -205,11 +211,16 @@ export class PandaState {
     }
 
     autoFork = (operation) => {
-        operation = operation || { operator: "auto" }
+        var isDefaultOperation = !Boolean(operation)
+        if (isDefaultOperation && this.nextNotSameOperationCache) {
+            operation = this.nextNotSameOperationCache
+        }
+        delete this.nextNotSameOperationCache
+        operation = operation || { operator: "auto", on_policy: this.isPreviousOperationOnPolicy.value }
         if (!operation.response_modified_type) {
             operation = this.setDefaultToOperation(operation)
         }
-        if (this.parentLastOperationOnPolicy.value || operation.on_policy) {
+        if (this.isPreviousOperationOnPolicy.value || operation.on_policy) {
             if (operation.is_prompt_modified) {
                 this.fork(operation)
             } else {
@@ -232,7 +243,7 @@ export class PandaState {
         this.setDefaultToOperation(operation)
 
         // default is on_policy:true
-        if (this.parentLastOperationOnPolicy.value || operation.on_policy) {
+        if (this.isPreviousOperationOnPolicy.value || operation.on_policy) {
             forceFork ? this.fork(operation) : this.autoFork(operation)
         } else {
             this.writeBack(operation)
