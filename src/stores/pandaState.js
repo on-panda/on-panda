@@ -1,8 +1,8 @@
-import { ref, computed, watchEffect } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '@/utils/commonUtils'
 import { messagesDifferent, tokensToSeq } from '@/utils/chatUtils'
 
-const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "1+1=" }, { role: "assistant", content: "Answer is", finish_reason: "length" }]
+const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "give a random float, no other words" }, { role: "assistant", content: "1.27364382", finish_reason: "length" }]
 const dialogExample = {
     title: "The Title",
     description: "Uneditable description",
@@ -141,12 +141,12 @@ export class PandaState {
         return this.currentDialogKey.value ? this.allDialogs.value[this.currentDialogKey.value] : {}
     })
     dialogCache = ref(deepCopy(this.currentDialogData.value))
-    _ = watchEffect(() => {
+    _ = watch(this.currentDialogData, function (newValue, oldValue) {
         // annotate and comment is saved in time, just ref the value
-        this.dialogCache.value = this.currentDialogData.value
+        this.dialogCache.value = newValue
         // messages should using cache to store current state, so need deep copy
-        this.dialogCache.value.messages = this.currentDialogData.value.messages ? deepCopy(this.currentDialogData.value.messages) : undefined
-    })
+        this.dialogCache.value.messages = newValue.messages ? deepCopy(newValue.messages) : undefined
+    }.bind(this))
 
     switchDialogByIndex = async (index) => {
         var oldIndex = this.currentDialogIndex.value
@@ -175,6 +175,7 @@ export class PandaState {
         this.pandaTree.value.dialogs[this.currentDialogKey.value] = newDialog
     }
     fork = (operation) => {
+        // TODO: this.cacheTokens()
         var newDialog = deepCopy(this.dialogComputed.value)
         newDialog.operations = operation ? [operation] : []
         this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = newDialog
