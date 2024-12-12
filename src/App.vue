@@ -122,14 +122,19 @@
         <div class="final-message-half-pannel">
           <br>
           <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
-            <p v-if="!tokens.length">⏳ waiting response...</p>
+            <div style="color: #444" v-if="!tokens.length">
+              <span v-if="requestStatus.generating">⏳ Waiting response...</span>
+              <span v-if="!requestStatus.generating">➡️ Please click send button.</span>
+            </div>
             <div ref="rawOnPandaPannelRef">
-              <span class="PatchSpan" v-for="patch in patchs" :style='{
-                "border-bottom": "3px solid " + probToColor(patch.prob),
-                ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
-                ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
-                ...(patch.tokens.some(t => t.selected) ? { "background-color": "#0078d7", "color": "#fff" } : {}),
-              }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
+              <span class="PatchSpan" v-for="patch in patchs"
+                :key="`t${pandaState.uuid.value}-d${pandaState.currentDialogKey.value}-p${patch.index}:${patch.patch}`"
+                :style='{
+                  "border-bottom": "3px solid " + probToColor(patch.prob),
+                  ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
+                  ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
+                  ...(patch.tokens.some(t => t.selected) ? { "background-color": "#0078d7", "color": "#fff" } : {}),
+                }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
                 @mouseleave="handleMouseLeavePatchSpan" @dblclick.prevent="setFloatInputPatch($event, patch)"></span>
               <el-tooltip
                 v-if="apiConfig.support_continue_final_message && tokens.length && tokens[tokens.length - 1].finish_reason == 'length'"
@@ -144,7 +149,14 @@
         <hr style="color:#eee">
         <div class="final-message-half-pannel">
           <!-- <small style="color: #888;">rendered markdown:</small> -->
-          <MessageMarkdown :content="finalMessage.content || '⏳ waiting response...'" style="background-color: #eee;" />
+          <div v-if="!tokens.length">
+            <br>
+            <div style="background-color: #eee;color: #444">
+              <span v-if="requestStatus.generating">⏳ Waiting response...</span>
+              <span v-if="!requestStatus.generating">➡️ Please click send button.</span>
+            </div>
+          </div>
+          <MessageMarkdown :content="finalMessage.content || ''" style="background-color: #eee;" />
         </div>
       </div>
     </div>
@@ -747,18 +759,18 @@ var messagesAudioExample = [
 var messages = ref(messages)
 
 
-
 function loadMessages(newMessages) {
-  tokens.value = []
   if (newMessages[newMessages.length - 1].role == "assistant") {
     var lastMessage = newMessages[newMessages.length - 1]
-    // var isEqual = deepEqual(finalMessage.value , lastMessage)
-    // console.log('loadMessages', finalMessage.value, lastMessage, isEqual)
-    // if(!isEqual){
-    var newTokens = convertMessageToTokens(lastMessage)
-    tokens.value = newTokens
-    // }
+    var isEqual = deepEqual(finalMessage.value, lastMessage)
+    if (!isEqual) {
+      tokens.value = []
+      var newTokens = convertMessageToTokens(lastMessage)
+      tokens.value = newTokens
+    }
     newMessages = newMessages.slice(0, newMessages.length - 1)
+  } else {
+    tokens.value = []
   }
   messages.value = newMessages
 }
@@ -793,7 +805,7 @@ var metaApiConfigs = ref([defaultApiConfig, ...apiConfigList])
 
 const apiConfigs = ref({});
 
-watch(metaApiConfigs, async (newValue) => {
+watch(metaApiConfigs, async function watchMetaApiConfigs(newValue) {
   const configs = [];
   for (let apiConfig of newValue) {
     apiConfig = JSON.parse(JSON.stringify(apiConfig));
@@ -832,7 +844,7 @@ var modelName = ref('on-panda')  // using endpoint_name == 'on-panda' as default
 
 // setTimeout(requestPromptLogprobs, 3000)
 
-watch(modelName, async (newValue) => {  // set modelName to page title
+watch(modelName, async function watchModelName(newValue) {  // set modelName to page title
   if (document.title.endsWith("onPanda")) {
     document.title = newValue + " | onPanda"
   }
@@ -1052,22 +1064,22 @@ class OpreatorCenter {
       }
     }
   })
-  continueGenerating = async () => {
-    await this.pandaState.beforeOperation()
+  continueGenerating = () => {
+    this.pandaState.beforeOperation()
     requestLlmServer(messagesComputed.value)
   }
 
-  stopGenerating = async () => {
-    await this.pandaState.beforeOperation()
+  stopGenerating = () => {
+    this.pandaState.beforeOperation()
     requestStatus.value.generating = false
   }
 
-  continueWithChosen = async (token, logprobItem) => {
+  continueWithChosen = (token, logprobItem) => {
 
     // function clickOnLogprobItem() {
-    await this.pandaState.beforeOperation()
+    this.pandaState.beforeOperation()
     prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob)
-    await this.pandaState.afterOperation({
+    this.pandaState.afterOperation({
       operator: "continue_with_chosen",
       on_policy: true,
     }, true)
@@ -1077,10 +1089,10 @@ class OpreatorCenter {
     }
   }
 
-  continueWithInput = async (token, continuePrefix, continuePrefixLogprob) => {
-    await this.pandaState.beforeOperation()
+  continueWithInput = (token, continuePrefix, continuePrefixLogprob) => {
+    this.pandaState.beforeOperation()
     prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob)
-    await this.pandaState.afterOperation({
+    this.pandaState.afterOperation({
       operator: "continue_with_input",
       on_policy: true,
     }, true)
@@ -1101,6 +1113,7 @@ function prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob) 
   continuePrefix = continuePrefix || ""
   // const continuePrefixToken = { delta: { content: continuePrefix }, tokenIndex: token.tokenIndex, bifurcationPoint: true, logprobs: token.logprobs }
   token = deepCopy(token)
+  delete token.finish_reason
   token.delta.content = continuePrefix
   token.bifurcationPoint = true
   token.pruned = false
@@ -1325,7 +1338,7 @@ const floatPatchPannelRef = ref(null)
 // exceptTouch=true to avoide touch device close floatPatchPannel by click on another patchSpan
 closeFloatPannelMeta(floatPatchPannelRef, closeFloatPatchPannel, true, true)
 
-watch(activatePatch, (newValue, oldValue) => {
+watch(activatePatch, function watchActivatePatch(newValue, oldValue) {
   activateLogprobItem.value = {}
   oldValue.target?.classList.remove('ActivatePatchSpan')
 });
@@ -1394,7 +1407,7 @@ import { pandaState } from './stores/pandaState'
 import { sleep } from '@/utils/commonUtils'
 
 watch(pandaState.dialogCache,
-  (newValue, oldValue) => {
+  function watchPandaStateDialogCache(newValue, oldValue) {
     if (newValue.messages) {
       loadMessages(newValue.messages)
       pandaState.tryRestoreTokens()
@@ -1423,9 +1436,9 @@ registerKeyActions({
 
 
 var exampleFunc = exampleNameToFunc['default']
-// var exampleFunc = exampleNameToFunc['annotate']
+var exampleFunc = exampleNameToFunc['annotate']
 // var exampleFunc = exampleNameToFunc['image']
-setTimeout(async () => {
+setTimeout(async function launchExampleFunc() {
   await exampleFunc()
   p("tokens", tokens.value)
   p("patchs", patchs)

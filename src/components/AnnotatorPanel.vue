@@ -46,6 +46,13 @@
                 <div style="white-space: pre-wrap;font-family: Monospace;background-color: #fafafa;">{{
                     JSON.stringify(pandaState.dialogCache.value, null, 2) }}</div>
             </details>
+            <details v-if="0">
+                <summary>
+                    <small style="color: #606266">tokens</small>
+                </summary>
+                <div style="white-space: pre-wrap;font-family: Monospace;background-color: #fafafa;">{{
+                    JSON.stringify(pandaState.tokens.value, null, 2) }}</div>
+            </details>
         </div>
     </div>
 </template>

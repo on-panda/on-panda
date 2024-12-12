@@ -1,6 +1,6 @@
 import { ref, computed, watchEffect } from 'vue'
-import { deepCopy, hashObjectSHA256Base64 } from '@/utils/commonUtils'
-import { messagesDifferent } from '@/utils/chatUtils'
+import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '@/utils/commonUtils'
+import { messagesDifferent, tokensToSeq } from '@/utils/chatUtils'
 
 const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "1+1=" }, { role: "assistant", content: "Answer is", finish_reason: "length" }]
 const dialogExample = {
@@ -73,6 +73,7 @@ dialogExample0.messages = [{ role: "user", content: "1+1=" }]
 
 var pandaTreeExample = {
     version: "1.0",
+    uuid: dateStringNow(true),
     dialogs: { 1: dialogExample0, 2: dialogExample }, // key start from 1
     hash_map: {},  // to support 'hash:4LKUXH3IuMhn4cti0hjpzqcA5Zv0bCZu+zBi2+buU30=' key 要不要加上 hash 前缀？(加上吧，更加一致，也给人一眼看出作用) 为什么不用 obj.hash?(繁琐了，不用)
     deleted_dialogs: {},
@@ -80,6 +81,7 @@ var pandaTreeExample = {
 
 export class PandaState {
     cacheTree = {}
+    uuid = computed(() => (this.pandaTree.uuid || dateStringNow(true)))
     constructor() {
     }
     registerDialogComputed = (dialogComputed) => {
@@ -95,14 +97,18 @@ export class PandaState {
         // TODO finish
         var tokensCache = this.cacheTree[this.currentDialogKey.value]?.tokens
         if (this.tokens?.value?.length && tokensCache) {
-            const tokensToSeq = (tokens) => tokens.map(token => token.token).join('') + (tokens[tokens.length - 1].finish_reason ? ('<|' + tokens[tokens.length - 1].finish_reason + '|>') : '')
-            if (tokensToSeq(this.tokens.value) === tokensToSeq(tokensCache)) {
+            var seqNow = tokensToSeq(this.tokens.value)
+            var seqCache = tokensToSeq(tokensCache)
+            if (seqNow === seqCache) {
                 this.tokens.value.length = 0
                 this.tokens.value.push(...tokensCache)
+            } else {
+                console.log('Warning! Unexpected seqNow !== seqCache:', seqNow === seqCache, '\n', seqNow, '\n----\n', seqCache, '\npruned now:', this.tokens.value.filter(token => token.pruned).length, 'pruned cache:', tokensCache.filter(token => token.pruned).length)
             }
         }
     }
     cacheTokens = () => {
+        // console.log('cacheTokens:', tokensToSeq(this.tokens.value), 'pruned:', this.tokens.value.filter(token => token.pruned).length)
         this.cacheTree[this.currentDialogKey.value] = {
             ...this.cacheTree[this.currentDialogKey.value], tokens: deepCopy(this.tokens.value)
         }
@@ -143,7 +149,6 @@ export class PandaState {
     })
 
     switchDialogByIndex = async (index) => {
-        this.cacheTokens()
         await this.beforeOperation()
         this.currentDialogIndex.value = (index + this.dialogKeys.value.length) % this.dialogKeys.value.length
     }
@@ -169,7 +174,6 @@ export class PandaState {
         newDialog.operations = operation ? [operation] : []
         this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = newDialog
 
-        this.cacheTokens()
         this.currentDialogIndex.value = this.dialogKeys.value.indexOf(this.dialogMaxKeyAll.value)
 
         // will throw recursion error
@@ -188,6 +192,7 @@ export class PandaState {
     // default on_policy:true
     parentLastOperationOnPolicy = computed(() => (!this.currentDialogData.value?.operations?.length) || this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1].on_policy)
     beforeOperation = (operation) => {
+        this.cacheTokens()
         this.autoFork(operation)
     }
 

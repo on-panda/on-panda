@@ -35,7 +35,7 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
             var response_modified_type = 'role'
         } else {
             function responeToSeq(response) {
-                return response.content + ((response.finish_reason && response.finish_reason !== 'length')?('<|' + response.finish_reason + '|>'):'')
+                return response.content + ((response.finish_reason && response.finish_reason !== 'length') ? ('<|' + response.finish_reason + '|>') : '')
             }
             var seq1 = responeToSeq(response1)
             var seq2 = responeToSeq(response2)
@@ -58,4 +58,8 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
     return { is_prompt_modified, is_response_modified, response_modified_type, common_prefix_length }
 }
 
+
+export function tokensToSeq(tokens) {
+    return tokens.map(token => token.delta.content + ((token.finish_reason && token.finish_reason !== 'length') ? ('<|' + token.finish_reason + '|>') : '')).join('')
+}
 

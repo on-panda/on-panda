@@ -63,6 +63,9 @@ export function p(varName, obj) {
   if (obj === undefined) {
     obj = varName
     varName = 'd'
+    // debug history
+    window['ddd'] = window.dd
+    window['dd'] = window.d
   }
   var legalVarName = toLegalVariableName(varName)
   window[legalVarName] = obj
@@ -84,6 +87,25 @@ export const escapeHTML = (s) => {
     .replaceAll(/"/g, '&quot;')
     .replaceAll(/'/g, '&#39;')
 }
+
+
+export function dateStringNow(includeMilliseconds = false) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+
+  var str = `${year}-${month}-${day}-${hours}_${minutes}_${seconds}`
+  if (includeMilliseconds) {
+    const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+    str += `.${milliseconds}`
+  }
+  return str
+}
+
 
 
 import { onMounted, onUnmounted } from 'vue'
