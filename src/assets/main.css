@@ -44,3 +44,8 @@
         /* 行悬停背景色 */
     }
 }
+
+
+.el-divider-ignore-background-color .el-divider__text {
+    background-color: transparent;
+}

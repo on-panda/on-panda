@@ -21,9 +21,9 @@
         <small>ctrl+enter</small> </button>
     </div>
     <div style="padding-left:12px;padding-right:12px;">
-      <editableStringAttribute :obj="props.message" attr="description" :editable="false"
+      <editableStringAttribute :obj="props.message" attr="description" :disabled="true"
         v-if="props.message['description']" />
-      <editableStringAttribute :obj="props.message" attr="comment" :editable="true" v-if="props.message['comment']"
+      <editableStringAttribute :obj="props.message" attr="comment" :disabled="false" v-if="props.message['comment']"
         title="comment:&nbsp;&nbsp;&nbsp;" />
     </div>
     <details>

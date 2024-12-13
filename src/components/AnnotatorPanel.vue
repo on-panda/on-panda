@@ -1,14 +1,9 @@
 <template>
     <div class="messagesInfoPannel"
-        v-if="pandaState.dialogCache.value?.annotate || pandaState.dialogCache.value?.description || pandaState.dialogCache.value?.comment">
-        <div style="background-color:antiquewhite; padding: 12px; border-radius: 10px;">
-            <b style="color: #aaa">Dialog Pannel</b>
+        v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment">
+        <div style="background-color:antiquewhite; padding: 12px; border-radius: 10px; max-width: 1024px;">
+            <b style="color: #aaa">Data Pannel</b>
             <br>
-            <editableStringAttribute :obj="pandaState.dialogCache.value" attr="description" :editable="false"
-                v-if="pandaState.dialogCache.value?.description" />
-            <editableStringAttribute :obj="pandaState.dialogCache.value" attr="comment" :editable="true"
-                v-if="pandaState.dialogCache.value?.comment" title="comment:&nbsp;&nbsp;&nbsp;" />
-
             <br>
             <el-form label-width="auto" size="small">
                 <el-form-item>
@@ -53,6 +48,24 @@
                 <div style="white-space: pre-wrap;font-family: Monospace;background-color: #fafafa;">{{
                     JSON.stringify(pandaState.tokens.value, null, 2) }}</div>
             </details>
+            <el-divider class="el-divider-ignore-background-color" content-position="left">
+                <small style="color: #606266; background-color: antiquewhite; padding:10px ">
+                    dialog level / data level
+                </small>
+            </el-divider>
+            <small v-if="pandaState.pandaTree.value?.title">
+                <span style="color: #888;padding-right: 17px;padding-left: 44px;">
+                    title:
+                </span>
+
+                <b style="color: #555;">{{ pandaState.pandaTree.value?.title }}</b>
+            </small>
+
+            <editableStringAttribute :obj="pandaState.pandaTree.value" attr="description" :disabled="true"
+                v-if="pandaState.pandaTree.value?.description" />
+            <editableStringAttribute :obj="pandaState.pandaTree.value" attr="comment" :disabled="false"
+                v-if="pandaState.pandaTree.value?.comment" name="&nbsp;&nbsp;&nbsp;comment:" />
+
         </div>
     </div>
 </template>

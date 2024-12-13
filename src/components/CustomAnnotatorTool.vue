@@ -10,26 +10,28 @@
             </el-tooltip>
         </template>
 
-        <div style="">
+        <div style="width: 90%; max-width: 950px;">
             <el-button-group v-if="props.tool.type == 'single_choice'" size="">
                 <el-button v-for="choice in props.tool.single_choice" :type="choiceToButtonType(choice)"
-                    @click="() => { for (let c of props.tool.single_choice) { c.v = c.k == choice.k } }">
+                    @click="() => { for (let c of props.tool.single_choice) { c.v = c.k == choice.k } }"
+                    :disabled="props.tool.disabled">
                     <b>{{ choice.k }}</b>
                 </el-button>
             </el-button-group>
             <div v-if="props.tool.type == 'multiple_choice'">
                 <el-button v-for="choice in props.tool.multiple_choice" :type="choiceToButtonType(choice)"
-                    @click="() => { choice.v = !choice.v }" style="margin-right: -5px;">
+                    @click="() => { choice.v = !choice.v }" style="margin-right: -5px;" :disabled="props.tool.disabled">
                     <b>{{ choice.k }}</b>
                 </el-button>
             </div>
             <div v-if="props.tool.type == 'checkbox'">
                 <CheckboxWidgetSupportNull :checkboxValue="props.tool.checkbox"
-                    @updateCheckboxValue="(v) => { props.tool.checkbox = v }"></CheckboxWidgetSupportNull>
+                    @updateCheckboxValue="(v) => { props.tool.checkbox = v }" :disabled="props.tool.disabled">
+                </CheckboxWidgetSupportNull>
             </div>
             <div v-if="props.tool.type == 'text'">
-                <el-input class="textareaInputInCustomAnnotatorTool" type="textarea" v-model="props.tool.text"
-                    style="width: 100%;" :input-style="{ color: '#888' }" :autosize="true" />
+                <el-input type="textarea" v-model="props.tool.text" :input-style="{ color: '#888' }" :autosize="true"
+                    :disabled="props.tool.disabled" />
             </div>
 
         </div>
@@ -72,26 +74,3 @@ function choiceToButtonType(choice) {
 }
 
 </script>
-<style scoped>
-.textareaInputInCustomAnnotatorTool {
-    min-width: 500px;
-}
-
-@media (max-width: 600px) {
-    .textareaInputInCustomAnnotatorTool {
-        min-width: 400px;
-    }
-}
-
-@media (max-width: 500px) {
-    .textareaInputInCustomAnnotatorTool {
-        min-width: 300px;
-    }
-}
-
-@media (max-width: 400px) {
-    .textareaInputInCustomAnnotatorTool {
-        min-width: 235px;
-    }
-}
-</style>

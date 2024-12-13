@@ -1,10 +1,10 @@
 <template>
     <el-button-group>
-        <el-button :type="{ true: 'success', false: 'info', null: 'default' }[checkboxValue] || 'warning'"
+        <el-button :disabled="props.disabled" :type="{ true: 'success', false: 'info', null: 'default' }[checkboxValue] || 'warning'"
             @click="emit('updateCheckboxValue', true)">
             <b>Y</b>
         </el-button>
-        <el-button :type="{ true: 'info', false: 'danger', null: 'default' }[checkboxValue] || 'warning'"
+        <el-button :disabled="props.disabled" :type="{ true: 'info', false: 'danger', null: 'default' }[checkboxValue] || 'warning'"
             @click="emit('updateCheckboxValue', false)">
             <b>N</b>
         </el-button>
@@ -19,6 +19,10 @@ const props = defineProps({
         type: [Boolean, null],
         default: null
     },
+    disabled: {
+        type: Boolean,
+        default: false
+    }
 })
 
 const emit = defineEmits(['updateCheckboxValue'])

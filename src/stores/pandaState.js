@@ -4,9 +4,6 @@ import { messagesDifferent, tokensToSeq } from '@/utils/chatUtils'
 
 const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "give a random float, no other words" }, { role: "assistant", content: "1.27364382", finish_reason: "length" }]
 const dialogExample = {
-    title: "The Title",
-    description: "Uneditable description",
-    comment: "Editable comment",
     messages: messagesExample,
     operations: [{
         operator: "continue_with_chosen",
@@ -53,6 +50,13 @@ const dialogExample = {
                 required: true, // default is false
             },
             {
+                name: "init_model",
+                disabled: true, // read only info of current dialog for annotator
+                type: "text",
+                text: "Llama 3",
+                tip: "Which model generates the initial answer of current dialog?",
+            },
+            {
                 name: "follow_up_prompt",
                 type: "text",
                 text: "",
@@ -69,11 +73,16 @@ var dialogExample0 = {
     annotate: deepCopy(dialogExample.annotate),
 }
 
+dialogExample0.annotate.customs.map(custom => { custom.disabled = !custom.disabled })
+
 dialogExample0.messages = [{ role: "user", content: "1+1=" }]
 
 var pandaTreeExample = {
     version: "1.0",
     uuid: dateStringNow(true),
+    title: "Title of the data",
+    description: "Uneditable description",
+    comment: "Editable comment",
     dialogs: { 1: dialogExample0, 2: dialogExample }, // key start from 1
     hash_map: {},  // to support 'hash:4LKUXH3IuMhn4cti0hjpzqcA5Zv0bCZu+zBi2+buU30=' key 要不要加上 hash 前缀？(加上吧，更加一致，也给人一眼看出作用) 为什么不用 obj.hash?(繁琐了，不用)
     deleted_dialogs: {},

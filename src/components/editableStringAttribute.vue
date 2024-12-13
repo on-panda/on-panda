@@ -1,11 +1,11 @@
 <template>
     <small style="color: #888;display: flex; justify-content: space-between;">
         <div style="padding-right: 10px;padding-top: 10px;">
-            {{ props.title || ((props.attr
+            {{ props.name || ((props.attr
                 || 'unknow') + ':') }}
         </div>
         <el-input type="textarea" v-model="props.obj[props.attr]" size="small" style="display: inline;padding-top: 5px;"
-            :input-style="{ color: '#888' }" :autosize="true" :disabled="!props.editable" />
+            :input-style="{ color: '#888' }" :autosize="true" :disabled="props.disabled" />
     </small>
 
 </template>
@@ -19,11 +19,11 @@ const props = defineProps({
     attr: {
         type: String,
     },
-    editable: {
+    disabled: {
         type: Boolean,
-        default: true
+        default: false
     },
-    title: {
+    name: {
         type: String,
         default: ""
     },
