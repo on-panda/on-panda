@@ -1,4 +1,4 @@
-import { deepEqual, getUnicodeLength } from './commonUtils'
+import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils'
 
 export function isFinalRoleModelRole(messages, modelRoles = ['assistant',]) {
     return modelRoles.includes(messages[messages.length - 1].role)
@@ -61,5 +61,15 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
 
 export function tokensToSeq(tokens) {
     return tokens.map(token => (token.delta.content || "") + ((token.finish_reason && token.finish_reason !== 'length') ? ('<|' + token.finish_reason + '|>') : '')).join('')
+}
+
+export function normalizeRequest(requestBody) {
+    const body = deepCopy(requestBody)
+    if (body.messages?.length) {
+        body.messages.map(message => {
+            delete message.finish_reason
+        })
+    }
+    return body
 }
 

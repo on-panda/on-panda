@@ -355,7 +355,7 @@ import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useEventListener, registerKeyActions, closeFloatPannelMeta } from '@/utils/commonUtils'
 import { p, escapeHTML, copyToClipboard, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils'
-import { tokensToSeq } from './utils/chatUtils'
+import { tokensToSeq, normalizeRequest } from './utils/chatUtils'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close } from '@element-plus/icons-vue'
 
@@ -386,7 +386,7 @@ async function requestPromptLogprobs() {
   }
   try {
 
-    var json = await openai.value.chat.completions.create(body);
+    var json = await openai.value.chat.completions.create(normalizeRequest(body));
 
     var lastMessageContent = messages[messages.length - 1].content
     var lastMessageContent_ = ''
@@ -951,7 +951,7 @@ async function requestLlmServer(messages) {
     requestStatus.value.generating = true
     requestStatus.value.requestTimes++
     var requestID = requestStatus.value.requestTimes
-    var stream = await openai.value.chat.completions.create(body, { signal: fetchController.signal });
+    var stream = await openai.value.chat.completions.create(normalizeRequest(body), { signal: fetchController.signal });
 
     var tokenIndex = 0
     var streamIndex = -1
