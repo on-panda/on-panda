@@ -551,7 +551,7 @@ const floatSelectedOpreationPannel = ref({
 
 const floatSelectedOpreationPannelRef = ref(null)
 closeFloatPannelMeta(floatSelectedOpreationPannelRef, () => {
-  // On mobile devices it disappears immediately after clicking, rendering the tool tip position invalid.
+  // On mobile devices it disappears immediately after clicking, rendering the tool tips position invalid.
   setTimeout(() => {
     floatSelectedOpreationPannel.value.improveInputVisible = false
   }, 10)

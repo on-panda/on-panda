@@ -15,7 +15,7 @@ const dialogExample = {
     }],
     annotate: {
         is_good: null,  // different from chosen, which will be SFT training data
-        // tip: "Preference of current messages (good or bad), default the last messages is good, others are bad",
+        // tips: "Preference of current messages (good or bad), default the last messages is good, others are bad",
         customs: [
             // The data structure includes user interface logic
             // recommend set null as default value, so could know the value is not set
@@ -23,7 +23,7 @@ const dialogExample = {
                 name: "qualified_prompt",
                 type: "checkbox",
                 checkbox: null,   // support null for default value
-                tip: "Is this a qualified prompt?",
+                tips: "Is this a qualified prompt?",
             },
             {
                 name: "annotation_status",
@@ -33,9 +33,9 @@ const dialogExample = {
                     { k: "skip", v: null },
                     { k: "undetermined", v: null },
                 ],
-                tip: "Annotation status, if not chosen, **default is done**",
+                tips: "Annotation status, if not chosen, **default is done**",
                 // markdown is supported
-                // if tip is too long, you should using a URL to avoid the redundancy in json
+                // if tips is too long, you should using a URL to avoid the redundancy in json
             },
             {
                 name: "tool_using",
@@ -46,7 +46,7 @@ const dialogExample = {
                     { k: "think", v: null },
                     { k: "draw", v: null },
                 ],
-                tip: "Tools should use in this prompt",
+                tips: "Tools should use in this prompt",
                 required: true, // default is false
             },
             {
@@ -54,13 +54,13 @@ const dialogExample = {
                 disabled: true, // read only info of current dialog for annotator
                 type: "text",
                 text: "Llama 3",
-                tip: "Which model generates the initial answer of current dialog?",
+                tips: "Which model generates the initial answer of current dialog?",
             },
             {
                 name: "follow_up_prompt",
                 type: "text",
                 text: "",
-                tip: "What may be the follow up prompt by user?"
+                tips: "What may be the follow up prompt by user?"
             }
         ]
     },
@@ -217,10 +217,21 @@ export class PandaState {
     setDefaultToOperation = (operation) => {
         const diff = messagesDifferent(this.currentDialogData.value.messages, this.dialogComputed.value.messages)
         // console.log('diff:', diff)
-        return Object.assign({
+
+        var defaultOperation = {
             time: Date.now(),
             parent: this.currentDialogKey.value,
-        }, diff, operation)
+        }
+        if (operation.on_policy) {
+            defaultOperation.chat_config = deepCopy(this.apiConfig.value.chat_config)
+            var NONE_USEFUL_CHAT_CONFIG_ITEMS = ['stream', 'logprobs', 'top_logprobs', 'stream_options', 'messages']
+            for (var key of NONE_USEFUL_CHAT_CONFIG_ITEMS) {
+                if (key in defaultOperation.chat_config) {
+                    delete defaultOperation.chat_config[key]
+                }
+            }
+        }
+        return Object.assign(defaultOperation, diff, operation)
     }
 
     setDefaultToPandaTree = (pandaTree) => {
@@ -271,7 +282,7 @@ export class PandaState {
     }
 
     afterOperation = (operation, forceFork = true) => {
-        this.setDefaultToOperation(operation)
+        operation = this.setDefaultToOperation(operation)
 
         // default is on_policy:true
         if (this.isPreviousOperationOnPolicy.value || operation.on_policy) {

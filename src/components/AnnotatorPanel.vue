@@ -35,7 +35,7 @@
                 </CustomAnnotatorTool>
             </el-form>
             <ObjectViewerInDetails :object="pandaState.dialogCache.value" summary="current dialog JSON"
-                tip="This dialogCache may not be updated in time. Try switching the dialog to refresh it." />
+                tips="This dialogCache may not be updated in time. Try switching the dialog to refresh it." />
             <ObjectViewerInDetails :object="pandaState.tokens.value" summary="tokens" v-if="0" />
             <el-divider class="el-divider-ignore-background-color" content-position="left">
                 <small style="color: #606266; background-color: antiquewhite; padding:10px ">

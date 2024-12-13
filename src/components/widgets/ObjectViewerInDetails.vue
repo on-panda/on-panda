@@ -1,7 +1,7 @@
 <template>
     <details>
         <summary style="color: #606266">
-            <el-tooltip :content="props.tip" v-if="props.tip" placement="top">
+            <el-tooltip :content="props.tips" v-if="props.tips" placement="top">
                 <small>{{ props.summary }}</small>
             </el-tooltip>
             <small v-else>{{ props.summary }}</small>
@@ -21,7 +21,7 @@ const props = defineProps({
         type: String,
         default: 'JSON'
     },
-    tip: {
+    tips: {
         type: String,
         default: null
     },

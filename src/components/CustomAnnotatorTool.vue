@@ -4,7 +4,7 @@
             <el-tooltip class="" effect="dark" placement="top" raw-content>
                 <template #content>
                     Type: <b>{{ props.tool.type }}</b><br>
-                    <MessageMarkdown :content="props.tool.tip" />
+                    <MessageMarkdown :content="props.tool.tips" />
                 </template>
                 <span>{{ props.tool.name }}</span>
             </el-tooltip>
