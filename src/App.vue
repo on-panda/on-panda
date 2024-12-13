@@ -17,7 +17,10 @@
     </details>
 
     <div style="text-align: center;">
-      <img width="128" src="/img/on-panda-logo.png">
+
+      <img width="128" src="/img/on-panda-logo.png"
+        :style="{ transform: _isLogoRotated ? 'rotate(360deg)' : 'rotate(0deg)', transition: 'transform 3s' }"
+        @click="_isLogoRotated = !_isLogoRotated" />
       <br>
       <b :style="isMobile ? {} : { fontSize: '20px' }">onPanda: LLM-Native Interaction Design</b>
       <br>
@@ -561,6 +564,7 @@ function improveSelectedText() {
 }
 
 const innerWidth = ref(window.innerWidth)
+const _isLogoRotated = ref(false)
 
 function handleResize() {
   innerWidth.value = window.innerWidth
