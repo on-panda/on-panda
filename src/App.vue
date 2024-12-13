@@ -253,27 +253,8 @@
       </div>
     </div>
     <br>
-    <div class="dialogControlPannel">
-      <footer style="display :flex; margin-top:-10px; margin-bottom:10px">
-        <!-- <span class="stretch" style="margin-right: auto" /> -->
-        <el-tooltip content="Previous modification<br>(Shortcut key: left)" raw-content placement="top">
-          <el-button id="switchToPreviousDialog" :icon="Back" size="small" @click="pandaState.switchToPreviousDialog" />
-        </el-tooltip>
-        <el-tooltip content="Next modification<br>(Shortcut key: right)" raw-content placement="top">
-          <el-button id="switchToNextDialog" :icon="Right" size="small" @click="pandaState.switchToNextDialog" />
-        </el-tooltip>
-      </footer>
-      <div style="color:#555">
-        &nbsp;&nbsp;
-        <small v-for="(key, idx) in pandaState.dialogKeys.value" style="cursor: pointer"
-          @click="pandaState.switchDialogByIndex(idx)"
-          :style="idx == pandaState.currentDialogIndex.value ? { color: '#409eff', fontWeight: 700 } : {}">
-          &nbsp; {{ key }} &nbsp;
-        </small>
-      </div>
-
-      <AnnotatorPanel />
-    </div>
+    <DialogControlPannel />
+    <AnnotatorPanel />
 
     <el-divider content-position="left">new message:</el-divider>
     <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
@@ -355,14 +336,15 @@ import Message from './components/Message.vue'
 import MessageRole from './components/MessageRole.vue'
 import MessageMarkdown from './components/MessageMarkdown.vue'
 import AnnotatorPanel from './components/AnnotatorPanel.vue'
+import DialogControlPannel from './components/DialogControlPannel.vue'
+
 import { OpenAI } from './utils/fetchOpenaiApi.js'
-import { useEventListener, registerKeyActions, closeFloatPannelMeta } from '@/utils/commonUtils'
+import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils'
 import { p, escapeHTML, copyToClipboard, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils'
 import { tokensToSeq, normalizeRequest } from './utils/chatUtils'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close } from '@element-plus/icons-vue'
 
-import { Back, Right, RefreshLeft, RefreshRight } from '@element-plus/icons-vue'
 
 
 var bitTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content[0]?.logprob === "number"))
@@ -1442,11 +1424,6 @@ const dialogComputed = computed(() => {
 pandaState.registerDialogComputed(dialogComputed)
 pandaState.registerApiConfig(apiConfig)
 pandaState.registerTokens(tokens)
-
-registerKeyActions({
-  ArrowLeft: pandaState.switchToPreviousDialog,
-  ArrowRight: pandaState.switchToNextDialog,
-})
 
 
 var exampleFunc = exampleNameToFunc['default']

@@ -1,5 +1,5 @@
 <template>
-    <div class="messagesInfoPannel"
+    <div class="AnnotatorPannel"
         v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment">
         <div style="background-color:antiquewhite; padding: 12px; border-radius: 10px; max-width: 1024px;">
             <b style="color: #aaa">Data Pannel</b>

@@ -129,6 +129,9 @@ export class PandaState {
     // pandaTree = ref(pandaTreeExample)
     allDialogs = computed(() => ({ ...this.pandaTree.value.dialogs, ...this.pandaTree.value.deleted_dialogs }))
     dialogKeys = computed(() => Object.keys(this.allDialogs.value).map(Number).sort((a, b) => a - b))
+    dialogKeysRemain = computed(() => this.dialogKeys.value.filter(key => (key in this.pandaTree.value.dialogs)))
+    isDeleted = computed(() => this.currentDialogKey.value in (this.pandaTree.value.deleted_dialogs || {}))
+
     dialogMaxKeyAll = computed(() => this.dialogKeys.value[this.dialogKeys.value.length - 1])
     dialogMaxIndexRemain = computed(() => {
         for (var i = this.dialogKeys.value.length - 1; i >= 0; i--) {
@@ -145,6 +148,10 @@ export class PandaState {
             return null
         }
         return keys[(keys.length * 20 + this.currentDialogIndex.value) % keys.length]
+    })
+    parentDialogKey = computed(() => {
+        var parentKey = this.currentDialogData.value?.operations?.length ? this.currentDialogData.value.operations[0].parent : null
+        return parentKey
     })
     currentDialogData = computed(() => {
         return this.currentDialogKey.value ? this.allDialogs.value[this.currentDialogKey.value] : {}
@@ -194,7 +201,44 @@ export class PandaState {
         // will throw recursion error
         // this.switchDialogByIndex(this.dialogKeys.value.length-1)
     }
-    delete = () => {
+    eraseCurrentDialog = () => {
+        // if current dialog will erase, default to next dialog or previous dialog
+        var currentKey = this.currentDialogKey.value
+        var targetKey = this.currentDialogIndex.value == this.dialogKeys.value.length - 1 ? this.dialogKeys.value[this.currentDialogIndex.value - 1] : this.dialogKeys.value[this.currentDialogIndex.value + 1]
+        if (this.parentDialogKey.value && this.dialogKeys.value.includes(this.parentDialogKey.value)) {
+            targetKey = this.parentDialogKey.value
+        }
+        this.switchDialogByIndex(this.dialogKeys.value.indexOf(targetKey))
+        if (currentKey in this.pandaTree.value.dialogs) {
+            delete this.pandaTree.value.dialogs[currentKey]
+        } else {
+            delete this.pandaTree.value.deleted_dialogs[currentKey]
+        }
+    }
+    deleteCurrentDialog = () => {
+        var currentKey = this.currentDialogKey.value
+        if (this.currentDialogKey.value in this.pandaTree.value.dialogs) { // if current dialog is remain(not deleted), default to next remain dialog or previous remain dialog after delete
+            var currentDialogRemainIndex = this.dialogKeysRemain.value.indexOf(this.currentDialogKey.value)
+            var targetKey = currentDialogRemainIndex == this.dialogKeysRemain.value.length - 1 ? this.dialogKeysRemain.value[currentDialogRemainIndex - 1] : this.dialogKeysRemain.value[currentDialogRemainIndex + 1]
+
+            if (this.parentDialogKey.value && this.dialogKeys.value.includes(this.parentDialogKey.value)) {
+                targetKey = this.parentDialogKey.value
+            }
+            this.switchDialogByIndex(this.dialogKeys.value.indexOf(targetKey))
+            this.pandaTree.value.deleted_dialogs[currentKey] = this.pandaTree.value.dialogs[currentKey]
+            delete this.pandaTree.value.dialogs[currentKey]
+        } else {
+            // this.eraseCurrentDialog()
+        }
+    }
+    restoreDeletedDialog = (key) => {
+        key = key || this.currentDialogKey.value
+        if (key in this.pandaTree.value.deleted_dialogs) {
+            this.pandaTree.value.dialogs[key] = this.pandaTree.value.deleted_dialogs[key]
+            delete this.pandaTree.value.deleted_dialogs[key]
+        } else {
+            console.log('Warning! restoreDeletedDialog:', key, 'not in deleted_dialogs')
+        }
     }
     undo = () => {
     }
