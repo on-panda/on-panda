@@ -173,7 +173,7 @@ export class PandaState {
         await this.switchDialogByIndex(this.currentDialogIndex.value - 1)
     }
     setExample = () => {
-        this.pandaTree.value = pandaTreeExample
+        this.load(pandaTreeExample)
         this.currentDialogIndex.value = 1
     }
     writeBack = (operation) => {
@@ -200,9 +200,12 @@ export class PandaState {
     }
     redo = () => {
     }
-    save = () => {
+    dump = () => {
+        return deepCopy(this.pandaTree.value)
     }
-    load = () => {
+    load = (pandaTree) => {
+        pandaTree = this.setDefaultToPandaTree(pandaTree)
+        this.pandaTree.value = pandaTree
     }
     // default on_policy:true
     isPreviousOperationOnPolicy = computed(() => (!this.currentDialogData.value?.operations?.length) || this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1].on_policy)
@@ -218,6 +221,24 @@ export class PandaState {
             time: Date.now(),
             parent: this.currentDialogKey.value,
         }, diff, operation)
+    }
+
+    setDefaultToPandaTree = (pandaTree) => {
+        pandaTree = pandaTree || this.pandaTree.value
+        const defaultPandaTree = {
+            version: "1.0",
+            uuid: dateStringNow(true),
+            dialogs: {},
+            hash_map: {},
+            deleted_dialogs: {},
+            annotated: true,
+        }
+        for (var key in defaultPandaTree) {
+            if (!(key in pandaTree)) {
+                pandaTree[key] = defaultPandaTree[key]
+            }
+        }
+        return pandaTree
     }
 
     autoFork = (operation) => {

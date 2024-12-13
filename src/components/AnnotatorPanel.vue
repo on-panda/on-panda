@@ -34,20 +34,9 @@
                 <CustomAnnotatorTool v-for="tool in pandaState.dialogCache.value.annotate.customs" :tool="tool">
                 </CustomAnnotatorTool>
             </el-form>
-            <details>
-                <summary>
-                    <small style="color: #606266">JSON</small>
-                </summary>
-                <div style="white-space: pre-wrap;font-family: Monospace;background-color: #fafafa;">{{
-                    JSON.stringify(pandaState.dialogCache.value, null, 2) }}</div>
-            </details>
-            <details v-if="0">
-                <summary>
-                    <small style="color: #606266">tokens</small>
-                </summary>
-                <div style="white-space: pre-wrap;font-family: Monospace;background-color: #fafafa;">{{
-                    JSON.stringify(pandaState.tokens.value, null, 2) }}</div>
-            </details>
+            <ObjectViewerInDetails :object="pandaState.dialogCache.value" summary="current dialog JSON"
+                tip="This dialogCache may not be updated in time. Try switching the dialog to refresh it." />
+            <ObjectViewerInDetails :object="pandaState.tokens.value" summary="tokens" v-if="0" />
             <el-divider class="el-divider-ignore-background-color" content-position="left">
                 <small style="color: #606266; background-color: antiquewhite; padding:10px ">
                     dialog level / data level
@@ -65,7 +54,8 @@
                 v-if="pandaState.pandaTree.value?.description" />
             <editableStringAttribute :obj="pandaState.pandaTree.value" attr="comment" :disabled="false"
                 v-if="pandaState.pandaTree.value?.comment" name="&nbsp;&nbsp;&nbsp;comment:" />
-
+            <br>
+            <ObjectViewerInDetails :object="pandaState.pandaTree.value" summary="panda tree JSON" />
         </div>
     </div>
 </template>
@@ -73,6 +63,17 @@
 import editableStringAttribute from './editableStringAttribute.vue'
 import CustomAnnotatorTool from './CustomAnnotatorTool.vue';
 import CheckboxWidgetSupportNull from './widgets/CheckboxWidgetSupportNull.vue'
+import ObjectViewerInDetails from './widgets/ObjectViewerInDetails.vue';
 import { pandaState } from '../stores/pandaState'
 
 </script>
+<style scoped>
+.raw-json-in-annotator-panel {
+    white-space: pre-wrap;
+    font-family: Monospace;
+    background-color: #fafafa;
+    /* width: 90%; */
+    margin: 10px;
+    padding: 10px;
+}
+</style>
