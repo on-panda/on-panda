@@ -216,6 +216,10 @@ export class PandaState {
         }
     }
     deleteCurrentDialog = () => {
+        // TODO
+        // this.beforeOperation({
+        //     operator: "delete",
+        // })
         var currentKey = this.currentDialogKey.value
         if (this.currentDialogKey.value in this.pandaTree.value.dialogs) { // if current dialog is remain(not deleted), default to next remain dialog or previous remain dialog after delete
             var currentDialogRemainIndex = this.dialogKeysRemain.value.indexOf(this.currentDialogKey.value)
@@ -245,6 +249,11 @@ export class PandaState {
     redo = () => {
     }
     dump = () => {
+        this.beforeOperation({
+            operator: "dump",
+            on_policy: this.isPreviousOperationOnPolicy.value,
+        })
+        this.pandaTree.value.has_ever_been_saved = true
         return deepCopy(this.pandaTree.value)
     }
     load = (pandaTree) => {
@@ -286,7 +295,7 @@ export class PandaState {
             dialogs: {},
             hash_map: {},
             deleted_dialogs: {},
-            annotated: true,
+            has_ever_saved: false,  // Has this data ever been saved by on-panda? Automatically set by on-panda
         }
         for (var key in defaultPandaTree) {
             if (!(key in pandaTree)) {

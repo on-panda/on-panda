@@ -1,7 +1,11 @@
 <template>
-    <div class="dialogControlPannel">
+    <div class="dialogControlPannel" v-if="pandaState.dialogCache.value?.annotate">
         <footer style="display :flex; margin-top:-10px; margin-bottom:10px">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
+            <el-tooltip content="Save the data" raw-content placement="top">
+                <el-button plain type="success" id="" :icon="Select" size="small"
+                    @click="downloadJsonFile(pandaState.dump())" />
+            </el-tooltip>
             <el-tooltip content="Previous modification<br>(Shortcut key: left)" raw-content placement="top">
                 <el-button id="switchToPreviousDialog" :icon="Back" size="small"
                     @click="pandaState.switchToPreviousDialog()" />
@@ -11,7 +15,8 @@
                     @click="pandaState.switchToNextDialog()" />
             </el-tooltip>
             <el-tooltip content="" raw-content placement="top" v-if="!pandaState.isDeleted.value">
-                <el-button id="" :icon="Delete" size="small" @click="pandaState.deleteCurrentDialog()" />
+                <el-button plain type="danger" id="" :icon="Delete" size="small"
+                    @click="pandaState.deleteCurrentDialog()" />
             </el-tooltip>
             <el-tooltip content="" raw-content placement="top" v-if="pandaState.isDeleted.value">
                 <el-button plain type="success" id="" :icon="Help" size="small"
@@ -20,6 +25,12 @@
             <el-tooltip content="" raw-content placement="top" v-if="pandaState.isDeleted.value">
                 <el-button plain type="danger" id="" :icon="CloseBold" size="small"
                     @click="pandaState.eraseCurrentDialog()" />
+            </el-tooltip>
+            <el-tooltip content="Upload *.panda.json file" raw-content placement="top">
+                <el-button id="" :icon="UploadFilled" size="small" @click="" :disabled="true" />
+            </el-tooltip>
+            <el-tooltip content="Download panda.json file" raw-content placement="top">
+                <el-button id="" :icon="Download" size="small" @click="downloadJsonFile(pandaState.dump())" />
             </el-tooltip>
         </footer>
         <div style="color:#555">
@@ -34,8 +45,8 @@
 </template>
 <script setup>
 import { pandaState } from '../stores/pandaState'
-import { Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold } from '@element-plus/icons-vue'
-import { registerKeyActions } from '../utils/commonUtils'
+import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled } from '@element-plus/icons-vue'
+import { registerKeyActions, downloadJsonFile } from '../utils/commonUtils'
 
 registerKeyActions({
     ArrowLeft: pandaState.switchToPreviousDialog,

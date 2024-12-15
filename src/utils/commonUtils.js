@@ -235,3 +235,16 @@ export async function hashObjectSHA256Base64(obj, sortKeys = true) {
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   return btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
 }
+
+export function downloadJsonFile(obj, filename) {
+  filename = filename || (dateStringNow() + '.panda.json')
+  const jsonString = JSON.stringify(obj, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename
+  a.click();
+  URL.revokeObjectURL(url)
+  return filename
+}
