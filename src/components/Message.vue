@@ -21,9 +21,9 @@
         <small>ctrl+enter</small> </button>
     </div>
     <div style="padding-left:12px;padding-right:12px;">
-      <editableStringAttribute :obj="props.message" attr="description" :disabled="true"
+      <EditableStringAttribute :obj="props.message" attr="description" :disabled="true"
         v-if="props.message['description']" />
-      <editableStringAttribute :obj="props.message" attr="comment" :disabled="false" v-if="props.message['comment']"
+      <EditableStringAttribute :obj="props.message" attr="comment" :disabled="false" v-if="props.message['comment']"
         title="comment:&nbsp;&nbsp;&nbsp;" />
     </div>
     <details>
@@ -39,7 +39,7 @@
 <script setup>
 import MessageRole from './MessageRole.vue'
 import MessageMarkdown from './MessageMarkdown.vue'
-import editableStringAttribute from './editableStringAttribute.vue'
+import EditableStringAttribute from './EditableStringAttribute.vue'
 
 import { Close, Delete } from '@element-plus/icons-vue'
 import { computed, ref } from 'vue'

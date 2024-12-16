@@ -50,9 +50,9 @@
                 <b style="color: #555;">{{ pandaState.pandaTree.value?.title }}</b>
             </small>
 
-            <editableStringAttribute :obj="pandaState.pandaTree.value" attr="description" :disabled="true"
+            <EditableStringAttribute :obj="pandaState.pandaTree.value" attr="description" :disabled="true"
                 v-if="pandaState.pandaTree.value?.description" />
-            <editableStringAttribute :obj="pandaState.pandaTree.value" attr="comment" :disabled="false"
+            <EditableStringAttribute :obj="pandaState.pandaTree.value" attr="comment" :disabled="false"
                 v-if="pandaState.pandaTree.value?.comment" name="&nbsp;&nbsp;&nbsp;comment:" />
             <br>
             <ObjectViewerInDetails :object="pandaState.pandaTree.value" summary="panda tree JSON" />
@@ -60,7 +60,7 @@
     </div>
 </template>
 <script setup>
-import editableStringAttribute from './editableStringAttribute.vue'
+import EditableStringAttribute from './EditableStringAttribute.vue'
 import CustomAnnotatorTool from './CustomAnnotatorTool.vue';
 import CheckboxWidgetSupportNull from './widgets/CheckboxWidgetSupportNull.vue'
 import ObjectViewerInDetails from './widgets/ObjectViewerInDetails.vue';
