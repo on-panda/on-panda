@@ -26,11 +26,11 @@
                     @click="pandaState.eraseCurrentDialog()" />
             </el-tooltip>
             <el-tooltip content="Upload *.panda.json file" raw-content placement="top">
-                <el-button :icon="UploadFilled" size="small"
-                    @click="async () => pandaState.load((await uploadJsonFile()).data)" />
+                <el-button :icon="UploadFilled" size="small" @click="uploadAndLoadJson" />
             </el-tooltip>
             <el-tooltip content="Download panda.json file" raw-content placement="top">
-                <el-button :icon="Download" size="small" @click="downloadJsonFile(pandaState.dump())" />
+                <el-button :icon="Download" size="small"
+                    @click="downloadJsonFile(pandaState.dump(), uploadedJson && uploadedJson.name)" />
             </el-tooltip>
         </footer>
         <div class='dialogKeysFooter' style="color:#555">
@@ -47,6 +47,7 @@
     </div>
 </template>
 <script setup>
+import { ref } from 'vue'
 import { pandaState } from '../stores/pandaState'
 import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled } from '@element-plus/icons-vue'
 import { registerKeyActions, downloadJsonFile, uploadJsonFile } from '../utils/commonUtils'
@@ -55,4 +56,13 @@ registerKeyActions({
     ArrowLeft: pandaState.switchToPreviousDialog,
     ArrowRight: pandaState.switchToNextDialog,
 })
+
+const uploadedJson = ref(null)
+
+async function uploadAndLoadJson() {
+    uploadedJson.value = await uploadJsonFile()
+    pandaState.load(uploadedJson.value.data)
+}
+
+
 </script>
