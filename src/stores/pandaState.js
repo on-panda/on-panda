@@ -250,15 +250,22 @@ export class PandaState {
     }
     redo = () => {
     }
-    dump = () => {
+    dump = (includeCache = true) => {
         this.beforeOperation()
         this.pandaTree.value.has_ever_been_saved = true
-        return deepCopy(this.pandaTree.value)
+        const dumped = deepCopy(this.pandaTree.value)
+        if (includeCache) {
+            dumped.cache_tree = this.cacheTree
+        }
+        return dumped
     }
     load = (pandaTree) => {
         this.cacheTree = {}
         pandaTree = this.setDefaultToPandaTree(pandaTree)
         this.pandaTree.value = pandaTree
+        if (pandaTree.cache_tree) {
+            this.cacheTree = pandaTree.cache_tree
+        }
         // this.switchDialogByIndex(this.dialogMaxIndexRemain)  // Will fork by is_prompt_modified=true, may by dialogComputed update not in time?
         this.currentDialogIndex.value = this.dialogMaxIndexRemain.value
     }
