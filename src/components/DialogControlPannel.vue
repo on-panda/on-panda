@@ -26,7 +26,8 @@
                     @click="pandaState.eraseCurrentDialog()" />
             </el-tooltip>
             <el-tooltip content="Upload *.panda.json file" raw-content placement="top">
-                <el-button :icon="UploadFilled" size="small" @click="" :disabled="true" />
+                <el-button :icon="UploadFilled" size="small"
+                    @click="async () => pandaState.load((await uploadJsonFile()).data)" />
             </el-tooltip>
             <el-tooltip content="Download panda.json file" raw-content placement="top">
                 <el-button :icon="Download" size="small" @click="downloadJsonFile(pandaState.dump())" />
@@ -48,7 +49,7 @@
 <script setup>
 import { pandaState } from '../stores/pandaState'
 import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled } from '@element-plus/icons-vue'
-import { registerKeyActions, downloadJsonFile } from '../utils/commonUtils'
+import { registerKeyActions, downloadJsonFile, uploadJsonFile } from '../utils/commonUtils'
 
 registerKeyActions({
     ArrowLeft: pandaState.switchToPreviousDialog,

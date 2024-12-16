@@ -197,6 +197,7 @@ export class PandaState {
         this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = newDialog
 
         this.currentDialogIndex.value = this.dialogKeys.value.indexOf(this.dialogMaxKeyAll.value)
+        // console.trace('fork:', this.currentDialogKey.value, '->', this.dialogMaxKeyAll.value + 1)
 
         // will throw recursion error
         // this.switchDialogByIndex(this.dialogKeys.value.length-1)
@@ -255,8 +256,11 @@ export class PandaState {
         return deepCopy(this.pandaTree.value)
     }
     load = (pandaTree) => {
+        this.cacheTree = {}
         pandaTree = this.setDefaultToPandaTree(pandaTree)
         this.pandaTree.value = pandaTree
+        // this.switchDialogByIndex(this.dialogMaxIndexRemain)  // Will fork by is_prompt_modified=true, may by dialogComputed update not in time?
+        this.currentDialogIndex.value = this.dialogMaxIndexRemain.value
     }
     previousOperation = computed(() => this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1])
     // default on_policy:true

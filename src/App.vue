@@ -60,7 +60,9 @@
     <el-divider content-position="left">
       <b> dialog:</b>
     </el-divider>
-    <div class="dialogFixedPosition" :style="pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {}">
+    <div class="dialogFixedPosition"
+      :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {}, isMobile ? {} : { padding: '10px' })"
+      style="border-radius: 5px; ">
 
       <div class="promptMessages">
         <Message v-for="(message, index) in messages" :message="message"

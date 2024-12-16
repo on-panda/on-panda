@@ -19,6 +19,8 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
     var { prompt: prompt1, response: response1 } = splitToPromptResponse(messages1, modelRoles)
     var { prompt: prompt2, response: response2 } = splitToPromptResponse(messages2, modelRoles)
     var is_prompt_modified = !deepEqual(prompt1, prompt2)
+
+    // console.log('is_prompt_modified:', is_prompt_modified, prompt1, prompt2)
     // if response is null, response is different
     var is_response_modified = true
     if (response1 && response2) {

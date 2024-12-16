@@ -31,7 +31,7 @@
 
 
                 </el-form-item>
-                <CustomAnnotatorTool v-for="tool in pandaState.dialogCache.value.annotate.customs" :tool="tool">
+                <CustomAnnotatorTool v-for="tool in pandaState.dialogCache.value.annotate?.customs" :tool="tool">
                 </CustomAnnotatorTool>
             </el-form>
             <ObjectViewerInDetails :object="pandaState.dialogCache.value" summary="current dialog JSON"

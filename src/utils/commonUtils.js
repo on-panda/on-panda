@@ -248,3 +248,46 @@ export function downloadJsonFile(obj, filename) {
   URL.revokeObjectURL(url)
   return filename
 }
+
+
+export async function uploadJsonFile() {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.json';
+  fileInput.style.display = 'none';
+
+  document.body.appendChild(fileInput);
+
+  const result = await new Promise((resolve, reject) => {
+    fileInput.onchange = () => {
+      const file = fileInput.files[0];
+      if (!file) {
+        reject(new Error('No file selected'));
+        document.body.removeChild(fileInput);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          resolve({ name: file.name, file, data, });
+        } catch (error) {
+          reject(new Error('Invalid JSON file'));
+        } finally {
+          document.body.removeChild(fileInput);
+        }
+      };
+      reader.onerror = () => {
+        reject(new Error('File reading failed'));
+        document.body.removeChild(fileInput);
+      };
+
+      reader.readAsText(file);
+    };
+
+    fileInput.click();
+  });
+
+  return result;
+}
