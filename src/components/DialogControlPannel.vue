@@ -3,7 +3,7 @@
         <footer style="display :flex; margin-top:-10px; margin-bottom:10px">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
             <el-tooltip content="Save the data" raw-content placement="top">
-                <el-button plain type="success" id="" :icon="Select" size="small"
+                <el-button plain type="success" :icon="Select" size="small"
                     @click="downloadJsonFile(pandaState.dump())" />
             </el-tooltip>
             <el-tooltip content="Previous modification<br>(Shortcut key: left)" raw-content placement="top">
@@ -14,31 +14,33 @@
                 <el-button id="switchToNextDialog" :icon="Right" size="small"
                     @click="pandaState.switchToNextDialog()" />
             </el-tooltip>
-            <el-tooltip content="" raw-content placement="top" v-if="!pandaState.isDeleted.value">
-                <el-button plain type="danger" id="" :icon="Delete" size="small"
-                    @click="pandaState.deleteCurrentDialog()" />
+            <el-tooltip content="Delete current dialog" raw-content placement="top" v-if="!pandaState.isDeleted.value">
+                <el-button plain type="danger" :icon="Delete" size="small" @click="pandaState.deleteCurrentDialog()" />
             </el-tooltip>
-            <el-tooltip content="" raw-content placement="top" v-if="pandaState.isDeleted.value">
-                <el-button plain type="success" id="" :icon="Help" size="small"
-                    @click="pandaState.restoreDeletedDialog()" />
+            <el-tooltip content="Restore current dialog" raw-content placement="top" v-if="pandaState.isDeleted.value">
+                <el-button plain type="success" :icon="Help" size="small" @click="pandaState.restoreDeletedDialog()" />
             </el-tooltip>
-            <el-tooltip content="" raw-content placement="top" v-if="pandaState.isDeleted.value">
-                <el-button plain type="danger" id="" :icon="CloseBold" size="small"
+            <el-tooltip content="Permanently delete current dialog" raw-content placement="top"
+                v-if="pandaState.isDeleted.value">
+                <el-button plain type="danger" :icon="CloseBold" size="small"
                     @click="pandaState.eraseCurrentDialog()" />
             </el-tooltip>
             <el-tooltip content="Upload *.panda.json file" raw-content placement="top">
-                <el-button id="" :icon="UploadFilled" size="small" @click="" :disabled="true" />
+                <el-button :icon="UploadFilled" size="small" @click="" :disabled="true" />
             </el-tooltip>
             <el-tooltip content="Download panda.json file" raw-content placement="top">
-                <el-button id="" :icon="Download" size="small" @click="downloadJsonFile(pandaState.dump())" />
+                <el-button :icon="Download" size="small" @click="downloadJsonFile(pandaState.dump())" />
             </el-tooltip>
         </footer>
-        <div style="color:#555">
+        <div class='dialogKeysFooter' style="color:#555">
             &nbsp;&nbsp;
             <small v-for="(key, idx) in pandaState.dialogKeys.value" style="cursor: pointer"
                 @click="pandaState.switchDialogByIndex(idx)"
                 :style="idx == pandaState.currentDialogIndex.value ? { color: '#409eff', fontWeight: 700 } : {}">
-                &nbsp; {{ key }} &nbsp;
+                <span style="margin-right: 8px"
+                    :style="key in pandaState.pandaTree.value.dialogs ? {} : { textDecoration: 'line-through red' }">
+                    &#8202;{{ key
+                    }} &#8202;</span>
             </small>
         </div>
     </div>

@@ -202,6 +202,7 @@ export class PandaState {
         // this.switchDialogByIndex(this.dialogKeys.value.length-1)
     }
     eraseCurrentDialog = () => {
+        this.beforeOperation()
         // if current dialog will erase, default to next dialog or previous dialog
         var currentKey = this.currentDialogKey.value
         var targetKey = this.currentDialogIndex.value == this.dialogKeys.value.length - 1 ? this.dialogKeys.value[this.currentDialogIndex.value - 1] : this.dialogKeys.value[this.currentDialogIndex.value + 1]
@@ -216,10 +217,7 @@ export class PandaState {
         }
     }
     deleteCurrentDialog = () => {
-        // TODO
-        // this.beforeOperation({
-        //     operator: "delete",
-        // })
+        this.beforeOperation()
         var currentKey = this.currentDialogKey.value
         if (this.currentDialogKey.value in this.pandaTree.value.dialogs) { // if current dialog is remain(not deleted), default to next remain dialog or previous remain dialog after delete
             var currentDialogRemainIndex = this.dialogKeysRemain.value.indexOf(this.currentDialogKey.value)
@@ -228,7 +226,8 @@ export class PandaState {
             if (this.parentDialogKey.value && this.dialogKeys.value.includes(this.parentDialogKey.value)) {
                 targetKey = this.parentDialogKey.value
             }
-            this.switchDialogByIndex(this.dialogKeys.value.indexOf(targetKey))
+            // TODO should switch to next remain dialog?
+            // this.switchDialogByIndex(this.dialogKeys.value.indexOf(targetKey))
             this.pandaTree.value.deleted_dialogs[currentKey] = this.pandaTree.value.dialogs[currentKey]
             delete this.pandaTree.value.dialogs[currentKey]
         } else {
@@ -236,6 +235,8 @@ export class PandaState {
         }
     }
     restoreDeletedDialog = (key) => {
+        this.beforeOperation()
+
         key = key || this.currentDialogKey.value
         if (key in this.pandaTree.value.deleted_dialogs) {
             this.pandaTree.value.dialogs[key] = this.pandaTree.value.deleted_dialogs[key]
@@ -249,10 +250,7 @@ export class PandaState {
     redo = () => {
     }
     dump = () => {
-        this.beforeOperation({
-            operator: "dump",
-            on_policy: this.isPreviousOperationOnPolicy.value,
-        })
+        this.beforeOperation()
         this.pandaTree.value.has_ever_been_saved = true
         return deepCopy(this.pandaTree.value)
     }
@@ -260,11 +258,13 @@ export class PandaState {
         pandaTree = this.setDefaultToPandaTree(pandaTree)
         this.pandaTree.value = pandaTree
     }
+    previousOperation = computed(() => this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1])
     // default on_policy:true
-    isPreviousOperationOnPolicy = computed(() => (!this.currentDialogData.value?.operations?.length) || this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1].on_policy)
-    beforeOperation = (operation) => {
+    isPreviousOperationOnPolicy = computed(() => (!this.currentDialogData.value?.operations?.length) || this.previousOperation.value.on_policy)
+    beforeOperation = (operation = null) => {
+        // Usually shouldn't set opration, if have to, using this.nextNotSameOperationCache
         this.cacheTokens()
-        this.autoFork(operation)
+        this.autoFork(operation) // Usually response_modified_type === 'same', and do nothing
     }
 
     setDefaultToOperation = (operation) => {
@@ -306,6 +306,8 @@ export class PandaState {
     }
 
     autoFork = (operation) => {
+        // if operation is not set, use nextNotSameOperationCache
+        // if response_modified_type === 'same', do nothing and not append operation
         var isDefaultOperation = !Boolean(operation)
         if (isDefaultOperation && this.nextNotSameOperationCache) {
             operation = this.nextNotSameOperationCache
