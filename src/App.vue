@@ -127,13 +127,12 @@
       <div class="finalMessageTwoPannel" style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
         <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
           <div class="final-message-half-pannel">
-            <br>
             <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
-              <div style="color: #444" v-if="!tokens.length">
+              <p style="color: #444" v-if="!tokens.length">
                 <span v-if="requestStatus.generating">⏳ Waiting response...</span>
                 <span v-if="!requestStatus.generating">➡️ Please click send button.</span>
-              </div>
-              <div ref="rawOnPandaPannelRef">
+              </p>
+              <p ref="rawOnPandaPannelRef">
                 <span class="PatchSpan" v-for="patch in patchs"
                   :key="`t${pandaState.uuid.value}-d${pandaState.currentDialogKey.value}-p${patch.index}:${patch.patch}`"
                   :style='{
@@ -149,9 +148,8 @@
                   <el-button :icon="DArrowRight" size="small" @click="opreators.continueGenerating()"
                     style="margin-left: 10px;height: 16px" />
                 </el-tooltip>
-              </div>
+              </p>
             </div>
-            <br>
           </div>
           <hr style="color:#eee">
           <div class="final-message-half-pannel">
@@ -163,7 +161,9 @@
                 <span v-if="!requestStatus.generating">➡️ Please click send button.</span>
               </div>
             </div>
-            <MessageMarkdown :content="finalMessage.content || ''" style="background-color: #eee;" />
+            <p> <!-- Removing the p tag will cause unstable rendering in stream mode -->
+              <MessageMarkdown :content="finalMessage.content || ''" style="background-color: #eee;" />
+            </p>
           </div>
         </div>
       </div>

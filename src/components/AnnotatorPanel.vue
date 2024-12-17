@@ -33,46 +33,49 @@
                 </el-form-item>
                 <CustomAnnotatorTool v-for="tool in pandaState.dialogCache.value.annotate?.customs" :tool="tool">
                 </CustomAnnotatorTool>
-            </el-form>
-            <ObjectViewerInDetails :object="pandaState.dialogCache.value" summary="current dialog JSON"
-                tips="This dialogCache may not be updated in time. Try switching the dialog to refresh it." />
-            <ObjectViewerInDetails :object="pandaState.tokens.value" summary="tokens" v-if="0" />
-            <el-divider class="el-divider-ignore-background-color" content-position="left">
-                <small style="color: #606266; background-color: antiquewhite; padding:10px ">
-                    dialog level / data level
-                </small>
-            </el-divider>
-            <div class="dataPannelRow" v-if="pandaState.pandaTree.value?.title">
-                <small>
-                    <span style="color: #888;padding-right: 17px;padding-left: 44px;">
-                        title:
-                    </span>
-                    <b style="color: #555;">{{ pandaState.pandaTree.value?.title }}</b>
-                </small>
-            </div>
-            <div class="dataPannelRow" v-if="uploadedJson">
-                <small>
-                    <span style="color: #888;padding-right: 17px;padding-left: 4px;">
-                        upload file:
-                    </span>
-                    <b style="color: #555;">{{ uploadedJson.name }}</b>
-                </small>
-            </div>
-            <div class="dataPannelRow">
-                <small>
-                    <span style="color: #888;padding-right: 17px;padding-left: 0px;">
-                        ever saved:
-                    </span>
-                    <CheckboxWidgetSupportNull :checkboxValue="pandaState.pandaTree.value?.has_ever_saved"
-                        :disabled="true" size="small" />
-                </small>
-            </div>
 
-            <EditableStringAttribute :obj="pandaState.pandaTree.value" attr="description" :disabled="true"
-                v-if="pandaState.pandaTree.value?.description" />
-            <EditableStringAttribute :obj="pandaState.pandaTree.value" attr="comment" :disabled="false"
-                v-if="pandaState.pandaTree.value?.comment" name="&nbsp;&nbsp;&nbsp;comment:" />
-            <br>
+                <ObjectViewerInDetails :object="pandaState.dialogCache.value" summary="current dialog JSON"
+                    tips="This dialogCache may not be updated in time. Try switching the dialog to refresh it." />
+                <ObjectViewerInDetails :object="pandaState.tokens.value" summary="tokens" v-if="0" />
+
+                <el-divider class="el-divider-ignore-background-color" content-position="left">
+                    <small style="color: #606266; background-color: antiquewhite; padding:10px ">
+                        dialog level / data level
+                    </small>
+                </el-divider>
+
+                <CustomAnnotatorTool v-if="pandaState.pandaTree.value?.title" :tool='{
+                    name: "title",
+                    type: "markdown",
+                    markdown: "**" + pandaState.pandaTree.value?.title + "**",
+                    disabled: true,
+                }'></CustomAnnotatorTool>
+                <CustomAnnotatorTool v-if="uploadedJson" :tool='{
+                    name: "upload file",
+                    type: "markdown",
+                    markdown: "**" + uploadedJson.name + "**",
+                    disabled: true,
+                }'></CustomAnnotatorTool>
+                <CustomAnnotatorTool :tool='{
+                    name: "has ever saved",
+                    type: "checkbox",
+                    checkbox: pandaState.pandaTree.value?.has_ever_saved,
+                    disabled: true,
+                    tips: "Has this data ever been saved by on-panda? Automatically set by on-panda."
+                }'></CustomAnnotatorTool>
+                <CustomAnnotatorTool v-if="pandaState.pandaTree.value?.description" :tool='{
+                    name: "description",
+                    type: "markdown",
+                    markdown: pandaState.pandaTree.value?.description,
+                    disabled: true,
+                }'></CustomAnnotatorTool>
+                <CustomAnnotatorTool v-if="pandaState.pandaTree.value?.comment" :tool='{
+                    name: "comment",
+                    type: "text",
+                    text: pandaState.pandaTree.value?.comment,
+                    disabled: false,
+                }'></CustomAnnotatorTool>
+            </el-form>
             <ObjectViewerInDetails :object="pandaState.pandaTree.value" summary="panda tree JSON" />
         </div>
     </div>

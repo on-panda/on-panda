@@ -28,7 +28,7 @@
             <el-tooltip content="Upload *.panda.json file<br>You can also drop a JSON file here!" raw-content
                 placement="top">
                 <el-button :icon="UploadFilled" size="small" @click="uploadAndLoadJson"
-                    :style="isDragged ? { backgroundColor: 'rgb(211, 255, 211)' } : {}" />
+                    :style="isDragged ? { backgroundColor: 'rgb(158, 218, 255)' } : {}" />
             </el-tooltip>
             <el-tooltip content="Download panda.json file" raw-content placement="top">
                 <el-button :icon="Download" size="small" @click="clickToDownload" />
@@ -164,6 +164,6 @@ useEventListener(document, 'dragleave', function (event) {
 </script>
 <style>
 .dropzone .el-upload .el-upload-dragger {
-    background-color: rgb(211, 255, 211)
+    background-color: rgb(158, 218, 255)
 }
 </style>

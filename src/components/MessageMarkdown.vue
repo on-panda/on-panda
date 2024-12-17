@@ -33,7 +33,13 @@ const htmlContent = computed(() => {
       .replace(/\\\(/g, "$")
       .replace(/\\\)/g, "$");
   }
-  return markdown.render(content)
+  var html = markdown.render(content).trim()
+  if (html.startsWith('<p>') && html.endsWith('</p>')) {
+    html = html.slice(3, -4)
+    // 去掉了 p 标签, 会导致动态 markdown 渲染不稳定，一直跳动，需要的话自己加上
+    // Removing the p tag will cause unstable rendering in stream mode. Add it yourself if necessary.
+  }
+  return html
 })
 </script>
 <style>

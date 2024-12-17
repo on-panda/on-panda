@@ -81,7 +81,7 @@ var pandaTreeExample = {
     version: "1.0",
     uuid: dateStringNow(true),
     title: "Title of the data",
-    description: "Uneditable description",
+    description: "Uneditable description for the data",
     comment: "Editable comment",
     dialogs: { 1: dialogExample0, 2: dialogExample }, // key start from 1
     hash_map: {},  // to support 'hash:4LKUXH3IuMhn4cti0hjpzqcA5Zv0bCZu+zBi2+buU30=' key 要不要加上 hash 前缀？(加上吧，更加一致，也给人一眼看出作用) 为什么不用 obj.hash?(繁琐了，不用)

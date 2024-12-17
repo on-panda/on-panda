@@ -1,13 +1,15 @@
 <template>
     <el-form-item :required="props.tool.required">
         <template #label>
-            <el-tooltip class="" effect="dark" placement="top" raw-content>
+            <el-tooltip class="" effect="dark" placement="top" raw-content
+                v-if="props.tool.tips || (!props.tool.disabled)">
                 <template #content>
                     Type: <b>{{ props.tool.type }}</b><br>
                     <MessageMarkdown :content="props.tool.tips" />
                 </template>
                 <span>{{ props.tool.name }}</span>
             </el-tooltip>
+            <span v-else>{{ props.tool.name }}</span>
         </template>
 
         <div style="width: 90%; max-width: 950px;">
@@ -33,7 +35,9 @@
                 <el-input type="textarea" v-model="props.tool.text" :input-style="{ color: '#888' }" :autosize="true"
                     :disabled="props.tool.disabled" />
             </div>
-
+            <div v-if="props.tool.type == 'markdown'" style="color: #555;">
+                <MessageMarkdown :content="props.tool.markdown" />
+            </div>
         </div>
     </el-form-item>
 </template>
