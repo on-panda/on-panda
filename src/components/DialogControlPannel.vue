@@ -62,15 +62,15 @@
                 </div>
             </template>
         </el-upload>
-
+        <!-- TODO mv left, right button to keys foooter -->
         <div class='dialogKeysFooter' style="color:#555">
             &nbsp;&nbsp;
-            <small v-for="(key, idx) in pandaState.dialogKeys.value" style="cursor: pointer"
-                @click="pandaState.switchDialogByIndex(idx)"
+            <small v-for="(key, idx) in pandaState.dialogKeys.value"
+                style="cursor: pointer;width: 25px; display: inline-block" @click="pandaState.switchDialogByIndex(idx)"
                 :style="(key in pandaState.pandaTree.value.dialogs) ? {} : { textDecoration: 'line-through red', color: '#bbb' }">
-                <span style="margin-right: 8px"
-                    :style="idx == pandaState.currentDialogIndex.value ? { color: '#409eff', fontWeight: 700 } : {}">
-                    &#8202;{{ key
+                <span style=""
+                    :style="idx == pandaState.currentDialogIndex.value ? { color: '#409eff', fontWeight: 550, fontSize: 'medium' } : {}">
+                    &#8202; {{ key
                     }} &#8202;</span>
             </small>
         </div>
