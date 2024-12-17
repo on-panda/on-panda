@@ -56,6 +56,7 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
     } else {
         var response_modified_type = 'no_response'
         var common_prefix_length = -1
+        is_response_modified = Boolean(response1 || response2)
     }
     return { is_prompt_modified, is_response_modified, response_modified_type, common_prefix_length }
 }

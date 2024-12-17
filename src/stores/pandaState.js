@@ -164,20 +164,35 @@ export class PandaState {
         this.dialogCache.value.messages = newValue.messages ? deepCopy(newValue.messages) : undefined
     }.bind(this))
 
-    switchDialogByIndex = async (index) => {
+    switchDialogByIndex = (index) => {
         var oldIndex = this.currentDialogIndex.value
         this.beforeOperation()
         if (oldIndex != index) {
             // setTimeout(this.tryRestoreTokens)
-            this.currentDialogIndex.value = (index + this.dialogKeys.value.length) % this.dialogKeys.value.length
+            this.currentDialogIndex.value = this.roundDialogIndex(index)
         }
         // this.tryRestoreTokens()
     }
-    switchToNextDialog = async () => {
-        await this.switchDialogByIndex(this.currentDialogIndex.value + 1)
+    roundDialogIndex = (index) => {
+        return (index + this.dialogKeys.value.length) % this.dialogKeys.value.length
     }
-    switchToPreviousDialog = async () => {
-        await this.switchDialogByIndex(this.currentDialogIndex.value - 1)
+    switchToNextDialog = () => {
+        var targetIndex = this.currentDialogIndex.value + 1
+        for (var i = 0; i < this.dialogKeys.value.length; i++) {
+            if (this.dialogKeys.value[this.roundDialogIndex(targetIndex + i)] in this.pandaTree.value.dialogs) {
+                this.switchDialogByIndex(targetIndex + i)
+                break
+            }
+        }
+    }
+    switchToPreviousDialog = () => {
+        var targetIndex = this.currentDialogIndex.value - 1
+        for (var i = 0; i < this.dialogKeys.value.length; i++) {
+            if (this.dialogKeys.value[this.roundDialogIndex(targetIndex - i)] in this.pandaTree.value.dialogs) {
+                this.switchDialogByIndex(targetIndex - i)
+                break
+            }
+        }
     }
     setExample = () => {
         this.load(pandaTreeExample)
@@ -252,7 +267,7 @@ export class PandaState {
     }
     dump = (includeCache = false) => {
         this.beforeOperation()
-        this.pandaTree.value.has_ever_been_saved = true
+        this.pandaTree.value.has_ever_saved = true
         const dumped = deepCopy(this.pandaTree.value)
         if (includeCache) {
             dumped.cache_tree = this.cacheTree
@@ -344,7 +359,11 @@ export class PandaState {
                 }
             }
         } else {
-            this.writeBack(operation)
+            if (operation.is_prompt_modified || operation.is_response_modified) {
+                this.writeBack(operation)
+            } else {
+                // do nothing
+            }
         }
     }
 
@@ -415,6 +434,8 @@ export class PandaState {
 
 
 export const pandaState = new PandaState()
+
+export const uploadedJson = ref(null)
 
 // export const panda = ref({
 //     historys: [dialogExample0, dialogExample],

@@ -42,13 +42,31 @@
                     dialog level / data level
                 </small>
             </el-divider>
-            <small v-if="pandaState.pandaTree.value?.title">
-                <span style="color: #888;padding-right: 17px;padding-left: 44px;">
-                    title:
-                </span>
-
-                <b style="color: #555;">{{ pandaState.pandaTree.value?.title }}</b>
-            </small>
+            <div class="dataPannelRow" v-if="pandaState.pandaTree.value?.title">
+                <small>
+                    <span style="color: #888;padding-right: 17px;padding-left: 44px;">
+                        title:
+                    </span>
+                    <b style="color: #555;">{{ pandaState.pandaTree.value?.title }}</b>
+                </small>
+            </div>
+            <div class="dataPannelRow" v-if="uploadedJson">
+                <small>
+                    <span style="color: #888;padding-right: 17px;padding-left: 4px;">
+                        upload file:
+                    </span>
+                    <b style="color: #555;">{{ uploadedJson.name }}</b>
+                </small>
+            </div>
+            <div class="dataPannelRow">
+                <small>
+                    <span style="color: #888;padding-right: 17px;padding-left: 0px;">
+                        ever saved:
+                    </span>
+                    <CheckboxWidgetSupportNull :checkboxValue="pandaState.pandaTree.value?.has_ever_saved"
+                        :disabled="true" size="small" />
+                </small>
+            </div>
 
             <EditableStringAttribute :obj="pandaState.pandaTree.value" attr="description" :disabled="true"
                 v-if="pandaState.pandaTree.value?.description" />
@@ -64,7 +82,7 @@ import EditableStringAttribute from './EditableStringAttribute.vue'
 import CustomAnnotatorTool from './CustomAnnotatorTool.vue';
 import CheckboxWidgetSupportNull from './widgets/CheckboxWidgetSupportNull.vue'
 import ObjectViewerInDetails from './widgets/ObjectViewerInDetails.vue';
-import { pandaState } from '../stores/pandaState'
+import { pandaState, uploadedJson } from '../stores/pandaState'
 
 </script>
 <style scoped>
@@ -75,5 +93,9 @@ import { pandaState } from '../stores/pandaState'
     /* width: 90%; */
     margin: 10px;
     padding: 10px;
+}
+
+.dataPannelRow {
+    height: 25px;
 }
 </style>

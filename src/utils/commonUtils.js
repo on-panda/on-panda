@@ -258,7 +258,7 @@ export async function uploadJsonFile() {
 
   document.body.appendChild(fileInput);
 
-  const result = await new Promise((resolve, reject) => {
+  const promise = await new Promise((resolve, reject) => {
     fileInput.onchange = () => {
       const file = fileInput.files[0];
       if (!file) {
@@ -289,5 +289,5 @@ export async function uploadJsonFile() {
     fileInput.click();
   });
 
-  return result;
+  return promise;
 }
