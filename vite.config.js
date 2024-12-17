@@ -30,12 +30,16 @@ export default defineConfig({
         changeOrigin: true,
         configure: (proxy, options) => {
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            // console.log('proxy:', proxy, proxy.options, req.url);
-            var url = new URL(req.url.replace(/^\/bypass-CORS\//, ''))
-            // console.log(proxy.options)
-            // console.log('url:', url)
-            proxy.options.target = url.origin;
-            proxyReq.path = url.pathname
+            try {
+              // console.log('proxy:', proxy, proxy.options, req.url);
+              var url = new URL(req.url.replace(/^\/bypass-CORS\//, ''))
+              // console.log(proxy.options)
+              // console.log('url:', url)
+              proxy.options.target = url.origin;
+              proxyReq.path = url.pathname
+            } catch (e) {
+              console.error(e)
+            }
           });
         },
       },

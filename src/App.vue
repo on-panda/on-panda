@@ -410,7 +410,7 @@ async function requestPromptLogprobs() {
       prompt_tokens: json.prompt_logprobs_list.length - tokensNew.length + 2,
       completion_tokens: tokensNew.length,
     }
-    if (lastToken.finish_reason == "stop") {  // if finish_reason is stop, add to tokensNew
+    if (lastToken?.finish_reason == "stop") {  // if finish_reason is stop, add to tokensNew
       tokensNew.push({
         delta: { role: tokens.value[0].role, content: "" },
         logprobs: lastToken.logprobs,
@@ -438,6 +438,7 @@ async function requestPromptLogprobs() {
   }
   catch (error) {
     warning(error)
+    throw error
   }
 }
 
