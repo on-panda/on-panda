@@ -32,7 +32,36 @@
                 <el-button :icon="Download" size="small"
                     @click="downloadJsonFile(pandaState.dump(), uploadedJson && uploadedJson.name)" />
             </el-tooltip>
+            <el-tooltip content="Download panda.json file" raw-content placement="top" v-if="0">
+                <el-dropdown split-button
+                    @click="downloadJsonFile(pandaState.dump(), uploadedJson && uploadedJson.name)" size=small>
+                    <el-icon>
+                        <Download />
+                    </el-icon>
+                    <template #dropdown>
+                        <el-dropdown-menu>
+                            <el-dropdown-item
+                                @click="downloadJsonFile(pandaState.dump(true), uploadedJson && uploadedJson.name)">Download
+                                with cache</el-dropdown-item>
+                        </el-dropdown-menu>
+                    </template>
+                </el-dropdown>
+            </el-tooltip>
         </footer>
+
+        <el-upload class="upload-demo" :drag="true"
+            action="" multiple>
+            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+            <div class="el-upload__text">
+                Drop file here or <em>click to upload</em>
+            </div>
+            <template #tip>
+                <div class="el-upload__tip">
+                    jpg/png files with a size less than 500kb
+                </div>
+            </template>
+        </el-upload>
+
         <div class='dialogKeysFooter' style="color:#555">
             &nbsp;&nbsp;
             <small v-for="(key, idx) in pandaState.dialogKeys.value" style="cursor: pointer"
@@ -49,7 +78,7 @@
 <script setup>
 import { ref } from 'vue'
 import { pandaState } from '../stores/pandaState'
-import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled } from '@element-plus/icons-vue'
+import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled, ArrowDown } from '@element-plus/icons-vue'
 import { registerKeyActions, downloadJsonFile, uploadJsonFile } from '../utils/commonUtils'
 
 registerKeyActions({

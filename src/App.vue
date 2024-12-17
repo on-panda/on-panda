@@ -89,7 +89,7 @@
           <el-tooltip v-if="0" content="edit (TBD)" placement="top">
             <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
           </el-tooltip>
-          <el-tooltip content="refresh probability" placement="top">
+          <el-tooltip content="refresh tokens' probability" placement="top">
             <el-button :icon="View" size="small" :disabled="!finalMessage.content || requestStatus.generating"
               @click="requestPromptLogprobs" />
             @click="requestPromptLogprobs" />
