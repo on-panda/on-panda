@@ -1123,6 +1123,7 @@ class OpreatorCenter {
     tokens.value = []
     this.pandaState.afterOperation({
       operator: "regenerate",
+      is_regenerate: true,
       on_policy: true,
     })
     requestLlmServer(messages.value)

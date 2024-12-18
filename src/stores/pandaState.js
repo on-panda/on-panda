@@ -7,7 +7,9 @@ const dialogExample = {
     messages: messagesExample,
     operations: [{
         operator: "continue_with_chosen",
-        from_candidate: true,
+        from_candidate: true,  // same as no parent?
+        // for DPO RM loss without token level signal
+        is_regenerate: false,
         time: 1733147962,
         prefix_messages_num: 2,
         parent: 1,
@@ -272,6 +274,7 @@ export class PandaState {
         if (includeCache) {
             dumped.cache_tree = this.cacheTree
         }
+        // TODO: delete items can be recomputed "is_prompt_modified" "is_response_modified" response_modified_type?
         return dumped
     }
     load = (pandaTree) => {
