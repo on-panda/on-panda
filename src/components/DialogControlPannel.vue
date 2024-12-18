@@ -50,18 +50,21 @@
             </el-tooltip>
         </footer>
 
-        <el-upload v-show="isDragged" class="dropzone" :drag="true" :auto-upload="false" :on-change="handleDropJson"
-            accept=".json" :multiple="false">
-            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-            <div class="el-upload__text">
-                Drop JSON file here!
-            </div>
-            <template #tip>
-                <div class="el-upload__tip">
-                    Only one JSON file
+        <el-dialog v-model="isDragged" style="width: 80%;">
+            <el-upload v-show="isDragged" class="dropzone" :drag="true" :auto-upload="false" :on-change="handleDropJson"
+                accept=".json" :multiple="false">
+                <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+                <div class="el-upload__text">
+                    Drop JSON file here!
                 </div>
-            </template>
-        </el-upload>
+                <template #tip>
+                    <div class="el-upload__tip">
+                        Only one JSON file
+                    </div>
+                </template>
+            </el-upload>
+        </el-dialog>
+
         <!-- TODO mv left, right button to keys foooter -->
         <div class='dialogKeysFooter' style="color:#555">
             &nbsp;&nbsp;

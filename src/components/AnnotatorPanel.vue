@@ -69,12 +69,8 @@
                     markdown: pandaState.pandaTree.value?.description,
                     disabled: true,
                 }'></CustomAnnotatorTool>
-                <CustomAnnotatorTool v-if="pandaState.pandaTree.value?.comment" :tool='{
-                    name: "comment",
-                    type: "text",
-                    text: pandaState.pandaTree.value?.comment,
-                    disabled: false,
-                }'></CustomAnnotatorTool>
+                <CustomAnnotatorTool v-if="pandaState.pandaTree.value?.comment" :tool='editableCommentAsTool'>
+                </CustomAnnotatorTool>
             </el-form>
             <ObjectViewerInDetails :object="pandaState.pandaTree.value" summary="panda tree JSON" />
         </div>
@@ -86,6 +82,32 @@ import CustomAnnotatorTool from './CustomAnnotatorTool.vue';
 import CheckboxWidgetSupportNull from './widgets/CheckboxWidgetSupportNull.vue'
 import ObjectViewerInDetails from './widgets/ObjectViewerInDetails.vue';
 import { pandaState, uploadedJson } from '../stores/pandaState'
+
+import { ref, watch } from 'vue'
+
+
+const editableCommentAsTool = ref({
+    name: "comment",
+    type: "text",
+    text: pandaState.pandaTree.value?.comment,
+    disabled: false,
+})
+
+// bind editableCommentAsTool to pandaState.pandaTree.value.comment
+watch(() => pandaState.pandaTree.value, (newVal) => {
+    if (newVal.comment != editableCommentAsTool.value.text) {
+        editableCommentAsTool.value.text = newVal.comment
+    }
+}, { deep: true })
+
+watch(() => editableCommentAsTool.value, (newVal) => {
+    if (pandaState.pandaTree.value.comment != newVal.text) {
+        pandaState.pandaTree.value.comment = newVal.text
+    }
+}, { deep: true })
+
+
+
 
 </script>
 <style scoped>
