@@ -111,9 +111,16 @@
           <span v-if="tokens.length && tokens[tokens.length - 1]?.usage?.prompt_tokens"> ｜ tokens: {{
             tokens[tokens.length
               - 1]?.usage?.prompt_tokens }} + {{ tokens[tokens.length - 1]?.usage?.completion_tokens }} </span>
-          <span v-if="bitTokens.length > 1"> ｜ bits / token
-            : {{ bitTotal.toFixed(1) }} ÷ {{ bitTokens.length }} =
-            {{ (bitTotal / bitTokens.length).toFixed(2) }}
+          <span v-if="bitTokens.length > 1"> ｜
+            <el-tooltip class="" effect="dark" placement="bottom" raw-content>
+              <template #content>
+                <MessageMarkdown content="${\text{bits}} = - \sum_{i} \log_2(p_i)$" />
+              </template>
+              bits / tokens: {{ bitTotal.toFixed(1) }} ÷ {{ bitTokens.length }} = {{ (bitTotal /
+                bitTokens.length).toFixed(2)
+              }}
+            </el-tooltip>
+
             <!-- <el-icon>
             <QuestionFilled style="height: 11px;" />
           </el-icon> -->
@@ -319,7 +326,16 @@
         <el-input-number v-model="apiConfig.chat_config.top_logprobs" :min="0" :max="50" :step="1" size="small" />
       </el-form-item>
 
-      <el-form-item label="continue generating">
+      <el-form-item>
+        <template #label>
+          <el-tooltip class="" effect="dark" placement="top" raw-content>
+            <template #content>
+              <MessageMarkdown
+                :content="'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> ' + CONTINUE_PROMPT" />
+            </template>
+            <span>continue generating</span>
+          </el-tooltip>
+        </template>
         <small>
           <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
             {{ apiConfig.support_continue_final_message ? "native" : "prompt engineering" }}
@@ -896,6 +912,9 @@ const requestStatus = ref({
   generating: false,
 })
 
+
+const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
+
 async function requestLlmServer(messages) {
   messages = messages.value === undefined ? messages : messages.value
   messages = messages.filter(message => message.content)
@@ -912,7 +931,6 @@ async function requestLlmServer(messages) {
       body['echo'] = false
 
     } else {
-      const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
       if (lastMessageContent.length < 20000000) {
         messages = messages.concat([
           { role: "user", content: CONTINUE_PROMPT },
