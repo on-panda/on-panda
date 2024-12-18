@@ -65,8 +65,8 @@
       style="border-radius: 5px; ">
 
       <div class="promptMessages">
-        <Message v-for="(message, index) in messages" :message="message"
-          @send-button="tokens = []; requestLlmServer(messages)" @delete-message="messages.splice(index, 1)" />
+        <Message v-for="(message, index) in messages" :message="message" @send-button="opreators.regenerate()"
+          @delete-message="messages.splice(index, 1)" />
       </div>
 
 
@@ -84,7 +84,7 @@
             <el-button :icon="VideoPause" size="small" @click="opreators.stopGenerating()" />
           </el-tooltip>
           <el-tooltip content="try again" placement="top">
-            <el-button :icon="Refresh" size="small" @click="tokens = []; requestLlmServer(messages)" />
+            <el-button :icon="Refresh" size="small" @click="opreators.regenerate()" />
           </el-tooltip>
           <el-tooltip v-if="0" content="edit (TBD)" placement="top">
             <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
@@ -273,7 +273,7 @@
     <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
 
       <Message :message="newTurnMessage" @delete-message="newTurnMessage.content = ''"
-        @send-button="messages = messagesComputed.concat([newTurnMessage]); tokens = []; newTurnMessage = { role: 'user', content: '' }; requestLlmServer(messages)" />
+        @send-button="opreators.newRoundMessage()" />
     </div>
 
     <!-- <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div> -->
@@ -1067,7 +1067,7 @@ async function requestLlmServer(messages) {
 
 
 class OpreatorCenter {
-  // continue generating, continue with chosen, continue with input, edit prompt, edit response, refresh, load example, load panda tree, stop.
+  // continue generating, stop, continue with chosen, continue with input, edit prompt(include role), new round, edit response, refresh, load example, load panda tree.
   constructor() {
   }
   pandaState = new Proxy({}, {
@@ -1118,6 +1118,37 @@ class OpreatorCenter {
     requestLlmServer(messagesComputed.value)
   }
 
+  regenerate = () => {
+    this.pandaState.beforeOperation()
+    tokens.value = []
+    this.pandaState.afterOperation({
+      operator: "regenerate",
+      on_policy: true,
+    })
+    requestLlmServer(messages.value)
+  }
+
+  newRoundMessage = () => {  // TODO remove auto write back's append opreation
+    this.pandaState.beforeOperation()
+    var role = newTurnMessage.value.role
+    messages.value = (messagesComputed.value.concat([newTurnMessage.value]))
+    tokens.value = [];
+    newTurnMessage.value = { role: role, content: '' }
+    this.pandaState.afterOperation({
+      operator: "new_round_message",
+      on_policy: true,
+    })
+    requestLlmServer(messages)
+  }
+
+  editPrompt = () => {
+  }
+
+  editRole = () => {
+  }
+
+  editResponse = () => {
+  }
 }
 
 function prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob) {

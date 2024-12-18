@@ -66,15 +66,15 @@
         </el-dialog>
 
         <!-- TODO mv left, right button to keys foooter -->
-        <div class='dialogKeysFooter' style="color:#555">
-            &nbsp;&nbsp;
+        <div class='dialogKeysFooter' style="color:#555;margin-bottom: 10px;">
+            &nbsp;
             <small v-for="(key, idx) in pandaState.dialogKeys.value"
-                style="cursor: pointer;width: 25px; display: inline-block" @click="pandaState.switchDialogByIndex(idx)"
+                style="cursor: pointer;width: 30px; display: inline-block;text-align: center;"
+                @click="pandaState.switchDialogByIndex(idx)"
                 :style="(key in pandaState.pandaTree.value.dialogs) ? {} : { textDecoration: 'line-through red', color: '#bbb' }">
-                <span style=""
+                <span
                     :style="idx == pandaState.currentDialogIndex.value ? { color: '#409eff', fontWeight: 550, fontSize: 'medium' } : {}">
-                    &#8202; {{ key
-                    }} &#8202;</span>
+                    &#8202; {{ key }} &#8202;</span>
             </small>
         </div>
     </div>
