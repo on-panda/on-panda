@@ -656,63 +656,59 @@ function openAllDetails() {
 const exampleNameToFunc = {
   "default": () => {
     modelName.value = "on-panda"
-    messages.value = messagesDefaultExample
-    tokens.value = []
-    requestLlmServer(messages)
-    // location.reload()
+    opreators.loadMessagesWithPandaTree(messagesDefaultExample)
+    opreators.newGenerate()
   },
   "R in 🍓": () => {
-    messages.value = [{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }]
-    tokens.value = []
-    requestLlmServer(messages)
+    opreators.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }])
+    opreators.newGenerate()
   },
   "image": () => {
     modelName.value = "image"
-    messages.value = messagesImageExample
     setTimeout(openAllDetails, 100)
-    tokens.value = []
-    requestLlmServer(messages)
+    opreators.loadMessagesWithPandaTree(messagesImageExample)
+    opreators.newGenerate()
   },
   "audio": () => {
     modelName.value = "audio"
-    messages.value = messagesAudioExample
-    tokens.value = []
-    requestLlmServer(messages)
+    opreators.loadMessagesWithPandaTree(messagesAudioExample
+    )
+    opreators.newGenerate()
   },
   "tokenizer": () => {
-    messages.value = messagesTokenizerExample
-    tokens.value = []
-    requestLlmServer(messages)
+    opreators.loadMessagesWithPandaTree(messagesTokenizerExample
+    )
+    opreators.newGenerate()
   },
   "random": () => {
-    messages.value = [{ role: "user", content: "just output a random float128 number without any words, no code" }]
-    tokens.value = []
-    requestLlmServer(messages)
+    opreators.loadMessagesWithPandaTree([{ role: "user", content: "just output a random float128 number without any words, no code" }]
+    )
+    opreators.newGenerate()
   },
   "笑话": () => {
-    messages.value = [{ role: "user", content: "讲一个关于西游记的笑话, 100字" }]
-    tokens.value = []
-    requestLlmServer(messages)
+    opreators.loadMessagesWithPandaTree([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }]
+    )
+    opreators.newGenerate()
   },
   "诗": () => {
-    messages.value = [{ role: "user", content: "写藏头诗：\n人工智能，大有可为" }]
-    tokens.value = []
-    requestLlmServer(messages)
+    opreators.loadMessagesWithPandaTree([{ role: "user", content: "写藏头诗：\n人工智能，大有可为" }]
+    )
+    opreators.newGenerate()
   },
   "计算": () => {
-    messages.value = [{ role: "system", content: "" }, { role: "user", content: "已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
-    tokens.value = []
-    requestLlmServer(messages)
+    opreators.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
+    )
+    opreators.newGenerate()
   },
   "count": () => {
-    messages.value = [{ role: "system", content: "" }, { role: "user", content: "How many 1 in 01011010101111011011?", description: "Answer is 13" }]
-    tokens.value = []
-    requestLlmServer(messages)
+    opreators.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "How many 1 in 01011010101111011011?", description: "Answer is 13" }]
+    )
+    opreators.newGenerate()
   },
   "AIME": () => {
-    messages.value = [{ role: "system", content: "" }, { role: "user", content: "Real numbers $x$ and $y$ with $x,y>1$ satisfy $\log_x(y^x)=\log_y(x^{4y})=10.$ What is the value of $xy$?", description: "Answer is 25" }]
-    tokens.value = []
-    requestLlmServer(messages)
+    opreators.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "Real numbers $x$ and $y$ with $x,y>1$ satisfy $\log_x(y^x)=\log_y(x^{4y})=10.$ What is the value of $xy$?", description: "Answer is 25" }]
+    )
+    opreators.newGenerate()
   },
   "continue": () => {
     loadMessages(messagesContinueExample)
@@ -1150,6 +1146,14 @@ class OpreatorCenter {
 
   editResponse = () => {
   }
+
+  loadMessagesWithPandaTree = (messages) => {
+    this.pandaState.beforeOperation()
+    this.pandaState = pandaState
+    const dialogNew = { messages: deepCopy(messages) }
+    const pandaTreeNew = { dialogs: { 1: dialogNew } }
+    this.pandaState.load(pandaTreeNew)
+  }
 }
 
 function prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob) {
@@ -1460,12 +1464,13 @@ import { sleep } from '@/utils/commonUtils'
 watch(pandaState.dialogCache,
   function watchPandaStateDialogCache(newValue, oldValue) {
     if (newValue.messages) {
+      requestStatus.value.generating = false
       loadMessages(newValue.messages)
       pandaState.tryRestoreTokens()
       // p(tokensToSeq(tokens.value))
       // console.trace()
     }
-  })
+  }, { flush: 'sync' })
 
 const dialogComputed = computed(() => {
 

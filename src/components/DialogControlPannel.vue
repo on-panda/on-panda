@@ -1,5 +1,5 @@
 <template>
-    <div class="dialogControlPannel" v-if="pandaState.dialogCache.value?.annotate">
+    <div class="dialogControlPannel" v-if="pandaState.dialogKeys.value?.length">
         <footer style="display :flex; margin-top:-10px; margin-bottom:10px">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
             <el-tooltip content="Save the data" raw-content placement="top">

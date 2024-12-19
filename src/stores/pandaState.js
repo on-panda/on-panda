@@ -107,17 +107,20 @@ export class PandaState {
         if (this.tokens?.value?.length && tokensCache) {
             var seqNow = tokensToSeq(this.tokens.value)
             var seqCache = tokensToSeq(tokensCache)
+            // console.trace('restoreTokens:')
+            // console.log('restoreTokens key:', this.currentDialogKey.value, seqNow , seqCache, 'pruned:', tokensCache.filter(token => token.pruned).length)
             if (seqNow === seqCache) {
                 this.tokens.value.length = 0
-                this.tokens.value.push(...tokensCache)
+                // must deep copy to aviod edit by reference
+                this.tokens.value.push(...deepCopy(tokensCache))
             } else {
+                console.trace('seqNow !== seqCache')
                 console.log('Warning! When tryRestoreTokens, unexpected seqNow !== seqCache:', seqNow === seqCache, '\n', seqNow, '\n----\n', seqCache, '\npruned now:', this.tokens.value.filter(token => token.pruned).length, 'pruned cache:', tokensCache.filter(token => token.pruned).length)
             }
         }
     }
     cacheTokens = () => {
-        // console.trace('cacheTokens:')
-        // console.log('cacheTokens:', tokensToSeq(this.tokens.value), 'pruned:', this.tokens.value.filter(token => token.pruned).length)
+        // console.log('cacheTokens key:', this.currentDialogKey.value, tokensToSeq(this.tokens.value), 'pruned:', this.tokens.value.filter(token => token.pruned).length)
         if (this.currentDialogData.value?.messages?.length) {
             this.cacheTree[this.currentDialogKey.value] = {
                 ...this.cacheTree[this.currentDialogKey.value], tokens: deepCopy(this.tokens.value)
@@ -159,12 +162,12 @@ export class PandaState {
         return this.currentDialogKey.value ? this.allDialogs.value[this.currentDialogKey.value] : {}
     })
     dialogCache = ref(deepCopy(this.currentDialogData.value))
-    _ = watch(this.currentDialogData, function (newValue, oldValue) {
+    _ = watch(this.currentDialogData, function watchCurrentDialogData(newValue, oldValue) {
         // annotate and comment is saved in time, just ref the value
         this.dialogCache.value = newValue
         // messages should using cache to store current state, so need deep copy
         this.dialogCache.value.messages = newValue.messages ? deepCopy(newValue.messages) : undefined
-    }.bind(this))
+    }.bind(this), { flush: 'sync' })
 
     switchDialogByIndex = (index) => {
         var oldIndex = this.currentDialogIndex.value
@@ -208,9 +211,9 @@ export class PandaState {
         if (operation) {
             newDialog.operations.push(operation)
         }
+        this.cacheTokens()
         this.pandaTree.value.dialogs[this.currentDialogKey.value] = newDialog
         // console.trace('write back:', this.currentDialogKey.value, operation)
-        this.cacheTokens()
     }
     fork = (operation) => {
         var newDialog = deepCopy(this.dialogComputed.value)
