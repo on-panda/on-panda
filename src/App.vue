@@ -65,7 +65,7 @@
       style="border-radius: 5px; ">
 
       <div class="promptMessages">
-        <Message v-for="(message, index) in messages" :message="message" @send-button="opreators.regenerate()"
+        <Message v-for="(message, index) in messages" :message="message" @send-button="opreators.newGenerate()"
           @delete-message="messages.splice(index, 1)" />
       </div>
 
@@ -84,7 +84,7 @@
             <el-button :icon="VideoPause" size="small" @click="opreators.stopGenerating()" />
           </el-tooltip>
           <el-tooltip content="try again" placement="top">
-            <el-button :icon="Refresh" size="small" @click="opreators.regenerate()" />
+            <el-button :icon="Refresh" size="small" @click="opreators.newGenerate()" />
           </el-tooltip>
           <el-tooltip v-if="0" content="edit (TBD)" placement="top">
             <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
@@ -1079,12 +1079,12 @@ class OpreatorCenter {
   })
   continueGenerating = () => {
     this.pandaState.beforeOperation()
-    var isTryGeneratingOnEot = tokens.value.length && tokens.value[tokens.value.length - 1].finish_reason === "stop"
-    if (isTryGeneratingOnEot) {
-      pandaState.nextNotSameOperationCache = {
-        operator: "continue_generating",
-        on_policy: true,
-      }
+    // var isTryGeneratingOnEot = tokens.value.length && tokens.value[tokens.value.length - 1].finish_reason === "stop"
+    // if (isTryGeneratingOnEot) {
+    // }
+    pandaState.nextNotSameOperationCache = {
+      operator: "continue_generating",
+      on_policy: true,
     }
     requestLlmServer(messagesComputed.value)
   }
@@ -1118,12 +1118,12 @@ class OpreatorCenter {
     requestLlmServer(messagesComputed.value)
   }
 
-  regenerate = () => {
+  newGenerate = () => {
     this.pandaState.beforeOperation()
     tokens.value = []
     this.pandaState.afterOperation({
-      operator: "regenerate",
-      is_regenerate: true,
+      operator: "new_generate",
+      is_new: true,
       on_policy: true,
     })
     requestLlmServer(messages.value)

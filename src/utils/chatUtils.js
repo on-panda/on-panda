@@ -34,13 +34,10 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
         var commonPrefix = findCommonPrefix(response1.content, response2.content)
         var common_prefix_length = getUnicodeLength(commonPrefix)
         if (response1.role !== response2.role) {
-            var response_modified_type = 'role'
+            var response_modified_type = 'change_role'
         } else {
-            function responeToSeq(response) {
-                return response.content + ((response.finish_reason && response.finish_reason !== 'length') ? ('<|' + response.finish_reason + '|>') : '')
-            }
-            var seq1 = responeToSeq(response1)
-            var seq2 = responeToSeq(response2)
+            var seq1 = messageToSeq(response1)
+            var seq2 = messageToSeq(response2)
             // console.log('response diff:', seq1, seq2, response1, response2)
             if (seq1 == seq2) {
                 var response_modified_type = 'same'
@@ -56,7 +53,16 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
     } else {
         var response_modified_type = 'no_response'
         var common_prefix_length = -1
-        is_response_modified = Boolean(response1 || response2)
+        is_response_modified = true
+
+        if (response1 && !response2) {
+            response_modified_type = 'delete_response'
+        } else if (!response1 && response2) {
+            response_modified_type = 'add_response'
+        } else {
+            response_modified_type = 'no_response'
+            is_response_modified = false
+        }
     }
     return { is_prompt_modified, is_response_modified, response_modified_type, common_prefix_length }
 }
@@ -64,6 +70,10 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
 
 export function tokensToSeq(tokens) {
     return tokens.map(token => (token.delta.content || "") + ((token.finish_reason && token.finish_reason !== 'length') ? ('<|' + token.finish_reason + '|>') : '')).join('')
+}
+
+export function messageToSeq(message) {
+    return message.content + ((message.finish_reason && message.finish_reason !== 'length') ? ('<|' + message.finish_reason + '|>') : '')
 }
 
 export function normalizeRequest(requestBody) {

@@ -5,16 +5,16 @@ import { messagesDifferent, tokensToSeq } from '@/utils/chatUtils'
 const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "give a random float, no other words" }, { role: "assistant", content: "1.27364382", finish_reason: "length" }]
 const dialogExample = {
     messages: messagesExample,
-    operations: [{
+    operations: [{ // just example
         operator: "continue_with_chosen",
         from_candidate: true,  // same as no parent?
-        // for DPO RM loss without token level signal
-        is_regenerate: false,
+        // only for DPO RM, without token level signal
+        is_new: false,
         time: 1733147962,
         prefix_messages_num: 2,
         parent: 1,
         on_policy: true,
-    }],
+    }] && [],
     annotate: {
         is_good: null,  // different from chosen, which will be SFT training data
         // tips: "Preference of current messages (good or bad), default the last messages is good, others are bad",
@@ -69,9 +69,7 @@ const dialogExample = {
 }
 
 var dialogExample0 = {
-    operations: [{
-        type: "send",
-    }],
+    operations: [],
     annotate: deepCopy(dialogExample.annotate),
 }
 
@@ -105,7 +103,6 @@ export class PandaState {
         this.tokens = tokens
     }
     tryRestoreTokens = () => {
-        // TODO finish
         var tokensCache = this.cacheTree[this.currentDialogKey.value]?.tokens
         if (this.tokens?.value?.length && tokensCache) {
             var seqNow = tokensToSeq(this.tokens.value)
@@ -119,9 +116,12 @@ export class PandaState {
         }
     }
     cacheTokens = () => {
+        // console.trace('cacheTokens:')
         // console.log('cacheTokens:', tokensToSeq(this.tokens.value), 'pruned:', this.tokens.value.filter(token => token.pruned).length)
-        this.cacheTree[this.currentDialogKey.value] = {
-            ...this.cacheTree[this.currentDialogKey.value], tokens: deepCopy(this.tokens.value)
+        if (this.currentDialogData.value?.messages?.length) {
+            this.cacheTree[this.currentDialogKey.value] = {
+                ...this.cacheTree[this.currentDialogKey.value], tokens: deepCopy(this.tokens.value)
+            }
         }
     }
 
@@ -200,21 +200,26 @@ export class PandaState {
         this.load(pandaTreeExample)
         this.currentDialogIndex.value = 1
     }
+    doNothing = () => {
+        this.cacheTokens()
+    }
     writeBack = (operation) => {
         var newDialog = deepCopy(this.dialogComputed.value)
         if (operation) {
             newDialog.operations.push(operation)
         }
         this.pandaTree.value.dialogs[this.currentDialogKey.value] = newDialog
+        // console.trace('write back:', this.currentDialogKey.value, operation)
+        this.cacheTokens()
     }
     fork = (operation) => {
-        // TODO: this.cacheTokens()
         var newDialog = deepCopy(this.dialogComputed.value)
         newDialog.operations = operation ? [operation] : []
+        // console.trace('fork:', this.currentDialogKey.value, '->', this.dialogMaxKeyAll.value + 1, operation)
         this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = newDialog
 
         this.currentDialogIndex.value = this.dialogKeys.value.indexOf(this.dialogMaxKeyAll.value)
-        // console.trace('fork:', this.currentDialogKey.value, '->', this.dialogMaxKeyAll.value + 1)
+        this.cacheTokens()
 
         // will throw recursion error
         // this.switchDialogByIndex(this.dialogKeys.value.length-1)
@@ -293,7 +298,6 @@ export class PandaState {
     isPreviousOperationOnPolicy = computed(() => (!this.currentDialogData.value?.operations?.length) || this.previousOperation.value.on_policy)
     beforeOperation = (operation = null) => {
         // Usually shouldn't set opration, if have to, using this.nextNotSameOperationCache
-        this.cacheTokens()
         this.autoFork(operation) // Usually response_modified_type === 'same', and do nothing
     }
 
@@ -332,6 +336,14 @@ export class PandaState {
                 pandaTree[key] = defaultPandaTree[key]
             }
         }
+
+        // set operations default value
+        for (var key in pandaTree.dialogs) {
+            var dialog = pandaTree.dialogs[key]
+            if (!dialog.operations) {
+                dialog.operations = []
+            }
+        }
         return pandaTree
     }
 
@@ -341,6 +353,7 @@ export class PandaState {
         var isDefaultOperation = !Boolean(operation)
         if (isDefaultOperation && this.nextNotSameOperationCache) {
             operation = this.nextNotSameOperationCache
+            isDefaultOperation = false
         }
         delete this.nextNotSameOperationCache
         operation = operation || { operator: "auto", on_policy: this.isPreviousOperationOnPolicy.value }
@@ -351,13 +364,16 @@ export class PandaState {
             if (operation.is_prompt_modified) {
                 this.fork(operation)
             } else {
-                const WRITE_BACK_TYPES = ['continued', 'no_response']
-                if (operation.response_modified_type === 'same') {
-                    // do nothing
-                }
-                else if (WRITE_BACK_TYPES.includes(operation.response_modified_type)) {
-                    this.writeBack(operation)
-                } else {
+                const WRITE_BACK_TYPES = ['continued', 'add_response', 'no_response']
+                if (!operation.is_response_modified) {
+                    this.doNothing()
+                } else if (WRITE_BACK_TYPES.includes(operation.response_modified_type)) {
+                    if (isDefaultOperation) {
+                        this.writeBack()
+                    } else {
+                        this.writeBack(operation)
+                    }
+                } else { // 'delete_response', 'truncated', 'bifurcation'
                     this.fork(operation)
                 }
             }
@@ -365,12 +381,12 @@ export class PandaState {
             if (operation.is_prompt_modified || operation.is_response_modified) {
                 this.writeBack(operation)
             } else {
-                // do nothing
+                this.doNothing()
             }
         }
     }
 
-    afterOperation = (operation, forceFork = true) => {
+    afterOperation = (operation, forceFork = false) => {
         operation = this.setDefaultToOperation(operation)
 
         // default is on_policy:true
