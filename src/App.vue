@@ -112,15 +112,17 @@
             tokens[tokens.length
               - 1]?.usage?.prompt_tokens }} + {{ tokens[tokens.length - 1]?.usage?.completion_tokens }} </span>
           <span v-if="bitTokens.length > 1"> ｜
-            <el-tooltip class="" effect="dark" placement="bottom" raw-content>
+            <el-tooltip class="" effect="light" placement="bottom" raw-content>
               <template #content>
-                <MessageMarkdown content="${\text{bits}} = - \sum_{i} \log_2(p_i)$" />
+                <MessageMarkdown
+                  content="${\text{bits}} = - \sum_{i} \log_2(p_i)$. // note for vLLM server model: 
+                  Logprob value are affected by sampling parameters, click: [🔗URL](https://github.com/vllm-project/vllm/issues/9453)" />
               </template>
-              bits / tokens: {{ bitTotal.toFixed(1) }} ÷ {{ bitTokens.length }} = {{ (bitTotal /
-                bitTokens.length).toFixed(2)
-              }}
+              bits
             </el-tooltip>
-
+            / tokens: {{ bitTotal.toFixed(1) }} ÷ {{ bitTokens.length }} = {{ (bitTotal /
+              bitTokens.length).toFixed(2)
+            }}
             <!-- <el-icon>
             <QuestionFilled style="height: 11px;" />
           </el-icon> -->
@@ -326,20 +328,21 @@
         <el-input-number v-model="apiConfig.chat_config.top_logprobs" :min="0" :max="50" :step="1" size="small" />
       </el-form-item>
 
-      <el-form-item>
-        <template #label>
-          <el-tooltip class="" effect="dark" placement="top" raw-content>
-            <template #content>
-              <MessageMarkdown
-                :content="'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> ' + CONTINUE_PROMPT" />
-            </template>
-            <span>continue generating</span>
-          </el-tooltip>
-        </template>
+      <el-form-item label="continue generating">
         <small>
           <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
             {{ apiConfig.support_continue_final_message ? "native" : "prompt engineering" }}
           </el-tag>
+          &nbsp;
+          <el-tooltip class="" effect="light" placement="top" raw-content>
+            <template #content>
+              <MessageMarkdown
+                :content="'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> ' + CONTINUE_PROMPT" />
+            </template>
+            <el-icon>
+              <InfoFilled />
+            </el-icon>
+          </el-tooltip>
         </small>
       </el-form-item>
     </el-form>
@@ -365,7 +368,7 @@ import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils'
 import { p, escapeHTML, copyToClipboard, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils'
 import { tokensToSeq, normalizeRequest } from './utils/chatUtils'
 
-import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close } from '@element-plus/icons-vue'
+import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close, InfoFilled } from '@element-plus/icons-vue'
 
 
 
