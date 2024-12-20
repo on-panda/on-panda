@@ -6,7 +6,7 @@
             </el-tooltip>
             <small v-else>{{ props.summary }}</small>
         </summary>
-        <div class="raw-json-in-annotator-panel">{{
+        <div class="raw-json-in-annotator-panel" style="overflow-x: scroll;">{{
             JSON.stringify(props.object, null, 2) }}</div>
     </details>
 </template>

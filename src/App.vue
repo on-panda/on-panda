@@ -63,14 +63,14 @@
     <div class="dialogFixedPosition"
       :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {}, isMobile ? {} : { padding: '10px' })"
       style="border-radius: 5px; ">
-      <!-- :key="message.role + messageToSeq(message) + index" -->
       <div class="promptMessages">
         <!-- <Message v-for="(message, index) in messages" :message="message" 
-        @sendButton="opreators.newGenerate()"
+          @sendButton="opreators.newGenerate()"
           @deleteMessage="opreators.clearOrDeleteMessage(message, index)" @focus="opreators.editPrompt.before()"
           @blur="opreators.editPrompt.after()" /> -->
         <!-- change edit in compoment to edit in opreators -->
-        <Message v-for="(message, index) in messages" :message="message" @sendButton="opreators.newGenerate()"
+        <Message v-for="(message, index) in messages" :key="message.role + messageToSeq(message) + index"
+          :message="message" @sendButton="opreators.newGenerate()"
           @deleteMessage="opreators.clearOrDeleteMessage(message, index)"
           @opreatorsUpdatePromptContent="(content) => opreators.updatePromptContent(content, index, message)"
           :usingCache="true" />
@@ -145,8 +145,7 @@
           <div class="final-message-half-pannel">
             <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
               <p style="color: #444" v-if="!tokens.length">
-                <span v-if="requestStatus.generating">⏳ Waiting response...</span>
-                <span v-if="!requestStatus.generating">➡️ Please click send button.</span>
+                <span v-html="WaitingInfo"></span>
               </p>
               <p ref="rawOnPandaPannelRef">
                 <span class="PatchSpan" v-for="patch in patchs"
@@ -171,11 +170,9 @@
           <div class="final-message-half-pannel">
             <!-- <small style="color: #888;">rendered markdown:</small> -->
             <div v-if="!tokens.length">
-              <br>
-              <div style="background-color: #eee;color: #444">
-                <span v-if="requestStatus.generating">⏳ Waiting response...</span>
-                <span v-if="!requestStatus.generating">➡️ Please click send button.</span>
-              </div>
+              <p style="background-color: #eee;color: #444">
+                <span v-html="WaitingInfo"></span>
+              </p>
             </div>
             <p> <!-- Removing the p tag will cause unstable rendering in stream mode -->
               <MessageMarkdown :content="finalMessage.content || ''" style="background-color: #eee;" />
@@ -921,6 +918,14 @@ const requestStatus = ref({
   generating: false,
 })
 
+const WaitingInfo = computed(() => {
+  if (requestStatus.value.generating) {
+    return `⏳ <b>No.${requestStatus.value.requestTimes}</b> request, waiting response from model: <br>  <code style='margin-left:30px'> ${apiConfig.value.chat_config.model} </code>`
+  } else {
+    return "➡️ Please click the send button."
+  }
+})
+
 
 const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
 
@@ -957,20 +962,22 @@ async function requestLlmServer(messages) {
   }
   body.messages = messages
 
+  requestStatus.value.generating = true
+  requestStatus.value.requestTimes++
+  var requestID = requestStatus.value.requestTimes
+  var requestModel = apiConfig.value.chat_config.model
+
   const fetchController = new AbortController();
 
   var FIRST_TOKEN_TIMEOUT_SECOND = 5 * 60
   let firstTokenTimeoutId = setTimeout(() => {
-    var errorMessage = 'First token timeout error: >= ' + FIRST_TOKEN_TIMEOUT_SECOND + ' secoond, abort request.'
+    var errorMessage = `No.${requestID} request: First token timeout error: >= ` + FIRST_TOKEN_TIMEOUT_SECOND + ` seconds, abort request to model: ${requestModel}.`
     fetchController.abort(errorMessage)
     var error = new Error(errorMessage);
     warning(error)
   }, FIRST_TOKEN_TIMEOUT_SECOND * 1000);
 
   try {
-    requestStatus.value.generating = true
-    requestStatus.value.requestTimes++
-    var requestID = requestStatus.value.requestTimes
     var stream = await openai.value.chat.completions.create(normalizeRequest(body), { signal: fetchController.signal });
 
     var tokenIndex = 0
@@ -1178,9 +1185,6 @@ class OpreatorCenter {
   }
 
   updatePromptContent = (content, index, message) => {
-    // TODO 只有 content 不同了才更新，以防止 stop generating
-    // 修改 utils messageToSeq , 支持 obj
-    // examples 挂了
     this.pandaState.beforeOperation()
     var messageRefresh = messages.value[index]
     messageRefresh.content = content
@@ -1537,7 +1541,7 @@ const dialogComputed = computed(() => {
 
   const dialog = { ...pandaState.dialogCache.value }
   dialog.messages = [...messagesComputed.value]
-  // TODO should add new newTurnMessage? No, becasue when load again, no more newTurnMessage
+  // should add new newTurnMessage? No, becasue when load again, newTurnMessage become finalMessage
   // if (newTurnMessage.value.content) {
   //   dialog.messages.push(newTurnMessage.value)
   // }

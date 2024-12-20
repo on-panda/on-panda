@@ -73,7 +73,9 @@ export function tokensToSeq(tokens) {
 }
 
 export function messageToSeq(message) {
-    return message.content + ((message.finish_reason && message.finish_reason !== 'length') ? ('<|' + message.finish_reason + '|>') : '')
+    var content = message.content
+    content = typeof content === 'string' ? content : JSON.stringify(content)
+    return content + ((message.finish_reason && message.finish_reason !== 'length') ? ('<|' + message.finish_reason + '|>') : '')
 }
 
 export function normalizeRequest(requestBody) {

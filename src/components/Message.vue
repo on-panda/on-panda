@@ -11,9 +11,8 @@
     <div style="display: flex; justify-content: space-between">
       <el-input class="message-content" v-model="contentAsText" type="textarea"
         placeholder="Empty message will be ignored" :autosize="{ minRows: 2, maxRows: 50 }"
-        @keydown.ctrl.enter="$emit('opreatorsUpdatePromptContent', getContent()); $emit('sendButton')"
-        @paste="handlePaste" @focus="$emit('focus')"
-        @blur="$emit('blur', props.message['content']); $emit('opreatorsUpdatePromptContent', getContent())"
+        @keydown.ctrl.enter="opreatorsUpdatePromptContent(); $emit('sendButton')" @paste="handlePaste"
+        @focus="$emit('focus')" @blur="$emit('blur', props.message['content']); opreatorsUpdatePromptContent()"
         ref="editor" />
 
       <button @click="$emit('sendButton')" :disabled="!props.message['content']" :style="{
@@ -59,6 +58,15 @@ const props = defineProps({
     default: false
   }
 })
+
+function opreatorsUpdatePromptContent() {
+  // only emit when using cache and content is changed
+  if (props.usingCache && messageCache.value) {
+    if (JSON.stringify(messageCache.value['content']) !== JSON.stringify(props.message['content'])) {
+      emit('opreatorsUpdatePromptContent', getContent())
+    }
+  }
+}
 
 const messageCache = ref(null)
 
