@@ -203,7 +203,11 @@ export class PandaState {
         this.load(pandaTreeExample)
         this.currentDialogIndex.value = 1
     }
-    doNothing = () => {
+    doNothing = (operation) => {
+        const MUST_RECORD_OPERATOR_LIST = ['new_generate']
+        if (MUST_RECORD_OPERATOR_LIST.includes(operation?.operator)) {
+            this.currentDialogData.value.operations.push(operation)
+        }
         this.cacheTokens()
     }
     writeBack = (operation) => {
@@ -392,8 +396,15 @@ export class PandaState {
     afterOperation = (operation, forceFork = false) => {
         operation = this.setDefaultToOperation(operation)
 
-        // default is on_policy:true
-        if (this.isPreviousOperationOnPolicy.value || operation.on_policy) {
+        if (operation.operator == 'edit_prompt' && !operation.is_prompt_modified && ["continued", "same"].includes(operation.response_modified_type)) {
+            // special case, because edit_prompt could happend during generating
+            // TODO rm this condition
+            return this.doNothing(operation)
+        }
+
+        if (!operation.is_prompt_modified && !operation.is_response_modified) {
+            this.doNothing(operation)
+        } else if (this.isPreviousOperationOnPolicy.value || operation.on_policy) {
             forceFork ? this.fork(operation) : this.autoFork(operation)
         } else {
             this.writeBack(operation)

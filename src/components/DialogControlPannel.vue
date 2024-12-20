@@ -3,8 +3,7 @@
         <footer style="display :flex; margin-top:-10px; margin-bottom:10px">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
             <el-tooltip content="Save the data" raw-content placement="top">
-                <el-button plain type="success" :icon="Select" size="small"
-                    @click="downloadJsonFile(pandaState.dump())" />
+                <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump()" />
             </el-tooltip>
             <el-tooltip content="Previous modification<br>(Shortcut key: left)" raw-content placement="top">
                 <el-button id="switchToPreviousDialog" :icon="Back" size="small"
@@ -32,6 +31,11 @@
             </el-tooltip>
             <el-tooltip content="Download panda.json file" raw-content placement="top">
                 <el-button :icon="Download" size="small" @click="clickToDownload" />
+            </el-tooltip>
+            <el-tooltip content="Open Data Pannel" raw-content placement="top"
+                v-if="!('is_good' in (pandaState.currentDialogData.value?.annotate || {}))">
+                <el-button :icon="Postcard" size="small"
+                    @click="() => { pandaState.currentDialogData.value.annotate = { is_good: null } }" />
             </el-tooltip>
             <el-tooltip content="Download panda.json file" raw-content placement="top" v-if="0">
                 <el-dropdown split-button
@@ -84,8 +88,8 @@
 <script setup>
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { pandaState, uploadedJson } from '../stores/pandaState'
-import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled, ArrowDown } from '@element-plus/icons-vue'
+import { PandaState, pandaState, uploadedJson } from '../stores/pandaState'
+import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled, Postcard } from '@element-plus/icons-vue'
 import { registerKeyActions, downloadJsonFile, uploadJsonFile, useEventListener } from '../utils/commonUtils'
 
 registerKeyActions({
@@ -131,7 +135,7 @@ const clickToDownload = () => {
             name = name.replace('.json', '.panda.json')
         }
     }
-    downloadJsonFile(pandaState.dump(true), name)
+    downloadJsonFile(pandaState.dump(false), name)
 }
 
 

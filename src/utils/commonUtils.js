@@ -59,6 +59,30 @@ export function ObjctKeyToCamelCaseNaming(obj) {
   return obj
 }
 
+export function buildMockObject(logPrefix) {
+  function createProxy(path = logPrefix) {
+    return new Proxy(function () { }, {
+      apply(target, thisArg, args) {
+        path && console.log(`${path}()`, args);
+        return createProxy(path && `${path}()`);
+      },
+      get(target, prop) {
+        if (prop === 'toString' || prop === Symbol.toPrimitive) {
+          return () => path;
+        }
+        return createProxy(path && `${path}.${prop}`);
+      },
+      set(target, prop, value) {
+        path && console.log(`${path}.${prop} = `, value);
+        return true;
+      }
+    });
+  }
+  return createProxy();
+}
+
+export const mockObject = buildMockObject()
+
 export function p(varName, obj) {
   if (obj === undefined) {
     obj = varName

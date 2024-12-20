@@ -5,14 +5,16 @@
       <span class="stretch" style="margin-right: auto" />
       <el-tooltip :content="props.message['content'] ? 'Clear' : 'Delete'" placement="top">
         <el-button :icon="props.message['content'] ? Delete : Close" size="small"
-          style="width: 24px;height: 15px; margin-top: 13px; margin-right: 5px;"
-          @click="props.message['content'] ? (props.message['content'] = '') : $emit('deleteMessage')" />
+          style="width: 24px;height: 15px; margin-top: 13px; margin-right: 5px;" @click="$emit('deleteMessage')" />
       </el-tooltip>
     </div>
     <div style="display: flex; justify-content: space-between">
       <el-input class="message-content" v-model="contentAsText" type="textarea"
         placeholder="Empty message will be ignored" :autosize="{ minRows: 2, maxRows: 50 }"
-        @keydown.ctrl.enter="$emit('sendButton')" @paste="handlePaste" ref="editor" />
+        @keydown.ctrl.enter="$emit('opreatorsUpdatePromptContent', getContent()); $emit('sendButton')"
+        @paste="handlePaste" @focus="$emit('focus')"
+        @blur="$emit('blur', props.message['content']); $emit('opreatorsUpdatePromptContent', getContent())"
+        ref="editor" />
 
       <button @click="$emit('sendButton')" :disabled="!props.message['content']" :style="{
         cursor: props.message['content'] ? 'pointer' : 'not-allowed'
@@ -41,20 +43,48 @@ import MessageRole from './MessageRole.vue'
 import MessageMarkdown from './MessageMarkdown.vue'
 import EditableStringAttribute from './EditableStringAttribute.vue'
 
-import { Close, Delete } from '@element-plus/icons-vue'
 import { computed, ref } from 'vue'
-import { convertImageUrlToBase64 } from '@/utils/commonUtils'
+import { convertImageUrlToBase64, deepCopy } from '@/utils/commonUtils'
+import { Close, Delete } from '@element-plus/icons-vue'
+
+const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur', 'opreatorsUpdatePromptContent'])
+
 const props = defineProps({
   message: {
     type: Object,
     default: {}
   },
+  usingCache: {
+    type: Boolean,
+    default: false
+  }
 })
+
+const messageCache = ref(null)
+
+const getContent = () => {
+  if (props.usingCache) {
+    if (!messageCache.value) {
+      messageCache.value = deepCopy(props.message)
+    }
+    return messageCache.value['content']
+  } else {
+    return props.message['content']
+  }
+}
+
+const setContent = (content) => {
+  if (props.usingCache) {
+    messageCache.value['content'] = content
+  } else {
+    props.message['content'] = content
+  }
+}
 
 
 const contentAsText = computed({
   get() {
-    const content = props.message['content']
+    const content = getContent()
     if (typeof content === 'string') {
       return content
     }
@@ -122,17 +152,14 @@ const contentAsText = computed({
         content.push({ type: 'text', text: remainingText });
       }
 
-      props.message['content'] = content;
+      setContent(content)
     } else {
       // If no special markers, treat the value as a simple string
-      props.message['content'] = value;
+      setContent(value)
     }
   }
 
 })
-
-
-const emit = defineEmits(['sendButton', 'deleteMessage'])
 
 
 const editor = ref(null)

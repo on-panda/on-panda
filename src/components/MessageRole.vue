@@ -1,14 +1,29 @@
 <template>
 
-    <p class="role-name" v-if="!editingRoleName" @dblclick="editingRoleName = true"
-        :style="messageRoleNameStyle(props.message)"> {{ props.message['role'] || 'unknown' }}:</p>
-    <el-input v-if="editingRoleName" @blur="editingRoleName = false" @keydown.enter="editingRoleName = false"
-        v-model="props.message['role']" size="" style="width: 100px;" />
+    <p class="role-name" v-show="!editingRoleName" @dblclick="focus" :style="messageRoleNameStyle(props.message)"> {{
+        props.message['role'] || 'unknown' }}:</p>
+    <el-input ref="roleNameInput" v-show="editingRoleName" @blur="blur()" @keydown.enter="blur()"
+        v-model="props.message['role']" style="width: 100px;" />
 
 
 </template>
 <script setup>
-import { ref, toValue } from 'vue'
+import { ref, toValue, inject } from 'vue'
+import { mockObject } from '@/utils/commonUtils'
+
+const roleNameInput = ref(null)
+const opreatorsEditRole = inject('opreators.editRole', mockObject)
+
+function focus() {
+    opreatorsEditRole.before()
+    editingRoleName.value = true
+    roleNameInput.value.focus()
+}
+
+function blur() {
+    editingRoleName.value = false
+    opreatorsEditRole.after()
+}
 
 const props = defineProps({
     message: {

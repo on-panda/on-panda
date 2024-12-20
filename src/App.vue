@@ -63,10 +63,17 @@
     <div class="dialogFixedPosition"
       :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {}, isMobile ? {} : { padding: '10px' })"
       style="border-radius: 5px; ">
-
+      <!-- :key="message.role + messageToSeq(message) + index" -->
       <div class="promptMessages">
-        <Message v-for="(message, index) in messages" :message="message" @send-button="opreators.newGenerate()"
-          @delete-message="messages.splice(index, 1)" />
+        <!-- <Message v-for="(message, index) in messages" :message="message" 
+        @sendButton="opreators.newGenerate()"
+          @deleteMessage="opreators.clearOrDeleteMessage(message, index)" @focus="opreators.editPrompt.before()"
+          @blur="opreators.editPrompt.after()" /> -->
+        <!-- change edit in compoment to edit in opreators -->
+        <Message v-for="(message, index) in messages" :message="message" @sendButton="opreators.newGenerate()"
+          @deleteMessage="opreators.clearOrDeleteMessage(message, index)"
+          @opreatorsUpdatePromptContent="(content) => opreators.updatePromptContent(content, index, message)"
+          :usingCache="true" />
       </div>
 
 
@@ -269,13 +276,14 @@
     </div>
     <br>
     <DialogControlPannel />
-    <AnnotatorPanel />
+    <AnnotatorPanel
+      v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment || globalStore.debug" />
 
     <el-divider content-position="left">new message:</el-divider>
     <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
 
-      <Message :message="newTurnMessage" @delete-message="newTurnMessage.content = ''"
-        @send-button="opreators.newRoundMessage()" />
+      <Message :message="newTurnMessage" @deleteMessage="newTurnMessage.content = ''"
+        @sendButton="opreators.newRoundMessage()" />
     </div>
 
     <!-- <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div> -->
@@ -354,7 +362,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, watchEffect } from 'vue'
+import { ref, computed, watch, toValue, provide } from 'vue'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import Message from './components/Message.vue'
@@ -364,12 +372,14 @@ import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import DialogControlPannel from './components/DialogControlPannel.vue'
 
 import { OpenAI } from './utils/fetchOpenaiApi.js'
-import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils'
-import { p, escapeHTML, copyToClipboard, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils'
-import { tokensToSeq, normalizeRequest } from './utils/chatUtils'
+import { useGlobalStore } from './stores/globalStore.js'
+import { useEventListener, closeFloatPannelMeta, buildMockObject } from '@/utils/commonUtils.js'
+import { p, escapeHTML, copyToClipboard, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils.js'
+import { tokensToSeq, normalizeRequest, messageToSeq } from './utils/chatUtils.js'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close, InfoFilled } from '@element-plus/icons-vue'
 
+const globalStore = useGlobalStore()
 
 
 var bitTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content[0]?.logprob === "number"))
@@ -915,7 +925,7 @@ const requestStatus = ref({
 const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
 
 async function requestLlmServer(messages) {
-  messages = messages.value === undefined ? messages : messages.value
+  messages = toValue(messages)
   messages = messages.filter(message => message.content)
   const modelRoles = apiConfig.value?.model_roles || ["assistant"]
   const continue_final_message = modelRoles.includes(messages[messages.length - 1].role)
@@ -1069,13 +1079,7 @@ class OpreatorCenter {
   // continue generating, stop, continue with chosen, continue with input, edit prompt(include role), new round, edit response, refresh, load example, load panda tree.
   constructor() {
   }
-  pandaState = new Proxy({}, {
-    get: function (target, prop, receiver) {
-      return function () {
-        console.log('call fake pandaState.' + prop + '()', receiver)
-      }
-    }
-  })
+  pandaState = buildMockObject()
   continueGenerating = () => {
     this.pandaState.beforeOperation()
     // var isTryGeneratingOnEot = tokens.value.length && tokens.value[tokens.value.length - 1].finish_reason === "stop"
@@ -1141,10 +1145,61 @@ class OpreatorCenter {
     requestLlmServer(messages)
   }
 
-  editPrompt = () => {
+  clearOrDeleteMessage = (message, index) => {
+    this.pandaState.beforeOperation()
+    if (message.content) {
+      // after beforeOperation(), message has been recomputed
+      var messageRefresh = messages.value[index]
+      messageRefresh.content = ""
+      this.pandaState.afterOperation({
+        operator: "edit_prompt_clear",
+        on_policy: false,
+      })
+    } else {
+      messages.value.splice(index, 1)
+      this.pandaState.afterOperation({
+        operator: "edit_prompt_delete",
+        on_policy: false,
+      })
+    }
   }
 
-  editRole = () => {
+  editPrompt = {
+    // long user editing time between `before` and `after`. which will stop generating. abondon!
+    before: () => {
+      this.pandaState.beforeOperation()
+    },
+    after: (opreation) => {
+      this.pandaState.afterOperation(Object.assign({
+        operator: "edit_prompt",
+        on_policy: false,
+      }, opreation || {}))
+    }
+  }
+
+  updatePromptContent = (content, index, message) => {
+    // TODO 只有 content 不同了才更新，以防止 stop generating
+    // 修改 utils messageToSeq , 支持 obj
+    // examples 挂了
+    this.pandaState.beforeOperation()
+    var messageRefresh = messages.value[index]
+    messageRefresh.content = content
+    this.pandaState.afterOperation({
+      operator: "edit_prompt",
+      on_policy: false,
+    })
+  }
+
+  editRole = {
+    before: () => {
+      this.pandaState.beforeOperation()
+    },
+    after: () => {
+      this.pandaState.afterOperation({
+        operator: "edit_role",
+        on_policy: false,
+      })
+    }
   }
 
   editResponse = () => {
@@ -1181,6 +1236,8 @@ function prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob) 
 }
 
 const opreators = new OpreatorCenter()
+
+provide('opreators.editRole', opreators.editRole)
 
 const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
 
@@ -1467,6 +1524,7 @@ import { sleep } from '@/utils/commonUtils'
 watch(pandaState.dialogCache,
   function watchPandaStateDialogCache(newValue, oldValue) {
     if (newValue.messages) {
+      // this will stop generating when edit
       requestStatus.value.generating = false
       loadMessages(newValue.messages)
       pandaState.tryRestoreTokens()
@@ -1492,13 +1550,15 @@ pandaState.registerTokens(tokens)
 
 
 var exampleFunc = exampleNameToFunc['default']
-// var exampleFunc = exampleNameToFunc['annotate']
+if (globalStore.debug) {
+  // var exampleFunc = exampleNameToFunc['annotate']
+}
 // var exampleFunc = exampleNameToFunc['image']
 setTimeout(async function launchExampleFunc() {
   await exampleFunc()
   p("tokens", tokens)
   p("patchs", patchs)
-}, 1500)
+}, 2000)
 
 onMounted(async () => {
   scrollDiv.value.addEventListener('scroll', handleReactiveFunctions);
