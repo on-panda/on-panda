@@ -3,8 +3,8 @@
     <div style="display :flex;">
       <MessageRole :message="props.message" />
       <span class="stretch" style="margin-right: auto" />
-      <el-tooltip :content="props.message['content'] ? 'Clear' : 'Delete'" placement="top">
-        <el-button :icon="props.message['content'] ? Delete : Close" size="small"
+      <el-tooltip :content="hasContent ? 'Clear' : 'Delete'" placement="top">
+        <el-button :icon="hasContent ? Delete : Close" size="small"
           style="width: 24px;height: 15px; margin-top: 13px; margin-right: 5px;" @click="$emit('deleteMessage')" />
       </el-tooltip>
     </div>
@@ -12,11 +12,10 @@
       <el-input class="message-content" v-model="contentAsText" type="textarea"
         placeholder="Empty message will be ignored" :autosize="{ minRows: 2, maxRows: 50 }"
         @keydown.ctrl.enter="opreatorsUpdatePromptContent(); $emit('sendButton')" @paste="handlePaste"
-        @focus="$emit('focus')" @blur="$emit('blur', props.message['content']); opreatorsUpdatePromptContent()"
-        ref="editor" />
+        @focus="$emit('focus')" @blur="$emit('blur', getContent()); opreatorsUpdatePromptContent()" ref="editor" />
 
-      <button @click="$emit('sendButton')" :disabled="!props.message['content']" :style="{
-        cursor: props.message['content'] ? 'pointer' : 'not-allowed'
+      <button @click="console.log('endButton'); $emit('sendButton')" :disabled="!hasContent" :style="{
+        cursor: hasContent ? 'pointer' : 'not-allowed'
       }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
         <b>Send➡️</b><br>
         <small>ctrl+enter</small> </button>
@@ -88,6 +87,10 @@ const setContent = (content) => {
     props.message['content'] = content
   }
 }
+
+const hasContent = computed(() => {
+  return getContent().length > 0
+})
 
 
 const contentAsText = computed({

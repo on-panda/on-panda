@@ -112,8 +112,7 @@ watch(() => editableCommentAsTool.value, (newVal) => {
 <style scoped>
 .raw-json-in-annotator-panel {
     white-space: pre-wrap;
-    font-family: Monospace;
-    background-color: #fafafa;
+    font-family: Monospace;  background-color: #fafafa;
     /* width: 90%; */
     margin: 10px;
     padding: 10px;
