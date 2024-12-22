@@ -60,8 +60,6 @@ import { computed, ref } from 'vue'
 import { convertImageUrlToBase64, deepCopy, mockObject, sleep, TaskQueue } from '@/utils/commonUtils'
 import { Close, Delete } from '@element-plus/icons-vue'
 
-const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur',])
-
 const props = defineProps({
   message: {
     type: Object,
@@ -76,13 +74,12 @@ const props = defineProps({
     default: -1
   },
 })
+const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur',])
 
-const messageCache = ref(null)
-
+// supoort both emit event (sample way using by newMessage) and using opreators (complex way)
 const usingOpreators = 'newGenerate' in props.opreators
-
+const messageCache = ref(null)
 const DELAY_MS_TO_UPDATE_CONTENT = 200  // avoid update content lead to rerender button and button click event lost
-
 const taskQueue = new TaskQueue()
 
 async function opreatorsUpdatePromptContent(delay = false) {
@@ -97,7 +94,6 @@ async function opreatorsUpdatePromptContent(delay = false) {
     }
   }
 }
-
 
 const getContent = () => {
   if (usingOpreators) {
@@ -124,6 +120,7 @@ const hasContent = computed(() => {
 
 
 const contentAsText = computed({
+  // convert object content to markdown
   get() {
     const content = getContent()
     if (typeof content === 'string') {
@@ -199,7 +196,6 @@ const contentAsText = computed({
       setContent(value)
     }
   }
-
 })
 
 
@@ -214,20 +210,15 @@ async function handlePaste(event) {
     const item = items[i];
     // console.log('clipboardData.items',item, JSON.parse(JSON.stringify([item.type, item.getAsFile(), item.getAsFile()?.type, item.kind,])))
     if (item.type.indexOf("image") !== -1) {
-      event.preventDefault(); // 阻止默认粘贴行为
+      event.preventDefault();
       const file = item.getAsFile();
-
-      // 将图像缓存在内存中，并生成 URL
       const imageUrl = cacheImage(file);
-
       ImageUrlToBase64Cache[imageUrl] = await convertImageUrlToBase64(imageUrl);
-      // 插入到编辑器中
       insertImage(imageUrl);
     }
   }
 }
 function cacheImage(file) {
-  // 将文件转换为 Blob URL 并存入缓存
   const imageUrl = URL.createObjectURL(file);
   imageCache.push({ file, url: imageUrl });
   return imageUrl;
