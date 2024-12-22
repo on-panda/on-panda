@@ -82,7 +82,7 @@ const messageCache = ref(null)
 const DELAY_MS_TO_UPDATE_CONTENT = 200  // avoid update content lead to rerender button and button click event lost
 const taskQueue = new TaskQueue()
 
-async function opreatorsUpdatePromptContent(delay = false) {
+async function opreatorsUpdatePromptContent({ delay = false }) {
   if (usingOpreators && messageCache.value) {
     // only update if content changed
     if (JSON.stringify(messageCache.value['content']) !== JSON.stringify(props.message['content'])) {

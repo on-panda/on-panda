@@ -351,7 +351,7 @@
 
     <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
 
-    <br v-for="_ in isMobile ? 12 : apiConfig.chat_config.top_logprobs">
+    <br v-for="_ in (isMobile ? 12 : apiConfig.chat_config.top_logprobs)">
   </div>
 </template>
 

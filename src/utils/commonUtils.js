@@ -113,8 +113,8 @@ export const escapeHTML = (s) => {
 }
 
 
-export function dateStringNow(includeMilliseconds = false) {
-  const now = new Date();
+export function dateStringNow(includeMilliseconds = false, timestamp = null) {
+  const now = timestamp ? new Date(timestamp) : new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
@@ -122,7 +122,7 @@ export function dateStringNow(includeMilliseconds = false) {
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const seconds = String(now.getSeconds()).padStart(2, '0');
 
-  var str = `${year}-${month}-${day}-${hours}_${minutes}_${seconds}`
+  var str = `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`
   if (includeMilliseconds) {
     const milliseconds = String(now.getMilliseconds()).padStart(3, '0');
     str += `.${milliseconds}`

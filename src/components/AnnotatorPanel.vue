@@ -56,11 +56,11 @@
                     disabled: true,
                 }'></CustomAnnotatorTool>
                 <CustomAnnotatorTool :tool='{
-                    name: "has ever saved",
-                    type: "checkbox",
-                    checkbox: pandaState.pandaTree.value?.has_ever_saved,
+                    name: "update time",
+                    type: "markdown",
+                    markdown: pandaState.pandaTree.value?.update_time ? dateStringNow(undefined, pandaState.pandaTree.value?.update_time) : "**Not saved yet**",
                     disabled: true,
-                    tips: "Has this data ever been saved by on-panda? Automatically set by on-panda."
+                    tips: "",
                 }'></CustomAnnotatorTool>
                 <CustomAnnotatorTool v-if="pandaState.pandaTree.value?.description" :tool='{
                     name: "description",
@@ -76,13 +76,13 @@
     </div>
 </template>
 <script setup>
-import EditableStringAttribute from './EditableStringAttribute.vue'
 import CustomAnnotatorTool from './CustomAnnotatorTool.vue';
 import CheckboxWidgetSupportNull from './widgets/CheckboxWidgetSupportNull.vue'
 import ObjectViewerInDetails from './widgets/ObjectViewerInDetails.vue';
 import { pandaState, uploadedJson } from '../stores/pandaState'
 
 import { ref, watch } from 'vue'
+import { dateStringNow } from '../utils/commonUtils'
 
 
 const editableCommentAsTool = ref({
@@ -112,7 +112,8 @@ watch(() => editableCommentAsTool.value, (newVal) => {
 <style scoped>
 .raw-json-in-annotator-panel {
     white-space: pre-wrap;
-    font-family: Monospace;  background-color: #fafafa;
+    font-family: Monospace;
+    background-color: #fafafa;
     /* width: 90%; */
     margin: 10px;
     padding: 10px;

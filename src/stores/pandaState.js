@@ -281,7 +281,7 @@ export class PandaState {
     }
     dump = (includeCache = false) => {
         this.beforeOperation()
-        this.pandaTree.value.has_ever_saved = true
+        this.pandaTree.value.update_time = (new Date()).getTime()
         const dumped = deepCopy(this.pandaTree.value)
         if (includeCache) {
             dumped.cache_tree = this.cacheTree
@@ -336,7 +336,7 @@ export class PandaState {
             dialogs: {},
             hash_map: {},
             deleted_dialogs: {},
-            has_ever_saved: false,  // Has this data ever been saved by on-panda? Automatically set by on-panda
+            update_time: null,  //  int, last save timestamp, automatically set by on-panda. Could be used to infer whether this data ever been saved.
         }
         for (var key in defaultPandaTree) {
             if (!(key in pandaTree)) {
