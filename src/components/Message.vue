@@ -5,24 +5,33 @@
       <span class="stretch" style="margin-right: auto" />
       <el-tooltip :content="hasContent ? 'Clear' : 'Delete'" placement="top">
         <el-button :icon="hasContent ? Delete : Close" size="small"
-          style="width: 24px;height: 15px; margin-top: 13px; margin-right: 5px;"
-          @click="usingOpreators ? opreatorsclearOrDeleteMessageWithDelay() : $emit('deleteMessage')" />
+          style="width: 24px;height: 15px; margin-top: 13px; margin-right: 5px;" @click="async () => {
+            if (usingOpreators) {
+              taskQueue.addTask(async () => await sleep(1))
+              // if not sleep, will cause element-plus.js Uncaught (in promise) TypeError: Cannot read properties of null (reading 'offsetHeight')
+              taskQueue.addTask(async () => props.opreators.clearOrDeleteMessage(messageCache, props.index))
+            } else { $emit('deleteMessage') }
+          }
+            " />
       </el-tooltip>
     </div>
     <div style="display: flex; justify-content: space-between">
       <el-input class="message-content" v-model="contentAsText" type="textarea"
         placeholder="Empty message will be ignored" :autosize="{ minRows: 2, maxRows: 50 }" @keydown.ctrl.enter="() => {
           if (usingOpreators) {
-            opreatorsUpdatePromptContentWithDelay(); opreatorsNewGenerateWithDelay()
+            taskQueue.addTask(async () => opreatorsUpdatePromptContent({ delay: false }))
+            taskQueue.addTask(props.opreators.newGenerate)
           } else {
             $emit('sendButton')
           }
         }" @paste="handlePaste" @focus="$emit('focus')"
-        @blur="usingOpreators ? opreatorsUpdatePromptContentWithDelay() : $emit('blur', getContent())" ref="editor" />
+        @blur="usingOpreators ? taskQueue.addTask(async () => opreatorsUpdatePromptContent({ delay: true })) : $emit('blur', getContent())"
+        ref="editor" />
 
-      <button @click="$emit('sendButton'); opreatorsNewGenerateWithDelay()" :disabled="!hasContent" :style="{
-        cursor: hasContent ? 'pointer' : 'not-allowed'
-      }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
+      <button @click="$emit('sendButton'); taskQueue.addTask(props.opreators.newGenerate)" :disabled="!hasContent"
+        :style="{
+          cursor: hasContent ? 'pointer' : 'not-allowed'
+        }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
         <b>Send➡️</b><br>
         <small>ctrl+enter</small> </button>
     </div>
@@ -48,7 +57,7 @@ import MessageMarkdown from './MessageMarkdown.vue'
 import EditableStringAttribute from './EditableStringAttribute.vue'
 
 import { computed, ref } from 'vue'
-import { convertImageUrlToBase64, deepCopy, mockObject } from '@/utils/commonUtils'
+import { convertImageUrlToBase64, deepCopy, mockObject, sleep, TaskQueue } from '@/utils/commonUtils'
 import { Close, Delete } from '@element-plus/icons-vue'
 
 const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur',])
@@ -72,31 +81,23 @@ const messageCache = ref(null)
 
 const usingOpreators = 'newGenerate' in props.opreators
 
-const DELAY_TO_UPDATE_CONTENT = 200  // avoid update content lead to rerender button and button click event lost
+const DELAY_MS_TO_UPDATE_CONTENT = 200  // avoid update content lead to rerender button and button click event lost
 
-function opreatorsUpdatePromptContentWithDelay() {
-  // only emit when using cache and content is changed
+const taskQueue = new TaskQueue()
+
+async function opreatorsUpdatePromptContent(delay = false) {
   if (usingOpreators && messageCache.value) {
+    // only update if content changed
     if (JSON.stringify(messageCache.value['content']) !== JSON.stringify(props.message['content'])) {
-      setTimeout(() => {
-        // emit('opreatorsUpdatePromptContent', getContent())
-        props.opreators.updatePromptContent(getContent(), props.index)
-      }, DELAY_TO_UPDATE_CONTENT)
+      if (delay) {
+        // only delay when update content
+        await sleep(DELAY_MS_TO_UPDATE_CONTENT)
+      }
+      props.opreators.updatePromptContent(getContent(), props.index)
     }
   }
 }
 
-function opreatorsNewGenerateWithDelay() {
-  setTimeout(() => {
-    props.opreators.newGenerate()
-  }, DELAY_TO_UPDATE_CONTENT * 1.5)
-}
-
-function opreatorsclearOrDeleteMessageWithDelay() {
-  setTimeout(() => {
-    props.opreators.clearOrDeleteMessage(messageCache.value, props.index)
-  }, DELAY_TO_UPDATE_CONTENT * 1.5)
-}
 
 const getContent = () => {
   if (usingOpreators) {

@@ -315,3 +315,25 @@ export async function uploadJsonFile() {
 
   return promise;
 }
+
+
+export class TaskQueue {
+  constructor() {
+    this.queue = []
+    this.running = false
+  }
+  async addTask(task) {
+    this.queue.push(task)
+    if (!this.running) {
+      this.running = true
+      while (this.queue.length > 0) {
+        const task = this.queue.shift()
+        const result = task()
+        if (result instanceof Promise) {
+          await result
+        }
+      }
+      this.running = false
+    }
+  }
+}
