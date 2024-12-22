@@ -9,10 +9,10 @@ const dialogExample = {
         operator: "continue_with_chosen",
         from_candidate: true,  // same as no parent?
         // only for DPO RM, without token level signal
-        is_new: false,
+        is_new_generated: false,
         time: 1733147962,
         prefix_messages_num: 2,
-        parent: 1,
+        parent: "1",  // must be string because its JSON key
         on_policy: true,
     }] && [],
     annotate: {
@@ -83,7 +83,7 @@ var pandaTreeExample = {
     title: "Title of the data",
     description: "Uneditable description for the data",
     comment: "Editable comment",
-    dialogs: { 1: dialogExample0, 2: dialogExample }, // key start from 1
+    dialogs: { "1": dialogExample0, "2": dialogExample }, // key start from 1, must be string because its JSON key
     hash_map: {},  // to support 'hash:4LKUXH3IuMhn4cti0hjpzqcA5Zv0bCZu+zBi2+buU30=' key 要不要加上 hash 前缀？(加上吧，更加一致，也给人一眼看出作用) 为什么不用 obj.hash?(繁琐了，不用)
     deleted_dialogs: {},
 }
@@ -156,7 +156,7 @@ export class PandaState {
     })
     parentDialogKey = computed(() => {
         var parentKey = this.currentDialogData.value?.operations?.length ? this.currentDialogData.value.operations[0].parent : null
-        return parentKey
+        return parentKey ? parentKey.toString() : null
     })
     currentDialogData = computed(() => {
         return this.currentDialogKey.value ? this.allDialogs.value[this.currentDialogKey.value] : {}
@@ -289,9 +289,34 @@ export class PandaState {
         // TODO: delete items can be recomputed "is_prompt_modified" "is_response_modified" response_modified_type?
         return dumped
     }
-    load = (pandaTree) => {
-        this.cacheTree = {}
+    asPandaTree = (obj) => {
+        const isPandaTree = obj.dialogs && Object.keys(obj.dialogs).length && obj.dialogs[Object.keys(obj.dialogs)[0]]?.messages?.length
+        if (isPandaTree) {
+            return obj
+        }
+
+        const isMessagesList = obj.length && obj[0].length && obj[0][0].role
+        if (isMessagesList) {
+            obj = obj[0]
+        }
+        const isMessages = obj.length && obj[0].role
+
+
+        if (isMessages) {
+            return {
+                dialogs: {
+                    "1": {
+                        messages: obj,
+                        annotate: { is_good: null }
+                    }
+                }
+            }
+        }
+    }
+    load = (obj) => {
+        var pandaTree = this.asPandaTree(obj)
         pandaTree = this.setDefaultToPandaTree(pandaTree)
+        this.cacheTree = {}
         if (pandaTree.cache_tree) {
             this.cacheTree = pandaTree.cache_tree
             delete pandaTree.cache_tree

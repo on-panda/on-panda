@@ -1130,7 +1130,7 @@ class OpreatorCenter {
     tokens.value = []
     this.pandaState.afterOperation({
       operator: "new_generate",
-      is_new: true,
+      is_new_generated: true,
       on_policy: true,
     })
     requestLlmServer(messages.value)
