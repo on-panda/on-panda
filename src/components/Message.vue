@@ -5,16 +5,22 @@
       <span class="stretch" style="margin-right: auto" />
       <el-tooltip :content="hasContent ? 'Clear' : 'Delete'" placement="top">
         <el-button :icon="hasContent ? Delete : Close" size="small"
-          style="width: 24px;height: 15px; margin-top: 13px; margin-right: 5px;" @click="$emit('deleteMessage')" />
+          style="width: 24px;height: 15px; margin-top: 13px; margin-right: 5px;"
+          @click="usingOpreators ? opreatorsclearOrDeleteMessageWithDelay() : $emit('deleteMessage')" />
       </el-tooltip>
     </div>
     <div style="display: flex; justify-content: space-between">
       <el-input class="message-content" v-model="contentAsText" type="textarea"
-        placeholder="Empty message will be ignored" :autosize="{ minRows: 2, maxRows: 50 }"
-        @keydown.ctrl.enter="opreatorsUpdatePromptContent(); $emit('sendButton')" @paste="handlePaste"
-        @focus="$emit('focus')" @blur="$emit('blur', getContent()); opreatorsUpdatePromptContent()" ref="editor" />
+        placeholder="Empty message will be ignored" :autosize="{ minRows: 2, maxRows: 50 }" @keydown.ctrl.enter="() => {
+          if (usingOpreators) {
+            opreatorsUpdatePromptContentWithDelay(); opreatorsNewGenerateWithDelay()
+          } else {
+            $emit('sendButton')
+          }
+        }" @paste="handlePaste" @focus="$emit('focus')"
+        @blur="usingOpreators ? opreatorsUpdatePromptContentWithDelay() : $emit('blur', getContent())" ref="editor" />
 
-      <button @click="console.log('endButton'); $emit('sendButton')" :disabled="!hasContent" :style="{
+      <button @click="$emit('sendButton'); opreatorsNewGenerateWithDelay()" :disabled="!hasContent" :style="{
         cursor: hasContent ? 'pointer' : 'not-allowed'
       }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
         <b>Send➡️</b><br>
@@ -42,35 +48,58 @@ import MessageMarkdown from './MessageMarkdown.vue'
 import EditableStringAttribute from './EditableStringAttribute.vue'
 
 import { computed, ref } from 'vue'
-import { convertImageUrlToBase64, deepCopy } from '@/utils/commonUtils'
+import { convertImageUrlToBase64, deepCopy, mockObject } from '@/utils/commonUtils'
 import { Close, Delete } from '@element-plus/icons-vue'
 
-const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur', 'opreatorsUpdatePromptContent'])
+const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur',])
 
 const props = defineProps({
   message: {
     type: Object,
     default: {}
   },
-  usingCache: {
-    type: Boolean,
-    default: false
-  }
+  opreators: {
+    type: [Object, Function],
+    default: mockObject
+  },
+  index: {
+    type: Number,
+    default: -1
+  },
 })
 
-function opreatorsUpdatePromptContent() {
+const messageCache = ref(null)
+
+const usingOpreators = 'newGenerate' in props.opreators
+
+const DELAY_TO_UPDATE_CONTENT = 200  // avoid update content lead to rerender button and button click event lost
+
+function opreatorsUpdatePromptContentWithDelay() {
   // only emit when using cache and content is changed
-  if (props.usingCache && messageCache.value) {
+  if (usingOpreators && messageCache.value) {
     if (JSON.stringify(messageCache.value['content']) !== JSON.stringify(props.message['content'])) {
-      emit('opreatorsUpdatePromptContent', getContent())
+      setTimeout(() => {
+        // emit('opreatorsUpdatePromptContent', getContent())
+        props.opreators.updatePromptContent(getContent(), props.index)
+      }, DELAY_TO_UPDATE_CONTENT)
     }
   }
 }
 
-const messageCache = ref(null)
+function opreatorsNewGenerateWithDelay() {
+  setTimeout(() => {
+    props.opreators.newGenerate()
+  }, DELAY_TO_UPDATE_CONTENT * 1.5)
+}
+
+function opreatorsclearOrDeleteMessageWithDelay() {
+  setTimeout(() => {
+    props.opreators.clearOrDeleteMessage(messageCache.value, props.index)
+  }, DELAY_TO_UPDATE_CONTENT * 1.5)
+}
 
 const getContent = () => {
-  if (props.usingCache) {
+  if (usingOpreators) {
     if (!messageCache.value) {
       messageCache.value = deepCopy(props.message)
     }
@@ -81,7 +110,7 @@ const getContent = () => {
 }
 
 const setContent = (content) => {
-  if (props.usingCache) {
+  if (usingOpreators) {
     messageCache.value['content'] = content
   } else {
     props.message['content'] = content

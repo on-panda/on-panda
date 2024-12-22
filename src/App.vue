@@ -70,10 +70,7 @@
           @blur="opreators.editPrompt.after()" /> -->
         <!-- change edit in compoment to edit in opreators -->
         <Message v-for="(message, index) in messages" :key="message.role + messageToSeq(message) + index"
-          :message="message" @sendButton="opreators.newGenerate()"
-          @deleteMessage="opreators.clearOrDeleteMessage(message, index)"
-          @opreatorsUpdatePromptContent="(content) => opreators.updatePromptContent(content, index, message)"
-          :usingCache="true" />
+          :message="message" :index="index" :opreators="opreators" />
       </div>
 
 
@@ -1200,7 +1197,7 @@ class OpreatorCenter {
     },
     after: () => {
       this.pandaState.afterOperation({
-        operator: "edit_role",
+        operator: "edit_prompt_role",
         on_policy: false,
       })
     }
