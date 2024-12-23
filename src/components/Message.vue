@@ -41,7 +41,7 @@
       <EditableStringAttribute :obj="props.message" attr="comment" :disabled="false" v-if="props.message['comment']"
         title="comment:&nbsp;&nbsp;&nbsp;" />
     </div>
-    <details>
+    <details ref="detailsRef">
       <summary>
         <small style="color: #888;">rendered markdown:</small>
       </summary>
@@ -56,9 +56,10 @@ import MessageRole from './MessageRole.vue'
 import MessageMarkdown from './MessageMarkdown.vue'
 import EditableStringAttribute from './EditableStringAttribute.vue'
 
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, watchEffect } from 'vue'
 import { convertImageUrlToBase64, deepCopy, mockObject, sleep, TaskQueue } from '@/utils/commonUtils'
 import { Close, Delete } from '@element-plus/icons-vue'
+import { getContentTypes } from '@/utils/chatUtils'
 
 const props = defineProps({
   message: {
@@ -229,6 +230,24 @@ function insertImage(imageUrl) {
     contentAsText.value += markdownImage;
   }
 }
+
+const detailsRef = ref(null)
+
+watchEffect(() => {
+  // auto open details when image detected
+  var content = getContent()
+  var types = getContentTypes(content)
+  for (let type of types) {
+    if (type.startsWith('image')) {
+      setTimeout(() => {
+        if (detailsRef.value) {
+          detailsRef.value.open = true
+        }
+      }, 100)
+      break
+    }
+  }
+})
 
 </script>
 <style scoped>

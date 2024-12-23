@@ -88,3 +88,23 @@ export function normalizeRequest(requestBody) {
     return body
 }
 
+
+export function getContentTypes(input) {
+    // Support both content, single message and list of messages
+    var isMessages = Array.isArray(input) && (input.length == 0 || input[0].role)
+    var isContent = typeof input === 'string' || (Array.isArray(input) && input.length > 0 && input[0].type)
+    if (isMessages) {
+        var list = input.map(getContentTypes).reduce((a, b) => a.concat(b), [])
+        return [...new Set(list)]
+    } else {
+        var content = isContent ? input : input.content
+        var contentTypes = []
+        if (content && Array.isArray(content)) {
+            content.map(content => contentTypes.push(content.type))
+        }
+        if (typeof content === 'string') {
+            contentTypes.push('text')
+        }
+        return [...new Set(contentTypes)]
+    }
+}

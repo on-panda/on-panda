@@ -654,12 +654,6 @@ const defaultApiConfig = {
   },
 }
 
-function openAllDetails() {
-  document.querySelectorAll('.promptMessages details').forEach(details => {
-    details.open = true;
-  });
-}
-
 const exampleNameToFunc = {
   "default": () => {
     modelName.value = "on-panda"
@@ -672,7 +666,6 @@ const exampleNameToFunc = {
   },
   "image": () => {
     modelName.value = "image"
-    setTimeout(openAllDetails, 100)
     opreators.loadMessagesWithPandaTree(messagesImageExample)
     opreators.newGenerate()
   },
