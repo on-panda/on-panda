@@ -73,107 +73,105 @@
           :message="message" :index="index" :opreators="opreators" />
       </div>
 
-
-      <div class="finalMessageHeadBar" style="display: flex; justify-content: space-between;"
-        :style="isMobile ? {} : { width: '50%' }">
-        <MessageRole :message="finalMessage" />
-        <span class="stretch" style="margin-right: auto" />
-        <footer class="finalMessageControlButtons" style="display :flex; margin-top:5px; margin-bottom:-5px">
+      <div class="responsePannel" :style="globalStore.cleanMode ? { maxWidth: '1024px' } : {}">
+        <div class="finalMessageHeadBar" style="display: flex; justify-content: space-between;"
+          :style="isMobile ? {} : { width: '50%' }">
+          <MessageRole :message="finalMessage" />
           <span class="stretch" style="margin-right: auto" />
-          <el-tooltip v-if="!requestStatus.generating" content="continue" placement="top">
-            <el-button :icon="DArrowRight" size="small" :disabled="!tokens?.length"
-              @click="opreators.continueGenerating()" />
-          </el-tooltip>
-          <el-tooltip v-if="requestStatus.generating" content="stop generating" placement="top">
-            <el-button :icon="VideoPause" size="small" @click="opreators.stopGenerating()" />
-          </el-tooltip>
-          <el-tooltip content="try again" placement="top">
-            <el-button :icon="Refresh" size="small" @click="opreators.newGenerate()" />
-          </el-tooltip>
-          <el-tooltip v-if="0" content="edit (TBD)" placement="top">
-            <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
-          </el-tooltip>
-          <el-tooltip content="refresh tokens' probability" placement="top">
-            <el-button :icon="View" size="small" :disabled="!finalMessage.content || requestStatus.generating"
-              @click="requestPromptLogprobs" />
-            @click="requestPromptLogprobs" />
-          </el-tooltip>
-          <el-tooltip content="copy" placement="top">
-            <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
-              @click="copyToClipboard(finalMessage.content)" />
-          </el-tooltip>
-          &nbsp;&nbsp;&nbsp;
-          <hr v-if="!isMobile" style="color:#eee; margin-top: -5px; margin-bottom: 4px">
-        </footer>
-        <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt active-text="raw"
-          inactive-text="MD" @change="scrollSwitch.scrollToPosition"
-          style="margin-right: 8px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa; width:45px" />
-      </div>
-      <div class="replayStatisticsSubtitle" style="display: flex; justify-content: space-between;">
-        <small style="color: #888;"> model:
-          <code>{{ tokensModelNames }}</code>
-          <span v-if="tokens.length && tokens[tokens.length - 1]?.usage?.prompt_tokens"> ｜ tokens: {{
-            tokens[tokens.length
-              - 1]?.usage?.prompt_tokens }} + {{ tokens[tokens.length - 1]?.usage?.completion_tokens }} </span>
-          <span v-if="bitTokens.length > 1"> ｜
-            <el-tooltip class="" effect="light" placement="bottom" raw-content>
-              <template #content>
-                <MessageMarkdown
-                  content="${\text{bits}} = - \sum_{i} \log_2(p_i)$. // note for vLLM server model: 
-                  Logprob value are affected by sampling parameters, click: [🔗URL](https://github.com/vllm-project/vllm/issues/9453)" />
-              </template>
-              bits
+          <footer class="finalMessageControlButtons" style="display :flex; margin-top:5px; margin-bottom:-5px">
+            <span class="stretch" style="margin-right: auto" />
+            <el-tooltip v-if="!requestStatus.generating" content="continue" placement="top">
+              <el-button :icon="DArrowRight" size="small" :disabled="!tokens?.length"
+                @click="opreators.continueGenerating()" />
             </el-tooltip>
-            / tokens: {{ bitTotal.toFixed(1) }} ÷ {{ bitTokens.length }} = {{ (bitTotal /
-              bitTokens.length).toFixed(2)
-            }}
-            <!-- <el-icon>
+            <el-tooltip v-if="requestStatus.generating" content="stop generating" placement="top">
+              <el-button :icon="VideoPause" size="small" @click="opreators.stopGenerating()" />
+            </el-tooltip>
+            <el-tooltip content="try again" placement="top">
+              <el-button :icon="Refresh" size="small" @click="opreators.newGenerate()" />
+            </el-tooltip>
+            <el-tooltip v-if="0" content="edit (TBD)" placement="top">
+              <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
+            </el-tooltip>
+            <el-tooltip content="refresh tokens' probability" placement="top">
+              <el-button :icon="View" size="small" :disabled="!finalMessage.content || requestStatus.generating"
+                @click="requestPromptLogprobs" />
+              @click="requestPromptLogprobs" />
+            </el-tooltip>
+            <el-tooltip content="copy" placement="top">
+              <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
+                @click="copyToClipboard(finalMessage.content)" />
+            </el-tooltip>
+            &nbsp;&nbsp;&nbsp;
+            <hr v-if="!isMobile" style="color:#eee; margin-top: -5px; margin-bottom: 4px">
+          </footer>
+          <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt active-text="raw"
+            inactive-text="MD" @change="scrollSwitch.scrollToPosition"
+            style="margin-right: 8px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa; width:45px" />
+        </div>
+        <div class="replayStatisticsSubtitle" style="display: flex; justify-content: space-between;">
+          <small style="color: #888;"> model:
+            <code>{{ tokensModelNames }}</code>
+            <span v-if="tokens.length && tokens[tokens.length - 1]?.usage?.prompt_tokens"> ｜ tokens: {{
+              tokens[tokens.length
+                - 1]?.usage?.prompt_tokens }} + {{ tokens[tokens.length - 1]?.usage?.completion_tokens }} </span>
+            <span v-if="bitTokens.length > 1"> ｜
+              <el-tooltip class="" effect="light" placement="bottom" raw-content>
+                <template #content>
+                  <MessageMarkdown
+                    content="${\text{bits}} = - \sum_{i} \log_2(p_i)$. // note for vLLM server model: 
+                  Logprob value are affected by sampling parameters, click: [🔗URL](https://github.com/vllm-project/vllm/issues/9453)" />
+                </template>
+                bits
+              </el-tooltip>
+              / tokens: {{ bitTotal.toFixed(1) }} ÷ {{ bitTokens.length }} = {{ (bitTotal /
+                bitTokens.length).toFixed(2)
+              }}
+              <!-- <el-icon>
             <QuestionFilled style="height: 11px;" />
           </el-icon> -->
-          </span>
+            </span>
 
 
-        </small>
-        <small style="color: #888;" v-if="!isMobile"> rendered markdown </small>
-      </div>
+          </small>
+          <small style="color: #888;" v-if="!isMobile"> rendered markdown </small>
+        </div>
 
-      <div class="finalMessageTwoPannel" style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
-        <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
-          <div class="final-message-half-pannel">
-            <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
-              <p style="color: #444" v-if="!tokens.length">
-                <span v-html="WaitingInfo"></span>
-              </p>
-              <p ref="rawOnPandaPannelRef">
-                <span class="PatchSpan" v-for="patch in patchs"
-                  :key="`t${pandaState.uuid.value}-d${pandaState.currentDialogKey.value}-p${patch.index}:${patch.patch}`"
-                  :style='{
-                    "border-bottom": "3px solid " + probToColor(patch.prob),
-                    ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
-                    ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
-                    ...(patch.tokens.some(t => t.selected) ? { "background-color": "#0078d7", "color": "#fff" } : {}),
-                  }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
-                  @mouseleave="handleMouseLeavePatchSpan" @dblclick.prevent="setFloatInputPatch($event, patch)"></span>
-                <el-tooltip
-                  v-if="apiConfig.support_continue_final_message && tokens.length && tokens[tokens.length - 1].finish_reason == 'length'"
-                  content="native continue generating" placement="bottom">
-                  <el-button :icon="DArrowRight" size="small" @click="opreators.continueGenerating()"
-                    style="margin-left: 10px;height: 16px" />
-                </el-tooltip>
-              </p>
+        <div class="finalMessageTwoPannel" style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
+          <div v-if="!globalStore.cleanMode" style="display: flex; justify-content: space-between;"
+            :style="{ 'width': isMobile ? '195%' : '100%' }">
+            <div class="final-message-half-pannel">
+              <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
+                <p style="color: #444" v-if="!tokens.length">
+                  <span v-html="WaitingInfo"></span>
+                </p>
+                <p ref="rawOnPandaPannelRef">
+                  <span class="PatchSpan" v-for="patch in patchs"
+                    :key="`t${pandaState.uuid.value}-d${pandaState.currentDialogKey.value}-p${patch.index}:${patch.patch}`"
+                    :style='{
+                      "border-bottom": "3px solid " + probToColor(patch.prob),
+                      ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
+                      ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
+                      ...(patch.tokens.some(t => t.selected) ? { "background-color": "#0078d7", "color": "#fff" } : {}),
+                    }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)"
+                    @mouseenter="handleMouseEnterPatchSpan" @mouseleave="handleMouseLeavePatchSpan"
+                    @dblclick.prevent="setFloatInputPatch($event, patch)"></span>
+                  <el-tooltip
+                    v-if="apiConfig.support_continue_final_message && tokens.length && tokens[tokens.length - 1].finish_reason == 'length'"
+                    content="native continue generating" placement="bottom">
+                    <el-button :icon="DArrowRight" size="small" @click="opreators.continueGenerating()"
+                      style="margin-left: 10px;height: 16px" />
+                  </el-tooltip>
+                </p>
+              </div>
+            </div>
+            <hr style="color:#eee">
+            <div class="final-message-half-pannel">
+              <MarkdownResponse :content="finalMessage.content" :WaitingInfo="WaitingInfo" />
             </div>
           </div>
-          <hr style="color:#eee">
-          <div class="final-message-half-pannel">
-            <!-- <small style="color: #888;">rendered markdown:</small> -->
-            <div v-if="!tokens.length">
-              <p style="background-color: #eee;color: #444">
-                <span v-html="WaitingInfo"></span>
-              </p>
-            </div>
-            <p> <!-- Removing the p tag will cause unstable rendering in stream mode -->
-              <MessageMarkdown :content="finalMessage.content || ''" style="background-color: #eee;" />
-            </p>
+          <div v-if="globalStore.cleanMode">
+            <MarkdownResponse :content="finalMessage.content" :WaitingInfo="WaitingInfo" />
           </div>
         </div>
       </div>
@@ -1514,6 +1512,7 @@ useEventListener(window, 'resize', handleReactiveFunctions)
 
 import { pandaState } from './stores/pandaState'
 import { sleep } from '@/utils/commonUtils'
+import MarkdownResponse from './components/widgets/MarkdownResponse.vue'
 
 watch(pandaState.dialogCache,
   function watchPandaStateDialogCache(newValue, oldValue) {

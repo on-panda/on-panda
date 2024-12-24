@@ -37,6 +37,10 @@
                 <el-button :icon="Postcard" size="small"
                     @click="() => { pandaState.currentDialogData.value.annotate = { is_good: null } }" />
             </el-tooltip>
+            <el-tooltip content="Clean UI (reading mode)" raw-content placement="top">
+                <el-button :icon="Reading" size="small" :type="globalStore.cleanMode ? 'success' : 'default'"
+                    @click="globalStore.cleanMode = !globalStore.cleanMode" />
+            </el-tooltip>
             <el-tooltip content="Download panda.json file" raw-content placement="top" v-if="0">
                 <el-dropdown split-button
                     @click="downloadJsonFile(pandaState.dump(), uploadedJson && uploadedJson.name)" size=small>
@@ -88,9 +92,12 @@
 <script setup>
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useGlobalStore } from '../stores/globalStore.js'
 import { PandaState, pandaState, uploadedJson } from '../stores/pandaState'
-import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled, Postcard } from '@element-plus/icons-vue'
+import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled, Postcard, Reading } from '@element-plus/icons-vue'
 import { registerKeyActions, downloadJsonFile, uploadJsonFile, useEventListener } from '../utils/commonUtils'
+
+const globalStore = useGlobalStore()
 
 registerKeyActions({
     ArrowLeft: pandaState.switchToPreviousDialog,

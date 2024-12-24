@@ -15,25 +15,36 @@
             " />
       </el-tooltip>
     </div>
-    <div style="display: flex; justify-content: space-between">
-      <el-input class="message-content" v-model="contentAsText" type="textarea"
-        placeholder="Empty message will be ignored" :autosize="{ minRows: 2, maxRows: 50 }" @keydown.ctrl.enter="() => {
-          if (usingOpreators) {
-            taskQueue.addTask(async () => opreatorsUpdatePromptContent({ delay: false }))
-            taskQueue.addTask(props.opreators.newGenerate)
-          } else {
-            $emit('sendButton')
-          }
-        }" @paste="handlePaste" @focus="$emit('focus')"
-        @blur="usingOpreators ? taskQueue.addTask(async () => opreatorsUpdatePromptContent({ delay: true })) : $emit('blur', getContent())"
-        ref="editor" />
+    <MarkdownResponse v-if="globalStore.cleanMode && isRenderRole" :content="contentAsText"
+      WaitingInfo="Empty message will be ignored" />
+    <div v-else class="editorAndDetials">
+      <div style="display: flex; justify-content: space-between">
+        <el-input class="message-content" v-model="contentAsText" type="textarea"
+          placeholder="Empty message will be ignored" :autosize="{ minRows: 2, maxRows: 50 }" @keydown.ctrl.enter="() => {
+            if (usingOpreators) {
+              taskQueue.addTask(async () => opreatorsUpdatePromptContent({ delay: false }))
+              taskQueue.addTask(props.opreators.newGenerate)
+            } else {
+              $emit('sendButton')
+            }
+          }" @paste="handlePaste" @focus="$emit('focus')"
+          @blur="usingOpreators ? taskQueue.addTask(async () => opreatorsUpdatePromptContent({ delay: true })) : $emit('blur', getContent())"
+          ref="editor" />
 
-      <button @click="$emit('sendButton'); taskQueue.addTask(props.opreators.newGenerate)" :disabled="!hasContent"
-        :style="{
-          cursor: hasContent ? 'pointer' : 'not-allowed'
-        }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
-        <b>Send➡️</b><br>
-        <small>ctrl+enter</small> </button>
+        <button @click="$emit('sendButton'); taskQueue.addTask(props.opreators.newGenerate)" :disabled="!hasContent"
+          :style="{
+            cursor: hasContent ? 'pointer' : 'not-allowed'
+          }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
+          <b>Send➡️</b><br>
+          <small>ctrl+enter</small> </button>
+      </div>
+      <details ref="detailsRef">
+        <summary>
+          <small style="color: #888;">rendered markdown:</small>
+        </summary>
+        <MessageMarkdown :content="contentAsText" />
+        <hr style="margin-top:0px;color:#ccc">
+      </details>
     </div>
     <div style="padding-left:12px;padding-right:12px;">
       <EditableStringAttribute :obj="props.message" attr="description" :disabled="true"
@@ -41,13 +52,6 @@
       <EditableStringAttribute :obj="props.message" attr="comment" :disabled="false" v-if="props.message['comment']"
         title="comment:&nbsp;&nbsp;&nbsp;" />
     </div>
-    <details ref="detailsRef">
-      <summary>
-        <small style="color: #888;">rendered markdown:</small>
-      </summary>
-      <MessageMarkdown :content="contentAsText" />
-      <hr style="margin-top:0px;color:#ccc">
-    </details>
   </div>
 </template>
 
@@ -55,11 +59,15 @@
 import MessageRole from './MessageRole.vue'
 import MessageMarkdown from './MessageMarkdown.vue'
 import EditableStringAttribute from './EditableStringAttribute.vue'
+import MarkdownResponse from './widgets/MarkdownResponse.vue'
 
 import { computed, ref, onMounted, watchEffect } from 'vue'
 import { convertImageUrlToBase64, deepCopy, mockObject, sleep, TaskQueue } from '@/utils/commonUtils'
 import { Close, Delete } from '@element-plus/icons-vue'
 import { getContentTypes } from '@/utils/chatUtils'
+import { useGlobalStore } from '@/stores/globalStore.js'
+
+const globalStore = useGlobalStore()
 
 const props = defineProps({
   message: {
@@ -96,29 +104,31 @@ async function opreatorsUpdatePromptContent({ delay = false }) {
   }
 }
 
-const getContent = () => {
+const getMessage = () => {
   if (usingOpreators) {
     if (!messageCache.value) {
       messageCache.value = deepCopy(props.message)
     }
-    return messageCache.value['content']
+    return messageCache.value
   } else {
-    return props.message['content']
+    return props.message
   }
 }
 
+const getContent = () => {
+  return getMessage()['content'] || ''
+}
+
 const setContent = (content) => {
-  if (usingOpreators) {
-    messageCache.value['content'] = content
-  } else {
-    props.message['content'] = content
-  }
+  var message = getMessage()
+  message['content'] = content
 }
 
 const hasContent = computed(() => {
   return getContent().length > 0
 })
 
+const isRenderRole = computed(() => ['assistant', 'context'].includes(getMessage()['role']))
 
 const contentAsText = computed({
   // convert object content to markdown

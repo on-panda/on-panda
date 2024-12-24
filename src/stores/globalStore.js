@@ -5,6 +5,8 @@ export const useGlobalStore = defineStore('global', () => {
 
     const hooks = ref({ beforeCreateChatCompletion: [] })
 
-    return { debug, hooks }
+    const cleanMode = ref(false)
+
+    return { debug, hooks, cleanMode }
 }
 )
