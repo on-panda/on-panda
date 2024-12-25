@@ -1,6 +1,6 @@
 <template>
     <div class="dialogControlPannel" v-if="pandaState.dialogKeys.value?.length">
-        <footer style="display :flex; margin-top:-10px; margin-bottom:10px">
+        <div style="margin-top:-10px; margin-bottom:10px; line-height:2">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
             <el-tooltip content="Save the data" raw-content placement="top">
                 <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump()" />
@@ -56,7 +56,7 @@
                     </template>
                 </el-dropdown>
             </el-tooltip>
-        </footer>
+        </div>
 
         <el-dialog v-model="isDragged" style="width: 80%;">
             <el-upload v-show="isDragged" class="dropzone" :drag="true" :auto-upload="false" :on-change="handleDropJson"

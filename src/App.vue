@@ -137,9 +137,9 @@
           <small style="color: #888;" v-if="!isMobile"> rendered markdown </small>
         </div>
 
-        <div class="finalMessageTwoPannel" style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
-          <div v-if="!globalStore.cleanMode" style="display: flex; justify-content: space-between;"
-            :style="{ 'width': isMobile ? '195%' : '100%' }">
+        <div class="finalMessageTwoPannel" v-if="!globalStore.cleanMode"
+          style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
+          <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
             <div class="final-message-half-pannel">
               <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
                 <p style="color: #444" v-if="!tokens.length">
@@ -170,9 +170,9 @@
               <MarkdownResponse :content="finalMessage.content" :WaitingInfo="WaitingInfo" />
             </div>
           </div>
-          <div v-if="globalStore.cleanMode">
-            <MarkdownResponse :content="finalMessage.content" :WaitingInfo="WaitingInfo" />
-          </div>
+        </div>
+        <div v-if="globalStore.cleanMode">
+          <MarkdownResponse :content="finalMessage.content" :WaitingInfo="WaitingInfo" />
         </div>
       </div>
     </div>

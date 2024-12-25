@@ -17,7 +17,7 @@ import MessageMarkdown from '../MessageMarkdown.vue'
 
 const props = defineProps({
     content: {
-        type: Object,
+        type: String,
     },
     WaitingInfo: {
         type: String,
