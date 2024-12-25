@@ -222,6 +222,10 @@ export class PandaState {
     fork = (operation) => {
         var newDialog = deepCopy(this.dialogComputed.value)
         newDialog.operations = operation ? [operation] : []
+        if ('is_good' in (newDialog.annotate || {})) {
+            // when fork, if has is_good key, reset it to default
+            newDialog.annotate.is_good = null
+        }
         // console.trace('fork:', this.currentDialogKey.value, '->', this.dialogMaxKeyAll.value + 1, operation)
         this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = newDialog
 
