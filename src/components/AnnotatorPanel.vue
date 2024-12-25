@@ -68,7 +68,7 @@
                     markdown: pandaState.pandaTree.value?.description,
                     disabled: true,
                 }'></CustomAnnotatorTool>
-                <CustomAnnotatorTool v-if="pandaState.pandaTree.value?.comment" :tool='editableCommentAsTool'>
+                <CustomAnnotatorTool :tool='editableCommentAsTool'>
                 </CustomAnnotatorTool>
             </el-form>
             <ObjectViewerInDetails :object="pandaState.pandaTree.value" summary="panda tree JSON" />
@@ -88,7 +88,7 @@ import { dateStringNow } from '../utils/commonUtils'
 const editableCommentAsTool = ref({
     name: "comment",
     type: "text",
-    text: pandaState.pandaTree.value?.comment,
+    text: pandaState.pandaTree.value?.comment || "",
     disabled: false,
 })
 
