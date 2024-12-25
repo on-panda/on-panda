@@ -31,18 +31,23 @@
       <summary>
         <small style="color: #888;">usage:</small>
       </summary>
-
       <br>
       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src="/img/onPanda-demo-candidate.gif"
         style="box-shadow: 0 0px 8px rgba(0, 0, 0, 0.5);width: 406px;max-width: 90%;">
       <br>
       <br>
+      Usage:<br>
       - Move to the problematic word, and alternative candidates will appear. <br>
       - Click a candidate to continue generating text based on the chosen word. <br>
       - Double-click a word to edit it, and the LLM will seamlessly continue writing. <br>
       - Select a piece of text and then manually edit it or have the LLM optimize it. <br>
       - Support pasting image on message editing area to enable VLM. <br>
       - Double click the role to edit the role name. <br>
+
+      <br><b>Beginner's tips:</b>
+      <br>
+      - You can try any button freely, except save button.<br>
+      - Recommend clicking on all the examples below once.<br>
     </details>
 
     <el-divider content-position="left">
@@ -271,9 +276,8 @@
     <AnnotatorPanel
       v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment || globalStore.debug" />
 
-    <el-divider content-position="left">new message:</el-divider>
+    <el-divider content-position="left" style="margin-bottom: 5px;">new message:</el-divider>
     <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
-
       <Message :message="newTurnMessage" @deleteMessage="newTurnMessage.content = ''"
         @sendButton="opreators.newRoundMessage()" />
     </div>
@@ -667,12 +671,12 @@ const exampleNameToFunc = {
     opreators.loadMessagesWithPandaTree(messagesImageExample)
     opreators.newGenerate()
   },
-  "audio": () => {
-    modelName.value = "audio"
-    opreators.loadMessagesWithPandaTree(messagesAudioExample
-    )
-    opreators.newGenerate()
-  },
+  // "audio": () => {
+  //   modelName.value = "audio"
+  //   opreators.loadMessagesWithPandaTree(messagesAudioExample
+  //   )
+  //   opreators.newGenerate()
+  // },
   "tokenizer": () => {
     opreators.loadMessagesWithPandaTree(messagesTokenizerExample
     )
