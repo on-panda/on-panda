@@ -343,7 +343,7 @@ export class PandaState {
 
         var defaultOperation = {
             time: Date.now(),
-            parent: this.currentDialogKey.value,
+            parent: String(this.currentDialogKey.value),
         }
         if (operation.on_policy) {
             defaultOperation.chat_config = deepCopy(this.apiConfig.value.chat_config)
