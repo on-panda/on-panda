@@ -350,9 +350,11 @@
         </small>
       </el-form-item>
     </el-form>
-
-    <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div>
-
+    <div v-if="warningContent"
+      style="background-color: #fdd;white-space: pre-wrap;cursor: default;overflow-x: scroll; padding: 10px">
+      <h3>Error Messages:</h3>
+      <div v-html="warningContent"></div>
+    </div>
     <br v-for="_ in (isMobile ? 12 : apiConfig.chat_config.top_logprobs)">
   </div>
 </template>
@@ -627,7 +629,7 @@ function warning(content) {
   const now = new Date();
   const dateTimeString = now.toLocaleString();
   warningNumber.value += 1
-  warningContent.value = "<b>" + warningNumber.value + ' th error, ' + "</b>" + dateTimeString + "<p>" + content + "</p><hr>" + warningContent.value
+  warningContent.value = "<hr><br><b>" + warningNumber.value + ' th error, ' + "</b>" + dateTimeString + "<br>" + content + warningContent.value
 }
 
 const defaultApiConfig = {
@@ -1289,7 +1291,7 @@ const probToColor = (prob, transparency) => {
   const green = Math.floor((prob) * (255 - 128))
   var rgb = `${255 - green}, ${128 + green}, 128`;
   // return {"box-shadow": "inset 0 -2px "+color}
-  if (0 < prob && prob < 0.0001) {
+  if (0 <= prob && prob < 0.0001) {
     rgb = "255, 0, 0"
   }
   if (transparency === undefined) {
@@ -1398,8 +1400,10 @@ const finalMessage = computed(() => {
   }, {})
   if (role) {
     finalMessage.role = role
+  } else if (tokens.value.length) {
+    finalMessage.role = "assistant" // when has token, the default role is assistant
   }
-  // Compatible with different models for continuation generating
+  // Compatible with different models for continue generating
   // For keys other than assistant and user, if v is the empty string, then delete
   for (var key in finalMessage) {
     if (key !== "role" && key !== "content" && finalMessage[key] === "") {
