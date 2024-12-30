@@ -797,14 +797,18 @@ function convertMessageToTokens(message) {
     })
     if (tokens && tokens.length > 0) {
       tokens[0].delta.role = "assistant"
-    } else {
-      tokens = [{ delta: { role: message.role, content: "" } }]
-    }
-    if (message.finish_reason) {
-      tokens[tokens.length - 1].finish_reason = message.finish_reason
-    }
-    if (!message.finish_reason || message.finish_reason == "length") {
-      tokens[tokens.length - 1].bifurcationPoint = true
+      if (message.finish_reason) {
+        tokens[tokens.length - 1].finish_reason = message.finish_reason
+      }
+      if (!message.finish_reason || message.finish_reason == "length") {
+        tokens[tokens.length - 1].bifurcationPoint = true
+      }
+    } else {  // final message is empty content but with role name
+      tokens = [{
+        delta: { role: message.role, content: "" },
+        tokenIndex: 0,
+        logprobs: { content: [{ token: "", top_logprobs: [], logprob: 0 }] },
+      }]
     }
   }
   return tokens
@@ -928,9 +932,15 @@ const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previ
 
 async function requestLlmServer(messages) {
   messages = toValue(messages)
-  messages = messages.filter(message => message.content)
   const modelRoles = apiConfig.value?.model_roles || ["assistant"]
   const continue_final_message = modelRoles.includes(messages[messages.length - 1].role)
+  if (continue_final_message) { // if continue_final_message, not filter the final message with role
+    messages = messages.slice(0, messages.length - 1).filter(message => message.content).concat([
+      messages[messages.length - 1],
+    ])
+  } else {
+    messages = messages.filter(message => message.content)
+  }
   var body = JSON.parse(JSON.stringify(apiConfig.value.chat_config))
   if (continue_final_message) {
     var lastMessageContent = messages[messages.length - 1].content
@@ -998,7 +1008,8 @@ async function requestLlmServer(messages) {
       if (continue_final_message && !tokenIndex) { // before affect to tokens
         // to remove the last token's finish_reason
         if (tokens.value.length) {
-          while (tokens.value[tokens.value.length - 1].delta.content === "") {
+          // at least remain first token for role
+          while (tokens.value[tokens.value.length - 1].delta.content === "" && tokens.value.length > 1) {
             tokens.value.pop()
           }
           delete tokens.value[tokens.value.length - 1].finish_reason
