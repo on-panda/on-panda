@@ -128,6 +128,7 @@ const handleDropJson = (uploadFile) => {
             ElMessage.success('JSON file uploaded successfully.');
         } catch (error) {
             ElMessage.error('Invalid JSON file!');
+            console.error(error);
         }
     };
     reader.readAsText(file);

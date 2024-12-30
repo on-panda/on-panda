@@ -795,8 +795,11 @@ function convertMessageToTokens(message) {
         logprobs: { content: [{ token: token.segment, top_logprobs: [] }] },
       }
     })
-
-    tokens[0].delta.role = "assistant"
+    if (tokens && tokens.length > 0) {
+      tokens[0].delta.role = "assistant"
+    } else {
+      tokens = [{ delta: { role: message.role, content: "" } }]
+    }
     if (message.finish_reason) {
       tokens[tokens.length - 1].finish_reason = message.finish_reason
     }
@@ -1123,14 +1126,19 @@ class OpreatorCenter {
   }
 
   newGenerate = () => {
-    this.pandaState.beforeOperation()
-    tokens.value = []
-    this.pandaState.afterOperation({
-      operator: "new_generate",
-      is_new_generated: true,
-      on_policy: true,
-    })
-    requestLlmServer(messages.value)
+    if (!finalMessage.value.content && finalMessage.value.role && apiConfig.value.support_continue_final_message) {
+      // if only has role, try using continue generating
+      this.continueGenerating()
+    } else {
+      this.pandaState.beforeOperation()
+      tokens.value = []
+      this.pandaState.afterOperation({
+        operator: "new_generate",
+        is_new_generated: true,
+        on_policy: true,
+      })
+      requestLlmServer(messages.value)
+    }
   }
 
   newRoundMessage = () => {  // TODO remove auto write back's append opreation
@@ -1403,6 +1411,9 @@ const finalMessage = computed(() => {
   } else if (tokens.value.length) {
     finalMessage.role = "assistant" // when has token, the default role is assistant
   }
+  if (role && !finalMessage.content) {  // only role but no content
+    finalMessage.content = ""
+  }
   // Compatible with different models for continue generating
   // For keys other than assistant and user, if v is the empty string, then delete
   for (var key in finalMessage) {
@@ -1417,7 +1428,7 @@ const finalMessage = computed(() => {
 })
 
 const messagesComputed = computed(() => {
-  if (finalMessage.value.content) {
+  if (finalMessage.value.content || finalMessage.value.role) {
     return messages.value.concat([finalMessage.value])
   } else {
     return messages.value

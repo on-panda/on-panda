@@ -55,6 +55,7 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
         var common_prefix_length = -1
         is_response_modified = true
 
+        // console.log('response diff:', response1, response2, messages1, messages2)
         if (response1 && !response2) {
             response_modified_type = 'delete_response'
         } else if (!response1 && response2) {
