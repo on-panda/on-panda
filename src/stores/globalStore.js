@@ -7,6 +7,8 @@ export const useGlobalStore = defineStore('global', () => {
 
     const cleanMode = ref(false)
 
-    return { debug, hooks, cleanMode }
+    const blobUrlToBase64Cache = ref({})
+
+    return { debug, hooks, cleanMode, blobUrlToBase64Cache }
 }
 )

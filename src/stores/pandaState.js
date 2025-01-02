@@ -1,6 +1,9 @@
 import { ref, computed, watch } from 'vue'
 import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '@/utils/commonUtils'
 import { messagesDifferent, tokensToSeq } from '@/utils/chatUtils'
+import { useGlobalStore } from './globalStore'
+
+const globalStore = useGlobalStore()
 
 const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "give a random float, no other words" }, { role: "assistant", content: "1.27364382", finish_reason: "length" }]
 const dialogExample = {
@@ -317,10 +320,14 @@ export class PandaState {
             }
         }
     }
+    clearCache = () => {
+        this.cacheTree = {}
+        globalStore.blobUrlToBase64Cache = {}
+    }
     load = (obj) => {
         var pandaTree = this.asPandaTree(obj)
         pandaTree = this.setDefaultToPandaTree(pandaTree)
-        this.cacheTree = {}
+        this.clearCache()
         if (pandaTree.cache_tree) {
             this.cacheTree = pandaTree.cache_tree
             delete pandaTree.cache_tree

@@ -187,7 +187,8 @@ const contentAsText = computed({
           const image = { type: 'image_url', image_url: { url: imageUrl } }
           if (imageUrl.startsWith('blob:')) {
             image.blobUrl = imageUrl
-            image.image_url.url = ImageUrlToBase64Cache[imageUrl]
+            image.image_url.url = globalStore.blobUrlToBase64Cache[imageUrl]
+            console.assert(image.image_url.url, 'blobUrl not found in globalStore.blobUrlToBase64Cache')
           }
           content.push(image);
         }
@@ -212,7 +213,6 @@ const contentAsText = computed({
 
 const editor = ref(null)
 const imageCache = []
-const ImageUrlToBase64Cache = {}
 async function handlePaste(event) {
   const clipboardData = event.clipboardData || window.clipboardData;
   const items = clipboardData.items;
@@ -224,7 +224,7 @@ async function handlePaste(event) {
       event.preventDefault();
       const file = item.getAsFile();
       const imageUrl = cacheImage(file);
-      ImageUrlToBase64Cache[imageUrl] = await convertImageUrlToBase64(imageUrl);
+      globalStore.blobUrlToBase64Cache[imageUrl] = await convertImageUrlToBase64(imageUrl);
       insertImage(imageUrl);
     }
   }
