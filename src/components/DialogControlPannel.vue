@@ -143,7 +143,7 @@ const clickToDownload = () => {
             name = name.replace('.json', '.panda.json')
         }
     }
-    downloadJsonFile(pandaState.dump(false), name)
+    downloadJsonFile(pandaState.dump(true), name)
 }
 
 
