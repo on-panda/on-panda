@@ -335,7 +335,10 @@ export class PandaState {
         this.cacheTree = {}
 
         const globalStore = useGlobalStore();
-        globalStore.blobUrlToBase64Cache = {}
+        for (var blobUrl in globalStore.blobUrlToBase64Cache) {
+            URL.revokeObjectURL(blobUrl)
+            delete globalStore.blobUrlToBase64Cache.blobUrl
+        }
     }
     load = (obj) => {
         var pandaTree = this.asPandaTree(obj)

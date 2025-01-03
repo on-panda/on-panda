@@ -216,6 +216,22 @@ export function blobToBase64(blob) {
   });
 }
 
+
+export function base64ToBlob(base64String) {
+  const byteString = atob(base64String.split(',')[1]);
+  const mimeString = base64String.split(',')[0].split(':')[1].split(';')[0];
+
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+
+  const blob = new Blob([ab], { type: mimeString });
+  return URL.createObjectURL(blob);
+}
+
 export const registerKeyActions = (keyActions) => {  // : { [key: string]: () => void }
   const handleKeyDown = (event) => { // : KeyboardEvent
     const isCtrl = event.ctrlKey || event.metaKey

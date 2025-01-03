@@ -62,7 +62,7 @@ import EditableStringAttribute from './EditableStringAttribute.vue'
 import MarkdownResponse from './widgets/MarkdownResponse.vue'
 
 import { computed, ref, onMounted, watchEffect } from 'vue'
-import { convertImageUrlToBase64, deepCopy, mockObject, sleep, TaskQueue } from '@/utils/commonUtils'
+import { convertImageUrlToBase64, base64ToBlob, deepCopy, mockObject, sleep, TaskQueue } from '@/utils/commonUtils'
 import { Close, Delete } from '@element-plus/icons-vue'
 import { getContentTypes } from '@/utils/chatUtils'
 import { useGlobalStore } from '@/stores/globalStore.js'
@@ -146,8 +146,12 @@ const contentAsText = computed({
           str += chunk['text']
         } else if (chunk['type'] === 'image_url') {
           var imageUrlShow = chunk['image_url']['url']
-          if (chunk['blobUrl']) {
-            imageUrlShow = chunk['blobUrl']
+          if (chunk['image_url']['url'].startsWith('data:')) { // base64
+            if (!globalStore.blobUrlToBase64Cache[chunk['blob_url']]) {
+              chunk['blob_url'] = base64ToBlob(chunk['image_url']['url'])
+              globalStore.blobUrlToBase64Cache[chunk['blob_url']] = chunk['image_url']['url']
+            }
+            imageUrlShow = chunk['blob_url']
           }
           str += `![<|ON_PANDA_IMAGE|>](${imageUrlShow})`
         } else {
@@ -186,7 +190,7 @@ const contentAsText = computed({
           var imageUrl = match[4];
           const image = { type: 'image_url', image_url: { url: imageUrl } }
           if (imageUrl.startsWith('blob:')) {
-            image.blobUrl = imageUrl
+            image.blob_url = imageUrl
             image.image_url.url = globalStore.blobUrlToBase64Cache[imageUrl]
             console.assert(image.image_url.url, 'blobUrl not found in globalStore.blobUrlToBase64Cache')
           }
