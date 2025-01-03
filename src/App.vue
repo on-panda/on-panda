@@ -62,7 +62,7 @@
       </template>
     </div>
 
-    <el-divider content-position="left">
+    <el-divider content-position="left" style="margin-bottom: 5px;">
       <b> dialog:</b>
     </el-divider>
     <div class="dialogFixedPosition"
@@ -659,6 +659,10 @@ const defaultApiConfig = {
 }
 
 const exampleNameToFunc = {
+  "clear": () => {
+    opreators.pandaState = pandaState
+    pandaState.setEmpty()
+  },
   "default": () => {
     modelName.value = "on-panda"
     opreators.loadMessagesWithPandaTree(messagesDefaultExample)

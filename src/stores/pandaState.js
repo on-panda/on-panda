@@ -1,6 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '@/utils/commonUtils'
-import { messagesDifferent, tokensToSeq } from '@/utils/chatUtils'
+import { messagesDifferent, tokensToSeq, isFinalRoleModelRole } from '@/utils/chatUtils'
 import { useGlobalStore } from './globalStore.js'
 
 const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "give a random float, no other words" }, { role: "assistant", content: "1.27364382", finish_reason: "length" }]
@@ -129,7 +129,7 @@ export class PandaState {
         }
     }
 
-    modelRoles = computed(this?.apiConfig?.value?.model_roles || ["assistant"])
+    modelRoles = computed(() => this?.apiConfig?.value?.model_roles || ["assistant"])
 
     pandaTree = ref({ dialogs: {} })
     // pandaTree = ref(pandaTreeExample)
@@ -202,7 +202,20 @@ export class PandaState {
     }
     setExample = () => {
         this.load(pandaTreeExample)
-        this.currentDialogIndex.value = 1
+    }
+    setEmpty = () => {
+        this.load({
+            dialogs: {
+                1: {
+                    messages: [
+                        // { role: "system", content: "" },
+                        { role: "user", content: "" }],
+                    annotate: {
+                        is_good: null
+                    }
+                }
+            }
+        })
     }
     doNothing = (operation) => {
         const MUST_RECORD_OPERATOR_LIST = ['new_generate']
@@ -338,7 +351,17 @@ export class PandaState {
     }
     previousOperation = computed(() => this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1])
     // default on_policy:true
-    isPreviousOperationOnPolicy = computed(() => (!this.currentDialogData.value?.operations?.length) || this.previousOperation.value.on_policy)
+    isPreviousOperationOnPolicy = computed(() => {
+        // if belong init dialog and no operations, default on_policy:true
+        if (!this.currentDialogData.value?.operations?.length) {
+            if (isFinalRoleModelRole(this.currentDialogData.value?.messages, this.modelRoles.value)) {
+                return true
+            } else {
+                return false
+            }
+        }
+        return this.previousOperation.value?.on_policy
+    })
     beforeOperation = (operation = null) => {
         // Usually shouldn't set opration, if have to, using this.nextNotSameOperationCache
         this.autoFork(operation) // Usually response_modified_type === 'same', and do nothing
