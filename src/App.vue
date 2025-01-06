@@ -654,7 +654,7 @@ const defaultApiConfig = {
     logprobs: true,
     top_logprobs: 20,
     // top_k: 2,
-    max_tokens: 1024,
+    max_tokens: 3072,
     temperature: 0.5,
     stream_options: {
       include_usage: true,
