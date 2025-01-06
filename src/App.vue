@@ -203,7 +203,7 @@
               }" @mouseover="activateLogprobItem = logprobItem"
               @mouseenter="$event.target.style.backgroundColor = '#ddd'"
               @mouseleave="$event.target.style.backgroundColor = ''">
-              <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token_piece || logprobItem.token)
+              <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token)
                 }}</span>
               <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
                 style="white-space: pre-wrap;font-family: Monospace;">:{{
@@ -221,8 +221,12 @@
               Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
           <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
             [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') :
-              activateLogprobItem.bytes
-            }}]</span>
+              activateLogprobItem.bytes }}]
+          </span>
+          <br>
+          <span v-if="activateLogprobItem.token_piece" style="font-family: Monospace;"> token_piece:
+            "{{ activateLogprobItem.token_piece }}"
+          </span>
         </footer>
       </div>
     </div>
