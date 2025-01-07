@@ -3,20 +3,27 @@
     <div style="display :flex;">
       <MessageRole :message="props.message" />
       <span class="stretch" style="margin-right: auto" />
-      <el-tooltip :content="hasContent ? 'Clear' : 'Delete'" placement="top">
-        <el-button :icon="hasContent ? Delete : Close" size="small"
-          style="width: 24px;height: 15px; margin-top: 13px; margin-right: 5px;" @click="async () => {
-            if (usingOpreators) {
-              taskQueue.addTask(async () => await sleep(1))
-              // if not sleep, will cause element-plus.js Uncaught (in promise) TypeError: Cannot read properties of null (reading 'offsetHeight')
-              taskQueue.addTask(async () => props.opreators.clearOrDeleteMessage(messageCache, props.index))
-            } else { $emit('deleteMessage') }
-          }
-            " />
-      </el-tooltip>
+      <div>
+        <el-button ref="isRenderContentEditingButton" v-if="!globalStore.cleanMode && isRenderRole" :icon="Edit"
+          size="small" class="massageOperationButton" @click="isRenderContentEditing = !isRenderContentEditing"
+          :type="isRenderContentEditing ? 'primary' : ''"></el-button>
+        <el-tooltip :content="hasContent ? 'Clear' : 'Delete'" placement="top">
+          <el-button :icon="hasContent ? Delete : Close" size="small" class="massageOperationButton"
+            style="margin-right: 5px;" @click="async () => {
+              if (usingOpreators) {
+                taskQueue.addTask(async () => await sleep(1))
+                // if not sleep, will cause element-plus.js Uncaught (in promise) TypeError: Cannot read properties of null (reading 'offsetHeight')
+                taskQueue.addTask(async () => props.opreators.clearOrDeleteMessage(messageCache, props.index))
+              } else { $emit('deleteMessage') }
+            }
+              " />
+        </el-tooltip>
+      </div>
     </div>
-    <MarkdownResponse v-if="globalStore.cleanMode && isRenderRole" :content="contentAsText"
-      WaitingInfo="Empty message will be ignored" />
+    <p v-if="globalStore.cleanMode && isRenderRole || (isRenderRole && !isRenderContentEditing)"
+      style="margin-top: 5px;margin-bottom: 0px;color: #555; border-radius: 5px; box-shadow: 0 0 0 1px var(--el-input-border-color,var(--el-border-color)) inset; padding:5px 11px">
+      <MessageMarkdown :content="contentAsText" @dblclick="handleRenderContent" />
+    </p>
     <div v-else class="editorAndDetials">
       <div style="display: flex; justify-content: space-between">
         <el-input class="message-content" v-model="contentAsText" type="textarea"
@@ -63,7 +70,7 @@ import MarkdownResponse from './widgets/MarkdownResponse.vue'
 
 import { computed, ref, onMounted, watchEffect } from 'vue'
 import { convertImageUrlToBase64, base64ToBlob, deepCopy, mockObject, sleep, TaskQueue } from '@/utils/commonUtils'
-import { Close, Delete } from '@element-plus/icons-vue'
+import { Close, Delete, Edit } from '@element-plus/icons-vue'
 import { getContentTypes } from '@/utils/chatUtils'
 import { useGlobalStore } from '@/stores/globalStore.js'
 
@@ -129,6 +136,10 @@ const hasContent = computed(() => {
 })
 
 const isRenderRole = computed(() => ['assistant', 'context'].includes(getMessage()['role']))
+
+const isRenderContentEditing = ref(false)
+
+const isRenderContentEditingButton = ref(null)
 
 const contentAsText = computed({
   // convert object content to markdown
@@ -263,11 +274,76 @@ watchEffect(() => {
   }
 })
 
+const handleRenderContent = () => {
+  if (isRenderContentEditingButton.value) {
+    isRenderContentEditingButton.value.ref.classList.remove('shake-button')
+    setTimeout(() => {
+      isRenderContentEditingButton.value.ref.classList.add('shake-button')
+    }, 100)
+  }
+}
+
 </script>
 <style scoped>
 @media (max-width: 600px) {
   .message-content {
     font-size: 16px;
+  }
+}
+
+.massageOperationButton {
+
+  width: 24px;
+  height: 15px;
+  margin-top: 13px;
+}
+
+
+.shake-button {
+  animation: shake 1s;
+}
+
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  10% {
+    transform: translate(-9px, -2px);
+  }
+
+  20% {
+    transform: translate(7px, 5px);
+  }
+
+  30% {
+    transform: translate(-5px, -8px);
+  }
+
+  40% {
+    transform: translate(4px, 6px);
+  }
+
+  50% {
+    transform: translate(-4px, -4px);
+  }
+
+  60% {
+    transform: translate(-6px, 8px);
+  }
+
+  70% {
+    transform: translate(9px, -6px);
+  }
+
+  80% {
+    transform: translate(7px, 3px);
+  }
+
+  90% {
+    transform: translate(-2px, -6px);
   }
 }
 </style>

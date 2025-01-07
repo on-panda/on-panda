@@ -53,7 +53,6 @@ function handleClickInMarkdown(event) {
   if (event.target.tagName === 'IMG') {
     event.target.classList.toggle('rawSizeImg')
   }
-  console.log(event.target.tagName)
 }
 
 </script>
