@@ -1,5 +1,5 @@
 <template>
-  <div class="md-content" v-html="htmlContent"></div>
+  <div class="md-content" v-html="htmlContent" @click="handleClickInMarkdown"></div>
 </template>
 
 <script setup>
@@ -41,6 +41,13 @@ const htmlContent = computed(() => {
   }
   return html
 })
+
+function handleClickInMarkdown(event) {
+  if (event.target.tagName === 'IMG') {
+    window.open(event.target.src, '_blank')
+  }
+}
+
 </script>
 <style>
 /* global CSS */
