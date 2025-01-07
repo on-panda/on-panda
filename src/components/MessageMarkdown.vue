@@ -1,5 +1,6 @@
 <template>
-  <div class="md-content" v-html="htmlContent" @click="handleClickInMarkdown"></div>
+  <div class="md-content" v-html="htmlContent" @dblclick="handleDoubleClickInMarkdown" @click="handleClickInMarkdown">
+  </div>
 </template>
 
 <script setup>
@@ -42,10 +43,17 @@ const htmlContent = computed(() => {
   return html
 })
 
-function handleClickInMarkdown(event) {
+function handleDoubleClickInMarkdown(event) {
   if (event.target.tagName === 'IMG') {
     window.open(event.target.src, '_blank')
   }
+}
+
+function handleClickInMarkdown(event) {
+  if (event.target.tagName === 'IMG') {
+    event.target.classList.toggle('rawSizeImg')
+  }
+  console.log(event.target.tagName)
 }
 
 </script>
@@ -59,6 +67,7 @@ function handleClickInMarkdown(event) {
   box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 8px;
   margin-left: 10px;
   margin-right: 10px;
+  cursor: pointer;
 }
 
 @media (min-width: 600px) {
@@ -66,5 +75,11 @@ function handleClickInMarkdown(event) {
     max-width: 512px;
     max-height: 512px;
   }
+}
+
+
+.md-content .rawSizeImg {
+  max-width: initial;
+  max-height: initial;
 }
 </style>

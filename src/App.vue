@@ -37,12 +37,16 @@
       <br>
       <br>
       Usage:<br>
-      - Move to the problematic word, and alternative candidates will appear. <br>
-      - Click a candidate to continue generating text based on the chosen word. <br>
-      - Double-click a word to edit it, and the LLM will seamlessly continue writing. <br>
-      - Select a piece of text and then manually edit it or have the LLM optimize it. <br>
-      - Support pasting image on message editing area to enable VLM. <br>
-      - Double click the role to edit the role name. <br>
+      <b>Basic Features:</b><br>
+      - Hover over any word to see alternative suggestions<br>
+      - Click a suggestion to continue generating from that point<br>
+      - Double-click any word to manually edit and continue<br>
+      - Select text to edit or let AI optimize it<br>
+
+      <b>Advanced Features:</b><br>
+      - Paste images directly for visual language model support<br>
+      - Single-click image to enlarge, double-click to open<br>
+      - Double-click role labels to edit them<br>
 
       <br><b>Beginner's tips:</b>
       <br>
