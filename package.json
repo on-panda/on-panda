@@ -10,7 +10,7 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "vue": "^3.4.29",
+    "vue": "^3.5.11",
     "element-plus": "^2.3.8",
     "@element-plus/icons-vue": "^2.1.0",
     "@ryanxcharles/markdown-it-katex": "^4.0.2",
@@ -19,7 +19,8 @@
     "katex": "^0.16.9",
     "markdown-it": "^13.0.2",
     "pinia": "^2.1.7",
-    "openai": "^4.58.1"
+    "openai": "^4.58.1",
+    "lz-string": "^1.4.4"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.5",

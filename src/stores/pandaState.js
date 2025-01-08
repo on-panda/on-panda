@@ -2,6 +2,56 @@ import { ref, computed, watch } from 'vue'
 import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '@/utils/commonUtils'
 import { messagesDifferent, tokensToSeq, isFinalRoleModelRole } from '@/utils/chatUtils'
 import { useGlobalStore } from './globalStore.js'
+import LZString from 'lz-string'
+
+
+function dumpCacheTree(cacheTree) {
+    cacheTree = deepCopy(cacheTree)
+    for (var dialogKey in cacheTree) {
+        if (cacheTree[dialogKey].tokens) {
+            var tokens = cacheTree[dialogKey].tokens
+            var tokenLen = tokens.length
+            for (var tokenIndex = 0; tokenIndex < tokenLen; tokenIndex++) {
+                var token = tokens[tokenIndex]
+                // clear top_logprobs in cache tokens
+                if (token.logprobs?.content && token.logprobs.content[0]) {
+                    delete token.logprobs.content[0].top_logprobs
+                    delete token.logprobs.content[0].bytes
+                    delete token.logprobs.content[0].token_piece
+                }
+                // clear items that value is null
+                for (let key in token) {
+                    if (token[key] === null) {
+                        delete token[key]
+                    }
+                }
+                // clear items in delta that value is null
+                for (let key in token.delta) {
+                    if (token.delta[key] === null) {
+                        delete token.delta[key]
+                    }
+                }
+                if (![0, tokenLen - 1].includes(tokenIndex)) {
+                    delete token.model
+                    delete token.usage
+                }
+
+            }
+        }
+    }
+    const cacheTreeString = JSON.stringify(cacheTree)
+    const cacheTreeStringCompressed = LZString.compressToBase64(cacheTreeString)
+    // compress effciency test:
+    // panda.json with full cache_tree: 6,700 KB
+    // return cacheTree  // with cleared cache_tree: 306 KB
+    // return cacheTreeString  // with cleared cache_tree string : 136 KB
+    // with 'lz-string' LZString.compress(): 27 KB (compressed 0.5%)
+    // with 'lz-string-base64' LZString.compressToBase64(): 24 KB (compressed 0.5%)
+    return {
+        compressed_type: 'lz-string-base64',
+        compressed: cacheTreeStringCompressed,
+    }
+}
 
 const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "give a random float, no other words" }, { role: "assistant", content: "1.27364382", finish_reason: "length" }]
 const dialogExample = {
@@ -263,6 +313,7 @@ export class PandaState {
         } else {
             delete this.pandaTree.value.deleted_dialogs[currentKey]
         }
+        delete this.cacheTree[currentKey]
     }
     deleteCurrentDialog = () => {
         this.beforeOperation()
@@ -302,7 +353,7 @@ export class PandaState {
         this.pandaTree.value.update_time = (new Date()).getTime()
         const dumped = deepCopy(this.pandaTree.value)
         if (includeCache) {
-            dumped.cache_tree = this.cacheTree
+            dumped.cache_tree = dumpCacheTree(this.cacheTree)
         }
         // TODO: delete items can be recomputed "is_prompt_modified" "is_response_modified" response_modified_type?
         return dumped
@@ -345,8 +396,15 @@ export class PandaState {
         pandaTree = this.setDefaultToPandaTree(pandaTree)
         this.clearCache()
         if (pandaTree.cache_tree) {
-            this.cacheTree = pandaTree.cache_tree
+            var cacheTree = typeof pandaTree.cache_tree === 'string' ? JSON.parse(pandaTree.cache_tree) : pandaTree.cache_tree
+            if (cacheTree.compressed_type === 'lz-string') { // abandon original lz-string `LZString.compress()`, bigger size and has garbled characters
+                cacheTree = JSON.parse(LZString.decompress(cacheTree.compressed))
+            }
+            if (cacheTree.compressed_type === 'lz-string-base64') {
+                cacheTree = JSON.parse(LZString.decompressFromBase64(cacheTree.compressed))
+            }
             delete pandaTree.cache_tree
+            this.cacheTree = cacheTree
         }
         this.pandaTree.value = pandaTree
         // this.switchDialogByIndex(this.dialogMaxIndexRemain)  // Will fork by is_prompt_modified=true, may by dialogComputed update not in time?
