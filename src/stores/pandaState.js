@@ -472,59 +472,6 @@ export class PandaState {
             this.writeBack(operation)
         }
     }
-    lazyCheck = async () => {
-        var hashComputed = await hashObjectSHA256Base64(this.dialogComputed.value)
-        var hashCurrent = await hashObjectSHA256Base64(this.currentDialogData.value)
-        console.log('Change:', hashComputed == hashCurrent)
-        console.log(hashComputed, hashCurrent)
-        console.log(this.dialogComputed.value)
-
-        if ("autoFork" && false) {
-            const isFinalRoleModelRoleComputed = isFinalRoleModelRole(this.dialogComputed.value.messages)
-            const isFinalRoleModelRoleCurrent = isFinalRoleModelRole(this.currentDialogData.value.messages)
-            if (!isFinalRoleModelRoleCurrent) {
-                this.writeBack()
-            } else if (!isFinalRoleModelRoleComputed) {
-                this.fork()
-            } else { // both final role is model role
-                const promptDiff = messagesDifferent(getPromptMessages(this.dialogComputed.value.messages), getPromptMessages(this.currentDialogData.value.messages))
-                const responeDiff = messageDifferent(getResponeMessages(this.dialogComputed.value.messages), getResponeMessages(this.currentDialogData.value.messages))
-
-                var isPreviousResponseOnPolicy
-                var isNewResponseOnPolicy
-                if (promptDiff.isDifferent) {
-                    if (isPreviousDialogOnPolicy) {
-                        this.fork()
-                    } else {
-                        this.writeBack()
-                    }
-                } else {
-                    if (responeDiff.diffType === "bifurcation") {
-                        this.writeBack()
-                    }
-
-                    if (isNewResponseOnPolicy) {
-
-                    }
-                }
-
-                // if new message, fork
-
-                // if both have new message, write back?
-
-                // if prompt same, respone same, do nothing
-
-                // if prompt different, respone same, write back?
-
-                // if respone different, but contiuned write back
-
-                // if respone different, but truncated, fork? (different of EOT and not EOT)
-
-                // if respone different, forked, fork
-
-            }
-        }
-    }
 }
 
 export const pandaState = new PandaState()
