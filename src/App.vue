@@ -306,15 +306,13 @@
         }))" placeholder="Select model" style="width: 440px" size="small" />
       </el-form-item>
 
-      <div style="display :flex">
-        <span class="stretch" style="margin-right: auto" v-if="isMobile" />
-        <span v-for="_ in (isMobile ? 0 : 31)">&nbsp;</span>
+      <div style="line-height: 1.85;margin-top: -20px;margin-bottom: -5px;" :align="isMobile ? 'right' : ''">
+        <span v-for="_ in (isMobile ? 0 : 30)">&nbsp;</span>
         <template v-for="(value, key) in modelNameTags">
           <el-tag :type="modelName.includes(value) ? 'primary' : 'info'" @click="modelName = value"
-            style="cursor: pointer;">
+            style="cursor: pointer;margin-left: 5px;">
             {{ key }}
           </el-tag>
-          &nbsp;
         </template>
       </div>
       <br>

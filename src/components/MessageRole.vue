@@ -1,9 +1,9 @@
 <template>
 
-    <p class="role-name" v-show="!editingRoleName" @dblclick="focus" :style="messageRoleNameStyle(props.message)"> {{
-        props.message['role'] || 'unknown' }}:</p>
-    <el-input ref="roleNameInput" v-show="editingRoleName" @blur="blur()" @keydown.enter="blur()"
-        v-model="props.message['role']" style="width: 100px;" />
+    <p class="role-name" v-show="!editingRoleName" @dblclick="focus" :style="messageRoleNameStyle(roleCache)"> {{
+        roleCache || 'unknown' }}:</p>
+    <el-input ref="roleNameInput" v-show="editingRoleName" @blur="blur()" @keydown.enter="blur()" v-model="roleCache"
+        style="width: 100px;" />
 
 
 </template>
@@ -22,6 +22,7 @@ function focus() {
 
 function blur() {
     editingRoleName.value = false
+    props.message.role = roleCache.value
     opreatorsEditRole.after()
 }
 
@@ -32,10 +33,12 @@ const props = defineProps({
     },
 })
 
+const roleCache = ref(props.message?.role)
+
 const editingRoleName = ref(false)
 
-const messageRoleNameStyle = (message) => {
-    var role = message['role'] ? toValue(message)['role'] : 'unknown'
+const messageRoleNameStyle = (role) => {
+    role = role || 'unknown'
     return {
         color: { 'user': 'orange', 'assistant': 'green', 'context': "#888", "system": "#888", 'unknown': "#888" }[role] || "#f55",
         fontSize: 'larger',

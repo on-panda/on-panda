@@ -307,43 +307,43 @@ const handleRenderContent = () => {
 
   0%,
   100% {
-    transform: translate(0, 0);
+    transform: translate(0, 0) scale(1);
   }
 
   10% {
-    transform: translate(-9px, -2px);
+    transform: translate(-9px, -2px) scale(2);
   }
 
   20% {
-    transform: translate(7px, 5px);
+    transform: translate(7px, 5px) scale(2);
   }
 
   30% {
-    transform: translate(-5px, -8px);
+    transform: translate(-5px, -8px) scale(2);
   }
 
   40% {
-    transform: translate(4px, 6px);
+    transform: translate(4px, 6px) scale(2);
   }
 
   50% {
-    transform: translate(-4px, -4px);
+    transform: translate(-4px, -4px) scale(2);
   }
 
   60% {
-    transform: translate(-6px, 8px);
+    transform: translate(-6px, 8px) scale(2);
   }
 
   70% {
-    transform: translate(9px, -6px);
+    transform: translate(9px, -6px) scale(2);
   }
 
   80% {
-    transform: translate(7px, 3px);
+    transform: translate(7px, 3px) scale(2);
   }
 
   90% {
-    transform: translate(-2px, -6px);
+    transform: translate(-2px, -6px) scale(2);
   }
 }
 </style>
