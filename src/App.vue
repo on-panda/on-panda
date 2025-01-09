@@ -107,7 +107,13 @@
                 @click="requestPromptLogprobs" />
               @click="requestPromptLogprobs" />
             </el-tooltip>
-            <el-tooltip content="copy" placement="top">
+            <el-tooltip placement="top" effect="light">
+              <template #content>
+                Copy response, or <br>
+                <el-button size="small" @click="duplicateWindow(pandaState)">
+                  Duplicate Window
+                </el-button>
+              </template>
               <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
                 @click="copyToClipboard(finalMessage.content)" />
             </el-tooltip>
@@ -378,7 +384,7 @@ import DialogControlPannel from './components/DialogControlPannel.vue'
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useGlobalStore } from './stores/globalStore.js'
 import { useEventListener, closeFloatPannelMeta, buildMockObject } from '@/utils/commonUtils.js'
-import { p, escapeHTML, copyToClipboard, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils.js'
+import { p, escapeHTML, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils.js'
 import { tokensToSeq, normalizeRequest, messageToSeq } from './utils/chatUtils.js'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close, InfoFilled } from '@element-plus/icons-vue'
@@ -1582,24 +1588,25 @@ pandaState.registerDialogComputed(dialogComputed)
 pandaState.registerApiConfig(apiConfig)
 pandaState.registerTokens(tokens)
 
-
-var exampleFunc = exampleNameToFunc['default']
-if (globalStore.debug) {
-  // var exampleFunc = exampleNameToFunc['annotate']
-}
-// var exampleFunc = exampleNameToFunc['image']
-setTimeout(async function launchExampleFunc() {
-  await exampleFunc()
-  p("tokens", tokens)
-  p("patchs", patchs)
-}, 2000)
-
 onMounted(async () => {
   scrollDiv.value.addEventListener('scroll', handleReactiveFunctions);
   try {
     await import('@/assets/secret/workaround.js');
   } catch (error) {
     console.error('Failed to load workaround.js:', error);
+  }
+
+  if (!tryLoadDuplicateWindow(pandaState)) { // duplicate window has higher priority
+    var exampleFunc = exampleNameToFunc['default']
+    if (globalStore.debug) {
+      // var exampleFunc = exampleNameToFunc['annotate']
+    }
+    // var exampleFunc = exampleNameToFunc['image']
+    setTimeout(async function launchExampleFunc() {
+      await exampleFunc()
+      p("tokens", tokens)
+      p("patchs", patchs)
+    }, 2000)
   }
 })
 

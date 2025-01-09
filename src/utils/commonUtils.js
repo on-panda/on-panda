@@ -182,6 +182,24 @@ export async function copyToClipboard(string) {
   })
 }
 
+export function duplicateWindow(pandaState) {
+  // dump pandaState to loaclStorage
+  // and open a new window with the same url
+  const stateJson = pandaState.dump(true)
+  localStorage.setItem('pandaStateDumpedForDuplicateWindow', JSON.stringify({pandaState: stateJson}))
+  window.open(window.location.href)
+}
+
+export function tryLoadDuplicateWindow(pandaState) {
+  // pop pandaState from loaclStorage, then load it
+  const stateJson = localStorage.getItem('pandaStateDumpedForDuplicateWindow')
+  if (stateJson) {
+    pandaState.load(JSON.parse(stateJson).pandaState)
+    localStorage.removeItem('pandaStateDumpedForDuplicateWindow')
+    return true
+  }
+  return false
+}
 
 export async function convertImageUrlToBase64(imageUrl, fetchCall) {
   fetchCall = fetchCall || fetch // Use the default fetch if not provided
