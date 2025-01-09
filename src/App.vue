@@ -115,7 +115,7 @@
                 </el-button>
               </template>
               <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
-                @click="copyToClipboard(finalMessage.content)" />
+                @click="copyToClipboard(finalMessage.content)" @dblclick="duplicateWindow(pandaState)" />
             </el-tooltip>
             &nbsp;&nbsp;&nbsp;
             <hr v-if="!isMobile" style="color:#eee; margin-top: -5px; margin-bottom: 4px">
