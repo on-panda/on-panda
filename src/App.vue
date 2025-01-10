@@ -325,24 +325,24 @@
       <br>
 
       <el-form-item label="temperature">
-        <el-input-number v-model="apiConfig.chat_config.temperature" :min="0" :max="10" :step="0.01" size="small" />
+        <el-input-number v-model="chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
       </el-form-item>
 
       <el-form-item label="max_tokens">
-        <el-input-number v-model="apiConfig.chat_config.max_tokens" :min="1" :max="1048576" :step="1" size="small" />
+        <el-input-number v-model="chatConfig.max_tokens" :min="1" :max="1048576" :step="1" size="small" />
       </el-form-item>
 
       <el-form-item label="top_p">
-        <el-input-number v-model="apiConfig.chat_config.top_p" :min="0" :max="1" :step="0.01" size="small" />
+        <el-input-number v-model="chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
       </el-form-item>
 
       <!-- <el-form-item label="Freq. Penalty">
-        <el-input-number v-model="apiConfig.chat_config.frequency_penalty" :min="0" :max="10" :step="0.01"
+        <el-input-number v-model="chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01"
           size="small" />
       </el-form-item> -->
 
       <el-form-item label="top_logprobs">
-        <el-input-number v-model="apiConfig.chat_config.top_logprobs" :min="0" :max="50" :step="1" size="small" />
+        <el-input-number v-model="chatConfig.top_logprobs" :min="0" :max="50" :step="1" size="small" />
       </el-form-item>
 
       <el-form-item label="continue generating">
@@ -659,17 +659,20 @@ const defaultApiConfig = {
     model: 'meta-llama/Meta-Llama-3-8B-Instruct',
     // model: 'Qwen/Qwen2.5-1.5B-Instruct',
     messages: messages,
-    stream: true,
-    logprobs: true,
-    top_logprobs: 20,
-    // top_k: 2,
-    max_tokens: 3072,
-    temperature: 0.5,
-    stream_options: {
-      include_usage: true,
-    },
   },
 }
+
+const chatConfig = ref({
+  stream: true,
+  logprobs: true,
+  top_logprobs: 20,
+  // top_k: 2,
+  max_tokens: 3072,
+  temperature: 0.5,
+  stream_options: {
+    include_usage: true,
+  },
+})
 
 const exampleNameToFunc = {
   "clear": () => {
@@ -895,19 +898,25 @@ const modelNameTags = {
   'claude': 'claude-3-5-sonnet-20241022',
 }
 
-const apiConfig = computed(() => {
-  var apiConfig = defaultApiConfig
+const apiConfigChosen = computed(() => {
+  var apiConfigChosen = defaultApiConfig
   for (const [key, config] of Object.entries(apiConfigs.value)) {
     if (key.includes(modelName.value)) {
-      apiConfig = config
+      apiConfigChosen = config
       break
     }
   }
+  return apiConfigChosen
+})
+
+const apiConfig = computed(() => {
   // update apiConfig with defaultApiConfig
+  var apiConfig = apiConfigChosen.value
   apiConfig.client_config = { ...defaultApiConfig.client_config, ...apiConfig.client_config }
-  apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfig.chat_config }
+  apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfig.chat_config, ...chatConfig.value }
   apiConfig = { ...defaultApiConfig, ...apiConfig }
   apiConfig.client_config.base_url = apiConfig.client_config.base_url.replace('${origin}', window.location.origin)
+
   return apiConfig
 })
 
