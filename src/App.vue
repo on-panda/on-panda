@@ -194,7 +194,8 @@
 
 
     <div @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true"
-      ref="floatPatchPannelRef" style="position: absolute; padding-top: 4px;" :style="{
+      ref="floatPatchPannelRef"
+      style="position: absolute; padding-top: 4px;background-color: rgba(200, 200, 200, 0.3); " :style="{
         position: 'absolute',
         left: `${floatPatchPannel.x}px`,
         top: `${floatPatchPannel.y}px`,
@@ -562,8 +563,8 @@ function setFloatSelectedOpreationPannelBelow() {
   endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
   var endNodeRect = endNode.getBoundingClientRect()
   const pixelsPerButton = isMobile.value ? 45 : 35
-  floatSelectedOpreationPannel.value.x = endNodeRect.right + window.scrollX - pixelsPerButton * document.querySelectorAll('.floatSelectedOpreationPannelButtons button').length
-  floatSelectedOpreationPannel.value.x = Math.max(floatSelectedOpreationPannel.value.x, 10)
+  const x = endNodeRect.right + window.scrollX - pixelsPerButton * document.querySelectorAll('.floatSelectedOpreationPannelButtons button').length
+  floatSelectedOpreationPannel.value.x = Math.max(x, 10)
   floatSelectedOpreationPannel.value.y = endNodeRect.bottom + window.scrollY + 2
 }
 
