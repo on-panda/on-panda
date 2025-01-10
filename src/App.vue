@@ -906,6 +906,11 @@ const apiConfigChosen = computed(() => {
       break
     }
   }
+  for (const key in chatConfig.value) { // apply apiConfigChosen.chat_config
+    if (key in apiConfigChosen.chat_config) {
+      chatConfig.value[key] = apiConfigChosen.chat_config[key]
+    }
+  }
   return apiConfigChosen
 })
 
