@@ -658,7 +658,6 @@ const defaultApiConfig = {
   "chat_config": {
     model: 'meta-llama/Meta-Llama-3-8B-Instruct',
     // model: 'Qwen/Qwen2.5-1.5B-Instruct',
-    messages: messages,
   },
 }
 
@@ -898,6 +897,8 @@ const modelNameTags = {
   'claude': 'claude-3-5-sonnet-20241022',
 }
 
+const chatConfigKeys = Object.keys(chatConfig.value)
+
 const apiConfigChosen = computed(() => {
   var apiConfigChosen = defaultApiConfig
   for (const [key, config] of Object.entries(apiConfigs.value)) {
@@ -906,7 +907,7 @@ const apiConfigChosen = computed(() => {
       break
     }
   }
-  for (const key in chatConfig.value) { // apply apiConfigChosen.chat_config
+  for (const key of chatConfigKeys) { // apply apiConfigChosen.chat_config
     if (key in apiConfigChosen.chat_config) {
       chatConfig.value[key] = apiConfigChosen.chat_config[key]
     }
@@ -916,7 +917,7 @@ const apiConfigChosen = computed(() => {
 
 const apiConfig = computed(() => {
   // update apiConfig with defaultApiConfig
-  var apiConfig = apiConfigChosen.value
+  var apiConfig = { ...apiConfigChosen.value }  // copy instead of reference
   apiConfig.client_config = { ...defaultApiConfig.client_config, ...apiConfig.client_config }
   apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfig.chat_config, ...chatConfig.value }
   apiConfig = { ...defaultApiConfig, ...apiConfig }
