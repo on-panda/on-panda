@@ -109,7 +109,7 @@
             </el-tooltip>
             <el-tooltip placement="top" effect="light">
               <template #content>
-                Copy response, or <br>
+                Click to copy response, <br>Or double-click to <br>
                 <el-button size="small" @click="duplicateWindow(pandaState)">
                   Duplicate Window
                 </el-button>

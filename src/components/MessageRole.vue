@@ -1,7 +1,8 @@
 <template>
 
-    <p class="role-name" v-show="!editingRoleName" @dblclick="focus" :style="messageRoleNameStyle(roleCache)"> {{
-        roleCache || 'unknown' }}:</p>
+    <p class="role-name" v-show="!editingRoleName" @dblclick="focus" :style="messageRoleNameStyle(props.message.role)">
+        {{
+            props.message.role || 'unknown' }}:</p>
     <el-input ref="roleNameInput" v-show="editingRoleName" @blur="blur()" @keydown.enter="blur()" v-model="roleCache"
         style="width: 100px;" />
 
@@ -15,6 +16,7 @@ const roleNameInput = ref(null)
 const opreatorsEditRole = inject('opreators.editRole', mockObject)
 
 function focus() {
+    roleCache.value = props.message.role
     opreatorsEditRole.before()
     editingRoleName.value = true
     roleNameInput.value.focus()
@@ -33,7 +35,10 @@ const props = defineProps({
     },
 })
 
-const roleCache = ref(props.message?.role)
+// roleCache can't change when props.message.role change
+// const roleCache = ref(props.message?.role)  
+
+const roleCache = ref(null)
 
 const editingRoleName = ref(false)
 
