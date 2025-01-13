@@ -63,7 +63,7 @@
 </template>
 
 <script setup>
-import MessageRole from './MessageRole.vue'
+import MessageRole from './widgets/MessageRole.vue'
 import MarkdownRender from './widgets/MarkdownRender.vue'
 import EditableStringAttribute from './EditableStringAttribute.vue'
 import MarkdownResponse from './widgets/MarkdownResponse.vue'
