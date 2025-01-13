@@ -109,3 +109,37 @@ export function getContentTypes(input) {
         return [...new Set(contentTypes)]
     }
 }
+
+export function clearTokenObject(token) {
+    // inplace clear items that are not needed in token object
+    // clear top_logprobs in cache tokens
+    if (token.logprobs?.content && token.logprobs.content[0]) {
+        delete token.logprobs.content[0].top_logprobs
+        delete token.logprobs.content[0].bytes
+        delete token.logprobs.content[0].token_piece
+    }
+    // clear items that value is null
+    for (let key in token) {
+        if (token[key] === null) {
+            delete token[key]
+        }
+    }
+    // clear items in delta that value is null
+    for (let key in token.delta) {
+        if (token.delta[key] === null) {
+            delete token.delta[key]
+        }
+    }
+}
+
+export function recordAsRejectedToken(token) {
+    var rejected_token = deepCopy(token)
+    clearTokenObject(rejected_token)
+    delete rejected_token.model
+    delete rejected_token.usage
+    delete rejected_token.index
+    delete rejected_token.delta?.role
+    delete rejected_token.pruned
+    delete rejected_token.bifurcationPoint
+    return rejected_token
+}

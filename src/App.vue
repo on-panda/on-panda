@@ -386,7 +386,7 @@ import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useGlobalStore } from './stores/globalStore.js'
 import { useEventListener, closeFloatPannelMeta, buildMockObject } from '@/utils/commonUtils.js'
 import { p, escapeHTML, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils.js'
-import { tokensToSeq, normalizeRequest, messageToSeq } from './utils/chatUtils.js'
+import { tokensToSeq, normalizeRequest, messageToSeq, recordAsRejectedToken } from './utils/chatUtils.js'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close, InfoFilled } from '@element-plus/icons-vue'
 
@@ -1152,6 +1152,8 @@ class OpreatorCenter {
     this.pandaState.afterOperation({
       operator: "continue_with_chosen",
       on_policy: true,
+      continue_with_chosen: logprobItem,  // chosen_top_logprob
+      rejected_token: recordAsRejectedToken(token),
     }, true)
     requestLlmServer(messagesComputed.value)
     if (isMobile.value) {
@@ -1165,6 +1167,8 @@ class OpreatorCenter {
     this.pandaState.afterOperation({
       operator: "continue_with_input",
       on_policy: true,
+      continue_with_input: { input_patch: continuePrefix },
+      rejected_token: recordAsRejectedToken(token),
     }, true)
     requestLlmServer(messagesComputed.value)
   }

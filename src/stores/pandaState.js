@@ -1,6 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '@/utils/commonUtils'
-import { messagesDifferent, tokensToSeq, isFinalRoleModelRole } from '@/utils/chatUtils'
+import { messagesDifferent, tokensToSeq, isFinalRoleModelRole, clearTokenObject } from '@/utils/chatUtils'
 import { useGlobalStore } from './globalStore.js'
 import LZString from 'lz-string'
 
@@ -13,24 +13,7 @@ function dumpCacheTree(cacheTree) {
             var tokenLen = tokens.length
             for (var tokenIndex = 0; tokenIndex < tokenLen; tokenIndex++) {
                 var token = tokens[tokenIndex]
-                // clear top_logprobs in cache tokens
-                if (token.logprobs?.content && token.logprobs.content[0]) {
-                    delete token.logprobs.content[0].top_logprobs
-                    delete token.logprobs.content[0].bytes
-                    delete token.logprobs.content[0].token_piece
-                }
-                // clear items that value is null
-                for (let key in token) {
-                    if (token[key] === null) {
-                        delete token[key]
-                    }
-                }
-                // clear items in delta that value is null
-                for (let key in token.delta) {
-                    if (token.delta[key] === null) {
-                        delete token.delta[key]
-                    }
-                }
+                clearTokenObject(token)
                 if (![0, tokenLen - 1].includes(tokenIndex)) {
                     delete token.model
                     delete token.usage
