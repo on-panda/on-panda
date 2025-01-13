@@ -76,9 +76,34 @@ function handleClickInMarkdown(event) {
   }
 }
 
-
 .md-content .rawSizeImg {
   max-width: initial;
   max-height: initial;
+}
+
+.md-content {
+  pre code {
+    font-family: monospace;
+    font-size: 13px;
+  }
+
+  /* Code block container */
+  pre code {
+    background-color: #f3f3f3;
+    border: 1px solid #fff;
+    border-radius: 3px;
+    padding: 10px;
+    overflow: auto;
+    line-height: 1.45;
+  }
+
+  /* Inline code */
+  p code {
+    background-color: #eee;
+    border: 0.5px solid #ccc;
+    border-radius: 3px;
+    padding: 0px 3px;
+    display: inline-block;
+  }
 }
 </style>
