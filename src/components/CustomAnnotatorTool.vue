@@ -5,7 +5,7 @@
                 v-if="props.tool.tips || (!props.tool.disabled)">
                 <template #content>
                     Type: <b>{{ props.tool.type }}</b><br>
-                    <MessageMarkdown :content="props.tool.tips" />
+                    <MarkdownRender :content="props.tool.tips" />
                 </template>
                 <span>{{ props.tool.name }}</span>
             </el-tooltip>
@@ -36,7 +36,7 @@
                     :disabled="props.tool.disabled" />
             </div>
             <div v-if="props.tool.type == 'markdown'" style="color: #555;">
-                <MessageMarkdown :content="props.tool.markdown" />
+                <MarkdownRender :content="props.tool.markdown" />
             </div>
         </div>
     </el-form-item>
@@ -44,7 +44,7 @@
 <script setup>
 
 import CheckboxWidgetSupportNull from './widgets/CheckboxWidgetSupportNull.vue';
-import MessageMarkdown from './MessageMarkdown.vue';
+import MarkdownRender from './widgets/MarkdownRender.vue';
 
 
 const props = defineProps({

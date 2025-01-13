@@ -22,7 +22,7 @@
     </div>
     <p v-if="globalStore.cleanMode && isRenderRole || (isRenderRole && !isRenderContentEditing)"
       style="margin-top: 5px;margin-bottom: 0px;color: #555; border-radius: 5px; box-shadow: 0 0 0 1px var(--el-input-border-color,var(--el-border-color)) inset; padding:5px 11px">
-      <MessageMarkdown :content="contentAsText" @dblclick="handleRenderContent" />
+      <MarkdownRender :content="contentAsText" @dblclick="handleRenderContent" />
     </p>
     <div v-else class="editorAndDetials">
       <div style="display: flex; justify-content: space-between">
@@ -49,7 +49,7 @@
         <summary>
           <small style="color: #888;">rendered markdown:</small>
         </summary>
-        <MessageMarkdown :content="contentAsText" />
+        <MarkdownRender :content="contentAsText" />
         <hr style="margin-top:0px;color:#ccc">
       </details>
     </div>
@@ -64,7 +64,7 @@
 
 <script setup>
 import MessageRole from './MessageRole.vue'
-import MessageMarkdown from './MessageMarkdown.vue'
+import MarkdownRender from './widgets/MarkdownRender.vue'
 import EditableStringAttribute from './EditableStringAttribute.vue'
 import MarkdownResponse from './widgets/MarkdownResponse.vue'
 

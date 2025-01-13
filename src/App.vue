@@ -133,7 +133,7 @@
             <span v-if="bitTokens.length > 1"> ｜
               <el-tooltip class="" effect="light" placement="bottom" raw-content>
                 <template #content>
-                  <MessageMarkdown
+                  <MarkdownRender
                     content="${\text{bits}} = - \sum_{i} \log_2(p_i)$. // note for vLLM server model: 
                   Logprob value are affected by sampling parameters, click: [🔗URL](https://github.com/vllm-project/vllm/issues/9453)" />
                 </template>
@@ -353,7 +353,7 @@
           &nbsp;
           <el-tooltip class="" effect="light" placement="top" raw-content>
             <template #content>
-              <MessageMarkdown
+              <MarkdownRender
                 :content="'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> ' + CONTINUE_PROMPT" />
             </template>
             <el-icon>
@@ -378,7 +378,7 @@ import { onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import Message from './components/Message.vue'
 import MessageRole from './components/MessageRole.vue'
-import MessageMarkdown from './components/MessageMarkdown.vue'
+import MarkdownRender from './components/widgets/MarkdownRender.vue'
 import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import DialogControlPannel from './components/DialogControlPannel.vue'
 

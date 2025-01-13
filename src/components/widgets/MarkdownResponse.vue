@@ -6,14 +6,14 @@
             </p>
         </div>
         <p> <!-- Removing the p tag will cause unstable rendering in stream mode -->
-            <MessageMarkdown :content="props.content || ''" style="background-color: #eee;" />
+            <MarkdownRender :content="props.content || ''" style="background-color: #eee;" />
         </p>
     </div>
 </template>
 
 <script setup>
 
-import MessageMarkdown from '../MessageMarkdown.vue'
+import MarkdownRender from './MarkdownRender.vue'
 
 const props = defineProps({
     content: {
