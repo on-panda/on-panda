@@ -96,9 +96,9 @@
             <el-tooltip v-if="requestStatus.generating" content="stop generating" placement="top">
               <el-button :icon="VideoPause" size="small" @click="opreators.stopGenerating()" />
             </el-tooltip>
-            <el-tooltip content="try again" placement="top">
+            <!-- <el-tooltip content="try again" placement="top">
               <el-button :icon="Refresh" size="small" @click="opreators.newGenerate()" />
-            </el-tooltip>
+            </el-tooltip> -->
             <el-tooltip v-if="0" content="edit (TBD)" placement="top">
               <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
             </el-tooltip>
@@ -107,7 +107,7 @@
                 @click="requestPromptLogprobs" />
               @click="requestPromptLogprobs" />
             </el-tooltip>
-            <el-tooltip placement="top" effect="light">
+            <el-tooltip placement="top-end" effect="light">
               <template #content>
                 Click to copy response, <br>Or double-click to <br>
                 <el-button size="small" @click="duplicateWindow(pandaState)">
