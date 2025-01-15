@@ -250,7 +250,7 @@
     }" style="display: flex">
       <textarea type="text" placeholder="submit: `↵`; newline: `shift+↵`" style="height: 25px; width:auto;"
         class="floatInputPatchInput" @focus="$event.target.select()"
-        @keydown.enter="if (!$event.shiftKey) { opreators.continueWithInput(floatInputPatch.attachedPatch.tokens.find(x => x.delta?.content?.length), $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
+        @keydown.enter="if (!$event.shiftKey) { opreators.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
     </div>
 
     <div ref='floatSelectedOpreationPannelRef' class="floatSelectedOpreationPannel"
