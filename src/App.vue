@@ -1300,7 +1300,7 @@ function probOfToken(token) {
   var prob = Math.exp(logprob)
 
   if (typeof logprob !== 'number') {
-    if (token.tokenIndex === 0 && !('content' in token.delta)) {
+    if (token.tokenIndex === 0 && !(token.delta.content)) {
       // if first role token has no prob and will in first patch
       prob = 1
     }
