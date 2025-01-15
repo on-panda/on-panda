@@ -90,7 +90,7 @@ function handleClickInMarkdown(event) {
   /* Code block container */
   pre code {
     background-color: #f3f3f3;
-    border: 1px solid #fff;
+    border: 4px solid #fff;
     border-radius: 3px;
     padding: 10px;
     overflow: auto;

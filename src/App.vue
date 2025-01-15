@@ -1061,7 +1061,7 @@ async function requestLlmServer(messages) {
       if (streamIndex === 0) { // first token
         clearTimeout(firstTokenTimeoutId)
       }
-      if (continue_final_message && streamIndex == 1 && token.delta.content == lastMessageContent) {
+      if (continue_final_message && streamIndex <= 1 && token.delta.content == lastMessageContent) {
         // avoid vllm echo bug https://github.com/vllm-project/vllm/issues/10111
         // TODO: remove this after vllm fix the bug
         continue
