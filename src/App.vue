@@ -1365,6 +1365,7 @@ function createSpanInPatchSpanHTML(textContent) {
   span.style['color'] = "rgb(180,180,180)"
   span.style['size'] = "small"
   span.style['user-select'] = "none"
+  span.style['-webkit-user-select'] = "none"  // for safari
   span.style['margin-left'] = "10px"
   return span.outerHTML
 }
