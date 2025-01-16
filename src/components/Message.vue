@@ -24,7 +24,7 @@
       style="margin-top: 5px;margin-bottom: 0px;color: #555; border-radius: 5px; box-shadow: 0 0 0 1px var(--el-input-border-color,var(--el-border-color)) inset; padding:5px 11px">
       <MarkdownRender :content="contentAsText" @dblclick="handleRenderContent" />
     </p>
-    <div v-else class="editorAndDetials">
+    <div v-else class="editorAndDetails">
       <div style="display: flex; justify-content: space-between">
         <el-input class="message-content" v-model="contentAsText" type="textarea"
           placeholder="Empty message will be ignored" :autosize="{ minRows: 2, maxRows: 50 }" @keydown.ctrl.enter="() => {
@@ -68,7 +68,7 @@ import MarkdownRender from './widgets/MarkdownRender.vue'
 import EditableStringAttribute from './EditableStringAttribute.vue'
 import MarkdownResponse from './widgets/MarkdownResponse.vue'
 
-import { computed, ref, onMounted, watchEffect } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watchEffect } from 'vue'
 import { convertImageUrlToBase64, base64ToBlob, deepCopy, mockObject, sleep, TaskQueue } from '@/utils/commonUtils'
 import { Close, Delete, Edit } from '@element-plus/icons-vue'
 import { getContentTypes } from '@/utils/chatUtils'
@@ -282,6 +282,23 @@ const handleRenderContent = () => {
     }, 100)
   }
 }
+
+onMounted(() => {
+  // to avoid details open status lost when rerender
+  // special for after edit content, details open status will lost
+  const detailsOpen = globalStore.messageIndexStatus[props.index]?.detailsOpen
+  if (detailsOpen == true) {
+    detailsRef.value.open = true
+  } else if (detailsOpen == false) {
+    detailsRef.value.open = false
+  }
+})
+
+onBeforeUnmount(() => {
+  // set details open status
+  globalStore.messageIndexStatus[props.index] = globalStore.messageIndexStatus[props.index] || {}
+  globalStore.messageIndexStatus[props.index].detailsOpen = detailsRef.value.open
+})
 
 </script>
 <style scoped>

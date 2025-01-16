@@ -1284,8 +1284,10 @@ function prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob) 
   token.delta.content = continuePrefix
   token.bifurcationPoint = true
   token.pruned = false
-  token.logprobs.content[0].logprob = isFinite(continuePrefixLogprob) ? continuePrefixLogprob : -9999
-  token.logprobs.content[0].token = continuePrefix
+  if (token.logprobs?.content[0]) {
+    token.logprobs.content[0].logprob = isFinite(continuePrefixLogprob) ? continuePrefixLogprob : -9999
+    token.logprobs.content[0].token = continuePrefix
+  }
   tokens.value.splice(token.tokenIndex, 0, token);
 }
 
@@ -1624,10 +1626,12 @@ onMounted(async () => {
     }
     // var exampleFunc = exampleNameToFunc['image']
     setTimeout(async function launchExampleFunc() {
-      await exampleFunc()
+      if (!requestStatus.value.generating) {
+        await exampleFunc()
+      }
       p("tokens", tokens)
       p("patchs", patchs)
-    }, 2000)
+    }, 3000)
   }
 })
 
