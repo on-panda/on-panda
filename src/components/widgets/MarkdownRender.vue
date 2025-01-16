@@ -87,24 +87,24 @@ function handleClickInMarkdown(event) {
     font-size: 13px;
   }
 
+  /* Inline code */
+  code {
+    background-color: #eee;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 0px 3px;
+    display: inline-block;
+  }
+
   /* Code block container */
   pre code {
     background-color: #f3f3f3;
     border: 4px solid #fff;
-    border-radius: 3px;
+    border-radius: 10px;
     overflow: auto;
     line-height: 1.45;
     display: block;
     padding: 1em;
-  }
-
-  /* Inline code */
-  p code {
-    background-color: #eee;
-    border: 0.5px solid #ccc;
-    border-radius: 3px;
-    padding: 0px 3px;
-    display: inline-block;
   }
 }
 </style>
