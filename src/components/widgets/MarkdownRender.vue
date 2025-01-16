@@ -92,9 +92,10 @@ function handleClickInMarkdown(event) {
     background-color: #f3f3f3;
     border: 4px solid #fff;
     border-radius: 3px;
-    padding: 10px;
     overflow: auto;
     line-height: 1.45;
+    display: block;
+    padding: 1em;
   }
 
   /* Inline code */
