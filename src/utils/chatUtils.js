@@ -84,6 +84,8 @@ export function normalizeRequest(requestBody) {
     if (body.messages?.length) {
         body.messages.map(message => {
             delete message.finish_reason
+            delete message.comment
+            delete message.description
         })
     }
     if (body.stop) {
@@ -94,6 +96,9 @@ export function normalizeRequest(requestBody) {
         }
     } else {
         delete body.stop
+    }
+    if (!body.chat_template) {
+        delete body.chat_template
     }
     return body
 }

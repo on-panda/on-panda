@@ -361,11 +361,11 @@
           <el-input-number v-model="chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
         </el-form-item>
 
-        <el-form-item label="frequency penalty">
+        <el-form-item label="frequency_penalty">
           <el-input-number v-model="chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01" size="small" />
         </el-form-item>
 
-        <el-form-item label="stop">
+        <!-- <el-form-item label="stop">
           <el-input v-model="chatConfig.stop" size="small" style="width: 120px;" />
           <small>
             &nbsp;
@@ -374,6 +374,23 @@
               <template #content>
                 <MarkdownRender
                   :content="'Similar to [stop item of OpenAI API](https://platform.openai.com/docs/api-reference/chat/create#chat-create-stop)\nIf input JSON string, will parse as JSON. \nFor Chrome user, using `F12 -> Network -> completions` to check the parse result'" />
+              </template>
+              <el-icon>
+                <InfoFilled />
+              </el-icon>
+            </el-tooltip>
+          </small>
+        </el-form-item> -->
+
+        <el-form-item label="extra_parameters">
+          <el-input v-model="extraParametersString" size="small" style="width: 120px;" />
+          <small>
+            &nbsp;
+            &nbsp;
+            <el-tooltip class="" effect="light" placement="top" raw-content>
+              <template #content>
+                <MarkdownRender
+                  :content='"JSON for [Extra Parameters](https://docs.vllm.ai/en/stable/dev/sampling_params.html), e.g.: \n`{\"stop\": \"\\n\", \"min_tokens\": 256}`\nFor Chrome user, using `F12 -> Network -> completions` to check the request"' />
               </template>
               <el-icon>
                 <InfoFilled />
@@ -694,6 +711,15 @@ const chatConfig = ref({
   },
 })
 
+const extraParametersString = ref("")
+const extraParameters = computed(() => {
+  try {
+    return extraParametersString.value ? JSON.parse(extraParametersString.value) : {}
+  } catch (error) {
+    return {}
+  }
+})
+
 const exampleNameToFunc = {
   "clear": () => {
     opreators.pandaState = pandaState
@@ -940,7 +966,7 @@ const apiConfig = computed(() => {
   // update apiConfig with defaultApiConfig
   var apiConfig = { ...apiConfigChosen.value }  // copy instead of reference
   apiConfig.client_config = { ...defaultApiConfig.client_config, ...apiConfig.client_config }
-  apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfig.chat_config, ...chatConfig.value }
+  apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfig.chat_config, ...chatConfig.value, ...extraParameters.value }
   apiConfig = { ...defaultApiConfig, ...apiConfig }
   apiConfig.client_config.base_url = apiConfig.client_config.base_url.replace('${origin}', window.location.origin)
 
