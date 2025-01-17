@@ -86,6 +86,15 @@ export function normalizeRequest(requestBody) {
             delete message.finish_reason
         })
     }
+    if (body.stop) {
+        try {
+            body.stop = JSON.parse(body.stop)
+        } catch (e) {
+            // body.stop = body.stop
+        }
+    } else {
+        delete body.stop
+    }
     return body
 }
 

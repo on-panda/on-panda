@@ -332,15 +332,6 @@
         <el-input-number v-model="chatConfig.max_tokens" :min="1" :max="1048576" :step="1" size="small" />
       </el-form-item>
 
-      <el-form-item label="top_p">
-        <el-input-number v-model="chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
-      </el-form-item>
-
-      <!-- <el-form-item label="Freq. Penalty">
-        <el-input-number v-model="chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01"
-          size="small" />
-      </el-form-item> -->
-
       <el-form-item label="top_logprobs">
         <el-input-number v-model="chatConfig.top_logprobs" :min="0" :max="50" :step="1" size="small" />
       </el-form-item>
@@ -362,6 +353,36 @@
           </el-tooltip>
         </small>
       </el-form-item>
+      <details style="margin-top: -10px;margin-bottom: 10px;">
+        <summary>
+          <small style="color: #bbb;"><b>Advanced Control</b></small>
+        </summary>
+        <el-form-item label="top_p">
+          <el-input-number v-model="chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
+        </el-form-item>
+
+        <el-form-item label="frequency penalty">
+          <el-input-number v-model="chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01" size="small" />
+        </el-form-item>
+
+        <el-form-item label="stop">
+          <el-input v-model="chatConfig.stop" size="small" style="width: 120px;" />
+          <small>
+            &nbsp;
+            &nbsp;
+            <el-tooltip class="" effect="light" placement="top" raw-content>
+              <template #content>
+                <MarkdownRender
+                  :content="'Similar to [stop item of OpenAI API](https://platform.openai.com/docs/api-reference/chat/create#chat-create-stop)\nIf input JSON string, will parse as JSON. \nFor Chrome user, using `F12 -> Network -> completions` to check the parse result'" />
+              </template>
+              <el-icon>
+                <InfoFilled />
+              </el-icon>
+            </el-tooltip>
+          </small>
+        </el-form-item>
+      </details>
+
     </el-form>
     <div v-if="warningContent"
       style="background-color: #fdd;white-space: pre-wrap;cursor: default;overflow-x: scroll; padding: 10px">
