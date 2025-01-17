@@ -100,6 +100,10 @@ export function normalizeRequest(requestBody) {
     if (!body.chat_template) {
         delete body.chat_template
     }
+    if (body.top_logprobs == 0) {  // turn off logprobs
+        delete body.logprobs
+        delete body.top_logprobs
+    }
     return body
 }
 
