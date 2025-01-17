@@ -4,8 +4,8 @@
       <MessageRole :message="props.message" />
       <span class="stretch" style="margin-right: auto" />
       <div>
-        <el-button ref="isRenderContentEditingButton" v-if="!globalStore.cleanMode && isRenderRole" :icon="Edit"
-          size="small" class="massageOperationButton" @click="isRenderContentEditing = !isRenderContentEditing"
+        <el-button ref="isRenderContentEditingButton" v-if="isRenderRole" :icon="Edit" size="small"
+          class="massageOperationButton" @click="isRenderContentEditing = !isRenderContentEditing"
           :type="isRenderContentEditing ? 'primary' : ''"></el-button>
         <el-tooltip :content="hasContent ? 'Clear' : 'Delete'" placement="top">
           <el-button :icon="hasContent ? Delete : Close" size="small" class="massageOperationButton"
@@ -20,7 +20,7 @@
         </el-tooltip>
       </div>
     </div>
-    <p v-if="globalStore.cleanMode && isRenderRole || (isRenderRole && !isRenderContentEditing)"
+    <p v-if="(isRenderRole && !isRenderContentEditing)"
       style="margin-top: 5px;margin-bottom: 0px;color: #555; border-radius: 5px; box-shadow: 0 0 0 1px var(--el-input-border-color,var(--el-border-color)) inset; padding:5px 11px">
       <MarkdownRender :content="contentAsText" @dblclick="handleRenderContent" />
     </p>
