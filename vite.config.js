@@ -13,6 +13,22 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
+  build: {
+    lib: {
+      entry: 'src/index.js',
+      name: 'OnPanda',
+      fileName: (format) => `on-panda.${format}.js`
+    },
+    rollupOptions: {
+      external: ['vue', 'pinia'],
+      output: {
+        globals: {
+          vue: 'Vue',
+          pinia: 'Pinia'
+        }
+      }
+    }
+  },
   server: {
     proxy: {
       '/llama-cpu': {

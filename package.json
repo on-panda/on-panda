@@ -1,7 +1,15 @@
 {
-  "name": "on-policy_alignment_data_annotator",
-  "version": "0.0.0",
+  "name": "on-panda",
+  "version": "0.0.1",
   "private": true,
+  "main": "./dist/on-panda.umd.js",
+  "module": "./dist/on-panda.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/on-panda.es.js",
+      "require": "./dist/on-panda.umd.js"
+    }
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
