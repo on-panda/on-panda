@@ -936,6 +936,7 @@ watch(modelName, async function watchModelName(newValue) {  // set modelName to 
 const modelNameTags = {
   'on-panda': 'on-panda',
   'o1': 'oone',
+  'r1': 'deepseek-r1',
   'image': 'image',
   'audio': 'audio',
   'llama': 'others-llama3p1-70b-chat',
