@@ -123,3 +123,8 @@ watch(() => editableCommentAsTool.value, (newVal) => {
     height: 25px;
 }
 </style>
+<style>
+.el-divider-ignore-background-color .el-divider__text {
+    background-color: transparent;
+}
+</style>

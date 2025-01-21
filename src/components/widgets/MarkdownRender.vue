@@ -1,5 +1,6 @@
 <template>
-  <div class="md-content" v-html="htmlContent" @dblclick="handleDoubleClickInMarkdown" @click="handleClickInMarkdown">
+  <div class="on-panda-markdown-content" v-html="htmlContent" @dblclick="handleDoubleClickInMarkdown"
+    @click="handleClickInMarkdown">
   </div>
 </template>
 
@@ -58,7 +59,7 @@ function handleClickInMarkdown(event) {
 </script>
 <style>
 /* global CSS */
-.md-content img {
+.on-panda-markdown-content img {
   max-width: 100%;
   max-height: 100%;
   max-width: 322px;
@@ -70,18 +71,18 @@ function handleClickInMarkdown(event) {
 }
 
 @media (min-width: 600px) {
-  .md-content img {
+  .on-panda-markdown-content img {
     max-width: 512px;
     max-height: 512px;
   }
 }
 
-.md-content .rawSizeImg {
+.on-panda-markdown-content .rawSizeImg {
   max-width: initial;
   max-height: initial;
 }
 
-.md-content {
+.on-panda-markdown-content {
   pre code {
     font-family: monospace;
     font-size: 13px;
@@ -105,6 +106,55 @@ function handleClickInMarkdown(event) {
     line-height: 1.45;
     display: block;
     padding: 1em;
+  }
+}
+
+/* markdown table CSS */
+.on-panda-markdown-content {
+
+  table {
+    border-spacing: 0;
+    border-collapse: collapse;
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow: auto;
+  }
+
+  td,
+  th {
+    padding: 0
+  }
+
+  table th {
+    font-weight: 600
+  }
+
+  table td,
+  table th {
+    padding: 6px 13px;
+    border: 1px solid #d0d7de
+  }
+
+  table tr {
+    background-color: #fff;
+    border-top: 1px solid #d7dde3
+  }
+
+  table tr:nth-child(2n) {
+    background-color: #f6f8fa
+  }
+
+  table img {
+    background-color: transparent
+  }
+
+
+  /* 悬停效果 */
+  tr:hover,
+  tr:nth-child(2n):hover {
+    background-color: #ecf0f1;
+    /* 行悬停背景色 */
   }
 }
 </style>
