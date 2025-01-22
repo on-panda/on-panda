@@ -8,8 +8,14 @@
     ".": {
       "import": "./dist/on-panda.es.js",
       "require": "./dist/on-panda.umd.js"
-    }
+    },
+    "./dist/style.css": "./dist/style.css"
   },
+  "files": [
+    "dist",
+    "dist/img",
+    "dist/style.css"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",
