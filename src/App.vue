@@ -298,7 +298,7 @@ import demoGifUrl from '../public/img/onPanda-demo-candidate.gif';
 
     <el-divider content-position="left" style="margin-bottom: 5px;">new message:</el-divider>
     <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
-      <Message :message="newTurnMessage" @deleteMessage="newTurnMessage.content = ''"
+      <Message :message="newTurnMessage" :index="-2" @deleteMessage="newTurnMessage.content = ''"
         @sendButton="opreators.newRoundMessage()" />
     </div>
 
@@ -388,7 +388,8 @@ import demoGifUrl from '../public/img/onPanda-demo-candidate.gif';
         </el-form-item> -->
 
         <el-form-item label="extra_parameters">
-          <el-input v-model="extraParametersString" size="small" style="width: 120px;" />
+          <el-input type="textarea" :autosize="{ minRows: 1 }" v-model="extraParametersString" size="small"
+            style="width: 220px;" />
           <small>
             &nbsp;
             &nbsp;

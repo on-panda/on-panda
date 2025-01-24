@@ -295,9 +295,11 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  // set details open status
-  globalStore.messageIndexStatus[props.index] = globalStore.messageIndexStatus[props.index] || {}
-  globalStore.messageIndexStatus[props.index].detailsOpen = detailsRef.value.open
+  if (detailsRef.value) {
+    // set details open status
+    globalStore.messageIndexStatus[props.index] = globalStore.messageIndexStatus[props.index] || {}
+    globalStore.messageIndexStatus[props.index].detailsOpen = detailsRef.value.open
+  }
 })
 
 </script>
