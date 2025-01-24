@@ -436,7 +436,6 @@ import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, Qu
 
 const globalStore = useGlobalStore()
 
-
 var bitTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content[0]?.logprob === "number"))
 
 var bitTotal = computed(
@@ -886,11 +885,7 @@ function convertMessageToTokens(message) {
   return tokens
 }
 
-// TODO mv to workround and rename to monkeyPatch.js
-import apiConfigList from '@/assets/secret/apiConfigList.js'
-// list of apiConfigs, if model is not set, fetch all models.
-
-var metaApiConfigs = ref([defaultApiConfig, ...apiConfigList])
+var metaApiConfigs = ref([defaultApiConfig,])
 
 const apiConfigs = ref({});
 
@@ -1668,10 +1663,11 @@ pandaState.registerTokens(tokens)
 onMounted(async () => {
   scrollDiv.value.addEventListener('scroll', handleReactiveFunctions);
   try {
-    await import('@/assets/secret/workaround.js');
+    await import('@/assets/secret/custom.js');
   } catch (error) {
-    console.error('Failed to load workaround.js:', error);
+    console.error('Failed to load custom.js:', error);
   }
+  metaApiConfigs.value = [...metaApiConfigs.value, ...globalStore.customMetaApiConfigs]
 
   if (!tryLoadDuplicateWindow(pandaState)) { // duplicate window has higher priority
     var exampleFunc = exampleNameToFunc['default']
@@ -1683,8 +1679,10 @@ onMounted(async () => {
       if (!requestStatus.value.generating) {
         await exampleFunc()
       }
-      p("tokens", tokens)
-      p("patchs", patchs)
+      if (globalStore.debug) {
+        p("tokens", tokens)
+        p("patchs", patchs)
+      }
     }, 3000)
   }
 })
