@@ -1,3 +1,9 @@
+<script>
+// static relative asset path
+import logoImageUrl from '../public/img/on-panda-logo.png';
+import demoGifUrl from '../public/img/onPanda-demo-candidate.gif';
+</script>
+
 <template>
   <div :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }">
     <details>
@@ -17,8 +23,7 @@
     </details>
 
     <div style="text-align: center;">
-
-      <img width="128" src="/img/on-panda-logo.png"
+      <img width="128" :src="logoImageUrl"
         :style="{ transform: _isLogoRotated ? 'rotate(360deg)' : 'rotate(0deg)', transition: 'transform 3s' }"
         @click="_isLogoRotated = !_isLogoRotated" />
       <br>
@@ -32,7 +37,7 @@
         <small style="color: #888;">usage:</small>
       </summary>
       <br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src="/img/onPanda-demo-candidate.gif"
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img :src="demoGifUrl"
         style="box-shadow: 0 0px 8px rgba(0, 0, 0, 0.5);width: 406px;max-width: 90%;">
       <br>
       <br>
