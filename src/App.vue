@@ -320,7 +320,7 @@ import demoGifUrl from '../public/img/onPanda-demo-candidate.gif';
 
       <div style="line-height: 1.85;margin-top: -20px;margin-bottom: -5px;" :align="isMobile ? 'right' : ''">
         <span v-for="_ in (isMobile ? 0 : 30)">&nbsp;</span>
-        <template v-for="(value, key) in modelNameTags">
+        <template v-for="(value, key) in props.modelNameTags">
           <el-tag :type="modelName.includes(value) ? 'primary' : 'info'" @click="modelName = value"
             style="cursor: pointer;margin-left: 5px;">
             {{ key }}
@@ -433,6 +433,32 @@ import { p, escapeHTML, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow
 import { tokensToSeq, normalizeRequest, messageToSeq, recordAsRejectedToken } from './utils/chatUtils.js'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close, InfoFilled } from '@element-plus/icons-vue'
+
+
+const props = defineProps({
+  apiConfigs: {
+    type: Object,
+    default: [],
+    description: `API configurations, if not set 'chat_config.model', will get model list by endpoint/models.
+e.g.:
+[{'support_continue_final_message': true, 'endpoint_name': 'on-panda', 'client_config': {'base_url': 'http://127.0.0.1:8000/v1'}, 'chat_config': {'model': 'meta-llama/Meta-Llama-3-8B-Instruct'}},]`,
+  },
+  modelNameTags: {
+    type: Object,
+    default: {
+      'on-panda': 'on-panda',
+      'o1': 'oone',
+      'r1': 'deepseek-r1',
+      'image': 'image',
+      'audio': 'audio',
+      'llama': 'others-llama3p1-70b-chat',
+      // 'qwen': 'others-qwen2p5-72b-chat',
+      'gpt4o': 'chatgpt-4o-latest',
+      'claude': 'claude-3-5-sonnet-20241022',
+    },
+    description: `Model name tags for quick selection`,
+  },
+})
 
 const globalStore = useGlobalStore()
 
@@ -731,7 +757,7 @@ const exampleNameToFunc = {
     pandaState.setEmpty()
   },
   "default": () => {
-    modelName.value = "on-panda"
+    modelName.value = props?.modelNameTags['on-panda'] || 'on-panda'
     opreators.loadMessagesWithPandaTree(messagesDefaultExample)
     opreators.newGenerate()
   },
@@ -740,7 +766,9 @@ const exampleNameToFunc = {
     opreators.newGenerate()
   },
   "image": () => {
-    modelName.value = "image"
+    if (props?.modelNameTags['image']) {
+      modelName.value = props?.modelNameTags['image']
+    }
     opreators.loadMessagesWithPandaTree(messagesImageExample)
     opreators.newGenerate()
   },
@@ -885,14 +913,17 @@ function convertMessageToTokens(message) {
   return tokens
 }
 
-var metaApiConfigs = ref([defaultApiConfig,])
+var metaApiConfigs = ref([defaultApiConfig, ...props.apiConfigs])
 
 const apiConfigs = ref({});
 
 watch(metaApiConfigs, async function watchMetaApiConfigs(newValue) {
   const configs = [];
   for (let apiConfig of newValue) {
-    apiConfig = JSON.parse(JSON.stringify(apiConfig));
+    apiConfig = deepCopy(apiConfig);
+    if (!apiConfig.chat_config) {
+      apiConfig.chat_config = {}
+    }
     if (apiConfig.chat_config.model) {
       configs.push(apiConfig);
     } else {
@@ -900,7 +931,7 @@ watch(metaApiConfigs, async function watchMetaApiConfigs(newValue) {
         const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.client_config));
         const list = await openai.models.list();
         for await (const model of list) {
-          const apiConfigWithModel = JSON.parse(JSON.stringify(apiConfig));
+          const apiConfigWithModel = deepCopy(apiConfig);
           apiConfigWithModel.chat_config.model = model.id;
           configs.push(apiConfigWithModel);
         }
@@ -921,7 +952,7 @@ watch(metaApiConfigs, async function watchMetaApiConfigs(newValue) {
   }, {});
 }, { immediate: true });
 
-var modelName = ref('on-panda')  // using endpoint_name == 'on-panda' as default model
+var modelName = ref(props?.modelNameTags['on-panda'] || 'on-panda')  // using endpoint_name == 'on-panda' as default model
 // var modelName = ref('llama3')
 // var modelName = ref('image')
 // var modelName = ref('audio')
@@ -933,18 +964,6 @@ watch(modelName, async function watchModelName(newValue) {  // set modelName to 
     document.title = newValue + " | onPanda"
   }
 })
-
-const modelNameTags = {
-  'on-panda': 'on-panda',
-  'o1': 'oone',
-  'r1': 'deepseek-r1',
-  'image': 'image',
-  'audio': 'audio',
-  'llama': 'others-llama3p1-70b-chat',
-  // 'qwen': 'others-qwen2p5-72b-chat',
-  'gpt4o': 'chatgpt-4o-latest',
-  'claude': 'claude-3-5-sonnet-20241022',
-}
 
 const chatConfigKeys = Object.keys(chatConfig.value)
 
