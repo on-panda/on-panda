@@ -21,6 +21,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "app": "vite build --mode app && vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
