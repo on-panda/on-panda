@@ -171,6 +171,7 @@ import demoGifUrl from '../public/img/onPanda-demo-candidate.gif';
                     :style='{
                       "border-bottom": "3px solid " + probToColor(patch.prob),
                       ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
+                      ...(patch.tokens.some(t => t.isReasoningContent) ? { "color": "#666" } : {}),
                       ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
                       ...(patch.tokens.some(t => t.selected) ? { "background-color": "#0078d7", "color": "#fff" } : {}),
                     }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)"
@@ -1125,6 +1126,12 @@ async function requestLlmServer(messages) {
       if (!token?.delta) {
         continue
       }
+      if (!token.delta?.content && token.delta?.reasoning_content) {
+        // handle reasoning_content item for DeepSeek R1
+        token.delta.content = token.delta.reasoning_content
+        delete token.delta.reasoning_content
+        token.isReasoningContent = true
+      }
       streamIndex++
       if (streamIndex === 0) { // first token
         clearTimeout(firstTokenTimeoutId)
@@ -1690,10 +1697,14 @@ onMounted(async () => {
 
   if (!tryLoadDuplicateWindow(pandaState)) { // duplicate window has higher priority
     var exampleFunc = exampleNameToFunc['default']
-    if (globalStore.debug) {
-      // var exampleFunc = exampleNameToFunc['annotate']
-    }
     // var exampleFunc = exampleNameToFunc['image']
+    if (globalStore.debug) {
+      // var exampleFunc = () => {
+      //   modelName.value = props?.modelNameTags['r1']
+      //   chatConfig.value.top_logprobs = 0
+      //   opreators.newGenerate()
+      // }
+    }
     setTimeout(async function launchExampleFunc() {
       if (!requestStatus.value.generating) {
         await exampleFunc()
