@@ -227,32 +227,33 @@ const contentAsText = computed({
 
 
 const editor = ref(null)
-const imageCache = []
-async function handlePaste(event) {
+async function handlePasteImages(event) {
   const clipboardData = event.clipboardData || window.clipboardData;
   const items = clipboardData.items;
-
+  var imageUrls = []
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     // console.log('clipboardData.items',item, JSON.parse(JSON.stringify([item.type, item.getAsFile(), item.getAsFile()?.type, item.kind,])))
     if (item.type.indexOf("image") !== -1) {
-      event.preventDefault();
       const file = item.getAsFile();
-      const imageUrl = cacheImage(file);
-      globalStore.blobUrlToBase64Cache[imageUrl] = await convertImageUrlToBase64(imageUrl);
-      insertImage(imageUrl);
+      const imageUrl = URL.createObjectURL(file);
+      imageUrls.push(imageUrl)
     }
   }
+  if (imageUrls.length) {
+    event.preventDefault();
+  }
+  return imageUrls
 }
-function cacheImage(file) {
-  const imageUrl = URL.createObjectURL(file);
-  imageCache.push({ file, url: imageUrl });
-  return imageUrl;
-}
-function insertImage(imageUrl) {
-  if (imageUrl) {
-    const markdownImage = `![<|ON_PANDA_IMAGE|>](${imageUrl})`;
-    contentAsText.value += markdownImage;
+
+async function handlePaste(event) {
+  var imageUrls = await handlePasteImages(event)
+  if (imageUrls.length) {
+    for (let imageUrl of imageUrls) {
+      globalStore.blobUrlToBase64Cache[imageUrl] = await convertImageUrlToBase64(imageUrl);
+    }
+    const markdownImage = imageUrls.map(imageUrl => `![<|ON_PANDA_IMAGE|>](${imageUrl})`).join('\n')
+    contentAsText.value += markdownImage
   }
 }
 
