@@ -2,6 +2,7 @@
 // static relative asset path
 import logoImageUrl from '../public/img/on-panda-logo.png';
 import demoGifUrl from '../public/img/onPanda-demo-candidate.gif';
+import 'element-plus/dist/index.css'
 </script>
 
 <template>

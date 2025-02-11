@@ -1,6 +1,6 @@
 {
   "name": "@on-panda/on-panda",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "main": "./dist/on-panda.umd.js",
   "module": "./dist/on-panda.es.js",
   "exports": {
