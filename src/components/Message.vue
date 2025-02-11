@@ -227,33 +227,37 @@ const contentAsText = computed({
 
 
 const editor = ref(null)
-async function handlePasteImages(event) {
+function handlePasteImages(event) {
   const clipboardData = event.clipboardData || window.clipboardData;
   const items = clipboardData.items;
-  var imageUrls = []
+  var blobUrls = {}
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     // console.log('clipboardData.items',item, JSON.parse(JSON.stringify([item.type, item.getAsFile(), item.getAsFile()?.type, item.kind,])))
     if (item.type.indexOf("image") !== -1) {
       const file = item.getAsFile();
-      const imageUrl = URL.createObjectURL(file);
-      imageUrls.push(imageUrl)
+      const blobUrl = URL.createObjectURL(file);
+      blobUrls[blobUrl] = file
     }
   }
-  if (imageUrls.length) {
+  if (Object.keys(blobUrls).length) {
     event.preventDefault();
   }
-  return imageUrls
+  return blobUrls
 }
 
 async function handlePaste(event) {
-  var imageUrls = await handlePasteImages(event)
-  if (imageUrls.length) {
-    for (let imageUrl of imageUrls) {
-      globalStore.blobUrlToBase64Cache[imageUrl] = await convertImageUrlToBase64(imageUrl);
+  var blobUrls = handlePasteImages(event)
+  if (Object.keys(blobUrls).length) {
+    for (let blobUrl in blobUrls) {
+      globalStore.blobUrlToBase64Cache[blobUrl] = await convertImageUrlToBase64(blobUrl);
     }
-    const markdownImage = imageUrls.map(imageUrl => `![<|ON_PANDA_IMAGE|>](${imageUrl})`).join('\n')
-    contentAsText.value += markdownImage
+    const markdownImage = Object.keys(blobUrls).map(blobUrl => `![<|ON_PANDA_IMAGE|>](${blobUrl})`).join('\n')
+    const cursorPosition = event.target.selectionStart
+    const currentValue = contentAsText.value
+    contentAsText.value = currentValue.slice(0, cursorPosition) +
+      markdownImage +
+      currentValue.slice(cursorPosition)
   }
 }
 

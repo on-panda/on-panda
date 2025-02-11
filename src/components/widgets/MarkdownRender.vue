@@ -67,7 +67,7 @@ function handleClickInMarkdown(event) {
   box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 8px;
   margin-left: 10px;
   margin-right: 10px;
-  cursor: pointer;
+  cursor: zoom-in;
 }
 
 @media (min-width: 600px) {
