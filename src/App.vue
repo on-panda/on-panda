@@ -202,13 +202,12 @@ import 'element-plus/dist/index.css'
 
     <div @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true"
       ref="floatPatchPannelRef"
-      style="position: absolute; padding-top: 4px;background-color: rgba(200, 200, 200, 0.3); " :style="{
-        position: 'absolute',
+      style="position: fixed; padding-top: 4px;background-color: rgba(200, 200, 200, 0.3); z-index: 10;" :style="{
         left: `${floatPatchPannel.x}px`,
         top: `${floatPatchPannel.y}px`,
       }" v-if="floatPatchPannel.visible">
       <!-- `padding-top: 4px` to avoid next line's token activate @mouseover  -->
-      <div class="floatPatchPannel" style="position: relative; z-index: 10;">
+      <div class="floatPatchPannel" style="position: relative;">
         <div v-for="token in activatePatch?.tokens?.filter(token => (token?.delta?.content !== undefined))"
           class="tokenPannel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
           <div class="floatPatchPannelHead" style="border-bottom: 2px solid #ccc;">
@@ -216,7 +215,7 @@ import 'element-plus/dist/index.css'
           </div>
           <div class="tokenLogprobItems">
             <div v-for="logprobItem in token?.logprobs?.content[0].top_logprobs"
-              style="display: block; background-color: #eee;" @click="() => {
+              style="display: block; background-color: #eee; cursor:pointer" @click="() => {
                 opreators.continueWithChosen(token, logprobItem)
               }" @mouseover="activateLogprobItem = logprobItem"
               @mouseenter="$event.target.style.backgroundColor = '#ddd'"
@@ -251,10 +250,9 @@ import 'element-plus/dist/index.css'
 
 
     <div ref="floatInputPatchRef" class="floatInputPatch" v-show="floatInputPatch.visible" :style="{
-      position: 'absolute',
       left: `${floatInputPatch.x}px`,
       top: `${floatInputPatch.y}px`,
-    }" style="display: flex">
+    }" style="display: flex; position: fixed">
       <textarea type="text" placeholder="submit: `↵`; newline: `shift+↵`" style="height: 25px; width:auto;"
         class="floatInputPatchInput" @focus="$event.target.select()"
         @keydown.enter="if (!$event.shiftKey) { opreators.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
@@ -263,10 +261,9 @@ import 'element-plus/dist/index.css'
     <div ref='floatSelectedOpreationPannelRef' class="floatSelectedOpreationPannel"
       v-show="floatSelectedOpreationPannel.visible && !floatInputPatch.visible || floatSelectedOpreationPannel.improveInputVisible"
       :style="{
-        position: 'absolute',
         left: `${floatSelectedOpreationPannel.x}px`,
         top: `${floatSelectedOpreationPannel.y}px`,
-      }">
+      }" style="position: fixed">
       <el-button-group class="floatSelectedOpreationPannelButtons"
         v-show="!floatSelectedOpreationPannel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
           token => token.selected = true
@@ -634,9 +631,9 @@ function setFloatSelectedOpreationPannelBelow() {
   endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
   var endNodeRect = endNode.getBoundingClientRect()
   const pixelsPerButton = isMobile.value ? 45 : 35
-  const x = endNodeRect.right + window.scrollX - pixelsPerButton * document.querySelectorAll('.floatSelectedOpreationPannelButtons button').length
+  const x = endNodeRect.right - pixelsPerButton * document.querySelectorAll('.floatSelectedOpreationPannelButtons button').length
   floatSelectedOpreationPannel.value.x = Math.max(x, 10)
-  floatSelectedOpreationPannel.value.y = endNodeRect.bottom + window.scrollY + 2
+  floatSelectedOpreationPannel.value.y = endNodeRect.bottom + 2
 }
 
 
@@ -1602,8 +1599,8 @@ function setFloatPatchPannelBelow(element) {
     return
   }
   const cellRect = element.getBoundingClientRect();
-  floatPatchPannel.value.x = cellRect.left + window.scrollX - 3
-  floatPatchPannel.value.y = cellRect.bottom + window.scrollY - 4
+  floatPatchPannel.value.x = cellRect.left - 3
+  floatPatchPannel.value.y = cellRect.bottom - 4
   if (floatPatchPannel.value.x + 120 > window.innerWidth) {
     // avoid floatPatchPannel out of window
     floatPatchPannel.value.x = floatPatchPannel.value.x - 85
@@ -1637,8 +1634,8 @@ function setFloatInputPatch(event, patch) {
   const cellRect = event.target.getBoundingClientRect();
   floatInputPatch.value.attachedPatch = patch
 
-  floatInputPatch.value.x = cellRect.left + window.scrollX - 3
-  floatInputPatch.value.y = cellRect.top + window.scrollY - 5
+  floatInputPatch.value.x = cellRect.left - 3
+  floatInputPatch.value.y = cellRect.top - 5
   floatInputPatch.value.visible = true;
   setTimeout(() => {
     document.querySelector('.floatInputPatchInput').value = patch?.patch;
@@ -1653,6 +1650,7 @@ function handleReactiveFunctions() {
 }
 
 useEventListener(window, 'resize', handleReactiveFunctions)
+useEventListener(window, 'scroll', handleReactiveFunctions)
 
 
 
@@ -1751,11 +1749,6 @@ onBeforeUnmount(async () => {
   border: 1px solid #ccc;
   border-radius: 5px;
   background-color: #f9f9f9;
-}
-
-.floatPatchPannel {
-  position: absolute;
-  cursor: default;
 }
 
 .PatchSpan {
