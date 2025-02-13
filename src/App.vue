@@ -76,8 +76,8 @@ import 'element-plus/dist/index.css'
       <b> dialog:</b>
     </el-divider>
     <div class="dialogFixedPosition"
-      :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {}, isMobile ? {} : { padding: '10px' })"
-      style="border-radius: 5px; ">
+      :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {})"
+      style="border-radius: 5px; padding-bottom: 20px;">
       <div class="promptMessages">
         <!-- <Message v-for="(message, index) in messages" :message="message" 
           @sendButton="opreators.newGenerate()"
@@ -159,7 +159,7 @@ import 'element-plus/dist/index.css'
         </div>
 
         <div class="finalMessageTwoPannel" v-if="!globalStore.cleanMode"
-          style="width: 100%;overflow:scroll;overflow-y:hidden" ref="scrollDiv">
+          style="width: 100%;overflow:scroll;overflow-y:hidden; padding-bottom: 3px;" ref="scrollDiv">
           <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
             <div class="final-message-half-pannel">
               <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
@@ -290,7 +290,6 @@ import 'element-plus/dist/index.css'
         <el-button :icon='Promotion' size="" @click="improveSelectedText"></el-button>
       </div>
     </div>
-    <br>
     <DialogControlPannel />
     <AnnotatorPanel
       v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment || globalStore.debug" />
@@ -1118,7 +1117,9 @@ async function requestLlmServer(messages) {
         tokens.value = tokens.value.filter(token => !token.pruned)
         tokensValuePtr = tokens.value
         tokenIndex = tokens.value.length
-        continue  // first chunk is role, no more role for continue_final_message
+        if (!chunk?.choices[0]?.delta?.content) {
+          continue  // if first chunk only not has content, no more role for continue_final_message
+        }
       }
       var token = chunk.choices[0];
       if (!token?.delta) {
@@ -1699,8 +1700,7 @@ onMounted(async () => {
     // var exampleFunc = exampleNameToFunc['image']
     if (globalStore.debug) {
       // var exampleFunc = () => {
-      //   modelName.value = props?.modelNameTags['r1']
-      //   chatConfig.value.top_logprobs = 0
+      //   modelName.value = 'doubao-1.5-pro-32k'
       //   opreators.newGenerate()
       // }
     }
