@@ -43,14 +43,15 @@
             </el-tooltip>
             <el-tooltip content="Download panda.json file" raw-content placement="top" v-if="0">
                 <el-dropdown split-button
-                    @click="downloadJsonFile(pandaState.dump(), uploadedJson && uploadedJson.name)" size=small>
+                    @click="async () => downloadJsonFile(await pandaState.dump(), uploadedJson && uploadedJson.name)"
+                    size=small>
                     <el-icon>
                         <Download />
                     </el-icon>
                     <template #dropdown>
                         <el-dropdown-menu>
                             <el-dropdown-item
-                                @click="downloadJsonFile(pandaState.dump(true), uploadedJson && uploadedJson.name)">Download
+                                @click="async () => downloadJsonFile(await pandaState.dump(true), uploadedJson && uploadedJson.name)">Download
                                 with cache</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
@@ -135,7 +136,7 @@ const handleDropJson = (uploadFile) => {
     isDragged.value = false;
 };
 
-const clickToDownload = () => {
+const clickToDownload = async () => {
     var name = null
     if (uploadedJson.value) {
         var name = uploadedJson.value.name
@@ -143,7 +144,7 @@ const clickToDownload = () => {
             name = name.replace('.json', '.panda.json')
         }
     }
-    downloadJsonFile(pandaState.dump(true), name)
+    downloadJsonFile(await pandaState.dump(true), name)
 }
 
 

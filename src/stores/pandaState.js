@@ -36,6 +36,54 @@ function dumpCacheTree(cacheTree) {
     }
 }
 
+var HASH_MAP_LENGTH = 16000
+var HASH_TEMPLATE_PREFIX = '<|hash|>'
+var HASH_TEMPLATE_REGEX = /^<\|hash\|>([A-Za-z0-9+\/=]+)$/
+
+async function usingHashMapRemoveRedundancy(dumped) {
+    // if message's content length or chunk's content length > HASH_MAP_LENGTH, using hash map to remove redundancy
+    for (var dialogKey in dumped.dialogs) {
+        var dialog = dumped.dialogs[dialogKey]
+        for (var message of dialog.messages) {
+            if (typeof message.content === 'string' && message.content.length > HASH_MAP_LENGTH) {
+                var hash = await hashObjectSHA256Base64(message.content)
+                dumped.hash_map[hash] = message.content
+                message.content = HASH_TEMPLATE_PREFIX + hash
+
+            } else if (Array.isArray(message.content)) {
+                for (var chunk of message.content) {
+                    var chunkContent = chunk[chunk.type]
+                    if (JSON.stringify(chunkContent).length > HASH_MAP_LENGTH) {
+                        var hash = await hashObjectSHA256Base64(chunkContent)
+                        dumped.hash_map[hash] = chunkContent
+                        chunk[chunk.type] = HASH_TEMPLATE_PREFIX + hash
+                    }
+                    // TODO mv out
+                    delete chunk.blob_url
+                }
+            }
+        }
+    }
+    return dumped
+}
+
+function recoverHashMap(dumped) {
+    // work on any dialogs
+    function recover(obj) {
+        for (var key in obj) {
+            if (typeof obj[key] === 'string' && obj[key].match(HASH_TEMPLATE_REGEX)) {
+                var hash = obj[key].replace(HASH_TEMPLATE_PREFIX, '')
+                obj[key] = dumped.hash_map[hash]
+            } else if (Array.isArray(obj[key]) || typeof obj[key] === 'object' && obj[key] !== null) {
+                recover(obj[key])
+            }
+        }
+    }
+    recover(dumped.dialogs)
+    dumped.hash_map = {}
+    return dumped
+}
+
 const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "give a random float, no other words" }, { role: "assistant", content: "1.27364382", finish_reason: "length" }]
 const dialogExample = {
     messages: messagesExample,
@@ -331,10 +379,11 @@ export class PandaState {
     }
     redo = () => {
     }
-    dump = (includeCache = false) => {
+    dump = async (includeCache = false) => {
         this.beforeOperation()
         this.pandaTree.value.update_time = (new Date()).getTime()
-        const dumped = deepCopy(this.pandaTree.value)
+        var dumped = deepCopy(this.pandaTree.value)
+        dumped = await usingHashMapRemoveRedundancy(dumped)
         if (includeCache) {
             dumped.cache_tree = dumpCacheTree(this.cacheTree)
         }
@@ -377,6 +426,7 @@ export class PandaState {
     load = (obj) => {
         var pandaTree = this.asPandaTree(obj)
         pandaTree = this.setDefaultToPandaTree(pandaTree)
+        pandaTree = recoverHashMap(pandaTree)
         this.clearCache()
         if (pandaTree.cache_tree) {
             var cacheTree = typeof pandaTree.cache_tree === 'string' ? JSON.parse(pandaTree.cache_tree) : pandaTree.cache_tree
@@ -434,7 +484,7 @@ export class PandaState {
     setDefaultToPandaTree = (pandaTree) => {
         pandaTree = pandaTree || this.pandaTree.value
         const defaultPandaTree = {
-            version: "1.0",
+            version: "2.0",  // support hash map
             uuid: dateStringNow(true),
             dialogs: {},
             hash_map: {},

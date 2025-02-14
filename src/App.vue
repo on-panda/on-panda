@@ -1659,6 +1659,8 @@ import { pandaState } from './stores/pandaState'
 import { sleep } from '@/utils/commonUtils'
 import MarkdownResponse from './components/widgets/MarkdownResponse.vue'
 
+opreators.loadMessagesWithPandaTree(messages.value)  // register pandaState
+
 watch(pandaState.dialogCache,
   function watchPandaStateDialogCache(newValue, oldValue) {
     if (newValue.messages) {
@@ -1700,7 +1702,8 @@ onMounted(async () => {
     // var exampleFunc = exampleNameToFunc['image']
     if (globalStore.debug) {
       // var exampleFunc = () => {
-      //   modelName.value = 'doubao-1.5-pro-32k'
+      //   // modelName.value = 'doubao-1.5-pro-32k'
+      //   modelName.value = props.modelNameTags['image']
       //   opreators.newGenerate()
       // }
     }
