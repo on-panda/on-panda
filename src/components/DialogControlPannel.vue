@@ -3,7 +3,7 @@
         <div style="margin-top:-10px; margin-bottom:10px; line-height:2">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
             <el-tooltip content="Save the data" raw-content placement="top">
-                <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump()" />
+                <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump({})" />
             </el-tooltip>
             <el-tooltip content="Previous modification<br>(Shortcut key: left)" raw-content placement="top">
                 <el-button id="switchToPreviousDialog" :icon="Back" size="small"
@@ -43,7 +43,7 @@
             </el-tooltip>
             <el-tooltip content="Download panda.json file" raw-content placement="top" v-if="0">
                 <el-dropdown split-button
-                    @click="async () => downloadJsonFile(await pandaState.dump(), uploadedJson && uploadedJson.name)"
+                    @click="async () => downloadJsonFile(await pandaState.dump({}), uploadedJson && uploadedJson.name)"
                     size=small>
                     <el-icon>
                         <Download />
@@ -51,7 +51,7 @@
                     <template #dropdown>
                         <el-dropdown-menu>
                             <el-dropdown-item
-                                @click="async () => downloadJsonFile(await pandaState.dump(true), uploadedJson && uploadedJson.name)">Download
+                                @click="async () => downloadJsonFile(await pandaState.dump({ includeCache: true }), uploadedJson && uploadedJson.name)">Download
                                 with cache</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
@@ -144,7 +144,7 @@ const clickToDownload = async () => {
             name = name.replace('.json', '.panda.json')
         }
     }
-    downloadJsonFile(await pandaState.dump(true), name)
+    downloadJsonFile(await pandaState.dump({ includeCache: true }), name)
 }
 
 

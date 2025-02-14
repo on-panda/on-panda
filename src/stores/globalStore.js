@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 export const useGlobalStore = defineStore('global', () => {
     const debug = ref(window.location.href.includes('http://localhost') || window.location.href.includes('http://127.0.0.1'))
 
+    const isOldUser = ref(localStorage.getItem('onPandaIsOldUser') == 'true')
+
     const customMetaApiConfigs = ref([])
 
     const hooks = ref({ beforeCreateChatCompletion: [] })
@@ -13,6 +15,6 @@ export const useGlobalStore = defineStore('global', () => {
 
     const messageIndexStatus = ref({})
 
-    return { debug, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customMetaApiConfigs }
+    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customMetaApiConfigs }
 }
 )

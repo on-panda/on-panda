@@ -826,7 +826,7 @@ var messages
 // var messages = [{ role: "user", content: "just repeat 1 time: `पत्नी`" }]
 var messagesDefaultExample = [{ role: "system", content: "" }, { role: "user", content: "🍓草莓的英文单词有几个 R ?" }]
 
-messages = messagesDefaultExample
+var messagesCleared = [{ role: "system", content: "" }, { role: "user", content: "" }]
 
 var messagesTokenizerExample = [{ role: "user", content: "Repeat only once, no other words:\n```\n<|磊|>🧎🏿‍♂️‍➡️\\n<hr>\n蘒    𝒀𝒆𝒔पत्नी\n```" }]
 
@@ -863,6 +863,10 @@ var messagesAudioExample = [
 
 // messages = messagesImageExample
 // messages = messagesAudioExample
+messages = messagesDefaultExample
+if (globalStore.isOldUser) {
+  messages = messagesCleared
+}
 var messages = ref(messages)
 
 
@@ -1211,7 +1215,7 @@ class OpreatorCenter {
       operator: "continue_generating",
       on_policy: true,
     }
-    requestLlmServer(messagesComputed.value)
+    requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
   }
 
   stopGenerating = () => {
@@ -1229,7 +1233,7 @@ class OpreatorCenter {
       continue_with_chosen: logprobItem,  // chosen_top_logprob
       rejected_token: recordAsRejectedToken(token),
     }, true)
-    requestLlmServer(messagesComputed.value)
+    requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
     if (isMobile.value) {
       window.setTimeout(closeFloatPatchPannel, 500)
     }
@@ -1244,7 +1248,7 @@ class OpreatorCenter {
       continue_with_input: { input_patch: continuePrefix },
       rejected_token: recordAsRejectedToken(token),
     }, true)
-    requestLlmServer(messagesComputed.value)
+    requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
   }
 
   newGenerate = () => {
@@ -1259,7 +1263,7 @@ class OpreatorCenter {
         is_new_generated: true,
         on_policy: true,
       })
-      requestLlmServer(messages.value)
+      requestLlmServer(messages.value).then(() => this.pandaState.beforeOperation())
     }
   }
 
@@ -1273,7 +1277,7 @@ class OpreatorCenter {
       operator: "new_round_message",
       on_policy: true,
     })
-    requestLlmServer(messages)
+    requestLlmServer(messages).then(() => this.pandaState.beforeOperation())
   }
 
   clearOrDeleteMessage = (message, index) => {
@@ -1698,24 +1702,26 @@ onMounted(async () => {
   metaApiConfigs.value = [...metaApiConfigs.value, ...globalStore.customMetaApiConfigs]
 
   if (!tryLoadDuplicateWindow(pandaState)) { // duplicate window has higher priority
-    var exampleFunc = exampleNameToFunc['default']
-    // var exampleFunc = exampleNameToFunc['image']
-    if (globalStore.debug) {
-      // var exampleFunc = () => {
-      //   // modelName.value = 'doubao-1.5-pro-32k'
-      //   modelName.value = props.modelNameTags['image']
-      //   opreators.newGenerate()
-      // }
-    }
-    setTimeout(async function launchExampleFunc() {
-      if (!requestStatus.value.generating) {
-        await exampleFunc()
-      }
+    if (!globalStore.isOldUser) {
+      var exampleFunc = exampleNameToFunc['default']
+      // var exampleFunc = exampleNameToFunc['image']
       if (globalStore.debug) {
-        p("tokens", tokens)
-        p("patchs", patchs)
+        // var exampleFunc = () => {
+        //   // modelName.value = 'doubao-1.5-pro-32k'
+        //   modelName.value = props.modelNameTags['image']
+        //   opreators.newGenerate()
+        // }
       }
-    }, 3000)
+      setTimeout(async function launchExampleFunc() {
+        if (!requestStatus.value.generating) {
+          await exampleFunc()
+        }
+        if (globalStore.debug) {
+          p("tokens", tokens)
+          p("patchs", patchs)
+        }
+      }, 3000)
+    }
   }
 })
 

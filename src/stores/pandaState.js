@@ -379,8 +379,10 @@ export class PandaState {
     }
     redo = () => {
     }
-    dump = async (includeCache = false) => {
-        this.beforeOperation()
+    dump = async ({ includeCache = false, beforeOperation = true } = {}) => {
+        if (beforeOperation) {
+            this.beforeOperation()
+        }
         this.pandaTree.value.update_time = (new Date()).getTime()
         var dumped = deepCopy(this.pandaTree.value)
         dumped = await usingHashMapRemoveRedundancy(dumped)
