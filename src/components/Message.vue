@@ -291,11 +291,13 @@ const handleRenderContent = () => {
 onMounted(() => {
   // to avoid details open status lost when rerender
   // special for after edit content, details open status will lost
-  const detailsOpen = globalStore.messageIndexStatus[props.index]?.detailsOpen
-  if (detailsOpen == true) {
-    detailsRef.value.open = true
-  } else if (detailsOpen == false) {
-    detailsRef.value.open = false
+  if (detailsRef.value) {
+    const detailsOpen = globalStore.messageIndexStatus[props.index]?.detailsOpen
+    if (detailsOpen == true) {
+      detailsRef.value.open = true
+    } else if (detailsOpen == false) {
+      detailsRef.value.open = false
+    }
   }
 })
 
