@@ -32,15 +32,10 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        '/llama-cpu': {
-          target: 'http://39.105.21.95:12481',
+        '/qwen-test': {
+          target: 'http://113.44.140.251:12692',
           changeOrigin: true,
-          rewrite: path => path.replace(/^\/llama-cpu/, '/v1/')
-        },
-        '/qwen-cpu': {
-          target: 'http://39.105.21.95:12482',
-          changeOrigin: true,
-          rewrite: path => path.replace(/^\/qwen-cpu/, '/v1/')
+          rewrite: path => path.replace(/^\/qwen-test/, '/v1/')
         },
         '/bypass-CORS': {
           target: 'https://api.github.com/',  // placeholder

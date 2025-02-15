@@ -717,14 +717,12 @@ const defaultApiConfig = {
   "endpoint_name": "endpoint-name",
   "model_roles": ["assistant"],
   "client_config": {
-    base_url: window.location.origin + "/llama-cpu",
-    // base_url: window.location.origin + "/qwen-cpu",
-    api_key: "sk-Nokey",
+    base_url: window.location.origin + "/qwen-test",
+    api_key: "ak-onPandaTestKey",
     dangerouslyAllowBrowser: true
   },
   "chat_config": {
-    model: 'meta-llama/Meta-Llama-3-8B-Instruct',
-    // model: 'Qwen/Qwen2.5-1.5B-Instruct',
+    model: "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4" //'qwen-test-model',
   },
 }
 
