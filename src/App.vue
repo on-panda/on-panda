@@ -38,7 +38,7 @@ import 'element-plus/dist/index.css'
         <small style="color: #888;">usage:</small>
       </summary>
       <br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img :src="demoGifUrl"
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img :src="demoGifUrl" loading="lazy"
         style="box-shadow: 0 0px 8px rgba(0, 0, 0, 0.5);width: 406px;max-width: 90%;">
       <br>
       <br>
@@ -214,14 +214,13 @@ import 'element-plus/dist/index.css'
             <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
           </div>
           <div class="tokenLogprobItems">
-            <div v-for="logprobItem in token?.logprobs?.content[0].top_logprobs"
+            <div v-for="logprobItem in token?.logprobs?.content[0]?.top_logprobs"
               style="display: block; background-color: #eee; cursor:pointer" @click="() => {
                 opreators.continueWithChosen(token, logprobItem)
               }" @mouseover="activateLogprobItem = logprobItem"
               @mouseenter="$event.target.style.backgroundColor = '#ddd'"
               @mouseleave="$event.target.style.backgroundColor = ''">
-              <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token)
-              }}</span>
+              <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token) }}</span>
               <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
                 style="white-space: pre-wrap;font-family: Monospace;">:{{
                   (Math.exp(logprobItem.logprob) * 100).toFixed(1).toString().padStart(5, ' ') }}%</span>
@@ -1698,29 +1697,29 @@ onMounted(async () => {
     console.error('Failed to load custom.js:', error);
   }
   metaApiConfigs.value = [...metaApiConfigs.value, ...globalStore.customMetaApiConfigs]
-
-  if (!tryLoadDuplicateWindow(pandaState)) { // duplicate window has higher priority
-    if (!globalStore.isOldUser) {
-      var exampleFunc = exampleNameToFunc['default']
-      // var exampleFunc = exampleNameToFunc['image']
-      if (globalStore.debug) {
-        // var exampleFunc = () => {
-        //   // modelName.value = 'doubao-1.5-pro-32k'
-        //   modelName.value = props.modelNameTags['image']
-        //   opreators.newGenerate()
-        // }
-      }
-      setTimeout(async function launchExampleFunc() {
-        if (!requestStatus.value.generating) {
-          await exampleFunc()
-        }
-        if (globalStore.debug) {
-          p("tokens", tokens)
-          p("patchs", patchs)
-        }
-      }, 3000)
-    }
+  var exampleFunc = exampleNameToFunc['default']
+  if (tryLoadDuplicateWindow(pandaState)) { // duplicate window has higher priority
+    exampleFunc = () => { }
   }
+  if (globalStore.isOldUser) {
+    exampleFunc = () => { }
+  }
+  if (globalStore.debug) {
+    // var exampleFunc = exampleNameToFunc['image']
+    // var exampleFunc = () => {
+    //   // modelName.value = 'doubao-1.5-pro-32k'
+    //   opreators.newGenerate()
+    // }
+  }
+  setTimeout(async function launchExampleFunc() {
+    if (!requestStatus.value.generating) {
+      await exampleFunc()
+    }
+    if (globalStore.debug) {
+      p("tokens", tokens)
+      p("patchs", patchs)
+    }
+  }, 3000)
 })
 
 onBeforeUnmount(async () => {
