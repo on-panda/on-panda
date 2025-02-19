@@ -221,7 +221,7 @@ import 'element-plus/dist/index.css'
               @mouseenter="$event.target.style.backgroundColor = '#ddd'"
               @mouseleave="$event.target.style.backgroundColor = ''">
               <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token)
-                }}</span>
+              }}</span>
               <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
                 style="white-space: pre-wrap;font-family: Monospace;">:{{
                   (Math.exp(logprobItem.logprob) * 100).toFixed(1).toString().padStart(5, ' ') }}%</span>
@@ -302,7 +302,7 @@ import 'element-plus/dist/index.css'
 
     <!-- <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div> -->
 
-    <pre v-show="false">{{ JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2) }}</pre>
+    <pre v-show="false">{{JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2)}}</pre>
 
     <el-divider content-position="left">
       <b>control parameter:</b>
@@ -445,11 +445,11 @@ e.g.:
     type: Object,
     default: {
       'on-panda': 'on-panda',
-      'o1': 'oone',
+      // 'o1': 'oone',
       'r1': 'deepseek-r1',
       'image': 'image',
-      'audio': 'audio',
-      'llama': 'others-llama3p1-70b-chat',
+      // 'audio': 'audio',
+      // 'llama': 'others-llama3p1-70b-chat',
       // 'qwen': 'others-qwen2p5-72b-chat',
       'gpt4o': 'chatgpt-4o-latest',
       'claude': 'claude-3-5-sonnet-20241022',
