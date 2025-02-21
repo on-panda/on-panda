@@ -317,7 +317,8 @@ import 'element-plus/dist/index.css'
         <el-select-v2 v-model="modelName" filterable :options="Object.keys(apiConfigs).map((x, idx) => ({
           value: x,
           label: x,
-        }))" placeholder="Select model" style="width: 440px" size="small" />
+        }))" placeholder="Select model" style="width: 440px" size="small" :height='400'
+          :class="{ 'mobile-select-model-input': isMobile }" />
       </el-form-item>
 
       <div style="line-height: 1.85;margin-top: -20px;margin-bottom: -5px;" :align="isMobile ? 'right' : ''">
@@ -1810,5 +1811,11 @@ onBeforeUnmount(async () => {
 
 * {
   font-family: Arial, sans-serif;
+}
+</style>
+
+<style>
+.mobile-select-model-input .el-select__wrapper {
+  font-size: 16px;
 }
 </style>
