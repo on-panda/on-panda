@@ -133,9 +133,14 @@ import 'element-plus/dist/index.css'
         <div class="replayStatisticsSubtitle" style="display: flex; justify-content: space-between;">
           <small style="color: #888;"> model:
             <code>{{ tokensModelNames }}</code>
-            <span v-if="tokens.length && tokens[tokens.length - 1]?.usage?.prompt_tokens"> ｜ tokens: {{
-              tokens[tokens.length
-                - 1]?.usage?.prompt_tokens }} + {{ tokens[tokens.length - 1]?.usage?.completion_tokens }} </span>
+            <span v-if="tokens.length">
+              <span v-if="tokens[tokens.length - 1]?.usage?.prompt_tokens">
+                ｜ tokens:
+                {{ tokens[tokens.length - 1]?.usage?.prompt_tokens }} +
+                {{ tokens[tokens.length - 1]?.usage?.completion_tokens }}
+              </span>
+              <span v-else-if="bitTokens.length <= 1"> ｜ tokens: {{ tokens.length }} </span>
+            </span>
             <span v-if="bitTokens.length > 1"> ｜
               <el-tooltip class="" effect="light" placement="bottom" raw-content>
                 <template #content>
@@ -452,6 +457,7 @@ e.g.:
       // 'qwen': 'others-qwen2p5-72b-chat',
       'gpt4o': 'chatgpt-4o-latest',
       'claude': 'claude-3-5-sonnet-20241022',
+      'groq': 'groq',
     },
     description: `Model name tags for quick selection`,
   },
@@ -1091,6 +1097,9 @@ async function requestLlmServer(messages) {
     var streamIndex = -1
     var generatedContent = ""
     var tokensValuePtr = tokens.value
+
+    var tokenBatch = []
+    var isTokensConcatLocked = false
     for await (const chunk of stream) {
       if ("error" in chunk) {
         throw new Error(JSON.stringify(chunk))
@@ -1157,10 +1166,28 @@ async function requestLlmServer(messages) {
             token.pruned = lastToken.pruned
           }
         }
-        tokensValuePtr.push(token)
+        tokenBatch.push(token)
+
+        // using batch to concat tokens to reduce compute complexity and avoid stuck main thread when generating super long CoT
+        var concatTokens = () => {
+          if (tokenBatch.length > 0) {
+            console.assert(tokensValuePtr === tokens.value)
+            tokensValuePtr.push(...tokenBatch)
+            tokenBatch = []
+          }
+        }
+        // concat tokens with a delay, the delay is based on the number of tokens
+        if (!isTokensConcatLocked) {
+          isTokensConcatLocked = true
+          concatTokens()
+          setTimeout(() => {
+            isTokensConcatLocked = false
+          }, Math.min(1000, 1000 * (tokensValuePtr.length || 0) / 8192))
+        }
+
+        // try remove duplicated prefill tokens for API not support continue_final_message
         generatedContent += token?.delta?.content || ""
         if (continue_final_message && !apiConfig.value.support_continue_final_message) {
-          // try remove duplicated prefill tokens for API not support continue_final_message
           if (generatedContent === lastMessageContent) {
             warning("API not support continue_final_message, remove duplicated prefill tokens")
             generatedContent = ""
@@ -1176,6 +1203,7 @@ async function requestLlmServer(messages) {
         // p(token.delta?.content, token)
       }
     }
+    concatTokens()
     if (tokens.value.length > 2) {  // workround for last token is empty and only have finish_reason
       const lastToken = tokens.value[tokens.value.length - 1]
       const lastToken2 = tokens.value[tokens.value.length - 2]
@@ -1707,6 +1735,7 @@ onMounted(async () => {
   if (globalStore.debug) {
     // var exampleFunc = exampleNameToFunc['image']
     // var exampleFunc = () => {
+    //   modelName.value = 'deepseek-r1-distill-qwen-32b'
     //   // modelName.value = 'doubao-1.5-pro-32k'
     //   opreators.newGenerate()
     // }
