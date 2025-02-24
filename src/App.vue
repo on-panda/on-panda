@@ -323,12 +323,24 @@ import 'element-plus/dist/index.css'
 
       <div style="line-height: 1.85;margin-top: -20px;margin-bottom: -5px;" :align="isMobile ? 'right' : ''">
         <span v-for="_ in (isMobile ? 0 : 30)">&nbsp;</span>
-        <template v-for="(value, key) in props.modelNameTags">
-          <el-tag :type="modelName.includes(value) ? 'primary' : 'info'" @click="modelName = value"
-            style="cursor: pointer;margin-left: 5px;">
-            {{ key }}
+        <template v-for="(modelName_, tag) in props.modelNameTags">
+          <el-tag :type="modelName.includes(modelName_) ? 'primary' : 'info'"
+            @click="handleModelTagClick($event, modelName_)" style="cursor: pointer;margin-left: 5px;">
+            {{ tag }}
           </el-tag>
         </template>
+        <small v-if="!isMobile">
+          &nbsp;
+          <el-tooltip class="" effect="light" placement="top" raw-content>
+            <template #content>
+              <MarkdownRender
+                :content="'1. Click the tag to switch model\n2. If hold down the `Ctrl` key and click the tag, will open a new window containing the same message'" />
+            </template>
+            <el-icon>
+              <InfoFilled />
+            </el-icon>
+          </el-tooltip>
+        </small>
       </div>
       <br>
 
@@ -459,6 +471,7 @@ e.g.:
       'gpt4o': 'chatgpt-4o-latest',
       'claude': 'claude-3-5-sonnet-20241022',
       'groq': 'groq',
+      'fast': 'llama-3.3-70b-versatile',
     },
     description: `Model name tags for quick selection`,
   },
@@ -1718,6 +1731,15 @@ pandaState.registerDialogComputed(dialogComputed)
 pandaState.registerApiConfig(apiConfig)
 pandaState.registerTokens(tokens)
 
+function handleModelTagClick(event, newModelName) {
+  if (event.ctrlKey) {
+    localStorage.setItem('modelNameForDuplicateWindow', newModelName)
+    duplicateWindow(pandaState)
+  } else {
+    modelName.value = newModelName
+  }
+}
+
 onMounted(async () => {
   scrollDiv.value.addEventListener('scroll', handleReactiveFunctions);
   try {
@@ -1729,8 +1751,12 @@ onMounted(async () => {
   var exampleFunc = exampleNameToFunc['default']
   if (tryLoadDuplicateWindow(pandaState)) { // duplicate window has higher priority
     exampleFunc = () => { }
-  }
-  if (globalStore.isOldUser) {
+    if (localStorage.getItem('modelNameForDuplicateWindow')) {
+      modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
+      localStorage.removeItem('modelNameForDuplicateWindow')
+      exampleFunc = opreators.newGenerate
+    }
+  } else if (globalStore.isOldUser) {
     exampleFunc = () => { }
   }
   if (globalStore.debug) {
