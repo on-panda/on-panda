@@ -469,7 +469,7 @@ e.g.:
       // 'llama': 'others-llama3p1-70b-chat',
       // 'qwen': 'others-qwen2p5-72b-chat',
       'gpt4o': 'chatgpt-4o-latest',
-      'claude': 'claude-3-5-sonnet-20241022',
+      'claude': 'claude',
       'groq': 'groq',
       'fast': 'llama-3.3-70b-versatile',
     },
