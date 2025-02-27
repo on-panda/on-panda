@@ -427,7 +427,7 @@ import 'element-plus/dist/index.css'
       <h3>Error Messages:</h3>
       <div v-html="warningContent"></div>
     </div>
-    <br v-for="_ in (isMobile ? 12 : apiConfig.chat_config.top_logprobs)">
+    <br v-for="_ in (isMobile ? 12 : 0)">
   </div>
 </template>
 
@@ -1004,7 +1004,7 @@ const apiConfigChosen = computed(() => {
     }
   }
   if (Object.keys(changedChatConfig).length > 0) {
-    ElMessage.warning(`Change the chat config: ${JSON.stringify(changedChatConfig)}`)
+    ElMessage.warning(`Change the control parameter: ${JSON.stringify(changedChatConfig)}`)
   }
   return apiConfigChosen
 })
@@ -1767,9 +1767,9 @@ onMounted(async () => {
     exampleFunc = () => { }
   }
   if (globalStore.debug) {
-// var exampleFunc = exampleNameToFunc['image']
-// var exampleFunc = () => {
-//   modelName.value = 'deepseek-r1-distill-qwen-32b'
+    // var exampleFunc = exampleNameToFunc['image']
+    // var exampleFunc = () => {
+    //   modelName.value = 'deepseek-r1-distill-qwen-32b'
     //   // modelName.value = 'doubao-1.5-pro-32k'
     //   opreators.newGenerate()
     // }
