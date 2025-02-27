@@ -994,10 +994,17 @@ const apiConfigChosen = computed(() => {
       break
     }
   }
+  const changedChatConfig = {}
   for (const key of chatConfigKeys) { // apply apiConfigChosen.chat_config
     if (key in apiConfigChosen.chat_config) {
+      if (key !== 'model' && apiConfigChosen.chat_config[key] !== chatConfig.value[key]) {
+        changedChatConfig[key] = apiConfigChosen.chat_config[key]
+      }
       chatConfig.value[key] = apiConfigChosen.chat_config[key]
     }
+  }
+  if (Object.keys(changedChatConfig).length > 0) {
+    ElMessage.warning(`Change the chat config: ${JSON.stringify(changedChatConfig)}`)
   }
   return apiConfigChosen
 })
@@ -1760,9 +1767,9 @@ onMounted(async () => {
     exampleFunc = () => { }
   }
   if (globalStore.debug) {
-    // var exampleFunc = exampleNameToFunc['image']
-    // var exampleFunc = () => {
-    //   modelName.value = 'deepseek-r1-distill-qwen-32b'
+// var exampleFunc = exampleNameToFunc['image']
+// var exampleFunc = () => {
+//   modelName.value = 'deepseek-r1-distill-qwen-32b'
     //   // modelName.value = 'doubao-1.5-pro-32k'
     //   opreators.newGenerate()
     // }
