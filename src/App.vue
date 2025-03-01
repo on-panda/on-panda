@@ -53,6 +53,7 @@ import 'element-plus/dist/index.css'
       - Paste images directly for visual language model support<br>
       - Single-click image to enlarge, double-click to open<br>
       - Double-click role labels to edit them<br>
+      - Hold down the `Alt` key while clicking to copy the content of the suggestion.<br>
 
       <br><b>Beginner's tips:</b>
       <br>
@@ -225,10 +226,9 @@ import 'element-plus/dist/index.css'
           </div>
           <div class="tokenLogprobItems">
             <div v-for="logprobItem in token?.logprobs?.content[0]?.top_logprobs"
-              style="display: block; background-color: #eee; cursor:pointer" @click="() => {
-                opreators.continueWithChosen(token, logprobItem)
-              }" @mouseover="activateLogprobItem = logprobItem"
-              @mouseenter="$event.target.style.backgroundColor = '#ddd'"
+              style="display: block; background-color: #eee; cursor:pointer"
+              @click="(event) => handleLogprobItemClick(event, token, logprobItem)"
+              @mouseover="activateLogprobItem = logprobItem" @mouseenter="$event.target.style.backgroundColor = '#ddd'"
               @mouseleave="$event.target.style.backgroundColor = ''">
               <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token) }}</span>
               <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
@@ -1572,6 +1572,17 @@ function closeFloatPatchPannel() {
   floatPatchPannel.value.visible = false;
   floatPatchPannel.value.waitingToHide = false;
   activatePatch.value = {}
+}
+
+function handleLogprobItemClick(event, token, logprobItem) {
+  if (event.altKey) {
+    var content = logprobItem.token
+    navigator.clipboard.writeText(content).then(() => {
+      ElMessage.success(`Copied "${content}" to clipboard`)
+    })
+  } else {
+    opreators.continueWithChosen(token, logprobItem);
+  }
 }
 
 const newTurnMessage = ref({ role: 'user', content: '' })
