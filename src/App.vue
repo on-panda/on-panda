@@ -108,10 +108,15 @@ import 'element-plus/dist/index.css'
             <el-tooltip v-if="0" content="edit (TBD)" placement="top">
               <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
             </el-tooltip>
-            <el-tooltip content="refresh tokens' probability" placement="top">
+            <el-tooltip placement="top" effect="light">
+              <template #content>
+                Refresh tokens' probability, <br>Or
+                <el-button size="small" @click="pasteThenRequestPromptLogprobs">
+                  Paste and Refresh
+                </el-button>
+              </template>
               <el-button :icon="View" size="small" :disabled="!finalMessage.content || requestStatus.generating"
                 @click="requestPromptLogprobs" />
-              @click="requestPromptLogprobs" />
             </el-tooltip>
             <el-tooltip placement="top-end" effect="light">
               <template #content>
@@ -568,6 +573,14 @@ async function requestPromptLogprobs() {
   }
 }
 
+async function pasteThenRequestPromptLogprobs() {
+  var pasteText = await navigator.clipboard.readText()
+  if (tokens.value.length == 0) {
+    tokens.value = [{ delta: { role: "assistant", content: "" } }]
+  }
+  opreators.applyInputChange(tokens.value[0], pasteText)
+  requestPromptLogprobs()
+}
 
 function useSelectedNodes(containerRef) {
   const selectedNodes = ref({ startNode: null, endNode: null });
@@ -1285,7 +1298,7 @@ class OpreatorCenter {
     }
   }
 
-  continueWithInput = (token, continuePrefix, continuePrefixLogprob) => {
+  applyInputChange = (token, continuePrefix, continuePrefixLogprob) => {
     this.pandaState.beforeOperation()
     prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob)
     this.pandaState.afterOperation({
@@ -1294,6 +1307,10 @@ class OpreatorCenter {
       continue_with_input: { input_patch: continuePrefix },
       rejected_token: recordAsRejectedToken(token),
     }, true)
+  }
+
+  continueWithInput = (token, continuePrefix, continuePrefixLogprob) => {
+    this.applyInputChange(token, continuePrefix, continuePrefixLogprob)
     requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
   }
 
