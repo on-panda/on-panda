@@ -18,8 +18,14 @@ export const useGlobalStore = defineStore('global', () => {
     const messageIndexStatus = ref({})
 
     const widthRelatedStore = buildWidthRelatedStore()
+    
+    const currentLocale = ref(localStorage.getItem('locale') || navigator.language)
+    function setLocale(locale) {
+        currentLocale.value = locale
+        localStorage.setItem('locale', locale)
+    }
 
-    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customMetaApiConfigs, ...widthRelatedStore }
+    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customMetaApiConfigs, currentLocale, setLocale, ...widthRelatedStore }
 }
 )
 

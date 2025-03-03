@@ -1,4 +1,7 @@
 <template>
+    <div class="LanguageSwitcher" style="text-align: right; margin-bottom: -15px;">
+        <LanguageSwitcher />
+    </div>
     <details>
         <summary>
             <small style="color: #888;">as Data Annotator:</small>
@@ -62,7 +65,7 @@ import demoGifUrl from '../../public/img/onPanda-demo-candidate.gif';
 
 import { ref } from 'vue'
 import { useGlobalStore } from '@/stores/globalStore'
-
+import LanguageSwitcher from './LanguageSwitcher.vue'
 
 const globalStore = useGlobalStore()
 const _isLogoRotated = ref(false)

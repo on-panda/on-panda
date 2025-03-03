@@ -1,4 +1,3 @@
-
 export function deepCopy(obj) {
   return JSON.parse(JSON.stringify(obj))
 }
@@ -112,7 +111,6 @@ export const escapeHTML = (s) => {
     .replaceAll(/'/g, '&#39;')
 }
 
-
 export function dateStringNow(includeMilliseconds = false, timestamp = null) {
   const now = timestamp ? new Date(timestamp) : new Date();
   const year = now.getFullYear();
@@ -130,15 +128,12 @@ export function dateStringNow(includeMilliseconds = false, timestamp = null) {
   return str
 }
 
-
-
 import { onMounted, onUnmounted } from 'vue'
 
 export function useEventListener(target, event, callback, options) {
   onMounted(() => target.addEventListener(event, callback, options))
   onUnmounted(() => target.removeEventListener(event, callback))
 }
-
 
 export function closeFloatPannelMeta(refElement, closeFunction, usingEscapeKey = true, exceptTouch = false) {
   function handleKeyDown(event) {
@@ -168,15 +163,14 @@ export function closeFloatPannelMeta(refElement, closeFunction, usingEscapeKey =
   useEventListener(window, supportsPointerEvent ? 'PointerEvent' : 'click', handleMouseClick)
 }
 
-
 import { ElMessage } from 'element-plus'
+import { i18n } from '@/i18n'
 
 export async function copyToClipboard(string) {
-
   await navigator.clipboard.writeText(string)
   ElMessage({
     showClose: true,
-    message: 'Copied to clipboard',
+    message: i18n.global.t('messages.copied'),
     type: 'success',
     duration: 2000,
   })
@@ -235,7 +229,6 @@ export function blobToBase64(blob) {
   });
 }
 
-
 export function base64ToBlob(base64String) {
   const byteString = atob(base64String.split(',')[1]);
   const mimeString = base64String.split(',')[0].split(':')[1].split(';')[0];
@@ -270,7 +263,6 @@ export const registerKeyActions = (keyActions) => {  // : { [key: string]: () =>
   useEventListener(document, 'keydown', handleKeyDown)
   return handleKeyDown
 }
-
 
 export async function hashObjectSHA256Base64(obj, sortKeys = true) {
   // Fixed key order => SHA-256 => Base64
@@ -307,7 +299,6 @@ export function downloadJsonFile(obj, filename) {
   URL.revokeObjectURL(url)
   return filename
 }
-
 
 export async function uploadJsonFile() {
   const fileInput = document.createElement('input');
@@ -350,7 +341,6 @@ export async function uploadJsonFile() {
 
   return promise;
 }
-
 
 export class TaskQueue {
   constructor() {

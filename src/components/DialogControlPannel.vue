@@ -2,46 +2,50 @@
     <div class="dialogControlPannel" v-if="pandaState.dialogKeys.value?.length">
         <div style="margin-top:-10px; margin-bottom:10px; line-height:2">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
-            <el-tooltip content="Save the data" raw-content placement="top">
+            <el-tooltip :content="t('tooltips.saveData')" raw-content placement="top">
                 <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump({})" />
             </el-tooltip>
-            <el-tooltip content="Previous modification<br>(Shortcut key: left)" raw-content placement="top">
+            <el-tooltip :content="t('tooltips.previousModification') + '<br>(Shortcut key: left)'" raw-content
+                placement="top">
                 <el-button id="switchToPreviousDialog" :icon="Back" size="small"
                     @click="pandaState.switchToPreviousDialog()" />
             </el-tooltip>
-            <el-tooltip content="Next modification<br>(Shortcut key: right)" raw-content placement="top">
+            <el-tooltip :content="t('tooltips.nextModification') + '<br>(Shortcut key: right)'" raw-content
+                placement="top">
                 <el-button id="switchToNextDialog" :icon="Right" size="small"
                     @click="pandaState.switchToNextDialog()" />
             </el-tooltip>
-            <el-tooltip content="Delete current dialog" raw-content placement="top" v-if="!pandaState.isDeleted.value">
+            <el-tooltip :content="t('tooltips.deleteDialog')" raw-content placement="top"
+                v-if="!pandaState.isDeleted.value">
                 <el-button plain type="danger" :icon="Delete" size="small" @click="pandaState.deleteCurrentDialog()" />
             </el-tooltip>
-            <el-tooltip content="Restore current dialog" raw-content placement="top" v-if="pandaState.isDeleted.value">
+            <el-tooltip :content="t('tooltips.restoreDialog')" raw-content placement="top"
+                v-if="pandaState.isDeleted.value">
                 <el-button plain type="success" :icon="Help" size="small" @click="pandaState.restoreDeletedDialog()" />
             </el-tooltip>
-            <el-tooltip content="Permanently delete current dialog" raw-content placement="top"
+            <el-tooltip :content="t('common.delete') + ' ' + t('tooltips.deleteDialog')" raw-content placement="top"
                 v-if="pandaState.isDeleted.value">
                 <el-button plain type="danger" :icon="CloseBold" size="small"
                     @click="pandaState.eraseCurrentDialog()" />
             </el-tooltip>
-            <el-tooltip content="Upload *.panda.json file<br>You can also drop a JSON file here!" raw-content
+            <el-tooltip :content="t('tooltips.uploadFile') + '<br>' + t('messages.dropJsonHere')" raw-content
                 placement="top">
                 <el-button :icon="UploadFilled" size="small" @click="uploadAndLoadJson"
                     :style="isDragged ? { backgroundColor: 'rgb(158, 218, 255)' } : {}" />
             </el-tooltip>
-            <el-tooltip content="Download panda.json file" raw-content placement="top">
+            <el-tooltip :content="t('tooltips.downloadFile')" raw-content placement="top">
                 <el-button :icon="Download" size="small" @click="clickToDownload" />
             </el-tooltip>
-            <el-tooltip content="Open Data Pannel" raw-content placement="top"
+            <el-tooltip :content="t('messages.openDataPanel')" raw-content placement="top"
                 v-if="!('is_good' in (pandaState.currentDialogData.value?.annotate || {}))">
                 <el-button :icon="Postcard" size="small"
                     @click="() => { pandaState.currentDialogData.value.annotate = { is_good: null } }" />
             </el-tooltip>
-            <el-tooltip content="Clean UI (reading mode)" raw-content placement="top">
+            <el-tooltip :content="t('tooltips.cleanUI')" raw-content placement="top">
                 <el-button :icon="Reading" size="small" :type="globalStore.cleanMode ? 'success' : 'default'"
                     @click="globalStore.cleanMode = !globalStore.cleanMode" />
             </el-tooltip>
-            <el-tooltip content="Download panda.json file" raw-content placement="top" v-if="0">
+            <el-tooltip :content="t('tooltips.downloadFile')" raw-content placement="top" v-if="0">
                 <el-dropdown split-button
                     @click="async () => downloadJsonFile(await pandaState.dump({}), uploadedJson && uploadedJson.name)"
                     size=small>
@@ -64,11 +68,11 @@
                 accept=".json" :multiple="false">
                 <el-icon class="el-icon--upload"><upload-filled /></el-icon>
                 <div class="el-upload__text">
-                    Drop JSON file here!
+                    {{ t('messages.dropJsonHere') }}
                 </div>
                 <template #tip>
                     <div class="el-upload__tip">
-                        Only one JSON file
+                        {{ t('messages.onlyOneJsonFile') }}
                     </div>
                 </template>
             </el-upload>
@@ -97,8 +101,10 @@ import { useGlobalStore } from '../stores/globalStore.js'
 import { PandaState, pandaState, uploadedJson } from '../stores/pandaState'
 import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled, Postcard, Reading } from '@element-plus/icons-vue'
 import { registerKeyActions, downloadJsonFile, uploadJsonFile, useEventListener } from '../utils/commonUtils'
+import { useI18n } from 'vue-i18n'
 
 const globalStore = useGlobalStore()
+const { t } = useI18n()
 
 registerKeyActions({
     ArrowLeft: pandaState.switchToPreviousDialog,
