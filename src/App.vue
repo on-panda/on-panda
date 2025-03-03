@@ -1,65 +1,10 @@
 <script>
-// static relative asset path
-import logoImageUrl from '../public/img/on-panda-logo.png';
-import demoGifUrl from '../public/img/onPanda-demo-candidate.gif';
 import 'element-plus/dist/index.css'
 </script>
 
 <template>
   <div :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }">
-    <details>
-      <summary>
-        <small style="color: #888;">as Data Annotator:</small>
-      </summary>
-      <h2>onPanda: on-Policy Alignment Data Annotator (PoC)</h2>
-      <code>Scaling up your data efficiency before scaling up your data.</code>
-    </details>
-
-    <details>
-      <summary>
-        <small style="color: #888;">as Writing Tool:</small>
-      </summary>
-      <h2>onPanda: LLM-Native Collaborative Writing Tool </h2>
-      <code>Precision byte-level control for LLM writing.</code>
-    </details>
-
-    <div style="text-align: center;">
-      <img width="128" :src="logoImageUrl"
-        :style="{ transform: _isLogoRotated ? 'rotate(360deg)' : 'rotate(0deg)', transition: 'transform 3s' }"
-        @click="_isLogoRotated = !_isLogoRotated" />
-      <br>
-      <b :style="isMobile ? {} : { fontSize: '20px' }">onPanda: LLM-Native Interaction Design</b>
-      <br>
-      <br>
-    </div>
-
-    <details>
-      <summary>
-        <small style="color: #888;">usage:</small>
-      </summary>
-      <br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img :src="demoGifUrl" loading="lazy"
-        style="box-shadow: 0 0px 8px rgba(0, 0, 0, 0.5);width: 406px;max-width: 90%;">
-      <br>
-      <br>
-      Usage:<br>
-      <b>Basic Features:</b><br>
-      - Hover over any word to see alternative suggestions<br>
-      - Click a suggestion to continue generating from that point<br>
-      - Double-click any word to manually edit and continue<br>
-      - Select text to edit or let AI optimize it<br>
-
-      <b>Advanced Features:</b><br>
-      - Paste images directly for visual language model support<br>
-      - Single-click image to enlarge, double-click to open<br>
-      - Double-click role labels to edit them<br>
-      - Hold down the `Alt` key while clicking to copy the content of the suggestion.<br>
-
-      <br><b>Beginner's tips:</b>
-      <br>
-      - You can try any button freely, except save button.<br>
-      - Recommend clicking on all the examples below once.<br>
-    </details>
+    <OnPandaHeader />
 
     <el-divider content-position="left">
       examples:
@@ -445,6 +390,7 @@ import MessageRole from './components/widgets/MessageRole.vue'
 import MarkdownRender from './components/widgets/MarkdownRender.vue'
 import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import DialogControlPannel from './components/DialogControlPannel.vue'
+import OnPandaHeader from './components/OnPandaHeader.vue'
 
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useGlobalStore } from './stores/globalStore.js'
@@ -483,6 +429,7 @@ e.g.:
 })
 
 const globalStore = useGlobalStore()
+var isMobile = computed(() => globalStore.isMobile)
 
 var bitTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content[0]?.logprob === "number"))
 
@@ -690,18 +637,6 @@ function improveSelectedText() {
   console.log('improveSelectedText', floatSelectedOpreationPannel.value.improveInputText, selectedText)
   floatSelectedOpreationPannel.value.improveInputVisible = false
 }
-
-const innerWidth = ref(window.innerWidth)
-const _isLogoRotated = ref(false)
-
-function handleResize() {
-  innerWidth.value = window.innerWidth
-}
-useEventListener(window, 'resize', handleResize)
-handleResize()
-
-var isMobile = computed(() => innerWidth.value < 700)
-var isMobileByUserAgent = (/Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i).test(navigator.userAgent) && ('ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)
 
 
 import { useScrollSwitchSync } from '@/utils/scrollSwitch.js'
