@@ -5,7 +5,9 @@ import 'element-plus/dist/index.css'
 <template>
   <div :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }">
     <OnPandaHeader />
-
+    <small style="color: #555;">
+      <MarkdownRender :content="props.customInfoForUser" v-if="props.customInfoForUser" />
+    </small>
     <el-divider content-position="left">
       examples:
     </el-divider>
@@ -425,6 +427,25 @@ e.g.:
       'fast': 'llama-3.3-70b-versatile',
     },
     description: `Model name tags for quick selection`,
+  },
+  customInfoForUser: {
+    type: String,
+    default: `
+### onPanda 标注指南
+
+#### 基本功能
+- 模型回复由一个一个词组组成，词组底部的颜色代表模型输出该词组的概率
+- 将鼠标悬停在文本上可查看候选词组，点击候选词组，模型会基于被选择的词组继续生成
+- 若候选词组中没有合适的词组，请双击错误的词组进行编辑，随后模型会自动继续生成
+
+#### 图片功能
+- 输入框可以直接粘贴图片 
+- 单击图片放大，双击打开
+
+#### 标注功能
+
+`,
+    description: `Custom info for user, will be rendered as markdown`,
   },
 })
 

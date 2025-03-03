@@ -289,7 +289,7 @@ export class PandaState {
             dialogs: {
                 1: {
                     messages: [
-                        // { role: "system", content: "" },
+                        { role: "system", content: "" },
                         { role: "user", content: "" }],
                     annotate: {
                         is_good: null
