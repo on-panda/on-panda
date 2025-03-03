@@ -9,7 +9,13 @@ export default {
     stop: 'Stop',
     copy: 'Copy',
     paste: 'Paste',
-    refresh: 'Refresh'
+    refresh: 'Refresh',
+    model: 'Model',
+    examples: 'Examples',
+    dialog: 'Dialog',
+    newMessage: 'New Message',
+    controlParameter: 'Control Parameter',
+    errorMessages: 'Error Messages'
   },
   header: {
     usage: 'Usage',
@@ -17,20 +23,14 @@ export default {
     advancedFeatures: 'Advanced Features',
     beginnerTips: 'Beginner\'s tips'
   },
-  controls: {
-    model: 'Model',
-    temperature: 'Temperature',
-    maxTokens: 'Max Tokens',
-    topLogprobs: 'Top Logprobs',
-    continueGenerating: 'Continue Generating'
-  },
   messages: {
-    newMessage: 'New Message',
-    controlParameter: 'Control Parameter',
+    waiting: 'Waiting...',
     copied: 'Copied to clipboard',
+    responseRefreshed: 'Response probability refreshed',
+    noPromptLogprobs: 'No prompt_logprobs in response, maybe the model does not support prompt_logprobs',
     dropJsonHere: 'Drop JSON file here!',
-    onlyOneJsonFile: 'Only one JSON file',
-    openDataPanel: 'Open Data Panel'
+    onlyOneJsonFile: 'Only one JSON file can be uploaded',
+    openDataPanel: 'Open data panel'
   },
   tooltips: {
     saveData: 'Save the data',
@@ -40,6 +40,11 @@ export default {
     restoreDialog: 'Restore current dialog',
     uploadFile: 'Upload *.panda.json file',
     downloadFile: 'Download panda.json file',
-    cleanUI: 'Clean UI (reading mode)'
+    cleanUI: 'Clean UI (reading mode)',
+    continueGenerating: 'Continue generating',
+    stopGenerating: 'Stop generating',
+  },
+  placeholders: {
+    submitEnter: 'Submit: `↵`; newline: `shift+↵`',
   }
 } 

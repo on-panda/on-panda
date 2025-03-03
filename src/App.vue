@@ -9,7 +9,7 @@ import 'element-plus/dist/index.css'
       <MarkdownRender :content="props.customInfoForUser" v-if="props.customInfoForUser" />
     </small>
     <el-divider content-position="left">
-      examples:
+      {{ t('common.examples') }}:
     </el-divider>
 
     <div style="line-height: 2">
@@ -21,7 +21,7 @@ import 'element-plus/dist/index.css'
     </div>
 
     <el-divider content-position="left" style="margin-bottom: 5px;">
-      <b> dialog:</b>
+      <b>{{ t('common.dialog') }}:</b>
     </el-divider>
     <div class="dialogFixedPosition"
       :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {})"
@@ -43,11 +43,11 @@ import 'element-plus/dist/index.css'
           <span class="stretch" style="margin-right: auto" />
           <footer class="finalMessageControlButtons" style="display :flex; margin-top:5px; margin-bottom:-5px">
             <span class="stretch" style="margin-right: auto" />
-            <el-tooltip v-if="!requestStatus.generating" content="continue" placement="top">
+            <el-tooltip v-if="!requestStatus.generating" :content="t('tooltips.continueGenerating')" placement="top">
               <el-button :icon="DArrowRight" size="small" :disabled="!tokens?.length"
                 @click="opreators.continueGenerating()" />
             </el-tooltip>
-            <el-tooltip v-if="requestStatus.generating" content="stop generating" placement="top">
+            <el-tooltip v-if="requestStatus.generating" :content="t('tooltips.stopGenerating')" placement="top">
               <el-button :icon="VideoPause" size="small" @click="opreators.stopGenerating()" />
             </el-tooltip>
             <!-- <el-tooltip content="try again" placement="top">
@@ -209,7 +209,7 @@ import 'element-plus/dist/index.css'
       left: `${floatInputPatch.x}px`,
       top: `${floatInputPatch.y}px`,
     }" style="display: flex; position: fixed">
-      <textarea type="text" placeholder="submit: `↵`; newline: `shift+↵`" style="height: 25px; width:auto;"
+      <textarea type="text" :placeholder="t('placeholders.submitEnter')" style="height: 25px; width:auto;"
         class="floatInputPatchInput" @focus="$event.target.select()"
         @keydown.enter="if (!$event.shiftKey) { opreators.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
     </div>
@@ -250,7 +250,7 @@ import 'element-plus/dist/index.css'
     <AnnotatorPanel
       v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment || globalStore.debug" />
 
-    <el-divider content-position="left" style="margin-bottom: 5px;">new message:</el-divider>
+    <el-divider content-position="left" style="margin-bottom: 5px;">{{ t('common.newMessage') }}:</el-divider>
     <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
       <Message :message="newTurnMessage" :index="-2" @deleteMessage="newTurnMessage.content = ''"
         @sendButton="opreators.newRoundMessage()" />
@@ -261,7 +261,7 @@ import 'element-plus/dist/index.css'
     <pre v-show="false">{{JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2)}}</pre>
 
     <el-divider content-position="left">
-      <b>control parameter:</b>
+      <b>{{ t('common.controlParameter') }}:</b>
     </el-divider>
 
     <el-form class="toolbar options" label-width="140px">
@@ -387,6 +387,7 @@ import 'element-plus/dist/index.css'
 import { ref, computed, watch, toValue, provide } from 'vue'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import Message from './components/Message.vue'
 import MessageRole from './components/widgets/MessageRole.vue'
 import MarkdownRender from './components/widgets/MarkdownRender.vue'
@@ -401,7 +402,6 @@ import { p, escapeHTML, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow
 import { tokensToSeq, normalizeRequest, messageToSeq, recordAsRejectedToken } from './utils/chatUtils.js'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close, InfoFilled } from '@element-plus/icons-vue'
-
 
 const props = defineProps({
   apiConfigs: {
@@ -449,6 +449,8 @@ e.g.:
   },
 })
 
+const { t } = useI18n()
+
 const globalStore = useGlobalStore()
 var isMobile = computed(() => globalStore.isMobile)
 
@@ -484,7 +486,7 @@ async function requestPromptLogprobs() {
     if (!json.prompt_logprobs_list) {
       ElMessage({
         showClose: true,
-        message: 'No prompt_logprobs in response, maybe the model does not support prompt_logprobs',
+        message: t('messages.noPromptLogprobs'),
         type: 'error',
         duration: 10000,
       })
@@ -530,7 +532,7 @@ async function requestPromptLogprobs() {
     tokens.value = tokensNew
     ElMessage({
       showClose: true,
-      message: 'Response probability refreshed',
+      message: t('messages.responseRefreshed'),
       type: 'success',
       duration: 5000,
     })
@@ -1659,7 +1661,7 @@ closeFloatPannelMeta(floatInputPatchRef, () => {
 })
 
 function setFloatInputPatch(event, patch) {
-  // keep floatPatchPannel on， don‘t know why need setTimeout
+  // keep floatPatchPannel on， don't know why need setTimeout
   setTimeout(() => {
     activatePatch.value = patch
     floatPatchPannel.value.waitingToHide = false;
