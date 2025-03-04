@@ -37,23 +37,7 @@
             style="box-shadow: 0 0px 8px rgba(0, 0, 0, 0.5);width: 406px;max-width: 90%;">
         <br>
         <br>
-        Usage:<br>
-        <b>Basic Features:</b><br>
-        - Hover over any word to see alternative suggestions<br>
-        - Click a suggestion to continue generating from that point<br>
-        - Double-click any word to manually edit and continue<br>
-        - Select text to edit or let AI optimize it<br>
-
-        <b>Advanced Features:</b><br>
-        - Paste images directly for visual language model support<br>
-        - Single-click image to enlarge, double-click to open<br>
-        - Double-click role labels to edit them<br>
-        - Hold down the `Alt` key while clicking to copy the content of the suggestion.<br>
-
-        <br><b>Beginner's tips:</b>
-        <br>
-        - You can try any button freely, except save button.<br>
-        - Recommend clicking on all the examples below once.<br>
+        <MarkdownRender :content="$t('header.instruction')" />
     </details>
 
 </template>
@@ -66,6 +50,7 @@ import demoGifUrl from '../../public/img/onPanda-demo-candidate.gif';
 import { ref } from 'vue'
 import { useGlobalStore } from '@/stores/globalStore'
 import LanguageSwitcher from './widgets/LanguageSwitcher.vue'
+import MarkdownRender from './widgets/MarkdownRender.vue'
 
 const globalStore = useGlobalStore()
 const _isLogoRotated = ref(false)

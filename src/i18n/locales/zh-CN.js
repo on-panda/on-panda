@@ -26,16 +26,6 @@ export default {
     native: '原生',
     promptEngineering: '提示工程'
   },
-  header: {
-    usage: '使用说明',
-    basicFeatures: '基本功能',
-    advancedFeatures: '高级功能',
-    beginnerTips: '新手提示',
-    asDataAnnotator: '作为标注工具',
-    asWritingTool: '作为写作工具',
-    dataAnnotatorDesc: '在扩大数据规模之前提高数据效率。',
-    writingToolDesc: '为大语言模型写作提供精确的字节级控制。'
-  },
   userMessages: {
     waiting: '等待中...',
     copied: '已复制到剪贴板',
@@ -70,8 +60,8 @@ export default {
     isGoodTooltip: '最后一次助手的回复是否良好？',
     defaultChoice: '如果没有被标注，对于最新对话默认为"Y"，否则默认为"N"',
     noChoiceMade: '没有被标注',
-    latestDialogDefault: '因为这是最新的对话，所以默认为"Y"',
-    notLatestDialogDefault: '因为这不是最新的对话，所以默认为"N"',
+    latestDialogDefault: '由于这是最新的对话，所以默认为"Y"',
+    notLatestDialogDefault: '由于这不是最新的对话，所以默认为"N"',
     currentDialogJson: '当前对话 JSON',
     dialogCacheTips: '这个对话缓存可能没有及时更新。可以尝试切换对话来刷新它',
     tokens: '令牌',
@@ -91,5 +81,33 @@ export default {
     delete: '删除该对话',
     send: '生成➡️',
     ctrlEnter: 'ctrl+enter'
+  },
+  header: {
+    usage: '使用说明',
+    basicFeatures: '基本功能',
+    advancedFeatures: '高级功能',
+    beginnerTips: '新手提示',
+    asDataAnnotator: '作为标注工具',
+    asWritingTool: '作为写作工具',
+    dataAnnotatorDesc: '在扩大数据规模之前提高数据效率。',
+    writingToolDesc: '为大语言模型写作提供精确的字节级控制。',
+    instruction: `
+### onPanda 标注指南
+**基本功能**
+- 概率可视化：模型回复由一个一个的词组组成，词组底部的颜色代表模型输出该词组的概率
+- 候选续写：将鼠标悬停在回复文本上可查看候选词组，点击候选词组，模型会基于被选择的词组继续生成
+- 双击编辑：若模型回复出现错误，可以双击错误的词组对其进行编辑，随后模型会基于编辑后的内容继续生成
+- 角色信息：system 是系统消息，user 是用户消息，assistant 是模型回复
+
+**图片功能**
+- 输入框可以直接粘贴图片 
+- 单击图片放大，双击打开
+
+**标注要求**
+- 尽可能用“候选续写”，如果候选词组中没有合适的词组，再考虑“双击编辑”
+- 请删掉非标注相关的历史对话后再保存
+
+若您使用 onPanda 不是为了标注数据，推荐点击右上角语言切换为英文界面，有进阶功能介绍
+`
   }
 } 

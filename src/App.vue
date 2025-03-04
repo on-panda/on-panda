@@ -3,10 +3,11 @@ import 'element-plus/dist/index.css'
 </script>
 
 <template>
-  <div :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }">
+  <div :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }" class="onPandaContainer">
     <OnPandaHeader />
-    <small style="color: #555;">
-      <MarkdownRender :content="props.customInfoForUser" v-if="props.customInfoForUser" />
+    <small style="color: #555;" v-if="props.customInfoForUser">
+      <br>
+      <MarkdownRender :content="props.customInfoForUser" />
     </small>
     <el-divider content-position="left">
       {{ t('common.examples') }}:
@@ -311,7 +312,7 @@ import 'element-plus/dist/index.css'
         <small>
           <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
             {{ $t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
-            'controlParameter.promptEngineering') }}
+              'controlParameter.promptEngineering') }}
           </el-tag>
           &nbsp;
           <el-tooltip class="" effect="light" placement="top" raw-content>
@@ -429,22 +430,7 @@ e.g.:
   },
   customInfoForUser: {
     type: String,
-    default: `
-### onPanda 标注指南
-
-#### 基本功能
-- 模型回复由一个一个的词组组成，词组底部的颜色代表模型输出该词组的概率
-- 将鼠标悬停在回复文本上可查看候选词组，点击候选词组，模型会基于被选择的词组继续生成
-- 若候选词组中没有合适的词组，请双击错误的词组进行编辑，随后模型会自动继续生成
-- system 是系统消息，user 是用户消息，assistant 是模型回复
-
-#### 图片功能
-- 输入框可以直接粘贴图片 
-- 单击图片放大，双击打开
-
-#### 标注要求
-
-`,
+    default: '',
     description: `Custom info for user, will be rendered as markdown`,
   },
 })
@@ -1836,5 +1822,16 @@ onBeforeUnmount(async () => {
 <style>
 .mobile-select-model-input .el-select__wrapper {
   font-size: 16px;
+}
+
+.onPandaContainer {
+  summary {
+    cursor: pointer;
+  }
+
+  summary::marker,
+  summary::-webkit-details-marker {
+    color: #888;
+  }
 }
 </style>

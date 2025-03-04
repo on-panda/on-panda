@@ -26,16 +26,6 @@ export default {
     native: 'native',
     promptEngineering: 'prompt engineering'
   },
-  header: {
-    usage: 'Usage',
-    basicFeatures: 'Basic Features',
-    advancedFeatures: 'Advanced Features',
-    beginnerTips: 'Beginner\'s tips',
-    asDataAnnotator: 'as Data Annotator',
-    asWritingTool: 'as Writing Tool',
-    dataAnnotatorDesc: 'Scaling up your data efficiency before scaling up your data.',
-    writingToolDesc: 'Precision byte-level control for LLM writing.'
-  },
   userMessages: {
     waiting: 'Waiting...',
     copied: 'Copied to clipboard',
@@ -91,5 +81,33 @@ export default {
     delete: 'Delete',
     send: 'Send➡️',
     ctrlEnter: 'ctrl+enter'
+  },
+  header: {
+    usage: 'Usage',
+    basicFeatures: 'Basic Features',
+    advancedFeatures: 'Advanced Features',
+    beginnerTips: 'Beginner\'s tips',
+    asDataAnnotator: 'as Data Annotator',
+    asWritingTool: 'as Writing Tool',
+    dataAnnotatorDesc: 'Scaling up your data efficiency before scaling up your data.',
+    writingToolDesc: 'Precision byte-level control for LLM writing.',
+    instruction: `
+### Usage:
+**Basic Features:**
+- Hover over any word to see alternative suggestions
+- Click a suggestion to continue generating from that point
+- Double-click any word to manually edit and continue
+- Select text to edit or let AI optimize it
+
+**Advanced Features:**
+- Paste images directly for visual language model support
+- Single-click image to enlarge, double-click to open
+- Double-click role labels to edit them
+- Hold down the \`Alt\` key while clicking to copy the content of the suggestion.
+
+**Beginner's tips:**
+- You can try any button freely, except save button.
+- Recommend clicking on all the examples below once.
+        `
   }
 } 
