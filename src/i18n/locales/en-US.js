@@ -10,10 +10,10 @@ export default {
     copy: 'Copy',
     paste: 'Paste',
     refresh: 'Refresh',
-    examples: 'Examples',
-    dialog: 'Dialog',
-    newMessage: 'New Message',
-    controlParameter: 'Control Parameter',
+    examples: 'examples',
+    dialog: 'dialog',
+    newMessage: 'new message',
+    controlParameter: 'control parameter',
     errorMessages: 'Error Messages',
     advancedControl: 'Advanced Control'
   },
@@ -43,7 +43,9 @@ export default {
     noPromptLogprobs: 'No prompt_logprobs in response, maybe the model does not support prompt_logprobs',
     dropJsonHere: 'Drop JSON file here!',
     onlyOneJsonFile: 'Only one JSON file can be uploaded',
-    openAnnotatorPanel: 'Open annotator panel'
+    openAnnotatorPanel: 'Open annotator panel',
+    waitingForModel: 'request, waiting response from model:',
+    clickSendButton: '➡️ Please click the send button.'
   },
   tooltips: {
     saveData: 'Save the data',

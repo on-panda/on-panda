@@ -21,7 +21,7 @@ import 'element-plus/dist/index.css'
     </div>
 
     <el-divider content-position="left" style="margin-bottom: 5px;">
-      {{ t('common.dialog') }}:
+      <b>{{ t('common.dialog') }}:</b>
     </el-divider>
     <div class="dialogFixedPosition"
       :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {})"
@@ -261,7 +261,7 @@ import 'element-plus/dist/index.css'
     <pre v-show="false">{{JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2)}}</pre>
 
     <el-divider content-position="left">
-      {{ t('common.controlParameter') }}:
+      <b>{{ t('common.controlParameter') }}:</b>
     </el-divider>
 
     <el-form class="toolbar options" label-width="140px">
@@ -285,8 +285,7 @@ import 'element-plus/dist/index.css'
           &nbsp;
           <el-tooltip class="" effect="light" placement="top" raw-content>
             <template #content>
-              <MarkdownRender
-                :content="$t('tooltips.modelTagClick')" />
+              <MarkdownRender :content="$t('tooltips.modelTagClick')" />
             </template>
             <el-icon>
               <InfoFilled />
@@ -311,13 +310,13 @@ import 'element-plus/dist/index.css'
       <el-form-item :label="$t('controlParameter.continueGenerating')">
         <small>
           <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
-            {{ $t(apiConfig.support_continue_final_message ? 'controlParameter.native' : 'controlParameter.promptEngineering') }}
+            {{ $t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
+            'controlParameter.promptEngineering') }}
           </el-tag>
           &nbsp;
           <el-tooltip class="" effect="light" placement="top" raw-content>
             <template #content>
-              <MarkdownRender
-                :content="$t('tooltips.continueGeneratingSupport') + CONTINUE_PROMPT" />
+              <MarkdownRender :content="$t('tooltips.continueGeneratingSupport') + CONTINUE_PROMPT" />
             </template>
             <el-icon>
               <InfoFilled />
@@ -1020,9 +1019,9 @@ const requestStatus = ref({
 
 const WaitingInfo = computed(() => {
   if (requestStatus.value.generating) {
-    return `⏳ <b>No.${requestStatus.value.requestTimes}</b> request, waiting response from model: <br>  <code style='margin-left:30px'> ${apiConfig.value.chat_config.model} </code>`
+    return `⏳ <b>No.${requestStatus.value.requestTimes}</b> ${t('userMessages.waitingForModel')} <br>  <code style='margin-left:30px'> ${apiConfig.value.chat_config.model} </code>`
   } else {
-    return "➡️ Please click the send button."
+    return t('userMessages.clickSendButton')
   }
 })
 

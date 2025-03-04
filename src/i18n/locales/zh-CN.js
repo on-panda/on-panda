@@ -43,7 +43,9 @@ export default {
     noPromptLogprobs: '响应中没有 prompt_logprobs，可能模型不支持刷新概率和候选',
     dropJsonHere: '拖放JSON文件到这里！',
     onlyOneJsonFile: '只能上传一个JSON文件',
-    openAnnotatorPanel: '进入标注模式'
+    openAnnotatorPanel: '进入标注模式',
+    waitingForModel: '请求，正在等待模型响应：',
+    clickSendButton: '➡️ 请点击生成按钮'
   },
   tooltips: {
     saveData: '保存数据',
