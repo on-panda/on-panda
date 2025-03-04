@@ -27,7 +27,7 @@ export default {
     promptEngineering: '提示工程'
   },
   header: {
-    usage: '英文使用说明',
+    usage: '使用说明',
     basicFeatures: '基本功能',
     advancedFeatures: '高级功能',
     beginnerTips: '新手提示',

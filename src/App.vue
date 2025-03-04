@@ -21,7 +21,7 @@ import 'element-plus/dist/index.css'
     </div>
 
     <el-divider content-position="left" style="margin-bottom: 5px;">
-      <b>{{ t('common.dialog') }}:</b>
+      {{ t('common.dialog') }}:
     </el-divider>
     <div class="dialogFixedPosition"
       :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {})"
@@ -261,7 +261,7 @@ import 'element-plus/dist/index.css'
     <pre v-show="false">{{JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2)}}</pre>
 
     <el-divider content-position="left">
-      <b>{{ t('common.controlParameter') }}:</b>
+      {{ t('common.controlParameter') }}:
     </el-divider>
 
     <el-form class="toolbar options" label-width="140px">
