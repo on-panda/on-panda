@@ -30,7 +30,7 @@ export default {
     noPromptLogprobs: 'No prompt_logprobs in response, maybe the model does not support prompt_logprobs',
     dropJsonHere: 'Drop JSON file here!',
     onlyOneJsonFile: 'Only one JSON file can be uploaded',
-    openDataPanel: 'Open data panel'
+    openAnnotatorPanel: 'Open annotator panel'
   },
   tooltips: {
     saveData: 'Save the data',
@@ -46,5 +46,25 @@ export default {
   },
   placeholders: {
     submitEnter: 'Submit: `↵`; newline: `shift+↵`',
+  },
+  annotator: {
+    annotatorPanel: 'Annotator Panel',
+    isGood: 'is_good',
+    isGoodTooltip: 'Is the last assistant\'s response good?',
+    defaultChoice: 'If no choice was made, \'Y\' is the default if it is the latest dialog, otherwise \'N\' is the default.',
+    noChoiceMade: 'No choice was made',
+    latestDialogDefault: 'as it is the **latest** dialog, so \'Y\' is the default.',
+    notLatestDialogDefault: 'as it is **NOT** the latest dialog, so \'N\' is the default.',
+    currentDialogJson: 'current dialog JSON',
+    dialogCacheTips: 'This dialogCache may not be updated in time. Try switching the dialog to refresh it.',
+    tokens: 'tokens',
+    dialogLevel: 'dialog level / data level',
+    notSavedYet: 'Not saved yet',
+    pandaTreeJson: 'panda tree JSON',
+    title: 'title',
+    uploadFile: 'upload file',
+    updateTime: 'update time',
+    description: 'description',
+    comment: 'comment'
   }
 } 

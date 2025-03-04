@@ -8,8 +8,9 @@ const messages = {
 }
 
 export const i18n = createI18n({
-  legacy: false, // 使用 Composition API 模式
-  locale: localStorage.getItem('locale') || 'en-US', // 默认语言
-  fallbackLocale: 'en-US', // 回退语言
+  legacy: false,
+  locale: localStorage.getItem('locale') || navigator.language,
+  fallbackLocale: 'en-US',
+  warnHtmlInMessage: 'off',
   messages
 }) 

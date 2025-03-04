@@ -36,7 +36,7 @@
             <el-tooltip :content="t('tooltips.downloadFile')" raw-content placement="top">
                 <el-button :icon="Download" size="small" @click="clickToDownload" />
             </el-tooltip>
-            <el-tooltip :content="t('messages.openDataPanel')" raw-content placement="top"
+            <el-tooltip :content="t('messages.openAnnotatorPanel')" raw-content placement="top"
                 v-if="!('is_good' in (pandaState.currentDialogData.value?.annotate || {}))">
                 <el-button :icon="Postcard" size="small"
                     @click="() => { pandaState.currentDialogData.value.annotate = { is_good: null } }" />

@@ -30,7 +30,7 @@ export default {
     noPromptLogprobs: '响应中没有prompt_logprobs，可能模型不支持prompt_logprobs',
     dropJsonHere: '拖放JSON文件到这里！',
     onlyOneJsonFile: '只能上传一个JSON文件',
-    openDataPanel: '打开数据面板'
+    openAnnotatorPanel: '进入标注模式'
   },
   tooltips: {
     saveData: '保存数据',
@@ -39,12 +39,32 @@ export default {
     deleteDialog: '删除当前对话',
     restoreDialog: '恢复当前对话',
     uploadFile: '上传 *.panda.json 文件',
-    downloadFile: '下载 panda.json 文件',
+    downloadFile: '下载为 panda.json 文件',
     cleanUI: '简洁界面（阅读模式）',
     continueGenerating: '继续生成',
     stopGenerating: '停止生成',
   },
   placeholders: {
     submitEnter: '提交: `↵`; 换行: `shift+↵`',
+  },
+  annotator: {
+    annotatorPanel: '标注面板',
+    isGood: '是否良好',
+    isGoodTooltip: '最后一次助手的回复是否良好？',
+    defaultChoice: '如果没有被标注，对于最新对话默认为"Y"，否则默认为"N"',
+    noChoiceMade: '没有被标注',
+    latestDialogDefault: '因为这是 **最新** 对话，所以默认为"Y"',
+    notLatestDialogDefault: '因为这 **不是** 最新对话，所以默认为"N"',
+    currentDialogJson: '当前对话 JSON',
+    dialogCacheTips: '这个对话缓存可能没有及时更新。可以尝试切换对话来刷新它',
+    tokens: '令牌',
+    dialogLevel: '当前对话 / 当前标注',
+    notSavedYet: '尚未保存',
+    pandaTreeJson: '标注 JSON 预览',
+    title: '标题',
+    uploadFile: '上传文件',
+    updateTime: '更新时间',
+    description: '描述',
+    comment: '评论'
   }
 } 

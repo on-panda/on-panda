@@ -1,7 +1,7 @@
 <template>
     <div class="AnnotatorPannel">
         <div style="background-color:antiquewhite; padding: 12px; border-radius: 10px; max-width: 1024px;">
-            <b style="color: #aaa">Data Pannel</b>
+            <b style="color: #aaa">{{ t('annotator.annotatorPanel') }}</b>
             <br>
             <br>
             <el-form label-width="auto" size="small">
@@ -10,11 +10,10 @@
                         <el-tooltip class="" effect="dark" placement="top" raw-content>
                             <template #content>
                                 Type: <b>checkbox</b><br>
-                                Is the last assistant's response good?<br>
-                                If no choice was made, 'Y' is the default if it is the latest dialog, otherwise 'N' is
-                                the default.
+                                {{ t('annotator.isGoodTooltip') }}<br>
+                                {{ t('annotator.defaultChoice') }}
                             </template>
-                            <span>is_good</span>
+                            <span>{{ t('annotator.isGood') }}</span>
                         </el-tooltip>
                     </template>
                     <CheckboxWidgetSupportNull
@@ -22,10 +21,11 @@
                         @updateCheckboxValue="(v) => { pandaState.dialogCache.value.annotate.is_good = v }">
                     </CheckboxWidgetSupportNull>
                     <small style="color: #606266" v-if="pandaState.dialogCache.value?.annotate?.is_good === null">
-                        &nbsp; No choice was made,
-                        <span v-if="pandaState.dialogMaxIndexRemain.value === pandaState.currentDialogIndex.value"> as
-                            it is the <b>latest</b> dialog, so 'Y' is the default.</span>
-                        <span v-else> as it is <b>NOT</b> the latest dialog, so 'N' is the default.</span>
+                        &nbsp; ({{ t('annotator.noChoiceMade') }},
+                        <span v-if="pandaState.dialogMaxIndexRemain.value === pandaState.currentDialogIndex.value"
+                            v-html="t('annotator.latestDialogDefault')"></span>
+                        <span v-else v-html="t('annotator.notLatestDialogDefault')"></span>
+                        )
                     </small>
 
 
@@ -33,37 +33,37 @@
                 <CustomAnnotatorTool v-for="tool in pandaState.dialogCache.value.annotate?.customs" :tool="tool">
                 </CustomAnnotatorTool>
 
-                <ObjectViewerInDetails :object="pandaState.dialogCache.value" summary="current dialog JSON"
-                    tips="This dialogCache may not be updated in time. Try switching the dialog to refresh it." />
-                <ObjectViewerInDetails :object="pandaState.tokens.value" summary="tokens" v-if="0" />
+                <ObjectViewerInDetails :object="pandaState.dialogCache.value"
+                    :summary="t('annotator.currentDialogJson')" :tips="t('annotator.dialogCacheTips')" />
+                <ObjectViewerInDetails :object="pandaState.tokens.value" :summary="t('annotator.tokens')" v-if="0" />
 
                 <el-divider class="el-divider-ignore-background-color" content-position="left">
                     <small style="color: #606266; background-color: antiquewhite; padding:10px ">
-                        dialog level / data level
+                        {{ t('annotator.dialogLevel') }}
                     </small>
                 </el-divider>
 
                 <CustomAnnotatorTool v-if="pandaState.pandaTree.value?.title" :tool='{
-                    name: "title",
+                    name: t("annotator.title"),
                     type: "markdown",
                     markdown: "**" + pandaState.pandaTree.value?.title + "**",
                     disabled: true,
                 }'></CustomAnnotatorTool>
                 <CustomAnnotatorTool v-if="uploadedJson" :tool='{
-                    name: "upload file",
+                    name: t("annotator.uploadFile"),
                     type: "markdown",
                     markdown: "**" + uploadedJson.name + "**",
                     disabled: true,
                 }'></CustomAnnotatorTool>
                 <CustomAnnotatorTool :tool='{
-                    name: "update time",
+                    name: t("annotator.updateTime"),
                     type: "markdown",
-                    markdown: pandaState.pandaTree.value?.update_time ? dateStringNow(undefined, pandaState.pandaTree.value?.update_time) : "**Not saved yet**",
+                    markdown: pandaState.pandaTree.value?.update_time ? dateStringNow(undefined, pandaState.pandaTree.value?.update_time) : "**" + t("annotator.notSavedYet") + "**",
                     disabled: true,
                     tips: "",
                 }'></CustomAnnotatorTool>
                 <CustomAnnotatorTool v-if="pandaState.pandaTree.value?.description" :tool='{
-                    name: "description",
+                    name: t("annotator.description"),
                     type: "markdown",
                     markdown: pandaState.pandaTree.value?.description,
                     disabled: true,
@@ -71,7 +71,7 @@
                 <CustomAnnotatorTool :tool='editableCommentAsTool'>
                 </CustomAnnotatorTool>
             </el-form>
-            <ObjectViewerInDetails :object="pandaState.pandaTree.value" summary="panda tree JSON" />
+            <ObjectViewerInDetails :object="pandaState.pandaTree.value" :summary="t('annotator.pandaTreeJson')" />
         </div>
     </div>
 </template>
@@ -83,10 +83,12 @@ import { pandaState, uploadedJson } from '../stores/pandaState'
 
 import { ref, watch } from 'vue'
 import { dateStringNow } from '../utils/commonUtils'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 
 const editableCommentAsTool = ref({
-    name: "comment",
+    name: t("annotator.comment"),
     type: "text",
     text: pandaState.pandaTree.value?.comment || "",
     disabled: false,

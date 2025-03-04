@@ -10,7 +10,7 @@ const pinia = createPinia()
 const app = createApp(App)
 
 // 根据当前语言设置 Element Plus 的语言
-const locale = localStorage.getItem('locale') || 'en-US'
+const locale = localStorage.getItem('locale') || navigator.language
 app.use(ElementPlus, {
   locale: locale === 'zh-CN' ? zhCn : en
 })
