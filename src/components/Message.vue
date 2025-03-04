@@ -7,7 +7,7 @@
         <el-button ref="isRenderContentEditingButton" v-if="isRenderRole" :icon="Edit" size="small"
           class="massageOperationButton" @click="isRenderContentEditing = !isRenderContentEditing"
           :type="isRenderContentEditing ? 'primary' : ''"></el-button>
-        <el-tooltip :content="hasContent ? 'Clear' : 'Delete'" placement="top">
+        <el-tooltip :content="hasContent ? t('chatMessage.clear') : t('chatMessage.delete')" placement="top">
           <el-button :icon="hasContent ? Delete : Close" size="small" class="massageOperationButton"
             style="margin-right: 5px;" @click="async () => {
               if (usingOpreators) {
@@ -27,7 +27,7 @@
     <div v-else class="editorAndDetails">
       <div style="display: flex; justify-content: space-between">
         <el-input class="message-content" v-model="contentAsText" type="textarea"
-          placeholder="Empty message will be ignored" :autosize="{ minRows: 2, maxRows: 50 }" @keydown.ctrl.enter="() => {
+          :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: 50 }" @keydown.ctrl.enter="() => {
             if (usingOpreators) {
               taskQueue.addTask(async () => opreatorsUpdatePromptContent({ delay: false }))
               taskQueue.addTask(props.opreators.newGenerate)
@@ -42,12 +42,12 @@
           :style="{
             cursor: hasContent ? 'pointer' : 'not-allowed'
           }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
-          <b>Send➡️</b><br>
-          <small>ctrl+enter</small> </button>
+          <b>{{ t('chatMessage.send') }}</b><br>
+          <small>{{ t('chatMessage.ctrlEnter') }}</small> </button>
       </div>
       <details ref="detailsRef">
         <summary>
-          <small style="color: #888;">rendered markdown:</small>
+          <small style="color: #888;">{{ t('chatMessage.renderedMarkdown') }}</small>
         </summary>
         <MarkdownRender :content="contentAsText" />
         <hr style="margin-top:0px;color:#ccc">
@@ -69,12 +69,14 @@ import EditableStringAttribute from './EditableStringAttribute.vue'
 import MarkdownResponse from './widgets/MarkdownResponse.vue'
 
 import { computed, ref, onMounted, onBeforeUnmount, watchEffect } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { convertImageUrlToBase64, base64ToBlob, deepCopy, mockObject, sleep, TaskQueue } from '@/utils/commonUtils'
 import { Close, Delete, Edit } from '@element-plus/icons-vue'
 import { getContentTypes } from '@/utils/chatUtils'
 import { useGlobalStore } from '@/stores/globalStore.js'
 
 const globalStore = useGlobalStore()
+const { t } = useI18n()
 
 const props = defineProps({
   message: {

@@ -81,5 +81,13 @@ export default {
     updateTime: '更新时间',
     description: '描述',
     comment: '评论'
+  },
+  chatMessage: {
+    emptyMessageIgnored: '空内容会被忽略',
+    renderedMarkdown: '格式渲染:',
+    clear: '清空',
+    delete: '删除该对话',
+    send: '生成➡️',
+    ctrlEnter: 'ctrl+enter'
   }
 } 

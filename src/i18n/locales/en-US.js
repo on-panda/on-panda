@@ -81,5 +81,13 @@ export default {
     updateTime: 'update time',
     description: 'description',
     comment: 'comment'
+  },
+  chatMessage: {
+    emptyMessageIgnored: 'Empty message will be ignored',
+    renderedMarkdown: 'rendered markdown:',
+    clear: 'Clear',
+    delete: 'Delete',
+    send: 'Send➡️',
+    ctrlEnter: 'ctrl+enter'
   }
 } 
