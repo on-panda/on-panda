@@ -65,7 +65,7 @@ import demoGifUrl from '../../public/img/onPanda-demo-candidate.gif';
 
 import { ref } from 'vue'
 import { useGlobalStore } from '@/stores/globalStore'
-import LanguageSwitcher from './LanguageSwitcher.vue'
+import LanguageSwitcher from './widgets/LanguageSwitcher.vue'
 
 const globalStore = useGlobalStore()
 const _isLogoRotated = ref(false)
