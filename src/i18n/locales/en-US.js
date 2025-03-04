@@ -10,18 +10,31 @@ export default {
     copy: 'Copy',
     paste: 'Paste',
     refresh: 'Refresh',
-    model: 'Model',
     examples: 'Examples',
     dialog: 'Dialog',
     newMessage: 'New Message',
     controlParameter: 'Control Parameter',
-    errorMessages: 'Error Messages'
+    errorMessages: 'Error Messages',
+    advancedControl: 'Advanced Control'
+  },
+  controlParameter: {
+    model: 'model',
+    temperature: 'temperature',
+    maxTokens: 'max_tokens',
+    topLogprobs: 'top_logprobs',
+    continueGenerating: 'continue generating',
+    native: 'native',
+    promptEngineering: 'prompt engineering'
   },
   header: {
     usage: 'Usage',
     basicFeatures: 'Basic Features',
     advancedFeatures: 'Advanced Features',
-    beginnerTips: 'Beginner\'s tips'
+    beginnerTips: 'Beginner\'s tips',
+    asDataAnnotator: 'as Data Annotator',
+    asWritingTool: 'as Writing Tool',
+    dataAnnotatorDesc: 'Scaling up your data efficiency before scaling up your data.',
+    writingToolDesc: 'Precision byte-level control for LLM writing.'
   },
   messages: {
     waiting: 'Waiting...',
@@ -43,6 +56,8 @@ export default {
     cleanUI: 'Clean UI (reading mode)',
     continueGenerating: 'Continue generating',
     stopGenerating: 'Stop generating',
+    modelTagClick: '1. Click the tag to switch model\n2. If hold down the `Ctrl` key and click the tag, will open a new window containing the same message',
+    continueGeneratingSupport: 'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> '
   },
   placeholders: {
     submitEnter: 'Submit: `↵`; newline: `shift+↵`',
@@ -53,8 +68,8 @@ export default {
     isGoodTooltip: 'Is the last assistant\'s response good?',
     defaultChoice: 'If no choice was made, \'Y\' is the default if it is the latest dialog, otherwise \'N\' is the default.',
     noChoiceMade: 'No choice was made',
-    latestDialogDefault: 'as it is the **latest** dialog, so \'Y\' is the default.',
-    notLatestDialogDefault: 'as it is **NOT** the latest dialog, so \'N\' is the default.',
+    latestDialogDefault: 'as it is the latest dialog, so \'Y\' is the default.',
+    notLatestDialogDefault: 'as it is NOT the latest dialog, so \'N\' is the default.',
     currentDialogJson: 'current dialog JSON',
     dialogCacheTips: 'This dialogCache may not be updated in time. Try switching the dialog to refresh it.',
     tokens: 'tokens',

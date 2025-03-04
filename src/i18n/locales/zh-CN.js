@@ -10,24 +10,37 @@ export default {
     copy: '复制',
     paste: '粘贴',
     refresh: '刷新',
-    model: '模型',
     examples: '示例',
     dialog: '对话',
     newMessage: '新消息',
     controlParameter: '控制参数',
-    errorMessages: '错误信息'
+    errorMessages: '错误信息',
+    advancedControl: '高级控制'
+  },
+  controlParameter: {
+    model: '模型',
+    temperature: '采样温度',
+    maxTokens: '最大生成长度',
+    topLogprobs: '候选词数量',
+    continueGenerating: '续写方案',
+    native: '原生',
+    promptEngineering: '提示工程'
   },
   header: {
-    usage: '使用说明',
+    usage: '英文使用说明',
     basicFeatures: '基本功能',
     advancedFeatures: '高级功能',
-    beginnerTips: '新手提示'
+    beginnerTips: '新手提示',
+    asDataAnnotator: '作为标注工具',
+    asWritingTool: '作为写作工具',
+    dataAnnotatorDesc: '在扩大数据规模之前提高数据效率。',
+    writingToolDesc: '为大语言模型写作提供精确的字节级控制。'
   },
   messages: {
     waiting: '等待中...',
     copied: '已复制到剪贴板',
     responseRefreshed: '响应概率已刷新',
-    noPromptLogprobs: '响应中没有prompt_logprobs，可能模型不支持prompt_logprobs',
+    noPromptLogprobs: '响应中没有 prompt_logprobs，可能模型不支持刷新概率和候选',
     dropJsonHere: '拖放JSON文件到这里！',
     onlyOneJsonFile: '只能上传一个JSON文件',
     openAnnotatorPanel: '进入标注模式'
@@ -43,6 +56,8 @@ export default {
     cleanUI: '简洁界面（阅读模式）',
     continueGenerating: '继续生成',
     stopGenerating: '停止生成',
+    modelTagClick: '1. 点击标签切换模型\n2. 如果按住 `Ctrl` 键并点击标签，将在新窗口中打开包含相同消息的对话',
+    continueGeneratingSupport: '此模型是否原生支持继续生成最终消息？\n\n如果不支持，将使用工程提示进行继续生成：\n\n> '
   },
   placeholders: {
     submitEnter: '提交: `↵`; 换行: `shift+↵`',
@@ -53,8 +68,8 @@ export default {
     isGoodTooltip: '最后一次助手的回复是否良好？',
     defaultChoice: '如果没有被标注，对于最新对话默认为"Y"，否则默认为"N"',
     noChoiceMade: '没有被标注',
-    latestDialogDefault: '因为这是 **最新** 对话，所以默认为"Y"',
-    notLatestDialogDefault: '因为这 **不是** 最新对话，所以默认为"N"',
+    latestDialogDefault: '因为这是最新的对话，所以默认为"Y"',
+    notLatestDialogDefault: '因为这不是最新的对话，所以默认为"N"',
     currentDialogJson: '当前对话 JSON',
     dialogCacheTips: '这个对话缓存可能没有及时更新。可以尝试切换对话来刷新它',
     tokens: '令牌',

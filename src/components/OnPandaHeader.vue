@@ -4,18 +4,18 @@
     </div>
     <details>
         <summary>
-            <small style="color: #888;">as Data Annotator:</small>
+            <small style="color: #888;">{{ $t('header.asDataAnnotator') }}:</small>
         </summary>
-        <h2>onPanda: on-Policy Alignment Data Annotator (PoC)</h2>
-        <code>Scaling up your data efficiency before scaling up your data.</code>
+        <h2>onPanda: on-Policy Alignment Data Annotator</h2>
+        <code>{{ $t('header.dataAnnotatorDesc') }}</code>
     </details>
 
     <details>
         <summary>
-            <small style="color: #888;">as Writing Tool:</small>
+            <small style="color: #888;">{{ $t('header.asWritingTool') }}:</small>
         </summary>
         <h2>onPanda: LLM-Native Collaborative Writing Tool </h2>
-        <code>Precision byte-level control for LLM writing.</code>
+        <code>{{ $t('header.writingToolDesc') }}</code>
     </details>
 
     <div style="text-align: center;">
@@ -30,7 +30,7 @@
 
     <details>
         <summary>
-            <small style="color: #888;">usage:</small>
+            <small style="color: #888;">{{ $t('header.usage') }}:</small>
         </summary>
         <br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img :src="demoGifUrl" loading="lazy"

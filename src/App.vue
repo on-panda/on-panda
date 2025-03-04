@@ -265,7 +265,7 @@ import 'element-plus/dist/index.css'
     </el-divider>
 
     <el-form class="toolbar options" label-width="140px">
-      <el-form-item label="model">
+      <el-form-item :label="$t('controlParameter.model')">
         <el-select-v2 v-model="modelName" filterable :options="Object.keys(apiConfigs).map((x, idx) => ({
           value: x,
           label: x,
@@ -286,7 +286,7 @@ import 'element-plus/dist/index.css'
           <el-tooltip class="" effect="light" placement="top" raw-content>
             <template #content>
               <MarkdownRender
-                :content="'1. Click the tag to switch model\n2. If hold down the `Ctrl` key and click the tag, will open a new window containing the same message'" />
+                :content="$t('tooltips.modelTagClick')" />
             </template>
             <el-icon>
               <InfoFilled />
@@ -296,28 +296,28 @@ import 'element-plus/dist/index.css'
       </div>
       <br>
 
-      <el-form-item label="temperature">
+      <el-form-item :label="$t('controlParameter.temperature')">
         <el-input-number v-model="chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
       </el-form-item>
 
-      <el-form-item label="max_tokens">
+      <el-form-item :label="$t('controlParameter.maxTokens')">
         <el-input-number v-model="chatConfig.max_tokens" :min="1" :max="1048576" :step="1" size="small" />
       </el-form-item>
 
-      <el-form-item label="top_logprobs">
+      <el-form-item :label="$t('controlParameter.topLogprobs')">
         <el-input-number v-model="chatConfig.top_logprobs" :min="0" :max="50" :step="1" size="small" />
       </el-form-item>
 
-      <el-form-item label="continue generating">
+      <el-form-item :label="$t('controlParameter.continueGenerating')">
         <small>
           <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
-            {{ apiConfig.support_continue_final_message ? "native" : "prompt engineering" }}
+            {{ $t(apiConfig.support_continue_final_message ? 'controlParameter.native' : 'controlParameter.promptEngineering') }}
           </el-tag>
           &nbsp;
           <el-tooltip class="" effect="light" placement="top" raw-content>
             <template #content>
               <MarkdownRender
-                :content="'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> ' + CONTINUE_PROMPT" />
+                :content="$t('tooltips.continueGeneratingSupport') + CONTINUE_PROMPT" />
             </template>
             <el-icon>
               <InfoFilled />
@@ -327,7 +327,7 @@ import 'element-plus/dist/index.css'
       </el-form-item>
       <details style="margin-top: -10px;margin-bottom: 10px;">
         <summary>
-          <small style="color: #bbb;"><b>Advanced Control</b></small>
+          <small style="color: #bbb;"><b>{{ t('common.advancedControl') }}</b></small>
         </summary>
         <el-form-item label="top_p">
           <el-input-number v-model="chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
