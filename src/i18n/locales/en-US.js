@@ -36,7 +36,7 @@ export default {
     dataAnnotatorDesc: 'Scaling up your data efficiency before scaling up your data.',
     writingToolDesc: 'Precision byte-level control for LLM writing.'
   },
-  messages: {
+  userMessages: {
     waiting: 'Waiting...',
     copied: 'Copied to clipboard',
     responseRefreshed: 'Response probability refreshed',

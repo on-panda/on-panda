@@ -28,7 +28,7 @@
                 <el-button plain type="danger" :icon="CloseBold" size="small"
                     @click="pandaState.eraseCurrentDialog()" />
             </el-tooltip>
-            <el-tooltip :content="t('tooltips.uploadFile') + '<br>' + t('messages.dropJsonHere')" raw-content
+            <el-tooltip :content="t('tooltips.uploadFile') + '<br>' + t('userMessages.dropJsonHere')" raw-content
                 placement="top">
                 <el-button :icon="UploadFilled" size="small" @click="uploadAndLoadJson"
                     :style="isDragged ? { backgroundColor: 'rgb(158, 218, 255)' } : {}" />
@@ -36,7 +36,7 @@
             <el-tooltip :content="t('tooltips.downloadFile')" raw-content placement="top">
                 <el-button :icon="Download" size="small" @click="clickToDownload" />
             </el-tooltip>
-            <el-tooltip :content="t('messages.openAnnotatorPanel')" raw-content placement="top"
+            <el-tooltip :content="t('userMessages.openAnnotatorPanel')" raw-content placement="top"
                 v-if="!('is_good' in (pandaState.currentDialogData.value?.annotate || {}))">
                 <el-button :icon="Postcard" size="small"
                     @click="() => { pandaState.currentDialogData.value.annotate = { is_good: null } }" />
@@ -68,11 +68,11 @@
                 accept=".json" :multiple="false">
                 <el-icon class="el-icon--upload"><upload-filled /></el-icon>
                 <div class="el-upload__text">
-                    {{ t('messages.dropJsonHere') }}
+                    {{ t('userMessages.dropJsonHere') }}
                 </div>
                 <template #tip>
                     <div class="el-upload__tip">
-                        {{ t('messages.onlyOneJsonFile') }}
+                        {{ t('userMessages.onlyOneJsonFile') }}
                     </div>
                 </template>
             </el-upload>

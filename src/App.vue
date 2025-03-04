@@ -487,7 +487,7 @@ async function requestPromptLogprobs() {
     if (!json.prompt_logprobs_list) {
       ElMessage({
         showClose: true,
-        message: t('messages.noPromptLogprobs'),
+        message: t('userMessages.noPromptLogprobs'),
         type: 'error',
         duration: 10000,
       })
@@ -533,7 +533,7 @@ async function requestPromptLogprobs() {
     tokens.value = tokensNew
     ElMessage({
       showClose: true,
-      message: t('messages.responseRefreshed'),
+      message: t('userMessages.responseRefreshed'),
       type: 'success',
       duration: 5000,
     })

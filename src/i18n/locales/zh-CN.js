@@ -36,7 +36,7 @@ export default {
     dataAnnotatorDesc: '在扩大数据规模之前提高数据效率。',
     writingToolDesc: '为大语言模型写作提供精确的字节级控制。'
   },
-  messages: {
+  userMessages: {
     waiting: '等待中...',
     copied: '已复制到剪贴板',
     responseRefreshed: '响应概率已刷新',

@@ -170,7 +170,7 @@ export async function copyToClipboard(string) {
   await navigator.clipboard.writeText(string)
   ElMessage({
     showClose: true,
-    message: i18n.global.t('messages.copied'),
+    message: i18n.global.t('userMessages.copied'),
     type: 'success',
     duration: 2000,
   })
