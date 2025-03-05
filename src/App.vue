@@ -59,13 +59,14 @@ import 'element-plus/dist/index.css'
             </el-tooltip>
             <el-tooltip placement="top" effect="light">
               <template #content>
-                Refresh tokens' probability, <br>Or
+                {{ t('tooltips.refreshTokenProb') }}, <br>
+                {{ t('tooltips.dblclickToPasteAndRefresh') }}
                 <el-button size="small" @click="pasteThenRequestPromptLogprobs">
-                  Paste and Refresh
+                  {{ t('tooltips.pasteAndRefresh') }}
                 </el-button>
               </template>
               <el-button :icon="View" size="small" :disabled="!finalMessage.content || requestStatus.generating"
-                @click="requestPromptLogprobs" />
+                @click="requestPromptLogprobs" @dblclick="pasteThenRequestPromptLogprobs" />
             </el-tooltip>
             <el-tooltip placement="top-end" effect="light">
               <template #content>
@@ -462,9 +463,22 @@ async function requestPromptLogprobs() {
     top_logprobs: apiConfig.value.chat_config.top_logprobs,
     prompt_logprobs: apiConfig.value.chat_config.top_logprobs,
   }
-  try {
 
-    var json = await openai.value.chat.completions.create(normalizeRequest(body));
+  requestStatus.value.requestTimes++
+  var requestID = requestStatus.value.requestTimes
+
+  try {
+    // wait for 300ms to avoid double-click send 3 times requests
+    await new Promise(resolve => setTimeout(resolve, 300))
+    if (requestID !== requestStatus.value.requestTimes) {
+      console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
+      return
+    }
+    var json = await openai.value.chat.completions.create(normalizeRequest(body))
+    if (requestID !== requestStatus.value.requestTimes) {
+      console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
+      return
+    }
 
     var lastMessageContent = messages[messages.length - 1].content
     var lastMessageContent_ = ''

@@ -30,7 +30,7 @@ export default {
     waiting: '等待中...',
     copied: '已复制到剪贴板',
     responseRefreshed: '响应概率已刷新',
-    noPromptLogprobs: '响应中没有 prompt_logprobs，可能模型不支持刷新概率和候选',
+    noPromptLogprobs: '响应中没有 prompt_logprobs，可能当前模型不支持刷新概率和候选',
     dropJsonHere: '拖放JSON文件到这里！',
     onlyOneJsonFile: '只能上传一个JSON文件',
     openAnnotatorPanel: '进入标注模式',
@@ -49,7 +49,10 @@ export default {
     continueGenerating: '继续生成',
     stopGenerating: '停止生成',
     modelTagClick: '1. 点击标签切换模型\n2. 如果按住 `Ctrl` 键并点击标签，将在新窗口中打开包含相同消息的对话',
-    continueGeneratingSupport: '此模型是否原生支持继续生成最终消息？\n\n如果不支持，将使用工程提示进行继续生成：\n\n> '
+    continueGeneratingSupport: '此模型是否原生支持继续生成最终消息？\n\n如果不支持，将使用工程提示进行继续生成：\n\n> ',
+    refreshTokenProb: '更新词组概率和候选',
+    dblclickToPasteAndRefresh: '或双击',
+    pasteAndRefresh: '粘贴并更新'
   },
   placeholders: {
     submitEnter: '提交: `↵`; 换行: `shift+↵`',

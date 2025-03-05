@@ -49,7 +49,10 @@ export default {
     continueGenerating: 'Continue generating',
     stopGenerating: 'Stop generating',
     modelTagClick: '1. Click the tag to switch model\n2. If hold down the `Ctrl` key and click the tag, will open a new window containing the same message',
-    continueGeneratingSupport: 'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> '
+    continueGeneratingSupport: 'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> ',
+    refreshTokenProb: 'Refresh tokens\' probability. Or',
+    dblclickToPasteAndRefresh: 'double-click to',
+    pasteAndRefresh: 'Paste & Refresh'
   },
   placeholders: {
     submitEnter: 'Submit: `↵`; newline: `shift+↵`',
