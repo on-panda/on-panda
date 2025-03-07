@@ -1,20 +1,13 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
-import en from 'element-plus/es/locale/lang/en'
 import App from './App.vue'
-import { i18n } from './i18n'
+import onPandaPlugin from './index.js'
 
-const pinia = createPinia()
 const app = createApp(App)
+const pinia = createPinia()
 
-// 根据当前语言设置 Element Plus 的语言
-const locale = localStorage.getItem('locale') || navigator.language
-app.use(ElementPlus, {
-  locale: locale === 'zh-CN' ? zhCn : en
-})
-
+// 使用onPandaPlugin安装所有组件和插件
+app.use(onPandaPlugin)
 app.use(pinia)
-app.use(i18n)
+
 app.mount('#app')
