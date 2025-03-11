@@ -42,6 +42,7 @@ export default {
     previousModification: 'Previous modification',
     nextModification: 'Next modification',
     deleteDialog: 'Delete current dialog',
+    eraseDialog: 'Erase current dialog',
     restoreDialog: 'Restore current dialog',
     uploadFile: 'Upload *.panda.json file',
     downloadFile: 'Download panda.json file',

@@ -23,7 +23,7 @@
                 v-if="pandaState.isDeleted.value">
                 <el-button plain type="success" :icon="Help" size="small" @click="pandaState.restoreDeletedDialog()" />
             </el-tooltip>
-            <el-tooltip :content="t('common.delete') + ' ' + t('tooltips.deleteDialog')" raw-content placement="top"
+            <el-tooltip :content="t('tooltips.eraseDialog')" raw-content placement="top"
                 v-if="pandaState.isDeleted.value">
                 <el-button plain type="danger" :icon="CloseBold" size="small"
                     @click="pandaState.eraseCurrentDialog()" />

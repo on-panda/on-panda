@@ -33,7 +33,7 @@ export default {
     noPromptLogprobs: '响应中没有 prompt_logprobs，可能当前模型不支持刷新概率和候选',
     dropJsonHere: '拖放JSON文件到这里！',
     onlyOneJsonFile: '只能上传一个JSON文件',
-    openAnnotatorPanel: '进入标注模式',
+    openAnnotatorPanel: '打开标注面板',
     waitingForModel: '请求，正在等待模型响应：',
     clickSendButton: '➡️ 请点击生成按钮'
   },
@@ -42,6 +42,7 @@ export default {
     previousModification: '上一个修改',
     nextModification: '下一个修改',
     deleteDialog: '删除当前对话',
+    eraseDialog: '彻底删除当前对话',
     restoreDialog: '恢复当前对话',
     uploadFile: '上传 *.panda.json 文件',
     downloadFile: '下载为 panda.json 文件',
