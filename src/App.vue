@@ -402,7 +402,8 @@ import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useGlobalStore } from './stores/globalStore.js'
 import { useEventListener, closeFloatPannelMeta, buildMockObject } from '@/utils/commonUtils.js'
 import { p, escapeHTML, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils.js'
-import { tokensToSeq, normalizeRequest, messageToSeq, recordAsRejectedToken } from './utils/chatUtils.js'
+import { tokensToSeq, convertMessageToTokens, normalizeRequest, messageToSeq, recordAsRejectedToken } from './utils/chatUtils.js'
+import { useScrollSwitchSync, useSelectedNodes } from '@/utils/userInterfaceUtils.js'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close, InfoFilled } from '@element-plus/icons-vue'
 
@@ -554,48 +555,6 @@ async function pasteThenRequestPromptLogprobs() {
   requestPromptLogprobs()
 }
 
-function useSelectedNodes(containerRef) {
-  const selectedNodes = ref({ startNode: null, endNode: null });
-
-  const mouseUpUpdateSelectedNodes = () => {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
-      selectedNodes.value = { startNode: null, endNode: null };
-      return;
-    }
-
-    const range = selection.getRangeAt(0);
-    let startNode = range.startContainer;
-    let endNode = range.endContainer;
-    // If startNode or endNode is a text node (nodeType 3), get their parentElement
-    if (startNode.nodeType === 3) {
-      startNode = startNode.parentElement;
-    }
-    if (endNode.nodeType === 3) {
-      endNode = endNode.parentElement;
-    }
-
-    // Check if startNode and endNode are within containerRef
-    if (
-      containerRef &&
-      containerRef.value &&
-      containerRef.value.contains(startNode) &&
-      containerRef.value.contains(endNode)
-    ) {
-      selectedNodes.value = { startNode, endNode };
-    } else {
-      selectedNodes.value = { startNode: null, endNode: null };
-    }
-    // console.log('text node', startNode, endNode, selection, range);
-  }
-
-  useEventListener(document, 'mouseup', mouseUpUpdateSelectedNodes);
-  useEventListener(document, 'touchend', mouseUpUpdateSelectedNodes);
-  useEventListener(document, 'focusin', mouseUpUpdateSelectedNodes);  // Close when double click
-
-  return selectedNodes;
-}
-
 const rawOnPandaPannelRef = ref(null);
 const selectedNodes = useSelectedNodes(rawOnPandaPannelRef);
 
@@ -663,8 +622,6 @@ function improveSelectedText() {
   floatSelectedOpreationPannel.value.improveInputVisible = false
 }
 
-
-import { useScrollSwitchSync } from '@/utils/scrollSwitch.js'
 
 const scrollDiv = ref(null)
 const scrollSwitch = useScrollSwitchSync(scrollDiv); // { isSwitched, scrollToPosition }
@@ -874,35 +831,6 @@ function loadMessages(newMessages) {
     tokens.value = []
   }
   messages.value = newMessages
-}
-
-function convertMessageToTokens(message) {
-  if (message.role == "assistant") {
-    var content = message.content
-    var tokens = Array.from(segmenter.segment(content)).map((token, tokenIndex) => {
-      return {
-        delta: { content: token.segment },
-        tokenIndex: tokenIndex,
-        logprobs: { content: [{ token: token.segment, top_logprobs: [] }] },
-      }
-    })
-    if (tokens && tokens.length > 0) {
-      tokens[0].delta.role = "assistant"
-      if (message.finish_reason) {
-        tokens[tokens.length - 1].finish_reason = message.finish_reason
-      }
-      if (!message.finish_reason || message.finish_reason == "length") {
-        tokens[tokens.length - 1].bifurcationPoint = true
-      }
-    } else {  // final message is empty content but with role name
-      tokens = [{
-        delta: { role: message.role, content: "" },
-        tokenIndex: 0,
-        logprobs: { content: [{ token: "", top_logprobs: [], logprob: 0 }] },
-      }]
-    }
-  }
-  return tokens
 }
 
 var metaApiConfigs = ref([defaultApiConfig, ...props.apiConfigs])
@@ -1396,7 +1324,6 @@ const opreators = new OpreatorCenter()
 
 provide('opreators.editRole', opreators.editRole)
 
-const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
 
 function probOfToken(token) {
   var logprob = token.logprobs?.content[0]?.logprob
@@ -1413,6 +1340,7 @@ function probOfToken(token) {
 
 const patchs = computed(() => {
   const assistentResponseContentAll = tokens.value.map((token) => token.delta.content).join("");
+  const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
   const visableSegments = Array.from(segmenter.segment(assistentResponseContentAll));
   // add a empty segment at the end for EOT token
   Array.from({ length: 4 }, (_, i) => visableSegments.push({ segment: "" }));

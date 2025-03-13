@@ -79,6 +79,37 @@ export function messageToSeq(message) {
     return content + ((message.finish_reason && message.finish_reason !== 'length') ? ('<|' + message.finish_reason + '|>') : '')
 }
 
+
+export function convertMessageToTokens(message) {
+    if (message.role == "assistant") {
+        var content = message.content
+        const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+        var tokens = Array.from(segmenter.segment(content)).map((token, tokenIndex) => {
+            return {
+                delta: { content: token.segment },
+                tokenIndex: tokenIndex,
+                logprobs: { content: [{ token: token.segment, top_logprobs: [] }] },
+            }
+        })
+        if (tokens && tokens.length > 0) {
+            tokens[0].delta.role = "assistant"
+            if (message.finish_reason) {
+                tokens[tokens.length - 1].finish_reason = message.finish_reason
+            }
+            if (!message.finish_reason || message.finish_reason == "length") {
+                tokens[tokens.length - 1].bifurcationPoint = true
+            }
+        } else {  // final message is empty content but with role name
+            tokens = [{
+                delta: { role: message.role, content: "" },
+                tokenIndex: 0,
+                logprobs: { content: [{ token: "", top_logprobs: [], logprob: 0 }] },
+            }]
+        }
+    }
+    return tokens
+}
+
 export function normalizeRequest(requestBody) {
     const body = deepCopy(requestBody)
     if (body.messages?.length) {
