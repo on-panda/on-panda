@@ -3,7 +3,8 @@ import 'element-plus/dist/index.css'
 </script>
 
 <template>
-  <div :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }" class="onPandaContainer">
+  <div ref="onPandaContainer" :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }"
+    class="onPandaContainer">
     <OnPandaHeader />
     <small style="color: #555;" v-if="props.customInfoForUser">
       <br>
@@ -248,9 +249,10 @@ import 'element-plus/dist/index.css'
         <el-button :icon='Promotion' size="" @click="improveSelectedText"></el-button>
       </div>
     </div>
-    <DialogControlPannel />
+    <DialogControlPannel :responseState="responseState" />
     <AnnotatorPanel
-      v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment || globalStore.debug" />
+      v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment || globalStore.debug"
+      :responseState="responseState" />
 
     <el-divider content-position="left" style="margin-bottom: 5px;">{{ t('common.newMessage') }}:</el-divider>
     <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
@@ -1691,9 +1693,17 @@ useEventListener(window, 'scroll', handleReactiveFunctions)
 
 
 
-import { pandaState } from './stores/pandaState'
 import { sleep } from '@/utils/commonUtils'
 import MarkdownResponse from './components/widgets/MarkdownResponse.vue'
+import { ResponseState } from './stores/responseState'
+const responseState = new ResponseState()
+const pandaState = responseState.pandaState
+
+const onPandaContainer = ref(null)
+watch(onPandaContainer, (newVal) => {
+  // ref="responseState.onPandaContainer" is not work
+  responseState.onPandaContainer.value = newVal
+})
 
 opreators.loadMessagesWithPandaTree(messages.value)  // register pandaState
 

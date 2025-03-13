@@ -95,16 +95,27 @@
     </div>
 </template>
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore.js'
-import { PandaState, pandaState, uploadedJson } from '../stores/pandaState'
 import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled, Postcard, Reading } from '@element-plus/icons-vue'
-import { registerKeyActions, downloadJsonFile, uploadJsonFile, useEventListener } from '../utils/commonUtils'
+import { registerKeyActions, downloadJsonFile, uploadJsonFile } from '../utils/commonUtils'
 import { useI18n } from 'vue-i18n'
 
-const globalStore = useGlobalStore()
 const { t } = useI18n()
+
+const props = defineProps({
+    responseState: {
+        type: Object,
+        required: true
+    }
+})
+
+const pandaState = props.responseState.pandaState
+const uploadedJson = props.responseState.uploadedJson
+const onPandaContainer = props.responseState.onPandaContainer
+
+const globalStore = useGlobalStore()
 
 registerKeyActions({
     ArrowLeft: pandaState.switchToPreviousDialog,
@@ -155,33 +166,37 @@ const clickToDownload = async () => {
 
 
 const isDragged = ref(false)
-
-useEventListener(document, 'dragover', function (event) {
-    event.preventDefault();
-    event.stopPropagation();
-    const files = event.dataTransfer.items;
-    for (let item of files) {
-        if (item.kind === 'file') {
-            if (item.type.includes('json')) {
-                isDragged.value = true;
-                // console.log('Dragged file:', item, item.getAsFile());
+watch(onPandaContainer, (newContainer) => {
+    if (newContainer) {
+        // can not use addEventListner, no need unmount
+        newContainer.addEventListener('dragover', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const files = event.dataTransfer.items;
+            for (let item of files) {
+                if (item.kind === 'file') {
+                    if (item.type.includes('json')) {
+                        isDragged.value = true;
+                        // console.log('Dragged file:', item, item.getAsFile());
+                    }
+                }
             }
-        }
-    }
-});
+        });
 
-useEventListener(document, 'drop', function (event) {
-    // prevent default drop event(open file in browser)
-    event.preventDefault();
-    event.stopPropagation();
-    isDragged.value = false;
-})
+        newContainer.addEventListener('drop', function (event) {
+            // prevent default drop event(open file in browser)
+            event.preventDefault();
+            event.stopPropagation();
+            isDragged.value = false;
+        })
 
-useEventListener(document, 'dragleave', function (event) {
-    if (event.target.tagName == 'HTML') { // only when drag out of the window
-        event.preventDefault();
-        event.stopPropagation();
-        isDragged.value = false;
+        newContainer.addEventListener('dragleave', function (event) {
+            if (event.target.tagName == 'HTML') { // only when drag out of the window
+                event.preventDefault();
+                event.stopPropagation();
+                isDragged.value = false;
+            }
+        })
     }
 })
 

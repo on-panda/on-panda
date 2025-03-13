@@ -79,13 +79,22 @@
 import CustomAnnotatorTool from './CustomAnnotatorTool.vue';
 import CheckboxWidgetSupportNull from './widgets/CheckboxWidgetSupportNull.vue'
 import ObjectViewerInDetails from './widgets/ObjectViewerInDetails.vue';
-import { pandaState, uploadedJson } from '../stores/pandaState'
 
 import { ref, watch } from 'vue'
 import { dateStringNow } from '../utils/commonUtils'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
+
+const props = defineProps({
+    responseState: {
+        type: Object,
+        required: true
+    }
+})
+
+const pandaState = props.responseState.pandaState
+const uploadedJson = props.responseState.uploadedJson
 
 const editableCommentAsTool = ref({
     name: t("annotator.comment"),

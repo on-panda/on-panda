@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useEventListener } from '@/utils/commonUtils'
 
-export const useGlobalStore = defineStore('global', () => {
+export const useGlobalStore = defineStore('onPandaGlobal', () => {
     const debug = ref(window.location.href.includes('http://localhost') || window.location.href.includes('http://127.0.0.1'))
 
     const isOldUser = ref(localStorage.getItem('onPandaIsOldUser') == 'true')
