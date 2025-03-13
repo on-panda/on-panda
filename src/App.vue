@@ -575,13 +575,15 @@ const apiConfigChosen = computed(() => {
   const changedChatConfig = {}
   for (const key of chatConfigKeys) { // apply apiConfigChosen.chat_config
     if (key in apiConfigChosen.chat_config) {
-      if (key !== 'model' && apiConfigChosen.chat_config[key] !== chatConfig.value[key]) {
+      if (key !== 'model' && JSON.stringify(apiConfigChosen.chat_config[key]) !== JSON.stringify(chatConfig.value[key])) {
         changedChatConfig[key] = apiConfigChosen.chat_config[key]
       }
       chatConfig.value[key] = apiConfigChosen.chat_config[key]
     }
   }
   if (Object.keys(changedChatConfig).length > 0) {
+    // If ElMessage is poped up at beginning, will raise error:
+    // TypeError: Cannot read properties of null (reading 'insertBefore')
     ElMessage.warning(`Change the control parameter: ${JSON.stringify(changedChatConfig)}`)
   }
   return apiConfigChosen
