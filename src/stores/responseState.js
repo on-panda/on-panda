@@ -1,15 +1,660 @@
+import { ref, computed, toValue, watch } from 'vue'
+import { deepCopy } from '@/utils/commonUtils'
 import { PandaState } from './pandaState'
-import { ref } from 'vue'
+import WarningState from './warningState'
+import { OpenAI } from '@/utils/fetchOpenaiApi.js'
+import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
+import { useGlobalStore } from './globalStore.js'
+import {
+    deepEqual,
+    ObjctKeyToCamelCaseNaming,
+    p,
+    sleep,
+} from '@/utils/commonUtils.js'
+import {
+    tokensToSeq,
+    convertMessageToTokens,
+    normalizeRequest,
+    recordAsRejectedToken,
+} from '@/utils/chatUtils.js'
+import { buildMockObject } from '@/utils/commonUtils.js'
 
-export const ResponseStateClassWithoutThis = () => {
+
+export const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
+
+export const defaultMessages = [
+    { role: "system", content: "" },
+    { role: "user", content: "" }]
+
+export const defaultChatConfig = {
+    stream: true,
+    logprobs: true,
+    top_logprobs: 20,
+    // top_k: 2,
+    max_tokens: 3072,
+    temperature: 0.5,
+    stream_options: {
+        include_usage: true,
+    },
+}
+
+export const defaultApiConfig = {
+    "support_continue_final_message": true,
+    "endpoint_name": "endpoint-name",
+    "model_roles": ["assistant"],
+    "client_config": {
+        base_url: window.location.origin + "/qwen-test",
+        api_key: "ak-onPandaTestKey",
+        dangerouslyAllowBrowser: true
+    },
+    "chat_config": {
+        model: "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
+        ...defaultChatConfig,
+    },
+}
+
+export function ResponseStateClassWithoutThis({ messages = null, apiConfig = null } = {}) {
+    // Initialize i18n
+    const { t } = useI18n()
+    // Get global store
+    const globalStore = useGlobalStore()
+
+    var messages = ref(messages || defaultMessages)
+    var apiConfig = ref(apiConfig || defaultApiConfig)
+
     // using closure as class to avoid using 'this'
     const pandaState = new PandaState()
     const uploadedJson = ref(null)
     const onPandaContainer = ref(document)
+
+    const tokens = ref([]);
+
+    const requestStatus = ref({
+        requestTimes: 0,
+        generating: false,
+    })
+
+    function loadMessages(newMessages) {
+        if (newMessages[newMessages.length - 1].role == "assistant") {
+            var lastMessage = newMessages[newMessages.length - 1]
+            var isEqual = deepEqual(finalMessage.value, lastMessage)
+            if (!isEqual) {
+                tokens.value = []
+                var newTokens = convertMessageToTokens(lastMessage)
+                tokens.value = newTokens
+            }
+            newMessages = newMessages.slice(0, newMessages.length - 1)
+        } else {
+            tokens.value = []
+        }
+        messages.value = newMessages
+    }
+
+
+    async function requestLlmServer(messages) {
+        messages = toValue(messages)
+        const modelRoles = apiConfig.value?.model_roles || ["assistant"]
+        const continue_final_message = modelRoles.includes(messages[messages.length - 1].role)
+        if (continue_final_message) { // if continue_final_message, not filter the final message with role
+            messages = messages.slice(0, messages.length - 1).filter(message => message.content).concat([
+                messages[messages.length - 1],
+            ])
+        } else {
+            messages = messages.filter(message => message.content)
+        }
+        var body = JSON.parse(JSON.stringify(apiConfig.value.chat_config))
+        if (continue_final_message) {
+            var lastMessageContent = messages[messages.length - 1].content
+            var prefillTokensNumber = tokens.value.filter(token => !token.pruned).length
+            if (apiConfig.value.support_continue_final_message) {
+                body.add_generation_prompt = false
+                // body['chat_template_kwargs'] = { continue_final_message: continue_final_message }
+                body['continue_final_message'] = continue_final_message
+                body['echo'] = false
+
+            } else {
+                if (lastMessageContent.length < 20000000) {
+                    messages = messages.concat([
+                        { role: "user", content: CONTINUE_PROMPT },
+                    ])
+                } else {  // not using
+                    var middleIndex = Math.floor(lastMessageContent.length / 2)
+                    messages = messages.slice(0, messages.length - 1).concat([
+                        { role: "assistant", content: lastMessageContent.slice(0, middleIndex) },
+                        { role: "user", content: CONTINUE_PROMPT },
+                        { role: "assistant", content: lastMessageContent.slice(middleIndex) },
+                        { role: "user", content: CONTINUE_PROMPT },
+                    ])
+                }
+            }
+        }
+        body.messages = messages
+
+        requestStatus.value.generating = true
+        requestStatus.value.requestTimes++
+        var requestID = requestStatus.value.requestTimes
+        var requestModel = apiConfig.value.chat_config.model
+
+        const fetchController = new AbortController();
+
+        var FIRST_TOKEN_TIMEOUT_SECOND = 5 * 60
+        let firstTokenTimeoutId = setTimeout(() => {
+            var errorMessage = `No.${requestID} request: First token timeout error: >= ` + FIRST_TOKEN_TIMEOUT_SECOND + ` seconds, abort request to model: ${requestModel}.`
+            fetchController.abort(errorMessage)
+            var error = new Error(errorMessage);
+            warning(error)
+        }, FIRST_TOKEN_TIMEOUT_SECOND * 1000);
+
+        try {
+            const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
+            var stream = await openai.chat.completions.create(normalizeRequest(body), { signal: fetchController.signal });
+
+            var tokenIndex = 0
+            var streamIndex = -1
+            var generatedContent = ""
+            var tokensValuePtr = tokens.value
+
+            var tokenBatch = []
+            var isTokensConcatLocked = false
+            for await (const chunk of stream) {
+                if ("error" in chunk) {
+                    throw new Error(JSON.stringify(chunk))
+                }
+                if (requestID !== requestStatus.value.requestTimes) {
+                    console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
+
+                    fetchController.abort()  // tell server to stop generating for saving resource
+                    return
+                }
+                if (!requestStatus.value.generating) {
+                    fetchController.abort()
+                    return
+                }
+                if (continue_final_message && !tokenIndex) { // before affect to tokens
+                    // to remove the last token's finish_reason
+                    if (tokens.value.length) {
+                        // at least remain first token for role
+                        while (tokens.value[tokens.value.length - 1].delta.content === "" && tokens.value.length > 1) {
+                            tokens.value.pop()
+                        }
+                        delete tokens.value[tokens.value.length - 1].finish_reason
+                    }
+                    // remove all pruned tokens
+                    tokens.value = tokens.value.filter(token => !token.pruned)
+                    tokensValuePtr = tokens.value
+                    tokenIndex = tokens.value.length
+                    if (!chunk?.choices[0]?.delta?.content) {
+                        continue  // if first chunk only not has content, no more role for continue_final_message
+                    }
+                }
+                var token = chunk.choices[0];
+                if (!token?.delta) {
+                    continue
+                }
+                if (!token.delta?.content && token.delta?.reasoning_content) {
+                    // handle reasoning_content item for DeepSeek R1
+                    token.delta.content = token.delta.reasoning_content
+                    delete token.delta.reasoning_content
+                    token.isReasoningContent = true
+                }
+                streamIndex++
+                if (streamIndex === 0) { // first token
+                    clearTimeout(firstTokenTimeoutId)
+                }
+                if (continue_final_message && streamIndex <= 1 && token.delta.content == lastMessageContent) {
+                    // avoid vllm echo bug https://github.com/vllm-project/vllm/issues/10111
+                    // TODO: remove this after vllm fix the bug
+                    continue
+                }
+                token.tokenIndex = tokenIndex
+                if (chunk.model) {
+                    token.model = chunk.model
+                }
+                if (chunk.usage) {
+                    token.usage = chunk.usage
+                }
+
+                if (chunk.choices) {
+                    tokenIndex++
+                    if (tokens.value.length) {
+                        const lastToken = tokens.value[tokens.value.length - 1]
+                        if (lastToken.pruned) {
+                            token.pruned = lastToken.pruned
+                        }
+                    }
+                    tokenBatch.push(token)
+
+                    // using batch to concat tokens to reduce compute complexity and avoid stuck main thread when generating super long CoT
+                    var concatTokens = () => {
+                        if (tokenBatch.length > 0) {
+                            console.assert(tokensValuePtr === tokens.value)
+                            tokensValuePtr.push(...tokenBatch)
+                            tokenBatch = []
+                        }
+                    }
+                    // concat tokens with a delay, the delay is based on the number of tokens
+                    if (!isTokensConcatLocked) {
+                        isTokensConcatLocked = true
+                        concatTokens()
+                        setTimeout(() => {
+                            isTokensConcatLocked = false
+                        }, Math.min(1000, 1000 * (tokensValuePtr.length || 0) / 8192))
+                    }
+
+                    // try remove duplicated prefill tokens for API not support continue_final_message
+                    generatedContent += token?.delta?.content || ""
+                    if (continue_final_message && !apiConfig.value.support_continue_final_message) {
+                        if (generatedContent === lastMessageContent) {
+                            warning("API not support continue_final_message, remove duplicated prefill tokens")
+                            generatedContent = ""
+                            tokenIndex = 0
+                            if (tokens.value === tokensValuePtr) {
+                                tokens.value = tokens.value.slice(0, prefillTokensNumber)
+                                tokensValuePtr = tokens.value
+                            } else {
+                                tokensValuePtr = tokens.value.slice(0, prefillTokensNumber)
+                            }
+                        }
+                    }
+                    // p(token.delta?.content, token)
+                }
+            }
+            concatTokens()
+            if (tokens.value.length > 2) {  // workround for last token is empty and only have finish_reason
+                const lastToken = tokens.value[tokens.value.length - 1]
+                const lastToken2 = tokens.value[tokens.value.length - 2]
+                if (lastToken.finish_reason && !lastToken.logprobs && lastToken2.logprobs) {
+                    lastToken2.finish_reason = lastToken.finish_reason
+                    for (var key in ['stop_reason', 'usage']) {
+                        if (lastToken[key]) {
+                            lastToken2[key] = lastToken[key]
+                        }
+                    }
+                    tokens.value.pop()
+                }
+            }
+            requestStatus.value.generating = false
+        } catch (error) {
+            requestStatus.value.generating = false
+            warning(error)
+            throw error
+        }
+    }
+
+    async function requestPromptLogprobs() {
+        // TODO auto run when chat_config is changed
+        var messages = messagesComputed.value
+        messages = messages.filter(message => message.content)
+        console.assert(messages[messages.length - 1].role == "assistant", "last message should be assistant", messages)
+        var body = {
+            messages: messages,
+            model: apiConfig.value.chat_config.model,
+            temperature: apiConfig.value.chat_config.temperature,
+            logprobs: true,
+            add_generation_prompt: false,
+            continue_final_message: true,
+            max_tokens: 1,
+            top_logprobs: apiConfig.value.chat_config.top_logprobs,
+            prompt_logprobs: apiConfig.value.chat_config.top_logprobs,
+        }
+
+        requestStatus.value.requestTimes++
+        var requestID = requestStatus.value.requestTimes
+
+        try {
+            // wait for 300ms to avoid double-click send 3 times requests
+            await new Promise(resolve => setTimeout(resolve, 300))
+            if (requestID !== requestStatus.value.requestTimes) {
+                console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
+                return
+            }
+            var json = await openai.value.chat.completions.create(normalizeRequest(body))
+            if (requestID !== requestStatus.value.requestTimes) {
+                console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
+                return
+            }
+
+            var lastMessageContent = messages[messages.length - 1].content
+            var lastMessageContent_ = ''
+            var tokensNew = []
+            if (!json.prompt_logprobs_list) {
+                ElMessage({
+                    showClose: true,
+                    message: t('userMessages.noPromptLogprobs'),
+                    type: 'error',
+                    duration: 10000,
+                })
+                return
+            }
+            for (var i = json.prompt_logprobs_list.length - 1; i >= 0; i--) {
+                var logprobs = json.prompt_logprobs_list[i]
+                var token_content = logprobs.content[0].token
+
+                if ((token_content + lastMessageContent_).length > lastMessageContent.length) {
+                    break
+                }
+                tokensNew.unshift({
+                    delta: { role: tokens.value[0].delta.role, content: token_content },
+                    logprobs: logprobs,
+                    model: tokens.value[0].model,
+                })
+                lastMessageContent_ = token_content + lastMessageContent_
+            }
+            var lastToken = json.choices[0]
+            var usage = {
+                prompt_tokens: json.prompt_logprobs_list.length - tokensNew.length + 2,
+                completion_tokens: tokensNew.length,
+            }
+            if (lastToken?.finish_reason == "stop") {  // if finish_reason is stop, add to tokensNew
+                tokensNew.push({
+                    delta: { role: tokens.value[0].role, content: "" },
+                    logprobs: lastToken.logprobs,
+                    model: json.model,
+                    finish_reason: lastToken.finish_reason,
+                })
+                usage.completion_tokens += 1
+            }
+
+            lastToken = tokensNew[tokensNew.length - 1]
+            lastToken.model = json.model
+            lastToken.usage = usage
+
+            tokensNew.map((token, tokenIndex) => {
+                token.tokenIndex = tokenIndex
+            })
+
+            tokens.value = tokensNew
+            ElMessage({
+                showClose: true,
+                message: t('userMessages.responseRefreshed'),
+                type: 'success',
+                duration: 5000,
+            })
+        }
+        catch (error) {
+            warning(error)
+            throw error
+        }
+    }
+
+
+
+    class OpreatorCenter {
+        // continue generating, stop, continue with chosen, continue with input, edit prompt(include role), new round, edit response, refresh, load example, load panda tree.
+        constructor() {
+        }
+        pandaState = buildMockObject()
+        continueGenerating = () => {
+            this.pandaState.beforeOperation()
+            // var isTryGeneratingOnEot = tokens.value.length && tokens.value[tokens.value.length - 1].finish_reason === "stop"
+            // if (isTryGeneratingOnEot) {
+            // }
+            pandaState.nextNotSameOperationCache = {
+                operator: "continue_generating",
+                on_policy: true,
+            }
+            requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
+        }
+
+        stopGenerating = () => {
+            this.pandaState.beforeOperation()
+            requestStatus.value.generating = false
+        }
+
+        continueWithChosen = (token, logprobItem) => {
+            // function clickOnLogprobItem() {
+            this.pandaState.beforeOperation()
+            prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob)
+            this.pandaState.afterOperation({
+                operator: "continue_with_chosen",
+                on_policy: true,
+                continue_with_chosen: logprobItem,  // chosen_top_logprob
+                rejected_token: recordAsRejectedToken(token),
+            }, true)
+            requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
+            if (globalStore.isMobile) {
+                window.setTimeout(closeFloatPatchPannel.value, 500)
+            }
+        }
+
+        applyInputChange = (token, continuePrefix, continuePrefixLogprob) => {
+            this.pandaState.beforeOperation()
+            prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob)
+            this.pandaState.afterOperation({
+                operator: "continue_with_input",
+                on_policy: true,
+                continue_with_input: { input_patch: continuePrefix },
+                rejected_token: recordAsRejectedToken(token),
+            }, true)
+        }
+
+        continueWithInput = (token, continuePrefix, continuePrefixLogprob) => {
+            this.applyInputChange(token, continuePrefix, continuePrefixLogprob)
+            requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
+        }
+
+        newGenerate = () => {
+            if (!finalMessage.value.content && finalMessage.value.role && apiConfig.value.support_continue_final_message) {
+                // if only has role, try using continue generating
+                this.continueGenerating()
+            } else {
+                this.pandaState.beforeOperation()
+                tokens.value = []
+                this.pandaState.afterOperation({
+                    operator: "new_generate",
+                    is_new_generated: true,
+                    on_policy: true,
+                })
+                requestLlmServer(messages.value).then(() => this.pandaState.beforeOperation())
+            }
+        }
+
+        newRoundMessage = () => {  // TODO remove auto write back's append opreation
+            this.pandaState.beforeOperation()
+            var role = newTurnMessage.value.role
+            messages.value = (messagesComputed.value.concat([newTurnMessage.value]))
+            tokens.value = [];
+            newTurnMessage.value = { role: role, content: '' }
+            this.pandaState.afterOperation({
+                operator: "new_round_message",
+                on_policy: true,
+            })
+            requestLlmServer(messages).then(() => this.pandaState.beforeOperation())
+        }
+
+        clearOrDeleteMessage = (message, index) => {
+            this.pandaState.beforeOperation()
+            if (message.content) {
+                // after beforeOperation(), message has been recomputed
+                var messageRefresh = messages.value[index]
+                messageRefresh.content = ""
+                this.pandaState.afterOperation({
+                    operator: "edit_prompt_clear",
+                    on_policy: false,
+                })
+            } else {
+                messages.value.splice(index, 1)
+                this.pandaState.afterOperation({
+                    operator: "edit_prompt_delete",
+                    on_policy: false,
+                })
+            }
+        }
+
+        editPrompt = {
+            // long user editing time between `before` and `after`. which will stop generating. abondon!
+            before: () => {
+                this.pandaState.beforeOperation()
+            },
+            after: (opreation) => {
+                this.pandaState.afterOperation(Object.assign({
+                    operator: "edit_prompt",
+                    on_policy: false,
+                }, opreation || {}))
+            }
+        }
+
+        updatePromptContent = (content, index, message) => {
+            this.pandaState.beforeOperation()
+            var messageRefresh = messages.value[index]
+            messageRefresh.content = content
+            this.pandaState.afterOperation({
+                operator: "edit_prompt",
+                on_policy: false,
+            })
+        }
+
+        editRole = {
+            before: () => {
+                this.pandaState.beforeOperation()
+            },
+            after: () => {
+                this.pandaState.afterOperation({
+                    operator: "edit_prompt_role",
+                    on_policy: false,
+                })
+            }
+        }
+
+        editResponse = () => {
+        }
+
+        loadMessagesWithPandaTree = (messages) => {
+            this.pandaState.beforeOperation()
+            this.pandaState = pandaState  // TODO 挪出去 beforeOperation() 会报错
+            const dialogNew = { messages: deepCopy(messages) }
+            const pandaTreeNew = { dialogs: { 1: dialogNew } }
+            this.pandaState.load(pandaTreeNew)
+        }
+    }
+
+    function prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob) {
+        for (const token_ of tokens.value) {
+            token_.pruned = token_.tokenIndex >= token.tokenIndex
+            if (token_.tokenIndex == token.tokenIndex) {
+                token_.bifurcationPoint = true
+            }
+        }
+        continuePrefix = continuePrefix || ""
+        // const continuePrefixToken = { delta: { content: continuePrefix }, tokenIndex: token.tokenIndex, bifurcationPoint: true, logprobs: token.logprobs }
+        token = deepCopy(token)
+        delete token.finish_reason
+        token.delta.content = continuePrefix
+        token.bifurcationPoint = true
+        token.pruned = false
+        if (token.logprobs?.content[0]) {
+            token.logprobs.content[0].logprob = isFinite(continuePrefixLogprob) ? continuePrefixLogprob : -9999
+            token.logprobs.content[0].token = continuePrefix
+        }
+        tokens.value.splice(token.tokenIndex, 0, token);
+    }
+
+    const opreators = new OpreatorCenter()
+
+    const newTurnMessage = ref({ role: 'user', content: '' })
+
+    const finalMessage = computed(() => {
+        var role = null  // Compatible with Claude that each token has a role
+        var finish_reason
+        var finalMessage = tokens.value.filter(
+            token => !token.pruned
+        ).map(
+            token => {
+                if (token.finish_reason) {
+                    finish_reason = token.finish_reason
+                }
+                return (token.delta || {})
+            }
+        ).reduce((delta1, delta2) => {
+            const delta = { ...delta1 }
+            for (var key in delta2) {
+                delta[key] = (delta[key] || "") + (delta2[key] || "")
+                if (key === "role" && delta2.role) {
+                    role = delta2.role
+                }
+            }
+            return delta
+        }, {})
+        if (role) {
+            finalMessage.role = role
+        } else if (tokens.value.length) {
+            finalMessage.role = "assistant" // when has token, the default role is assistant
+        }
+        if (role && !finalMessage.content) {  // only role but no content
+            finalMessage.content = ""
+        }
+        // Compatible with different models for continue generating
+        // For keys other than assistant and user, if v is the empty string, then delete
+        for (var key in finalMessage) {
+            if (key !== "role" && key !== "content" && finalMessage[key] === "") {
+                delete finalMessage[key]
+            }
+        }
+        if (finish_reason) {
+            finalMessage.finish_reason = finish_reason
+        }
+        return finalMessage
+    })
+
+    const messagesComputed = computed(() => {
+        if (finalMessage.value.content || finalMessage.value.role) {
+            return messages.value.concat([finalMessage.value])
+        } else {
+            return messages.value
+        }
+    })
+
+    watch(pandaState.dialogCache,
+        function watchPandaStateDialogCache(newValue, oldValue) {
+            if (newValue.messages) {
+                // this will stop generating when edit
+                requestStatus.value.generating = false
+                loadMessages(newValue.messages)
+                pandaState.tryRestoreTokens()
+                // p(tokensToSeq(tokens.value))
+                // console.trace()
+            }
+        }, { flush: 'sync' })
+
+    const dialogComputed = computed(() => {
+
+        const dialog = { ...pandaState.dialogCache.value }
+        dialog.messages = [...messagesComputed.value]
+        // should add new newTurnMessage? No, becasue when load again, newTurnMessage become finalMessage
+        // if (newTurnMessage.value.content) {
+        //   dialog.messages.push(newTurnMessage.value)
+        // }
+        return dialog
+    })
+
+    pandaState.registerDialogComputed(dialogComputed)
+    pandaState.registerApiConfig(apiConfig)
+    pandaState.registerTokens(tokens)
+
+    const warningState = new WarningState()
+    const warning = warningState.warning
+
+    const closeFloatPatchPannel = ref(null)
+    function registerInResponseText({ closeFloatPatchPannel }) {
+        closeFloatPatchPannel.value = closeFloatPatchPannel
+    }
+
     return {
         pandaState,
         uploadedJson,
         onPandaContainer,
+        messages,
+        apiConfig,
+        tokens,
+        requestStatus,
+        opreators,
+        loadMessages,
+        newTurnMessage,
+        finalMessage,
+        messagesComputed,
+        ...warningState,
+        registerInResponseText
     }
 }
 

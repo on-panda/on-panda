@@ -67,7 +67,7 @@ import 'element-plus/dist/index.css'
                 </el-button>
               </template>
               <el-button :icon="View" size="small" :disabled="!finalMessage.content || requestStatus.generating"
-                @click="requestPromptLogprobs" @dblclick="pasteThenRequestPromptLogprobs" />
+                @click="responseState.requestPromptLogprobs()" @dblclick="pasteThenRequestPromptLogprobs" />
             </el-tooltip>
             <el-tooltip placement="top-end" effect="light">
               <template #content>
@@ -127,25 +127,7 @@ import 'element-plus/dist/index.css'
                 <p style="color: #444" v-if="!tokens.length">
                   <span v-html="WaitingInfo"></span>
                 </p>
-                <p ref="rawOnPandaPannelRef">
-                  <span class="PatchSpan" v-for="patch in patchs"
-                    :key="`t${pandaState.uuid.value}-d${pandaState.currentDialogKey.value}-p${patch.index}:${patch.patch}`"
-                    :style='{
-                      "border-bottom": "3px solid " + probToColor(patch.prob),
-                      ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
-                      ...(patch.tokens.some(t => t.isReasoningContent) ? { "color": "#666" } : {}),
-                      ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
-                      ...(patch.tokens.some(t => t.selected) ? { "background-color": "#0078d7", "color": "#fff" } : {}),
-                    }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)"
-                    @mouseenter="handleMouseEnterPatchSpan" @mouseleave="handleMouseLeavePatchSpan"
-                    @dblclick.prevent="setFloatInputPatch($event, patch)"></span>
-                  <el-tooltip
-                    v-if="apiConfig.support_continue_final_message && tokens.length && tokens[tokens.length - 1].finish_reason == 'length'"
-                    content="native continue generating" placement="bottom">
-                    <el-button :icon="DArrowRight" size="small" @click="opreators.continueGenerating()"
-                      style="margin-left: 10px;height: 16px" />
-                  </el-tooltip>
-                </p>
+                <OnPandaResponseText :responseState="responseState" />
               </div>
             </div>
             <hr style="color:#eee">
@@ -160,95 +142,6 @@ import 'element-plus/dist/index.css'
       </div>
     </div>
 
-
-    <div @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true"
-      ref="floatPatchPannelRef"
-      style="position: fixed; padding-top: 4px;background-color: rgba(200, 200, 200, 0.3); z-index: 10;" :style="{
-        left: `${floatPatchPannel.x}px`,
-        top: `${floatPatchPannel.y}px`,
-      }" v-if="floatPatchPannel.visible">
-      <!-- `padding-top: 4px` to avoid next line's token activate @mouseover  -->
-      <div class="floatPatchPannel" style="position: relative;">
-        <div v-for="token in activatePatch?.tokens?.filter(token => (token?.delta?.content !== undefined))"
-          class="tokenPannel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
-          <div class="floatPatchPannelHead" style="border-bottom: 2px solid #ccc;">
-            <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
-          </div>
-          <div class="tokenLogprobItems">
-            <div v-for="logprobItem in token?.logprobs?.content[0]?.top_logprobs"
-              style="display: block; background-color: #eee; cursor:pointer"
-              @click="(event) => handleLogprobItemClick(event, token, logprobItem)"
-              @mouseover="activateLogprobItem = logprobItem" @mouseenter="$event.target.style.backgroundColor = '#ddd'"
-              @mouseleave="$event.target.style.backgroundColor = ''">
-              <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token) }}</span>
-              <span :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
-                style="white-space: pre-wrap;font-family: Monospace;">:{{
-                  (Math.exp(logprobItem.logprob) * 100).toFixed(1).toString().padStart(5, ' ') }}%</span>
-            </div>
-          </div>
-        </div>
-        <footer class="tokenPannel" style="min-height: 24px; padding: 5px;">
-          <button :icon="Close" @click="closeFloatPatchPannel"
-            style="padding: 0px; margin: 0 0px -5px 0px; float:right;">❌</button>
-          <span v-if="activateLogprobItem.logprob" style="font-family: Monospace;"> {{
-            (-Math.log2(Math.exp(activateLogprobItem.logprob))).toFixed(2) }} bit
-            <br>
-            {{
-              Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
-          <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
-            [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') :
-              activateLogprobItem.bytes }}]
-          </span>
-          <br>
-          <span v-if="activateLogprobItem.token_piece" style="font-family: Monospace;"> token_piece:
-            "{{ activateLogprobItem.token_piece }}"
-          </span>
-        </footer>
-      </div>
-    </div>
-
-
-    <div ref="floatInputPatchRef" class="floatInputPatch" v-show="floatInputPatch.visible" :style="{
-      left: `${floatInputPatch.x}px`,
-      top: `${floatInputPatch.y}px`,
-    }" style="display: flex; position: fixed">
-      <textarea type="text" :placeholder="t('placeholders.submitEnter')" style="height: 25px; width:auto;"
-        class="floatInputPatchInput" @focus="$event.target.select()"
-        @keydown.enter="if (!$event.shiftKey) { opreators.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
-    </div>
-
-    <div ref='floatSelectedOpreationPannelRef' class="floatSelectedOpreationPannel"
-      v-show="floatSelectedOpreationPannel.visible && !floatInputPatch.visible || floatSelectedOpreationPannel.improveInputVisible"
-      :style="{
-        left: `${floatSelectedOpreationPannel.x}px`,
-        top: `${floatSelectedOpreationPannel.y}px`,
-      }" style="position: fixed">
-      <el-button-group class="floatSelectedOpreationPannelButtons"
-        v-show="!floatSelectedOpreationPannel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
-          token => token.selected = true
-        )" :size="isMobile ? '' : 'small'">
-        <el-tooltip content="Manually edit" placement="bottom">
-          <el-button :disabled="true" :icon="Edit" />
-        </el-tooltip>
-        <el-tooltip content="Improve by AI" placement="bottom">
-          <el-button :icon="ChatLineRound" @click="floatSelectedOpreationPannel.improveInputVisible = true" />
-        </el-tooltip>
-        <el-tooltip content="Explain by AI" placement="bottom">
-          <el-button :disabled="true" :icon="QuestionFilled" />
-        </el-tooltip>
-        <el-tooltip content="Try again" placement="bottom">
-          <el-button :disabled="true" :icon="Refresh" />
-        </el-tooltip>
-      </el-button-group>
-      <div v-show="floatSelectedOpreationPannel.improveInputVisible"
-        style="display: flex; justify-content: space-between;">
-        <textarea v-model="floatSelectedOpreationPannel.improveInputText" type="text"
-          placeholder="Instruction for AI to improve" style="height: 25px; width:auto;" @focus="$event.target.select()"
-          @keydown.enter="improveSelectedText" />
-
-        <el-button :icon='Promotion' size="" @click="improveSelectedText"></el-button>
-      </div>
-    </div>
     <DialogControlPannel :responseState="responseState" />
     <AnnotatorPanel
       v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment || globalStore.debug"
@@ -261,8 +154,6 @@ import 'element-plus/dist/index.css'
     </div>
 
     <!-- <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div> -->
-
-    <pre v-show="false">{{JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2)}}</pre>
 
     <el-divider content-position="left">
       <b>{{ t('common.controlParameter') }}:</b>
@@ -315,7 +206,7 @@ import 'element-plus/dist/index.css'
         <small>
           <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
             {{ $t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
-              'controlParameter.promptEngineering') }}
+            'controlParameter.promptEngineering') }}
           </el-tag>
           &nbsp;
           <el-tooltip class="" effect="light" placement="top" raw-content>
@@ -397,15 +288,22 @@ import MarkdownRender from './components/widgets/MarkdownRender.vue'
 import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import DialogControlPannel from './components/DialogControlPannel.vue'
 import OnPandaHeader from './components/OnPandaHeader.vue'
+import OnPandaResponseText from './components/OnPandaResponseText.vue'
 
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useGlobalStore } from './stores/globalStore.js'
 import { useEventListener, closeFloatPannelMeta, buildMockObject } from '@/utils/commonUtils.js'
 import { p, escapeHTML, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils.js'
-import { tokensToSeq, convertMessageToTokens, normalizeRequest, messageToSeq, recordAsRejectedToken } from './utils/chatUtils.js'
+import { tokensToSeq, convertMessageToTokens, normalizeRequest, messageToSeq, probOfToken } from './utils/chatUtils.js'
 import { useScrollSwitchSync, useSelectedNodes } from '@/utils/userInterfaceUtils.js'
 
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close, InfoFilled } from '@element-plus/icons-vue'
+
+
+import { sleep } from '@/utils/commonUtils'
+import MarkdownResponse from '@/components/widgets/MarkdownResponse.vue'
+import { ResponseStateClassWithoutThis, defaultApiConfig, defaultChatConfig, CONTINUE_PROMPT } from '@/stores/responseState'
+
 
 const props = defineProps({
   apiConfigs: {
@@ -444,107 +342,24 @@ const { t } = useI18n()
 const globalStore = useGlobalStore()
 var isMobile = computed(() => globalStore.isMobile)
 
+const responseState = ResponseStateClassWithoutThis()
+const pandaState = responseState.pandaState
+
+const onPandaContainer = ref(null)
+watch(onPandaContainer, (newVal) => {
+  // ref="responseState.onPandaContainer" is not work
+  responseState.onPandaContainer.value = newVal
+})
+
+
+
+
 var bitTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content[0]?.logprob === "number"))
 
 var bitTotal = computed(
   () => bitTokens.value.reduce((sum, token) => sum + - Math.log2(probOfToken(token)), 0)
 )
 
-async function requestPromptLogprobs() {
-  // TODO auto run when chat_config is changed
-  var messages = messagesComputed.value
-  messages = messages.filter(message => message.content)
-  console.assert(messages[messages.length - 1].role == "assistant", "last message should be assistant", messages)
-  var body = {
-    messages: messages,
-    model: apiConfig.value.chat_config.model,
-    temperature: apiConfig.value.chat_config.temperature,
-    logprobs: true,
-    add_generation_prompt: false,
-    continue_final_message: true,
-    max_tokens: 1,
-    top_logprobs: apiConfig.value.chat_config.top_logprobs,
-    prompt_logprobs: apiConfig.value.chat_config.top_logprobs,
-  }
-
-  requestStatus.value.requestTimes++
-  var requestID = requestStatus.value.requestTimes
-
-  try {
-    // wait for 300ms to avoid double-click send 3 times requests
-    await new Promise(resolve => setTimeout(resolve, 300))
-    if (requestID !== requestStatus.value.requestTimes) {
-      console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
-      return
-    }
-    var json = await openai.value.chat.completions.create(normalizeRequest(body))
-    if (requestID !== requestStatus.value.requestTimes) {
-      console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
-      return
-    }
-
-    var lastMessageContent = messages[messages.length - 1].content
-    var lastMessageContent_ = ''
-    var tokensNew = []
-    if (!json.prompt_logprobs_list) {
-      ElMessage({
-        showClose: true,
-        message: t('userMessages.noPromptLogprobs'),
-        type: 'error',
-        duration: 10000,
-      })
-      return
-    }
-    for (var i = json.prompt_logprobs_list.length - 1; i >= 0; i--) {
-      var logprobs = json.prompt_logprobs_list[i]
-      var token_content = logprobs.content[0].token
-
-      if ((token_content + lastMessageContent_).length > lastMessageContent.length) {
-        break
-      }
-      tokensNew.unshift({
-        delta: { role: tokens.value[0].delta.role, content: token_content },
-        logprobs: logprobs,
-        model: tokens.value[0].model,
-      })
-      lastMessageContent_ = token_content + lastMessageContent_
-    }
-    var lastToken = json.choices[0]
-    var usage = {
-      prompt_tokens: json.prompt_logprobs_list.length - tokensNew.length + 2,
-      completion_tokens: tokensNew.length,
-    }
-    if (lastToken?.finish_reason == "stop") {  // if finish_reason is stop, add to tokensNew
-      tokensNew.push({
-        delta: { role: tokens.value[0].role, content: "" },
-        logprobs: lastToken.logprobs,
-        model: json.model,
-        finish_reason: lastToken.finish_reason,
-      })
-      usage.completion_tokens += 1
-    }
-
-    lastToken = tokensNew[tokensNew.length - 1]
-    lastToken.model = json.model
-    lastToken.usage = usage
-
-    tokensNew.map((token, tokenIndex) => {
-      token.tokenIndex = tokenIndex
-    })
-
-    tokens.value = tokensNew
-    ElMessage({
-      showClose: true,
-      message: t('userMessages.responseRefreshed'),
-      type: 'success',
-      duration: 5000,
-    })
-  }
-  catch (error) {
-    warning(error)
-    throw error
-  }
-}
 
 async function pasteThenRequestPromptLogprobs() {
   var pasteText = await navigator.clipboard.readText()
@@ -552,140 +367,18 @@ async function pasteThenRequestPromptLogprobs() {
     tokens.value = [{ delta: { role: "assistant", content: "" } }]
   }
   opreators.applyInputChange(tokens.value[0], pasteText)
-  requestPromptLogprobs()
+  responseState.requestPromptLogprobs()
 }
 
-const rawOnPandaPannelRef = ref(null);
-const selectedNodes = useSelectedNodes(rawOnPandaPannelRef);
-
-
-const selectedTokens = computed(() => {
-  floatSelectedOpreationPannel.value.visible = false
-  if (!selectedNodes.value.startNode || !selectedNodes.value.endNode) {
-    return [];
-  }
-  // avoid select the span-in-span patch
-  var startNode = selectedNodes.value.startNode
-  startNode = ('patch-index' in startNode.attributes) ? startNode : startNode.parentElement
-
-  var endNode = selectedNodes.value.endNode
-  endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
-
-  //set FloatSelectedOpreationPannel
-  setFloatSelectedOpreationPannelBelow()
-  floatSelectedOpreationPannel.value.visible = true
-
-  const startPatchIndex = Number(startNode.attributes['patch-index'].value)
-  const endPatchIndex = Number(endNode.attributes['patch-index'].value)
-  // console.log('selectedNodes', startPatchIndex, endPatchIndex)
-
-  const startTokenIndex = patchs.value[startPatchIndex].tokens[0].tokenIndex
-  const endPatch = patchs.value[endPatchIndex]
-  const endTokenIndex = endPatch.tokens[endPatch.tokens.length - 1].tokenIndex
-  return tokens.value.slice(startTokenIndex, endTokenIndex + 1)
-});
-
-function setFloatSelectedOpreationPannelBelow() {
-  var endNode = selectedNodes.value.endNode
-  if (!endNode) {
-    return
-  }
-  endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
-  var endNodeRect = endNode.getBoundingClientRect()
-  const pixelsPerButton = isMobile.value ? 45 : 35
-  const x = endNodeRect.right - pixelsPerButton * document.querySelectorAll('.floatSelectedOpreationPannelButtons button').length
-  floatSelectedOpreationPannel.value.x = Math.max(x, 10)
-  floatSelectedOpreationPannel.value.y = endNodeRect.bottom + 2
-}
-
-
-
-const floatSelectedOpreationPannel = ref({
-  visible: false,
-  improveInputText: "",
-  improveInputVisible: false,
-  x: 0,
-  y: 0,
-})
-
-const floatSelectedOpreationPannelRef = ref(null)
-closeFloatPannelMeta(floatSelectedOpreationPannelRef, () => {
-  // On mobile devices it disappears immediately after clicking, rendering the tool tips position invalid.
-  setTimeout(() => {
-    floatSelectedOpreationPannel.value.improveInputVisible = false
-  }, 10)
-})
-
-function improveSelectedText() {
-  const selectedText = selectedTokens.value.map(token => token.delta.content).join("")
-  console.log('improveSelectedText', floatSelectedOpreationPannel.value.improveInputText, selectedText)
-  floatSelectedOpreationPannel.value.improveInputVisible = false
-}
 
 
 const scrollDiv = ref(null)
 const scrollSwitch = useScrollSwitchSync(scrollDiv); // { isSwitched, scrollToPosition }
 
+const warning = responseState.warning
+const warningContent = responseState.warningContent
 
-const warningContent = ref("")
-const warningNumber = ref(0)
-
-function warning(content) {
-  if (content instanceof Error) {
-
-    ElMessage({
-      showClose: true,
-      message: content.message,
-      type: 'error',
-      duration: 10000,
-    })
-    let errorMessage = `
-    <strong>Error Name:</strong> ${content.name} <br>
-    <strong>Error Message:</strong> ${content.message} <br>
-    <strong>Error Type:</strong> ${content.constructor.name} <br>
-    ${content.fileName ? `<strong>File Name:</strong> ${content.fileName} <br>` : ''}
-    ${content.lineNumber ? `<strong>Line Number:</strong> ${content.lineNumber} <br>` : ''}
-    <strong>Error Stack:</strong> <pre>${content.stack}</pre>
-                `;
-    // <strong>Is Custom Error:</strong> ${error instanceof Error} <br>
-
-    content = errorMessage
-  } else {
-    console.log('warning:', content)
-    var json = JSON.stringify(content, null, 2)
-    content = '<pre>' + json + '</pre>'
-  }
-  const now = new Date();
-  const dateTimeString = now.toLocaleString();
-  warningNumber.value += 1
-  warningContent.value = "<hr><br><b>" + warningNumber.value + ' th error, ' + "</b>" + dateTimeString + "<br>" + content + warningContent.value
-}
-
-const defaultApiConfig = {
-  "support_continue_final_message": true,
-  "endpoint_name": "endpoint-name",
-  "model_roles": ["assistant"],
-  "client_config": {
-    base_url: window.location.origin + "/qwen-test",
-    api_key: "ak-onPandaTestKey",
-    dangerouslyAllowBrowser: true
-  },
-  "chat_config": {
-    model: "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4" //'qwen-test-model',
-  },
-}
-
-const chatConfig = ref({
-  stream: true,
-  logprobs: true,
-  top_logprobs: 20,
-  // top_k: 2,
-  max_tokens: 3072,
-  temperature: 0.5,
-  stream_options: {
-    include_usage: true,
-  },
-})
+const chatConfig = ref(defaultChatConfig)
 
 const extraParametersString = ref("")
 const extraParameters = computed(() => {
@@ -814,24 +507,8 @@ messages = messagesDefaultExample
 if (globalStore.isOldUser) {
   messages = messagesCleared
 }
-var messages = ref(messages)
 
 
-function loadMessages(newMessages) {
-  if (newMessages[newMessages.length - 1].role == "assistant") {
-    var lastMessage = newMessages[newMessages.length - 1]
-    var isEqual = deepEqual(finalMessage.value, lastMessage)
-    if (!isEqual) {
-      tokens.value = []
-      var newTokens = convertMessageToTokens(lastMessage)
-      tokens.value = newTokens
-    }
-    newMessages = newMessages.slice(0, newMessages.length - 1)
-  } else {
-    tokens.value = []
-  }
-  messages.value = newMessages
-}
 
 var metaApiConfigs = ref([defaultApiConfig, ...props.apiConfigs])
 
@@ -921,11 +598,8 @@ const apiConfig = computed(() => {
   return apiConfig
 })
 
-
-const openai = computed(() =>
-  new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
-)
-const tokens = ref([]);
+var messages = responseState.messages
+const tokens = responseState.tokens
 
 const tokensModelNames = computed(() => {
 
@@ -942,10 +616,7 @@ const tokensModelNames = computed(() => {
   return tokensModelNames.join(", ")
 })
 
-const requestStatus = ref({
-  requestTimes: 0,
-  generating: false,
-})
+const requestStatus = responseState.requestStatus
 
 const WaitingInfo = computed(() => {
   if (requestStatus.value.generating) {
@@ -956,711 +627,22 @@ const WaitingInfo = computed(() => {
 })
 
 
-const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
-
-async function requestLlmServer(messages) {
-  messages = toValue(messages)
-  const modelRoles = apiConfig.value?.model_roles || ["assistant"]
-  const continue_final_message = modelRoles.includes(messages[messages.length - 1].role)
-  if (continue_final_message) { // if continue_final_message, not filter the final message with role
-    messages = messages.slice(0, messages.length - 1).filter(message => message.content).concat([
-      messages[messages.length - 1],
-    ])
-  } else {
-    messages = messages.filter(message => message.content)
-  }
-  var body = JSON.parse(JSON.stringify(apiConfig.value.chat_config))
-  if (continue_final_message) {
-    var lastMessageContent = messages[messages.length - 1].content
-    var prefillTokensNumber = tokens.value.filter(token => !token.pruned).length
-    if (apiConfig.value.support_continue_final_message) {
-      body.add_generation_prompt = false
-      // body['chat_template_kwargs'] = { continue_final_message: continue_final_message }
-      body['continue_final_message'] = continue_final_message
-      body['echo'] = false
-
-    } else {
-      if (lastMessageContent.length < 20000000) {
-        messages = messages.concat([
-          { role: "user", content: CONTINUE_PROMPT },
-        ])
-      } else {  // not using
-        var middleIndex = Math.floor(lastMessageContent.length / 2)
-        messages = messages.slice(0, messages.length - 1).concat([
-          { role: "assistant", content: lastMessageContent.slice(0, middleIndex) },
-          { role: "user", content: CONTINUE_PROMPT },
-          { role: "assistant", content: lastMessageContent.slice(middleIndex) },
-          { role: "user", content: CONTINUE_PROMPT },
-        ])
-      }
-    }
-  }
-  body.messages = messages
-
-  requestStatus.value.generating = true
-  requestStatus.value.requestTimes++
-  var requestID = requestStatus.value.requestTimes
-  var requestModel = apiConfig.value.chat_config.model
-
-  const fetchController = new AbortController();
-
-  var FIRST_TOKEN_TIMEOUT_SECOND = 5 * 60
-  let firstTokenTimeoutId = setTimeout(() => {
-    var errorMessage = `No.${requestID} request: First token timeout error: >= ` + FIRST_TOKEN_TIMEOUT_SECOND + ` seconds, abort request to model: ${requestModel}.`
-    fetchController.abort(errorMessage)
-    var error = new Error(errorMessage);
-    warning(error)
-  }, FIRST_TOKEN_TIMEOUT_SECOND * 1000);
-
-  try {
-    var stream = await openai.value.chat.completions.create(normalizeRequest(body), { signal: fetchController.signal });
-
-    var tokenIndex = 0
-    var streamIndex = -1
-    var generatedContent = ""
-    var tokensValuePtr = tokens.value
-
-    var tokenBatch = []
-    var isTokensConcatLocked = false
-    for await (const chunk of stream) {
-      if ("error" in chunk) {
-        throw new Error(JSON.stringify(chunk))
-      }
-      if (requestID !== requestStatus.value.requestTimes) {
-        console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
-
-        fetchController.abort()  // tell server to stop generating for saving resource
-        return
-      }
-      if (!requestStatus.value.generating) {
-        fetchController.abort()
-        return
-      }
-      if (continue_final_message && !tokenIndex) { // before affect to tokens
-        // to remove the last token's finish_reason
-        if (tokens.value.length) {
-          // at least remain first token for role
-          while (tokens.value[tokens.value.length - 1].delta.content === "" && tokens.value.length > 1) {
-            tokens.value.pop()
-          }
-          delete tokens.value[tokens.value.length - 1].finish_reason
-        }
-        // remove all pruned tokens
-        tokens.value = tokens.value.filter(token => !token.pruned)
-        tokensValuePtr = tokens.value
-        tokenIndex = tokens.value.length
-        if (!chunk?.choices[0]?.delta?.content) {
-          continue  // if first chunk only not has content, no more role for continue_final_message
-        }
-      }
-      var token = chunk.choices[0];
-      if (!token?.delta) {
-        continue
-      }
-      if (!token.delta?.content && token.delta?.reasoning_content) {
-        // handle reasoning_content item for DeepSeek R1
-        token.delta.content = token.delta.reasoning_content
-        delete token.delta.reasoning_content
-        token.isReasoningContent = true
-      }
-      streamIndex++
-      if (streamIndex === 0) { // first token
-        clearTimeout(firstTokenTimeoutId)
-      }
-      if (continue_final_message && streamIndex <= 1 && token.delta.content == lastMessageContent) {
-        // avoid vllm echo bug https://github.com/vllm-project/vllm/issues/10111
-        // TODO: remove this after vllm fix the bug
-        continue
-      }
-      token.tokenIndex = tokenIndex
-      if (chunk.model) {
-        token.model = chunk.model
-      }
-      if (chunk.usage) {
-        token.usage = chunk.usage
-      }
-
-      if (chunk.choices) {
-        tokenIndex++
-        if (tokens.value.length) {
-          const lastToken = tokens.value[tokens.value.length - 1]
-          if (lastToken.pruned) {
-            token.pruned = lastToken.pruned
-          }
-        }
-        tokenBatch.push(token)
-
-        // using batch to concat tokens to reduce compute complexity and avoid stuck main thread when generating super long CoT
-        var concatTokens = () => {
-          if (tokenBatch.length > 0) {
-            console.assert(tokensValuePtr === tokens.value)
-            tokensValuePtr.push(...tokenBatch)
-            tokenBatch = []
-          }
-        }
-        // concat tokens with a delay, the delay is based on the number of tokens
-        if (!isTokensConcatLocked) {
-          isTokensConcatLocked = true
-          concatTokens()
-          setTimeout(() => {
-            isTokensConcatLocked = false
-          }, Math.min(1000, 1000 * (tokensValuePtr.length || 0) / 8192))
-        }
-
-        // try remove duplicated prefill tokens for API not support continue_final_message
-        generatedContent += token?.delta?.content || ""
-        if (continue_final_message && !apiConfig.value.support_continue_final_message) {
-          if (generatedContent === lastMessageContent) {
-            warning("API not support continue_final_message, remove duplicated prefill tokens")
-            generatedContent = ""
-            tokenIndex = 0
-            if (tokens.value === tokensValuePtr) {
-              tokens.value = tokens.value.slice(0, prefillTokensNumber)
-              tokensValuePtr = tokens.value
-            } else {
-              tokensValuePtr = tokens.value.slice(0, prefillTokensNumber)
-            }
-          }
-        }
-        // p(token.delta?.content, token)
-      }
-    }
-    concatTokens()
-    if (tokens.value.length > 2) {  // workround for last token is empty and only have finish_reason
-      const lastToken = tokens.value[tokens.value.length - 1]
-      const lastToken2 = tokens.value[tokens.value.length - 2]
-      if (lastToken.finish_reason && !lastToken.logprobs && lastToken2.logprobs) {
-        lastToken2.finish_reason = lastToken.finish_reason
-        for (var key in ['stop_reason', 'usage']) {
-          if (lastToken[key]) {
-            lastToken2[key] = lastToken[key]
-          }
-        }
-        tokens.value.pop()
-      }
-    }
-    requestStatus.value.generating = false
-  } catch (error) {
-    requestStatus.value.generating = false
-    warning(error)
-    throw error
-  }
-}
 
 
-class OpreatorCenter {
-  // continue generating, stop, continue with chosen, continue with input, edit prompt(include role), new round, edit response, refresh, load example, load panda tree.
-  constructor() {
-  }
-  pandaState = buildMockObject()
-  continueGenerating = () => {
-    this.pandaState.beforeOperation()
-    // var isTryGeneratingOnEot = tokens.value.length && tokens.value[tokens.value.length - 1].finish_reason === "stop"
-    // if (isTryGeneratingOnEot) {
-    // }
-    pandaState.nextNotSameOperationCache = {
-      operator: "continue_generating",
-      on_policy: true,
-    }
-    requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
-  }
-
-  stopGenerating = () => {
-    this.pandaState.beforeOperation()
-    requestStatus.value.generating = false
-  }
-
-  continueWithChosen = (token, logprobItem) => {
-    // function clickOnLogprobItem() {
-    this.pandaState.beforeOperation()
-    prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob)
-    this.pandaState.afterOperation({
-      operator: "continue_with_chosen",
-      on_policy: true,
-      continue_with_chosen: logprobItem,  // chosen_top_logprob
-      rejected_token: recordAsRejectedToken(token),
-    }, true)
-    requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
-    if (isMobile.value) {
-      window.setTimeout(closeFloatPatchPannel, 500)
-    }
-  }
-
-  applyInputChange = (token, continuePrefix, continuePrefixLogprob) => {
-    this.pandaState.beforeOperation()
-    prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob)
-    this.pandaState.afterOperation({
-      operator: "continue_with_input",
-      on_policy: true,
-      continue_with_input: { input_patch: continuePrefix },
-      rejected_token: recordAsRejectedToken(token),
-    }, true)
-  }
-
-  continueWithInput = (token, continuePrefix, continuePrefixLogprob) => {
-    this.applyInputChange(token, continuePrefix, continuePrefixLogprob)
-    requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
-  }
-
-  newGenerate = () => {
-    if (!finalMessage.value.content && finalMessage.value.role && apiConfig.value.support_continue_final_message) {
-      // if only has role, try using continue generating
-      this.continueGenerating()
-    } else {
-      this.pandaState.beforeOperation()
-      tokens.value = []
-      this.pandaState.afterOperation({
-        operator: "new_generate",
-        is_new_generated: true,
-        on_policy: true,
-      })
-      requestLlmServer(messages.value).then(() => this.pandaState.beforeOperation())
-    }
-  }
-
-  newRoundMessage = () => {  // TODO remove auto write back's append opreation
-    this.pandaState.beforeOperation()
-    var role = newTurnMessage.value.role
-    messages.value = (messagesComputed.value.concat([newTurnMessage.value]))
-    tokens.value = [];
-    newTurnMessage.value = { role: role, content: '' }
-    this.pandaState.afterOperation({
-      operator: "new_round_message",
-      on_policy: true,
-    })
-    requestLlmServer(messages).then(() => this.pandaState.beforeOperation())
-  }
-
-  clearOrDeleteMessage = (message, index) => {
-    this.pandaState.beforeOperation()
-    if (message.content) {
-      // after beforeOperation(), message has been recomputed
-      var messageRefresh = messages.value[index]
-      messageRefresh.content = ""
-      this.pandaState.afterOperation({
-        operator: "edit_prompt_clear",
-        on_policy: false,
-      })
-    } else {
-      messages.value.splice(index, 1)
-      this.pandaState.afterOperation({
-        operator: "edit_prompt_delete",
-        on_policy: false,
-      })
-    }
-  }
-
-  editPrompt = {
-    // long user editing time between `before` and `after`. which will stop generating. abondon!
-    before: () => {
-      this.pandaState.beforeOperation()
-    },
-    after: (opreation) => {
-      this.pandaState.afterOperation(Object.assign({
-        operator: "edit_prompt",
-        on_policy: false,
-      }, opreation || {}))
-    }
-  }
-
-  updatePromptContent = (content, index, message) => {
-    this.pandaState.beforeOperation()
-    var messageRefresh = messages.value[index]
-    messageRefresh.content = content
-    this.pandaState.afterOperation({
-      operator: "edit_prompt",
-      on_policy: false,
-    })
-  }
-
-  editRole = {
-    before: () => {
-      this.pandaState.beforeOperation()
-    },
-    after: () => {
-      this.pandaState.afterOperation({
-        operator: "edit_prompt_role",
-        on_policy: false,
-      })
-    }
-  }
-
-  editResponse = () => {
-  }
-
-  loadMessagesWithPandaTree = (messages) => {
-    this.pandaState.beforeOperation()
-    this.pandaState = pandaState
-    const dialogNew = { messages: deepCopy(messages) }
-    const pandaTreeNew = { dialogs: { 1: dialogNew } }
-    this.pandaState.load(pandaTreeNew)
-  }
-}
-
-function prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob) {
-  for (const patch of patchs.value) {
-    for (const patchToken of patch.tokens) {
-      patchToken.pruned = patchToken.tokenIndex >= token.tokenIndex
-      if (patchToken.tokenIndex == token.tokenIndex) {
-        patchToken.bifurcationPoint = true
-      }
-    }
-  }
-  continuePrefix = continuePrefix || ""
-  // const continuePrefixToken = { delta: { content: continuePrefix }, tokenIndex: token.tokenIndex, bifurcationPoint: true, logprobs: token.logprobs }
-  token = deepCopy(token)
-  delete token.finish_reason
-  token.delta.content = continuePrefix
-  token.bifurcationPoint = true
-  token.pruned = false
-  if (token.logprobs?.content[0]) {
-    token.logprobs.content[0].logprob = isFinite(continuePrefixLogprob) ? continuePrefixLogprob : -9999
-    token.logprobs.content[0].token = continuePrefix
-  }
-  tokens.value.splice(token.tokenIndex, 0, token);
-}
-
-const opreators = new OpreatorCenter()
+const opreators = responseState.opreators
+const loadMessages = responseState.loadMessages
 
 provide('opreators.editRole', opreators.editRole)
 
-
-function probOfToken(token) {
-  var logprob = token.logprobs?.content[0]?.logprob
-  var prob = Math.exp(logprob)
-
-  if (typeof logprob !== 'number') {
-    if (token.tokenIndex === 0 && !(token.delta.content)) {
-      // if first role token has no prob and will in first patch
-      prob = 1
-    }
-  }
-  return prob
-}
-
-const patchs = computed(() => {
-  const assistentResponseContentAll = tokens.value.map((token) => token.delta.content).join("");
-  const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-  const visableSegments = Array.from(segmenter.segment(assistentResponseContentAll));
-  // add a empty segment at the end for EOT token
-  Array.from({ length: 4 }, (_, i) => visableSegments.push({ segment: "" }));
-  var patchs = []
-  var tokenToSegmentString = "";
-  var segmentIndex = 0;
-  var tokenStartIndex = 0;
-  for (const token of tokens.value) {
-    const tokenContent = (token.delta?.content || "");
-    var tokenIndex = token.tokenIndex
-    tokenToSegmentString += tokenContent;
-    var patchString = visableSegments[segmentIndex].segment
-    if (tokenToSegmentString.length >= patchString.length) {
-      while (tokenToSegmentString.length > patchString.length) {
-        segmentIndex++
-        patchString += visableSegments[segmentIndex].segment
-      }
-      if (tokenToSegmentString != patchString) {
-        // TODO: support segment split inside one token
-        // assert 
-        throw new Error("tokenToSegmentString != segment: " + tokenToSegmentString + " != " + patchString)
-      }
-      var patchTokens = tokens.value.slice(tokenStartIndex, tokenIndex + 1)
-      patchs.push({ patch: patchString, tokens: patchTokens, prob: patchTokens.reduce((acc, token) => acc * probOfToken(token), 1), index: patchs.length })
-      tokenStartIndex = tokenIndex + 1
-      tokenToSegmentString = ""
-      segmentIndex++
-    }
-  }
-  return patchs
-});
+var handleScrollDivFunctions = []
+provide('handleScrollDivFunctions', handleScrollDivFunctions)
 
 
-const probToColor = (prob, transparency) => {
-  const green = Math.floor((prob) * (255 - 128))
-  var rgb = `${255 - green}, ${128 + green}, 128`;
-  // return {"box-shadow": "inset 0 -2px "+color}
-  if (0 <= prob && prob < 0.0001) {
-    rgb = "255, 0, 0"
-  }
-  if (transparency === undefined) {
-    var color = `rgb(${rgb})`
-  } else {
-    var color = `rgba(${rgb}, ${transparency})`
-  }
-  return color
-}
-
-function createSpanInPatchSpanHTML(textContent) {
-  const span = document.createElement('span')
-  span.className = 'spanInPatchSpan'  // .spanInPatchSpan CSS not work?
-  span.textContent = textContent
-  span.style['color'] = "rgb(180,180,180)"
-  span.style['size'] = "small"
-  span.style['user-select'] = "none"
-  span.style['-webkit-user-select'] = "none"  // for safari
-  span.style['margin-left'] = "10px"
-  return span.outerHTML
-}
+const newTurnMessage = responseState.newTurnMessage
+const finalMessage = responseState.finalMessage
 
 
-function replaceNewlinesWithSpans(str) {
-  const regex = /\n/g;
-  return str.replace(regex, (match) => {
-    return createSpanInPatchSpanHTML('↵') + '<br>'
-  });
-}
-
-function appendFinishReason(token) {
-  if (token.finish_reason) {
-    return createSpanInPatchSpanHTML(`<|${token.finish_reason}|>`)
-  }
-  return ""
-}
-
-const tokenToSpanHTML = (token) => {
-  const content = token?.delta?.content
-  html = ""
-  if (content) {
-    var html = escapeHTML(content)
-    html = replaceNewlinesWithSpans(html)
-  }
-  html = html + appendFinishReason(token)
-  return html
-}
-
-const patchToSpanHTML = (patch) => {
-  return patch.tokens.map(token => tokenToSpanHTML(token)).join("")
-}
-
-const handleMouseEnterPatchSpan = (event) => {
-  const patchIndex = event.target.attributes["patch-index"].value
-  const patch = patchs.value[parseInt(patchIndex)]
-
-  event.target.classList.add('ActivatePatchSpan')
-  patch.target = event.target
-  activatePatch.value = patch
-  if (isMobile.value) {
-    // Prevents false touches due to web size changes
-    setTimeout(() => setFloatPatchPannelBelow(event.target), 1)
-  } else {
-    setFloatPatchPannelBelow(event.target)
-  }
-}
-
-function handleMouseLeavePatchSpan(event) {
-  // console.log(event)
-  floatPatchPannel.value.waitingToHide = true
-  setTimeout(() => {
-    if (floatPatchPannel.value.waitingToHide) {
-      closeFloatPatchPannel()
-    }
-  }, 300);
-}
-
-function closeFloatPatchPannel() {
-  floatPatchPannel.value.visible = false;
-  floatPatchPannel.value.waitingToHide = false;
-  activatePatch.value = {}
-}
-
-function handleLogprobItemClick(event, token, logprobItem) {
-  if (event.altKey) {
-    var content = logprobItem.token
-    navigator.clipboard.writeText(content).then(() => {
-      ElMessage.success(`Copied "${content}" to clipboard`)
-    })
-  } else {
-    opreators.continueWithChosen(token, logprobItem);
-  }
-}
-
-const newTurnMessage = ref({ role: 'user', content: '' })
-
-const finalMessage = computed(() => {
-  var role = null  // Compatible with Claude that each token has a role
-  var finish_reason
-  var finalMessage = tokens.value.filter(
-    token => !token.pruned
-  ).map(
-    token => {
-      if (token.finish_reason) {
-        finish_reason = token.finish_reason
-      }
-      return (token.delta || {})
-    }
-  ).reduce((delta1, delta2) => {
-    const delta = { ...delta1 }
-    for (var key in delta2) {
-      delta[key] = (delta[key] || "") + (delta2[key] || "")
-      if (key === "role" && delta2.role) {
-        role = delta2.role
-      }
-    }
-    return delta
-  }, {})
-  if (role) {
-    finalMessage.role = role
-  } else if (tokens.value.length) {
-    finalMessage.role = "assistant" // when has token, the default role is assistant
-  }
-  if (role && !finalMessage.content) {  // only role but no content
-    finalMessage.content = ""
-  }
-  // Compatible with different models for continue generating
-  // For keys other than assistant and user, if v is the empty string, then delete
-  for (var key in finalMessage) {
-    if (key !== "role" && key !== "content" && finalMessage[key] === "") {
-      delete finalMessage[key]
-    }
-  }
-  if (finish_reason) {
-    finalMessage.finish_reason = finish_reason
-  }
-  return finalMessage
-})
-
-const messagesComputed = computed(() => {
-  if (finalMessage.value.content || finalMessage.value.role) {
-    return messages.value.concat([finalMessage.value])
-  } else {
-    return messages.value
-  }
-})
-
-
-
-// floatPatchPannel
-const activatePatch = ref({})
-const activateLogprobItem = ref({})
-const tokenToHtml = (tokenContent) => {
-  if (tokenContent === undefined) {
-    return "undefined"
-  }
-  if (tokenContent === "") {
-    return "<|unsee|>"
-  }
-  return JSON.stringify(tokenContent)
-}
-
-
-const floatPatchPannel = ref({
-  visible: false,
-  waitingToHide: false,
-  x: 0,
-  y: 0,
-})
-
-const floatPatchPannelRef = ref(null)
-
-
-// exceptTouch=true to avoide touch device close floatPatchPannel by click on another patchSpan
-closeFloatPannelMeta(floatPatchPannelRef, closeFloatPatchPannel, true, true)
-
-watch(activatePatch, function watchActivatePatch(newValue, oldValue) {
-  activateLogprobItem.value = {}
-  oldValue.target?.classList.remove('ActivatePatchSpan')
-});
-
-function setFloatPatchPannelBelow(element) {
-  element = element || document.querySelector('.ActivatePatchSpan')
-  if (!element) {
-    return
-  }
-  const cellRect = element.getBoundingClientRect();
-  floatPatchPannel.value.x = cellRect.left - 3
-  floatPatchPannel.value.y = cellRect.bottom - 4
-  if (floatPatchPannel.value.x + 120 > window.innerWidth) {
-    // avoid floatPatchPannel out of window
-    floatPatchPannel.value.x = floatPatchPannel.value.x - 85
-  }
-  floatPatchPannel.value.waitingToHide = false;
-  floatPatchPannel.value.visible = true;
-}
-
-
-const floatInputPatch = ref({
-  visible: false,
-  attachedPatch: undefined,
-  x: 0,
-  y: 0,
-})
-
-const floatInputPatchRef = ref(null)
-
-closeFloatPannelMeta(floatInputPatchRef, () => {
-  floatInputPatch.value.visible = false
-})
-
-function setFloatInputPatch(event, patch) {
-  // keep floatPatchPannel on， don't know why need setTimeout
-  setTimeout(() => {
-    activatePatch.value = patch
-    floatPatchPannel.value.waitingToHide = false;
-    floatPatchPannel.value.visible = true;
-  }, 20)
-
-  const cellRect = event.target.getBoundingClientRect();
-  floatInputPatch.value.attachedPatch = patch
-
-  floatInputPatch.value.x = cellRect.left - 3
-  floatInputPatch.value.y = cellRect.top - 5
-  floatInputPatch.value.visible = true;
-  setTimeout(() => {
-    document.querySelector('.floatInputPatchInput').value = patch?.patch;
-    document.querySelector('.floatInputPatchInput').focus()
-  }, 2)
-
-}
-
-function handleReactiveFunctions() {
-  setFloatPatchPannelBelow()
-  setFloatSelectedOpreationPannelBelow()
-}
-
-useEventListener(window, 'resize', handleReactiveFunctions)
-useEventListener(window, 'scroll', handleReactiveFunctions)
-
-
-
-import { sleep } from '@/utils/commonUtils'
-import MarkdownResponse from '@/components/widgets/MarkdownResponse.vue'
-import { ResponseStateClassWithoutThis } from '@/stores/responseState'
-const responseState = ResponseStateClassWithoutThis()
-const pandaState = responseState.pandaState
-
-const onPandaContainer = ref(null)
-watch(onPandaContainer, (newVal) => {
-  // ref="responseState.onPandaContainer" is not work
-  responseState.onPandaContainer.value = newVal
-})
-
-opreators.loadMessagesWithPandaTree(messages.value)  // register pandaState
-
-watch(pandaState.dialogCache,
-  function watchPandaStateDialogCache(newValue, oldValue) {
-    if (newValue.messages) {
-      // this will stop generating when edit
-      requestStatus.value.generating = false
-      loadMessages(newValue.messages)
-      pandaState.tryRestoreTokens()
-      // p(tokensToSeq(tokens.value))
-      // console.trace()
-    }
-  }, { flush: 'sync' })
-
-const dialogComputed = computed(() => {
-
-  const dialog = { ...pandaState.dialogCache.value }
-  dialog.messages = [...messagesComputed.value]
-  // should add new newTurnMessage? No, becasue when load again, newTurnMessage become finalMessage
-  // if (newTurnMessage.value.content) {
-  //   dialog.messages.push(newTurnMessage.value)
-  // }
-  return dialog
-})
-
-pandaState.registerDialogComputed(dialogComputed)
-pandaState.registerApiConfig(apiConfig)
-pandaState.registerTokens(tokens)
+opreators.loadMessagesWithPandaTree(messages.value)
 
 function handleModelTagClick(event, newModelName) {
   if (event.ctrlKey) {
@@ -1672,7 +654,12 @@ function handleModelTagClick(event, newModelName) {
 }
 
 onMounted(async () => {
-  scrollDiv.value.addEventListener('scroll', handleReactiveFunctions);
+  function handleScrollDivFunction(e) {
+    for (const func of handleScrollDivFunctions) {
+      func(e)
+    }
+  }
+  scrollDiv.value.addEventListener('scroll', handleScrollDivFunction);
   try {
     await import('@/assets/secret/custom.js');
   } catch (error) {
@@ -1704,12 +691,12 @@ onMounted(async () => {
     }
     if (globalStore.debug) {
       p("tokens", tokens)
-      p("patchs", patchs)
     }
   }, 3000)
 })
 
 onBeforeUnmount(async () => {
+  scrollDiv.value.removeEventListener('scroll', handleScrollDivFunction);
 })
 
 
@@ -1731,40 +718,6 @@ onBeforeUnmount(async () => {
   width: 49.5%;
 }
 
-
-.floatPatchPannelHead .tokenLogprobItems {
-  display: block;
-}
-
-.tokenPannel {
-  border: 1px solid #ccc;
-  padding: 0px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #f9f9f9;
-}
-
-.PatchSpan {
-  box-shadow: inset -1px 0 rgb(200, 200, 200);
-  /* 使用 inset 将阴影设为内阴影 */
-}
-
-.tokenSpan {
-  white-space: pre-wrap;
-  font-family: Monospace;
-}
-
-.PatchSpan {
-  white-space: pre-wrap;
-  margin: 0;
-  padding: 0;
-  display: inline;
-}
-
-.ActivatePatchSpan {
-  background-color: #ccc;
-  border-radius: 4px;
-}
 
 * {
   font-family: Arial, sans-serif;

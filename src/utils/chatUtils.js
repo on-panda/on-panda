@@ -192,3 +192,17 @@ export function recordAsRejectedToken(token) {
     delete rejected_token.bifurcationPoint
     return rejected_token
 }
+
+
+export function probOfToken(token) {
+    var logprob = token.logprobs?.content[0]?.logprob
+    var prob = Math.exp(logprob)
+
+    if (typeof logprob !== 'number') {
+        if (token.tokenIndex === 0 && !(token.delta.content)) {
+            // if first role token has no prob and will in first patch
+            prob = 1
+        }
+    }
+    return prob
+}
