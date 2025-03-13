@@ -206,7 +206,7 @@ import 'element-plus/dist/index.css'
         <small>
           <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
             {{ $t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
-            'controlParameter.promptEngineering') }}
+              'controlParameter.promptEngineering') }}
           </el-tag>
           &nbsp;
           <el-tooltip class="" effect="light" placement="top" raw-content>
@@ -475,7 +475,7 @@ var messagesContinueExample = [{ role: "user", content: "Tell me a common saying
 // VLM
 var messagesImageExample = [{
   role: "user", content: [
-    { type: "text", text: "图中左侧的 “v” 是由什么形状构成？\n" },
+    { type: "text", text: '图中左侧的 "v" 是由什么形状构成？\n' },
     {
       type: "image_url", image_url: {
         url: "https://docs.vllm.ai/en/latest/_static/vllm-logo-text-light.png"
@@ -600,6 +600,8 @@ const apiConfig = computed(() => {
   return apiConfig
 })
 
+responseState.bindApiConfig(apiConfig)
+
 var messages = responseState.messages
 const tokens = responseState.tokens
 
@@ -638,6 +640,11 @@ provide('opreators.editRole', opreators.editRole)
 
 var handleScrollDivFunctions = []
 provide('handleScrollDivFunctions', handleScrollDivFunctions)
+function handleScrollDivFunction(e) {
+  for (const func of handleScrollDivFunctions) {
+    func(e)
+  }
+}
 
 
 const newTurnMessage = responseState.newTurnMessage
@@ -656,11 +663,6 @@ function handleModelTagClick(event, newModelName) {
 }
 
 onMounted(async () => {
-  function handleScrollDivFunction(e) {
-    for (const func of handleScrollDivFunctions) {
-      func(e)
-    }
-  }
   scrollDiv.value.addEventListener('scroll', handleScrollDivFunction);
   try {
     await import('@/assets/secret/custom.js');

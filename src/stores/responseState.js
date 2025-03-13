@@ -640,6 +640,13 @@ export function ResponseStateClassWithoutThis({ messages = null, apiConfig = nul
         closeFloatPatchPannel.value = closeFloatPatchPannel
     }
 
+    const bindApiConfig = (apiConfigRef) => {
+        watch(apiConfigRef, (newApiConfig) => {
+            // Use Object.assign to maintain the same reference in responseState.apiConfig
+            Object.assign(apiConfig.value, newApiConfig)
+        }, { deep: true, immediate: true, flush: 'sync' })
+    }
+
     return {
         pandaState,
         uploadedJson,
@@ -654,7 +661,8 @@ export function ResponseStateClassWithoutThis({ messages = null, apiConfig = nul
         finalMessage,
         messagesComputed,
         ...warningState,
-        registerInResponseText
+        registerInResponseText,
+        bindApiConfig
     }
 }
 
