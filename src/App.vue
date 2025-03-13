@@ -1694,9 +1694,9 @@ useEventListener(window, 'scroll', handleReactiveFunctions)
 
 
 import { sleep } from '@/utils/commonUtils'
-import MarkdownResponse from './components/widgets/MarkdownResponse.vue'
-import { ResponseState } from './stores/responseState'
-const responseState = new ResponseState()
+import MarkdownResponse from '@/components/widgets/MarkdownResponse.vue'
+import { ResponseStateClassWithoutThis } from '@/stores/responseState'
+const responseState = ResponseStateClassWithoutThis()
 const pandaState = responseState.pandaState
 
 const onPandaContainer = ref(null)
