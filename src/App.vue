@@ -301,7 +301,7 @@ import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, QuestionFilled, V
 
 import { sleep } from '@/utils/commonUtils'
 import MarkdownResponse from '@/components/widgets/MarkdownResponse.vue'
-import { ResponseStateClosure, defaultApiConfig, defaultChatConfig, CONTINUE_PROMPT } from '@/stores/responseState'
+import { ResponseStateClosure, defaultMessages, defaultApiConfig, defaultChatConfig, CONTINUE_PROMPT } from '@/stores/responseState'
 
 
 const props = defineProps({
@@ -378,7 +378,8 @@ const scrollSwitch = useScrollSwitchSync(scrollDiv); // { isSwitched, scrollToPo
 const warning = responseState.warning
 const warningContent = responseState.warningContent
 
-const chatConfig = ref(defaultChatConfig)
+const chatConfigRaw = deepCopy(defaultChatConfig)
+const chatConfig = ref(chatConfigRaw)
 
 const extraParametersString = ref("")
 const extraParameters = computed(() => {
@@ -396,7 +397,7 @@ const exampleNameToFunc = {
   },
   "default": () => {
     modelName.value = props?.modelNameTags['on-panda'] || 'on-panda'
-    opreators.loadMessagesWithPandaTree(messagesDefaultExample)
+    opreators.loadMessagesWithPandaTree(welcomeMessages)
     opreators.newGenerate()
   },
   "R in 🍓": () => {
@@ -464,9 +465,8 @@ const exampleNameToFunc = {
 }
 var messages
 // var messages = [{ role: "user", content: "just repeat 1 time: `पत्नी`" }]
-var messagesDefaultExample = [{ role: "system", content: "" }, { role: "user", content: "🍓草莓的英文单词有几个 R ?" }]
 
-var messagesCleared = [{ role: "system", content: "" }, { role: "user", content: "" }]
+const welcomeMessages = [{ role: "system", content: "" }, { role: "user", content: '🍓草莓的英文单词有几个 "R" ?' }]
 
 var messagesTokenizerExample = [{ role: "user", content: "Repeat only once, no other words:\n```\n<|磊|>🧎🏿‍♂️‍➡️\\n<hr>\n蘒    𝒀𝒆𝒔पत्नी\n```" }]
 
@@ -503,51 +503,70 @@ var messagesAudioExample = [
 
 // messages = messagesImageExample
 // messages = messagesAudioExample
-messages = messagesDefaultExample
+messages = welcomeMessages
 if (globalStore.isOldUser) {
-  messages = messagesCleared
+  messages = defaultMessages
 }
 
 
 
 var metaApiConfigs = ref([defaultApiConfig, ...props.apiConfigs])
 
-const apiConfigs = ref({});
-
-watch(metaApiConfigs, async function watchMetaApiConfigs(newValue) {
-  const configs = [];
-  for (let apiConfig of newValue) {
-    apiConfig = deepCopy(apiConfig);
-    if (!apiConfig.chat_config) {
-      apiConfig.chat_config = {}
-    }
-    if (apiConfig.chat_config.model) {
-      configs.push(apiConfig);
-    } else {
-      try {
-        const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.client_config));
-        const list = await openai.models.list();
-        for await (const model of list) {
-          const apiConfigWithModel = deepCopy(apiConfig);
-          apiConfigWithModel.chat_config.model = model.id;
-          configs.push(apiConfigWithModel);
+const apiConfigReceived = ref([])
+const apiConfigs = computed(() => {
+  const apiConfigs = {}
+  for (const configs of apiConfigReceived.value) {
+    if (configs && configs.length) {
+      for (const [index, config] of configs.entries()) {
+        var key = (config.endpoint_name ? config.endpoint_name : "endpoint") + "—" + (configs.length > 1 ? `${index + 1}—` : '') + (config.chat_config.model || '<|None|>')
+        if (isMobile.value) {
+          key = (config.chat_config.model || '<|None|>') + ' | ' + (config.endpoint_name ? config.endpoint_name : "") + ` | ${index + 1}`
         }
-      } catch (error) {
-        warning(error)
-        console.log("Error in fetching models list");
-        console.log(error);
+        apiConfigs[key] = config
       }
     }
   }
-  apiConfigs.value = configs.reduce((obj, config, index) => {
-    var key = `${index + 1}—` + (config.endpoint_name ? config.endpoint_name + "—" : "") + (config.chat_config.model || '<|None|>')
-    if (isMobile.value) {
-      key = `${index + 1} | ` + (config.chat_config.model || '<|None|>') + ' | ' + (config.endpoint_name ? config.endpoint_name : "")
+  return apiConfigs
+}, { flush: 'sync' })
+
+var watchMetaApiConfigsResolver = () => { }
+watch(metaApiConfigs, async function watchMetaApiConfigs(newValue) {
+  // Asynchronous concurrent request without changing the order
+  // and not block by slow response
+  const configPromises = [];
+  apiConfigReceived.value = new Array(newValue.length).fill(null);
+
+  for (let i = 0; i < newValue.length; i++) {
+    const apiConfig = deepCopy(newValue[i]);
+    if (!apiConfig.chat_config) {
+      apiConfig.chat_config = {}
     }
-    obj[key] = config;
-    return obj;
-  }, {});
-}, { immediate: true });
+    // If model is specified, return a promise that resolves to a single config
+    if (apiConfig.chat_config.model) {
+      apiConfigReceived.value[i] = [apiConfig]
+    } else {
+      // For configs without a model, fetch the model list concurrently
+      const fetchPromise = (async (i) => {
+        try {
+          const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.client_config));
+          const list = await openai.models.list();
+          apiConfigReceived.value[i] = list.map(model => {
+            const apiConfigWithModel = deepCopy(apiConfig);
+            apiConfigWithModel.chat_config.model = model.id;
+            return apiConfigWithModel;
+          });
+        } catch (error) {
+          warning(error)
+          console.log("Error in fetching models list");
+          console.log(error);
+        }
+      })(i);
+      configPromises.push(fetchPromise);
+    }
+  }
+  await Promise.all(configPromises);
+  watchMetaApiConfigsResolver()
+})
 
 var modelName = ref(props?.modelNameTags['on-panda'] || 'on-panda')  // using endpoint_name == 'on-panda' as default model
 // var modelName = ref('llama3')
@@ -575,7 +594,8 @@ const apiConfigChosen = computed(() => {
   const changedChatConfig = {}
   for (const key of chatConfigKeys) { // apply apiConfigChosen.chat_config
     if (key in apiConfigChosen.chat_config) {
-      if (key !== 'model' && JSON.stringify(apiConfigChosen.chat_config[key]) !== JSON.stringify(chatConfig.value[key])) {
+      // Using chatConfigRaw to avoid adjusting parameters causes recomputed
+      if (key !== 'model' && JSON.stringify(apiConfigChosen.chat_config[key]) !== JSON.stringify(chatConfigRaw[key])) {
         changedChatConfig[key] = apiConfigChosen.chat_config[key]
       }
       chatConfig.value[key] = apiConfigChosen.chat_config[key]
@@ -672,34 +692,42 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to load custom.js:', error);
   }
-  metaApiConfigs.value = [...metaApiConfigs.value, ...globalStore.customMetaApiConfigs]
-  var exampleFunc = exampleNameToFunc['default']
-  if (tryLoadDuplicateWindow(pandaState)) { // duplicate window has higher priority
-    exampleFunc = () => { }
-    if (localStorage.getItem('modelNameForDuplicateWindow')) {
-      modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
-      localStorage.removeItem('modelNameForDuplicateWindow')
-      exampleFunc = opreators.newGenerate
+
+  async function afterApiConfigsReady() {
+    var watchMetaApiConfigsLoaded = new Promise(resolve => {
+      watchMetaApiConfigsResolver = resolve
+    })
+    metaApiConfigs.value = [...metaApiConfigs.value, ...globalStore.customMetaApiConfigs]
+    var exampleFunc = exampleNameToFunc['default']
+    if (tryLoadDuplicateWindow(pandaState)) { // duplicate window has higher priority
+      exampleFunc = () => { }
+      if (localStorage.getItem('modelNameForDuplicateWindow')) {
+        modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
+        localStorage.removeItem('modelNameForDuplicateWindow')
+        exampleFunc = opreators.newGenerate
+      }
+    } else if (globalStore.isOldUser) {
+      exampleFunc = () => { }
     }
-  } else if (globalStore.isOldUser) {
-    exampleFunc = () => { }
-  }
-  if (globalStore.debug) {
-    // var exampleFunc = exampleNameToFunc['image']
-    // var exampleFunc = () => {
-    //   modelName.value = 'deepseek-r1-distill-qwen-32b'
-    //   // modelName.value = 'doubao-1.5-pro-32k'
-    //   opreators.newGenerate()
-    // }
-  }
-  setTimeout(async function launchExampleFunc() {
+    if (globalStore.debug) {
+      // var exampleFunc = exampleNameToFunc['image']
+      // var exampleFunc = () => {
+      //   // modelName.value = 'deepseek-r1-distill-qwen-32b'
+      //   modelName.value = 'doubao-1.5-pro-32k'
+      //   opreators.newGenerate()
+      // }
+    }
+
+    await watchMetaApiConfigsLoaded
+    await sleep(5)
     if (!requestStatus.value.generating) {
       await exampleFunc()
     }
     if (globalStore.debug) {
       p("tokens", tokens)
     }
-  }, 3000)
+  }
+  afterApiConfigsReady()
 })
 
 onBeforeUnmount(async () => {

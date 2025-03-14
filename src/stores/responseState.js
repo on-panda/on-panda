@@ -12,9 +12,7 @@ import { WarningState } from './warningState'
 
 export const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
 
-export const defaultMessages = [
-    { role: "system", content: "" },
-    { role: "user", content: "" }]
+export const defaultMessages = [{ role: "system", content: "" }, { role: "user", content: "" }]
 
 export const defaultChatConfig = {
     stream: true,
