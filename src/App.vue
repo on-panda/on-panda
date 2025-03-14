@@ -278,7 +278,7 @@ import 'element-plus/dist/index.css'
 </template>
 
 <script setup>
-import { ref, computed, watch, toValue, provide } from 'vue'
+import { ref, computed, watch, provide } from 'vue'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
@@ -292,17 +292,16 @@ import OnPandaResponseText from './components/OnPandaResponseText.vue'
 
 import { OpenAI } from './utils/fetchOpenaiApi.js'
 import { useGlobalStore } from './stores/globalStore.js'
-import { useEventListener, closeFloatPannelMeta, buildMockObject } from '@/utils/commonUtils.js'
-import { p, escapeHTML, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils.js'
-import { tokensToSeq, convertMessageToTokens, normalizeRequest, messageToSeq, probOfToken } from './utils/chatUtils.js'
-import { useScrollSwitchSync, useSelectedNodes } from '@/utils/userInterfaceUtils.js'
+import { p, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils.js'
+import { tokensToSeq, messageToSeq, probOfToken } from './utils/chatUtils.js'
+import { useScrollSwitchSync } from '@/utils/userInterfaceUtils.js'
 
-import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close, InfoFilled } from '@element-plus/icons-vue'
+import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, QuestionFilled, View, InfoFilled } from '@element-plus/icons-vue'
 
 
 import { sleep } from '@/utils/commonUtils'
 import MarkdownResponse from '@/components/widgets/MarkdownResponse.vue'
-import { ResponseStateClassWithoutThis, defaultApiConfig, defaultChatConfig, CONTINUE_PROMPT } from '@/stores/responseState'
+import { ResponseStateClosure, defaultApiConfig, defaultChatConfig, CONTINUE_PROMPT } from '@/stores/responseState'
 
 
 const props = defineProps({
@@ -341,8 +340,9 @@ const { t } = useI18n()
 
 const globalStore = useGlobalStore()
 var isMobile = computed(() => globalStore.isMobile)
+const isMounted = ref(false)
 
-const responseState = ResponseStateClassWithoutThis()
+const responseState = ResponseStateClosure()
 const pandaState = responseState.pandaState
 
 const onPandaContainer = ref(null)
@@ -584,7 +584,9 @@ const apiConfigChosen = computed(() => {
   if (Object.keys(changedChatConfig).length > 0) {
     // If ElMessage is poped up at beginning, will raise error:
     // TypeError: Cannot read properties of null (reading 'insertBefore')
-    ElMessage.warning(`Change the control parameter: ${JSON.stringify(changedChatConfig)}`)
+    if (isMounted.value) {
+      ElMessage.warning(`Change the control parameter: ${JSON.stringify(changedChatConfig)}`)
+    }
   }
   return apiConfigChosen
 })
@@ -663,6 +665,7 @@ function handleModelTagClick(event, newModelName) {
 }
 
 onMounted(async () => {
+  isMounted.value = true
   scrollDiv.value.addEventListener('scroll', handleScrollDivFunction);
   try {
     await import('@/assets/secret/custom.js');

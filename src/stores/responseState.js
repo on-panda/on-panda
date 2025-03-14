@@ -1,24 +1,13 @@
 import { ref, computed, toValue, watch } from 'vue'
-import { deepCopy } from '@/utils/commonUtils'
-import { PandaState } from './pandaState'
-import WarningState from './warningState'
-import { OpenAI } from '@/utils/fetchOpenaiApi.js'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
+import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject } from '@/utils/commonUtils.js'
+import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken } from '@/utils/chatUtils.js'
+import { OpenAI } from '@/utils/fetchOpenaiApi.js'
+
 import { useGlobalStore } from './globalStore.js'
-import {
-    deepEqual,
-    ObjctKeyToCamelCaseNaming,
-    p,
-    sleep,
-} from '@/utils/commonUtils.js'
-import {
-    tokensToSeq,
-    convertMessageToTokens,
-    normalizeRequest,
-    recordAsRejectedToken,
-} from '@/utils/chatUtils.js'
-import { buildMockObject } from '@/utils/commonUtils.js'
+import { PandaState } from './pandaState'
+import { WarningState } from './warningState'
 
 
 export const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
@@ -54,16 +43,14 @@ export const defaultApiConfig = {
     },
 }
 
-export function ResponseStateClassWithoutThis({ messages = null, apiConfig = null } = {}) {
-    // Initialize i18n
+export function ResponseStateClosure({ messages = null, apiConfig = null } = {}) {
+    // using closure as class to avoid using 'this'
     const { t } = useI18n()
-    // Get global store
     const globalStore = useGlobalStore()
 
     var messages = ref(messages || defaultMessages)
     var apiConfig = ref(apiConfig || defaultApiConfig)
 
-    // using closure as class to avoid using 'this'
     const pandaState = new PandaState()
     const uploadedJson = ref(null)
     const onPandaContainer = ref(document)
@@ -283,7 +270,7 @@ export function ResponseStateClassWithoutThis({ messages = null, apiConfig = nul
     }
 
     async function requestPromptLogprobs() {
-        // TODO auto run when chat_config is changed
+        // TODO auto run when chat_config is changed?
         var messages = messagesComputed.value
         messages = messages.filter(message => message.content)
         console.assert(messages[messages.length - 1].role == "assistant", "last message should be assistant", messages)
@@ -628,6 +615,7 @@ export function ResponseStateClassWithoutThis({ messages = null, apiConfig = nul
         return dialog
     })
 
+    // TODO better register in pandaState
     pandaState.registerDialogComputed(dialogComputed)
     pandaState.registerApiConfig(apiConfig)
     pandaState.registerTokens(tokens)
@@ -644,6 +632,7 @@ export function ResponseStateClassWithoutThis({ messages = null, apiConfig = nul
         watch(apiConfigRef, (newApiConfig) => {
             // Use Object.assign to maintain the same reference in responseState.apiConfig
             Object.assign(apiConfig.value, newApiConfig)
+            // flush sync to avoid async update
         }, { deep: true, immediate: true, flush: 'sync' })
     }
 

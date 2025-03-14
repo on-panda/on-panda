@@ -1,6 +1,21 @@
 import { ref, onMounted } from 'vue';
 import { useEventListener } from '@/utils/commonUtils.js'
 
+export const probToColor = (prob, transparency) => {
+    const green = Math.floor((prob) * (255 - 128))
+    var rgb = `${255 - green}, ${128 + green}, 128`;
+    // return {"box-shadow": "inset 0 -2px "+color}
+    if (0 <= prob && prob < 0.0001) {
+        rgb = "255, 0, 0"
+    }
+    if (transparency === undefined) {
+        var color = `rgb(${rgb})`
+    } else {
+        var color = `rgba(${rgb}, ${transparency})`
+    }
+    return color
+}
+
 export function useScrollSwitchSync(scrollDiv) {
     /* Usage:
     <el-switch

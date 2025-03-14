@@ -115,19 +115,17 @@
 
 <script setup>
 
-import { ref, computed, watch, toValue, inject } from 'vue'
-import { onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, inject } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 
-import { OpenAI } from '@/utils/fetchOpenaiApi.js'
 import { useGlobalStore } from '@/stores/globalStore.js'
-import { useEventListener, closeFloatPannelMeta, buildMockObject } from '@/utils/commonUtils.js'
-import { p, escapeHTML, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils.js'
+import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils.js'
+import { p, escapeHTML } from '@/utils/commonUtils.js'
 import { tokensToSeq, probOfToken } from '@/utils/chatUtils.js'
-import { useScrollSwitchSync, useSelectedNodes } from '@/utils/userInterfaceUtils.js'
+import { probToColor, useSelectedNodes } from '@/utils/userInterfaceUtils.js'
 
-import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, ChatLineRound, QuestionFilled, Promotion, View, Close, InfoFilled } from '@element-plus/icons-vue'
+import { Edit, Refresh, DArrowRight, ChatLineRound, QuestionFilled, Promotion, Close } from '@element-plus/icons-vue'
 
 const props = defineProps({
     responseState: {
@@ -214,22 +212,6 @@ function improveSelectedText() {
     const selectedText = selectedTokens.value.map(token => token.delta.content).join("")
     console.log('improveSelectedText', floatSelectedOpreationPannel.value.improveInputText, selectedText)
     floatSelectedOpreationPannel.value.improveInputVisible = false
-}
-
-
-const probToColor = (prob, transparency) => {  // TODO mv to utils
-    const green = Math.floor((prob) * (255 - 128))
-    var rgb = `${255 - green}, ${128 + green}, 128`;
-    // return {"box-shadow": "inset 0 -2px "+color}
-    if (0 <= prob && prob < 0.0001) {
-        rgb = "255, 0, 0"
-    }
-    if (transparency === undefined) {
-        var color = `rgb(${rgb})`
-    } else {
-        var color = `rgba(${rgb}, ${transparency})`
-    }
-    return color
 }
 
 function createSpanInPatchSpanHTML(textContent) {
@@ -441,6 +423,7 @@ function handleReactiveFunctions() {
     setFloatSelectedOpreationPannelBelow()
 }
 
+// register handleReactiveFunctions to handleScrollDivFunctions
 const handleScrollDivFunctions = inject('handleScrollDivFunctions', [])
 handleScrollDivFunctions.push(handleReactiveFunctions)
 
@@ -466,7 +449,6 @@ useEventListener(window, 'scroll', handleReactiveFunctions)
 
 .PatchSpan {
     box-shadow: inset -1px 0 rgb(200, 200, 200);
-    /* 使用 inset 将阴影设为内阴影 */
 }
 
 .tokenSpan {

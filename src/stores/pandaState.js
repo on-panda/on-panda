@@ -282,7 +282,7 @@ export class PandaState {
         }
     }
     setExample = () => {
-        this.load(pandaTreeExample)
+        this.load(deepCopy(pandaTreeExample))
     }
     setEmpty = () => {
         this.load({

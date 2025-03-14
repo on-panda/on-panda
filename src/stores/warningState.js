@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 
-function WarningState() {
+export function WarningState() {
     const warningContent = ref("")
     const warningNumber = ref(0)
 
@@ -44,4 +44,3 @@ function WarningState() {
 }
 
 
-export default WarningState
