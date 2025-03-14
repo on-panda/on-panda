@@ -67,7 +67,7 @@ import 'element-plus/dist/index.css'
                 </el-button>
               </template>
               <el-button :icon="View" size="small" :disabled="!finalMessage.content || requestStatus.generating"
-                @click="responseState.requestPromptLogprobs()" @dblclick="pasteThenRequestPromptLogprobs" />
+                @click="opreators.refreshResponseProbability()" @dblclick="pasteThenRequestPromptLogprobs" />
             </el-tooltip>
             <el-tooltip placement="top-end" effect="light">
               <template #content>

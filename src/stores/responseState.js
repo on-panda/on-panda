@@ -133,6 +133,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             warning(error)
         }, FIRST_TOKEN_TIMEOUT_SECOND * 1000);
 
+        var concatTokens = () => { }
+
         try {
             const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
             var stream = await openai.chat.completions.create(normalizeRequest(body), { signal: fetchController.signal });
@@ -271,6 +273,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
     async function requestPromptLogprobs() {
         // TODO auto run when chat_config is changed?
+        // may delete the stop/<EOT> token
+        // on_policy
         var messages = messagesComputed.value
         messages = messages.filter(message => message.content)
         console.assert(messages[messages.length - 1].role == "assistant", "last message should be assistant", messages)
@@ -296,7 +300,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
                 return
             }
-            var json = await openai.value.chat.completions.create(normalizeRequest(body))
+            const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
+            var json = await openai.chat.completions.create(normalizeRequest(body))
             if (requestID !== requestStatus.value.requestTimes) {
                 console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
                 return
@@ -489,6 +494,16 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             this.pandaState.afterOperation({
                 operator: "edit_prompt",
                 on_policy: false,
+            })
+        }
+
+        refreshResponseProbability = () => {
+            this.pandaState.beforeOperation()
+            requestPromptLogprobs().then(() => {
+                this.pandaState.afterOperation({
+                    operator: "refresh_probability",
+                    on_policy: this.pandaState.isPreviousOperationOnPolicy.value,
+                })
             })
         }
 
