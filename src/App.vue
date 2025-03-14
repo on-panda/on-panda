@@ -109,9 +109,6 @@ import 'element-plus/dist/index.css'
               / tokens: {{ bitTotal.toFixed(1) }} ÷ {{ bitTokens.length }} = {{ (bitTotal /
                 bitTokens.length).toFixed(2)
               }}
-              <!-- <el-icon>
-            <QuestionFilled style="height: 11px;" />
-          </el-icon> -->
             </span>
 
 
@@ -152,8 +149,6 @@ import 'element-plus/dist/index.css'
       <Message :message="newTurnMessage" :index="-2" @deleteMessage="newTurnMessage.content = ''"
         @sendButton="opreators.newRoundMessage()" />
     </div>
-
-    <!-- <div v-html="warningContent" style="background-color: #fdd;white-space: pre-wrap;cursor: default;"></div> -->
 
     <el-divider content-position="left">
       <b>{{ t('common.controlParameter') }}:</b>
@@ -231,23 +226,6 @@ import 'element-plus/dist/index.css'
           <el-input-number v-model="chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01" size="small" />
         </el-form-item>
 
-        <!-- <el-form-item label="stop">
-          <el-input v-model="chatConfig.stop" size="small" style="width: 120px;" />
-          <small>
-            &nbsp;
-            &nbsp;
-            <el-tooltip class="" effect="light" placement="top" raw-content>
-              <template #content>
-                <MarkdownRender
-                  :content="'Similar to [stop item of OpenAI API](https://platform.openai.com/docs/api-reference/chat/create#chat-create-stop)\nIf input JSON string, will parse as JSON. \nFor Chrome user, using `F12 -> Network -> completions` to check the parse result'" />
-              </template>
-              <el-icon>
-                <InfoFilled />
-              </el-icon>
-            </el-tooltip>
-          </small>
-        </el-form-item> -->
-
         <el-form-item label="extra_parameters">
           <el-input type="textarea" :autosize="{ minRows: 1 }" v-model="extraParametersString" size="small"
             style="width: 220px;" />
@@ -278,31 +256,31 @@ import 'element-plus/dist/index.css'
 </template>
 
 <script setup>
+// TODO 
+// 1. split ControlParameterPannel.vue
+// 2. change Messages render method, support edit and click. ctrl+z
+
 import { ref, computed, watch, provide } from 'vue'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, View, InfoFilled } from '@element-plus/icons-vue'
+
+import { OpenAI } from '@/utils/fetchOpenaiApi.js'
+import { p, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming, sleep } from '@/utils/commonUtils.js'
+import { tokensToSeq, messageToSeq, probOfToken } from '@/utils/chatUtils.js'
+import { useScrollSwitchSync } from '@/utils/userInterfaceUtils.js'
+import { useGlobalStore } from '@/stores/globalStore.js'
+import { ResponseStateClosure, defaultMessages, defaultApiConfig, defaultChatConfig, CONTINUE_PROMPT } from '@/stores/responseState'
+
 import Message from './components/Message.vue'
 import MessageRole from './components/widgets/MessageRole.vue'
 import MarkdownRender from './components/widgets/MarkdownRender.vue'
+import MarkdownResponse from '@/components/widgets/MarkdownResponse.vue'
 import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import DialogControlPannel from './components/DialogControlPannel.vue'
 import OnPandaHeader from './components/OnPandaHeader.vue'
 import OnPandaResponseText from './components/OnPandaResponseText.vue'
-
-import { OpenAI } from './utils/fetchOpenaiApi.js'
-import { useGlobalStore } from './stores/globalStore.js'
-import { p, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming } from '@/utils/commonUtils.js'
-import { tokensToSeq, messageToSeq, probOfToken } from './utils/chatUtils.js'
-import { useScrollSwitchSync } from '@/utils/userInterfaceUtils.js'
-
-import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, QuestionFilled, View, InfoFilled } from '@element-plus/icons-vue'
-
-
-import { sleep } from '@/utils/commonUtils'
-import MarkdownResponse from '@/components/widgets/MarkdownResponse.vue'
-import { ResponseStateClosure, defaultMessages, defaultApiConfig, defaultChatConfig, CONTINUE_PROMPT } from '@/stores/responseState'
-
 
 const props = defineProps({
   apiConfigs: {
@@ -320,7 +298,6 @@ e.g.:
       'r1': 'deepseek-r1',
       'image': 'image',
       // 'audio': 'audio',
-      // 'llama': 'others-llama3p1-70b-chat',
       // 'qwen': 'others-qwen2p5-72b-chat',
       'gpt4o': 'chatgpt-4o-latest',
       'claude': 'claude',
@@ -351,15 +328,11 @@ watch(onPandaContainer, (newVal) => {
   responseState.onPandaContainer.value = newVal
 })
 
-
-
-
 var bitTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content[0]?.logprob === "number"))
 
 var bitTotal = computed(
   () => bitTokens.value.reduce((sum, token) => sum + - Math.log2(probOfToken(token)), 0)
 )
-
 
 async function pasteThenRequestPromptLogprobs() {
   var pasteText = await navigator.clipboard.readText()
@@ -369,8 +342,6 @@ async function pasteThenRequestPromptLogprobs() {
   opreators.applyInputChange(tokens.value[0], pasteText)
   responseState.requestPromptLogprobs()
 }
-
-
 
 const scrollDiv = ref(null)
 const scrollSwitch = useScrollSwitchSync(scrollDiv); // { isSwitched, scrollToPosition }
@@ -508,8 +479,6 @@ if (globalStore.isOldUser) {
   messages = defaultMessages
 }
 
-
-
 var metaApiConfigs = ref([defaultApiConfig, ...props.apiConfigs])
 
 const apiConfigReceived = ref([])
@@ -569,11 +538,6 @@ watch(metaApiConfigs, async function watchMetaApiConfigs(newValue) {
 })
 
 var modelName = ref(props?.modelNameTags['on-panda'] || 'on-panda')  // using endpoint_name == 'on-panda' as default model
-// var modelName = ref('llama3')
-// var modelName = ref('image')
-// var modelName = ref('audio')
-
-// setTimeout(requestPromptLogprobs, 3000)
 
 watch(modelName, async function watchModelName(newValue) {  // set modelName to page title
   if (document.title.endsWith("onPanda")) {
@@ -652,9 +616,6 @@ const WaitingInfo = computed(() => {
   }
 })
 
-
-
-
 const opreators = responseState.opreators
 const loadMessages = responseState.loadMessages
 
@@ -668,10 +629,8 @@ function handleScrollDivFunction(e) {
   }
 }
 
-
 const newTurnMessage = responseState.newTurnMessage
 const finalMessage = responseState.finalMessage
-
 
 opreators.loadMessagesWithPandaTree(messages.value)
 
@@ -733,9 +692,6 @@ onMounted(async () => {
 onBeforeUnmount(async () => {
   scrollDiv.value.removeEventListener('scroll', handleScrollDivFunction);
 })
-
-
-
 </script>
 
 <style scoped>
@@ -752,7 +708,6 @@ onBeforeUnmount(async () => {
   display: inline-block;
   width: 49.5%;
 }
-
 
 * {
   font-family: Arial, sans-serif;
