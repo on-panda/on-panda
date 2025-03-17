@@ -30,7 +30,7 @@
           :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: 50 }" @keydown.ctrl.enter="() => {
             if (usingOperators) {
               taskQueue.addTask(async () => operationCenterUpdatePromptContent({ delay: false }))
-              taskQueue.addTask(props.operationCenter.newGenerate)
+              taskQueue.addTask(props.operationCenter.generateNew)
             } else {
               $emit('sendButton')
             }
@@ -38,7 +38,7 @@
           @blur="usingOperators ? taskQueue.addTask(async () => operationCenterUpdatePromptContent({ delay: true })) : $emit('blur', getContent())"
           ref="editor" />
 
-        <button @click="$emit('sendButton'); taskQueue.addTask(props.operationCenter.newGenerate)" :disabled="!hasContent"
+        <button @click="$emit('sendButton'); taskQueue.addTask(props.operationCenter.generateNew)" :disabled="!hasContent"
           :style="{
             cursor: hasContent ? 'pointer' : 'not-allowed'
           }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
@@ -95,7 +95,7 @@ const props = defineProps({
 const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur',])
 
 // supoort both emit event (sample way using by newMessage) and using operationCenter (complex way)
-const usingOperators = 'newGenerate' in props.operationCenter
+const usingOperators = 'generateNew' in props.operationCenter
 const messageCache = ref(null)
 const DELAY_MS_TO_UPDATE_CONTENT = 200  // avoid update content lead to rerender button and button click event lost
 const taskQueue = new TaskQueue()

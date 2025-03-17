@@ -299,7 +299,7 @@ export class PandaState {
         })
     }
     doNothing = (operation) => {
-        const MUST_RECORD_OPERATOR_LIST = ['new_generate']
+        const MUST_RECORD_OPERATOR_LIST = ['generate_new']
         if (MUST_RECORD_OPERATOR_LIST.includes(operation?.operator)) {
             this.currentDialogData.value.operations.push(operation)
         }

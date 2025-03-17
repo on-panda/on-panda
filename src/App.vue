@@ -30,7 +30,7 @@ import 'element-plus/dist/index.css'
       style="border-radius: 5px; padding-bottom: 20px;">
       <div class="promptMessages">
         <!-- <Message v-for="(message, index) in messages" :message="message" 
-          @sendButton="operationCenter.newGenerate()"
+          @sendButton="operationCenter.generateNew()"
           @deleteMessage="operationCenter.clearOrDeleteMessage(message, index)" @focus="operationCenter.editPrompt.before()"
           @blur="operationCenter.editPrompt.after()" /> -->
         <!-- change edit in compoment to edit in operationCenter -->
@@ -53,7 +53,7 @@ import 'element-plus/dist/index.css'
               <el-button :icon="VideoPause" size="small" @click="operationCenter.stopGenerating()" />
             </el-tooltip>
             <!-- <el-tooltip content="try again" placement="top">
-              <el-button :icon="Refresh" size="small" @click="operationCenter.newGenerate()" />
+              <el-button :icon="Refresh" size="small" @click="operationCenter.generateNew()" />
             </el-tooltip> -->
             <el-tooltip v-if="0" content="edit (TBD)" placement="top">
               <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
@@ -145,9 +145,9 @@ import 'element-plus/dist/index.css'
       :responseState="responseState" />
 
     <el-divider content-position="left" style="margin-bottom: 5px;">{{ t('common.newMessage') }}:</el-divider>
-    <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
-      <Message :message="newTurnMessage" :index="-2" @deleteMessage="newTurnMessage.content = ''"
-        @sendButton="operationCenter.newRoundMessage()" />
+    <div :style="{ opacity: newRoundMessage.content ? 1 : 0.5 }">
+      <Message :message="newRoundMessage" :index="-2" @deleteMessage="newRoundMessage.content = ''"
+        @sendButton="operationCenter.startNewRound()" />
     </div>
 
     <el-divider content-position="left">
@@ -169,7 +169,7 @@ import 'element-plus/dist/index.css'
           <el-tag :type="modelName.includes(modelName_) ? 'primary' : 'info'"
             @click="handleModelTagClick($event, modelName_)" @dblclick="() => {
               modelName = modelName_
-              operationCenter.newGenerate()
+              operationCenter.generateNew()
             }" style="cursor: pointer;margin-left: 5px;">
             {{ tag }}
           </el-tag>
@@ -372,59 +372,59 @@ const exampleNameToFunc = {
   "default": () => {
     modelName.value = props?.modelNameTags['on-panda'] || 'on-panda'
     operationCenter.loadMessagesWithPandaTree(welcomeMessages)
-    operationCenter.newGenerate()
+    operationCenter.generateNew()
   },
   "R in 🍓": () => {
     operationCenter.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }])
-    operationCenter.newGenerate()
+    operationCenter.generateNew()
   },
   "image": () => {
     if (props?.modelNameTags['image']) {
       modelName.value = props?.modelNameTags['image']
     }
     operationCenter.loadMessagesWithPandaTree(messagesImageExample)
-    operationCenter.newGenerate()
+    operationCenter.generateNew()
   },
   // "audio": () => {
   //   modelName.value = "audio"
   //   operationCenter.loadMessagesWithPandaTree(messagesAudioExample
   //   )
-  //   operationCenter.newGenerate()
+  //   operationCenter.generateNew()
   // },
   "tokenizer": () => {
     operationCenter.loadMessagesWithPandaTree(messagesTokenizerExample
     )
-    operationCenter.newGenerate()
+    operationCenter.generateNew()
   },
   "random": () => {
     operationCenter.loadMessagesWithPandaTree([{ role: "user", content: "just output a random float128 number without any words, no code" }]
     )
-    operationCenter.newGenerate()
+    operationCenter.generateNew()
   },
   "笑话": () => {
     operationCenter.loadMessagesWithPandaTree([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }]
     )
-    operationCenter.newGenerate()
+    operationCenter.generateNew()
   },
   "诗": () => {
     operationCenter.loadMessagesWithPandaTree([{ role: "user", content: "写藏头诗：\n人工智能，大有可为" }]
     )
-    operationCenter.newGenerate()
+    operationCenter.generateNew()
   },
   "计算": () => {
     operationCenter.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
     )
-    operationCenter.newGenerate()
+    operationCenter.generateNew()
   },
   "count": () => {
     operationCenter.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "How many 1 in 01011010101111011011?", description: "Answer is 13" }]
     )
-    operationCenter.newGenerate()
+    operationCenter.generateNew()
   },
   "AIME": () => {
     operationCenter.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "Real numbers $x$ and $y$ with $x,y>1$ satisfy $\log_x(y^x)=\log_y(x^{4y})=10.$ What is the value of $xy$?", description: "Answer is 25" }]
     )
-    operationCenter.newGenerate()
+    operationCenter.generateNew()
   },
   "continue": () => {
     loadMessages(messagesContinueExample)
@@ -632,7 +632,7 @@ function handleScrollDivFunction(e) {
   }
 }
 
-const newTurnMessage = responseState.newTurnMessage
+const newRoundMessage = responseState.newRoundMessage
 const finalMessage = responseState.finalMessage
 
 operationCenter.loadMessagesWithPandaTree(messages.value)
@@ -666,7 +666,7 @@ onMounted(async () => {
       if (localStorage.getItem('modelNameForDuplicateWindow')) {
         modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
         localStorage.removeItem('modelNameForDuplicateWindow')
-        exampleFunc = operationCenter.newGenerate
+        exampleFunc = operationCenter.generateNew
       }
     } else if (globalStore.isOldUser) {
       exampleFunc = () => { }
@@ -676,7 +676,7 @@ onMounted(async () => {
       // var exampleFunc = () => {
       //   // modelName.value = 'deepseek-r1-distill-qwen-32b'
       //   modelName.value = 'doubao-1.5-pro-32k'
-      //   operationCenter.newGenerate()
+      //   operationCenter.generateNew()
       // }
     }
 

@@ -373,15 +373,13 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
     class OperationCenter {
         // continue generating, stop, continue with chosen, continue with input, edit prompt(include role), new round, edit response, refresh, load example, load panda tree.
-        constructor() {
-        }
         pandaState = buildMockObject()
         continueGenerating = () => {
             this.pandaState.beforeOperation()
             // var isTryGeneratingOnEot = tokens.value.length && tokens.value[tokens.value.length - 1].finish_reason === "stop"
             // if (isTryGeneratingOnEot) {
             // }
-            pandaState.nextNotSameOperationCache = {
+            this.pandaState.nextNotSameOperationCache = {
                 operator: "continue_generating",
                 on_policy: true,
             }
@@ -425,7 +423,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
         }
 
-        newGenerate = () => {
+        generateNew = () => {
             if (!finalMessage.value.content && finalMessage.value.role && apiConfig.value.support_continue_final_message) {
                 // if only has role, try using continue generating
                 this.continueGenerating()
@@ -433,7 +431,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 this.pandaState.beforeOperation()
                 tokens.value = []
                 this.pandaState.afterOperation({
-                    operator: "new_generate",
+                    operator: "generate_new",
                     is_new_generated: true,
                     on_policy: true,
                 })
@@ -441,14 +439,14 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             }
         }
 
-        newRoundMessage = () => {  // TODO remove auto write back's append operation
+        startNewRound = () => {  // TODO remove auto write back's append operation
             this.pandaState.beforeOperation()
-            var role = newTurnMessage.value.role
-            messages.value = (messagesComputed.value.concat([newTurnMessage.value]))
+            var role = newRoundMessage.value.role
+            messages.value = (messagesComputed.value.concat([newRoundMessage.value]))
             tokens.value = [];
-            newTurnMessage.value = { role: role, content: '' }
+            newRoundMessage.value = { role: role, content: '' }
             this.pandaState.afterOperation({
-                operator: "new_round_message",
+                operator: "start_new_round",
                 on_policy: true,
             })
             requestLlmServer(messages).then(() => this.pandaState.beforeOperation())
@@ -521,10 +519,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         editResponse = () => {
         }
 
-        loadMessagesWithPandaTree = (messages) => {
+        loadMessagesWithPandaTree = (newMessages) => {
             this.pandaState.beforeOperation()
             this.pandaState = pandaState  // TODO 挪出去 beforeOperation() 会报错
-            const dialogNew = { messages: deepCopy(messages) }
+            const dialogNew = { messages: deepCopy(newMessages) }
             const pandaTreeNew = { dialogs: { 1: dialogNew } }
             this.pandaState.load(pandaTreeNew)
         }
@@ -553,7 +551,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
     const operationCenter = new OperationCenter()
 
-    const newTurnMessage = ref({ role: 'user', content: '' })
+    const newRoundMessage = ref({ role: 'user', content: '' })
 
     const finalMessage = computed(() => {
         var role = null  // Compatible with Claude that each token has a role
@@ -622,9 +620,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         const dialog = { ...pandaState.dialogCache.value }
         dialog.messages = [...messagesComputed.value]
-        // should add new newTurnMessage? No, becasue when load again, newTurnMessage become finalMessage
-        // if (newTurnMessage.value.content) {
-        //   dialog.messages.push(newTurnMessage.value)
+        // should add new newRoundMessage? No, becasue when load again, newRoundMessage become finalMessage
+        // if (newRoundMessage.value.content) {
+        //   dialog.messages.push(newRoundMessage.value)
         // }
         return dialog
     })
@@ -660,7 +658,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         requestStatus,
         operationCenter,
         loadMessages,
-        newTurnMessage,
+        newRoundMessage,
         finalMessage,
         messagesComputed,
         ...warningState,
