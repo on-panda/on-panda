@@ -49,7 +49,7 @@ export default {
     cleanUI: '简洁界面（阅读模式）',
     continueGenerating: '继续生成',
     stopGenerating: '停止生成',
-    modelTagClick: '1. 点击标签切换模型\n2. 如果按住 `Ctrl` 键并点击标签，将在新窗口中打开包含相同消息的对话',
+    modelTagClick: '1. 单击标签切换模型；双击标签切换模型并重新生成。\n2. 如果按住 `Ctrl` 键并点击标签，将在新窗口中打开包含相同消息的对话',
     continueGeneratingSupport: '此模型是否支持原生续写 assistant 消息？\n\n如果不支持，将使用提示工程(prompt engineering)进行续写：\n\n> ',
     refreshTokenProb: '更新词组概率和候选',
     dblclickToPasteAndRefresh: '或双击',

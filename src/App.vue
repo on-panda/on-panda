@@ -167,7 +167,10 @@ import 'element-plus/dist/index.css'
         <span v-for="_ in (isMobile ? 0 : 30)">&nbsp;</span>
         <template v-for="(modelName_, tag) in props.modelNameTags">
           <el-tag :type="modelName.includes(modelName_) ? 'primary' : 'info'"
-            @click="handleModelTagClick($event, modelName_)" style="cursor: pointer;margin-left: 5px;">
+            @click="handleModelTagClick($event, modelName_)" @dblclick="() => {
+              modelName = modelName_
+              operationCenter.newGenerate()
+            }" style="cursor: pointer;margin-left: 5px;">
             {{ tag }}
           </el-tag>
         </template>
