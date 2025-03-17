@@ -120,7 +120,7 @@ import 'element-plus/dist/index.css'
           style="width: 100%;overflow:scroll;overflow-y:hidden; padding-bottom: 3px;" ref="scrollDiv">
           <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
             <div class="final-message-half-pannel">
-              <div style="background-color: #eee;white-space: pre-wrap;cursor: default;">
+              <div style="background-color: #eee;">
                 <p style="color: #444" v-if="!tokens.length">
                   <span v-html="WaitingInfo"></span>
                 </p>
@@ -250,7 +250,7 @@ import 'element-plus/dist/index.css'
 
     </el-form>
     <div v-if="warningContent"
-      style="background-color: #fdd;white-space: pre-wrap;cursor: default;overflow-x: scroll; padding: 10px">
+      style="background-color: #fdd;white-space: pre-wrap;overflow-x: scroll; padding: 10px">
       <h3>Error Messages:</h3>
       <div v-html="warningContent"></div>
     </div>

@@ -1,6 +1,6 @@
 <template>
 
-    <p ref="rawOnPandaPannelRef">
+    <p ref="onPandaResponseTextRef" class="OnPandaResponseText" style="white-space: pre-wrap;cursor: default;">
         <span class="PatchSpan" v-for="patch in patchs"
             :key="`t${pandaState.uuid.value}-d${pandaState.currentDialogKey.value}-p${patch.index}:${patch.patch}`"
             :style='{
@@ -147,8 +147,8 @@ const { t } = useI18n()
 
 
 
-const rawOnPandaPannelRef = ref(null);
-const selectedNodes = useSelectedNodes(rawOnPandaPannelRef);
+const onPandaResponseTextRef = ref(null);
+const selectedNodes = useSelectedNodes(onPandaResponseTextRef);
 
 const selectedTokens = computed(() => {
     floatSelectedOperationPannel.value.visible = false
