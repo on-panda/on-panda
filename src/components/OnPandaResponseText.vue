@@ -14,7 +14,7 @@
         <el-tooltip
             v-if="apiConfig.support_continue_final_message && tokens.length && tokens[tokens.length - 1].finish_reason == 'length'"
             content="native continue generating" placement="bottom">
-            <el-button :icon="DArrowRight" size="small" @click="operators.continueGenerating()"
+            <el-button :icon="DArrowRight" size="small" @click="operationCenter.continueGenerating()"
                 style="margin-left: 10px;height: 16px" />
         </el-tooltip>
     </p>
@@ -74,7 +74,7 @@
     }" style="display: flex; position: fixed">
         <textarea type="text" :placeholder="t('placeholders.submitEnter')" style="height: 25px; width:auto;"
             class="floatInputPatchInput" @focus="$event.target.select()"
-            @keydown.enter="if (!$event.shiftKey) { operators.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
+            @keydown.enter="if (!$event.shiftKey) { operationCenter.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
     </div>
 
     <div ref='floatSelectedOperationPannelRef' class="floatSelectedOperationPannel"
@@ -137,7 +137,7 @@ const props = defineProps({
 const responseState = props.responseState
 const pandaState = responseState.pandaState
 const tokens = responseState.tokens
-const operators = responseState.operators
+const operationCenter = responseState.operationCenter
 const apiConfig = responseState.apiConfig
 
 const globalStore = useGlobalStore()
@@ -331,7 +331,7 @@ function handleLogprobItemClick(event, token, logprobItem) {
             ElMessage.success(`Copied "${content}" to clipboard`)
         })
     } else {
-        operators.continueWithChosen(token, logprobItem);
+        operationCenter.continueWithChosen(token, logprobItem);
     }
 }
 

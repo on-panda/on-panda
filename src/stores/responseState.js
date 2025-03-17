@@ -371,7 +371,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
 
 
-    class OperatorCenter {
+    class OperationCenter {
         // continue generating, stop, continue with chosen, continue with input, edit prompt(include role), new round, edit response, refresh, load example, load panda tree.
         constructor() {
         }
@@ -551,7 +551,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         tokens.value.splice(token.tokenIndex, 0, token);
     }
 
-    const operators = new OperatorCenter()
+    const operationCenter = new OperationCenter()
 
     const newTurnMessage = ref({ role: 'user', content: '' })
 
@@ -658,7 +658,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         apiConfig,
         tokens,
         requestStatus,
-        operators,
+        operationCenter,
         loadMessages,
         newTurnMessage,
         finalMessage,

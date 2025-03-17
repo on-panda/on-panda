@@ -13,7 +13,7 @@
               if (usingOperators) {
                 taskQueue.addTask(async () => await sleep(1))
                 // if not sleep, will cause element-plus.js Uncaught (in promise) TypeError: Cannot read properties of null (reading 'offsetHeight')
-                taskQueue.addTask(async () => props.operators.clearOrDeleteMessage(messageCache, props.index))
+                taskQueue.addTask(async () => props.operationCenter.clearOrDeleteMessage(messageCache, props.index))
               } else { $emit('deleteMessage') }
             }
               " />
@@ -29,16 +29,16 @@
         <el-input class="message-content" v-model="contentAsText" type="textarea"
           :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: 50 }" @keydown.ctrl.enter="() => {
             if (usingOperators) {
-              taskQueue.addTask(async () => operatorsUpdatePromptContent({ delay: false }))
-              taskQueue.addTask(props.operators.newGenerate)
+              taskQueue.addTask(async () => operationCenterUpdatePromptContent({ delay: false }))
+              taskQueue.addTask(props.operationCenter.newGenerate)
             } else {
               $emit('sendButton')
             }
           }" @paste="handlePaste" @focus="$emit('focus')"
-          @blur="usingOperators ? taskQueue.addTask(async () => operatorsUpdatePromptContent({ delay: true })) : $emit('blur', getContent())"
+          @blur="usingOperators ? taskQueue.addTask(async () => operationCenterUpdatePromptContent({ delay: true })) : $emit('blur', getContent())"
           ref="editor" />
 
-        <button @click="$emit('sendButton'); taskQueue.addTask(props.operators.newGenerate)" :disabled="!hasContent"
+        <button @click="$emit('sendButton'); taskQueue.addTask(props.operationCenter.newGenerate)" :disabled="!hasContent"
           :style="{
             cursor: hasContent ? 'pointer' : 'not-allowed'
           }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
@@ -83,7 +83,7 @@ const props = defineProps({
     type: Object,
     default: {}
   },
-  operators: {
+  operationCenter: {
     type: [Object, Function],
     default: mockObject
   },
@@ -94,13 +94,13 @@ const props = defineProps({
 })
 const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur',])
 
-// supoort both emit event (sample way using by newMessage) and using operators (complex way)
-const usingOperators = 'newGenerate' in props.operators
+// supoort both emit event (sample way using by newMessage) and using operationCenter (complex way)
+const usingOperators = 'newGenerate' in props.operationCenter
 const messageCache = ref(null)
 const DELAY_MS_TO_UPDATE_CONTENT = 200  // avoid update content lead to rerender button and button click event lost
 const taskQueue = new TaskQueue()
 
-async function operatorsUpdatePromptContent({ delay = false }) {
+async function operationCenterUpdatePromptContent({ delay = false }) {
   if (usingOperators && messageCache.value) {
     // only update if content changed
     if (JSON.stringify(messageCache.value['content']) !== JSON.stringify(props.message['content'])) {
@@ -108,7 +108,7 @@ async function operatorsUpdatePromptContent({ delay = false }) {
         // only delay when update content
         await sleep(DELAY_MS_TO_UPDATE_CONTENT)
       }
-      props.operators.updatePromptContent(getContent(), props.index)
+      props.operationCenter.updatePromptContent(getContent(), props.index)
     }
   }
 }

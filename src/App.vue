@@ -30,12 +30,12 @@ import 'element-plus/dist/index.css'
       style="border-radius: 5px; padding-bottom: 20px;">
       <div class="promptMessages">
         <!-- <Message v-for="(message, index) in messages" :message="message" 
-          @sendButton="operators.newGenerate()"
-          @deleteMessage="operators.clearOrDeleteMessage(message, index)" @focus="operators.editPrompt.before()"
-          @blur="operators.editPrompt.after()" /> -->
-        <!-- change edit in compoment to edit in operators -->
+          @sendButton="operationCenter.newGenerate()"
+          @deleteMessage="operationCenter.clearOrDeleteMessage(message, index)" @focus="operationCenter.editPrompt.before()"
+          @blur="operationCenter.editPrompt.after()" /> -->
+        <!-- change edit in compoment to edit in operationCenter -->
         <Message v-for="(message, index) in messages" :key="message.role + messageToSeq(message) + index"
-          :message="message" :index="index" :operators="operators" />
+          :message="message" :index="index" :operationCenter="operationCenter" />
       </div>
 
       <div class="responsePannel" :style="globalStore.cleanMode ? { maxWidth: '1024px' } : {}">
@@ -47,13 +47,13 @@ import 'element-plus/dist/index.css'
             <span class="stretch" style="margin-right: auto" />
             <el-tooltip v-if="!requestStatus.generating" :content="t('tooltips.continueGenerating')" placement="top">
               <el-button :icon="DArrowRight" size="small" :disabled="!tokens?.length"
-                @click="operators.continueGenerating()" />
+                @click="operationCenter.continueGenerating()" />
             </el-tooltip>
             <el-tooltip v-if="requestStatus.generating" :content="t('tooltips.stopGenerating')" placement="top">
-              <el-button :icon="VideoPause" size="small" @click="operators.stopGenerating()" />
+              <el-button :icon="VideoPause" size="small" @click="operationCenter.stopGenerating()" />
             </el-tooltip>
             <!-- <el-tooltip content="try again" placement="top">
-              <el-button :icon="Refresh" size="small" @click="operators.newGenerate()" />
+              <el-button :icon="Refresh" size="small" @click="operationCenter.newGenerate()" />
             </el-tooltip> -->
             <el-tooltip v-if="0" content="edit (TBD)" placement="top">
               <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
@@ -67,7 +67,7 @@ import 'element-plus/dist/index.css'
                 </el-button>
               </template>
               <el-button :icon="View" size="small" :disabled="!finalMessage.content || requestStatus.generating"
-                @click="operators.refreshResponseProbability()" @dblclick="pasteThenRequestPromptLogprobs" />
+                @click="operationCenter.refreshResponseProbability()" @dblclick="pasteThenRequestPromptLogprobs" />
             </el-tooltip>
             <el-tooltip placement="top-end" effect="light">
               <template #content>
@@ -147,7 +147,7 @@ import 'element-plus/dist/index.css'
     <el-divider content-position="left" style="margin-bottom: 5px;">{{ t('common.newMessage') }}:</el-divider>
     <div :style="{ opacity: newTurnMessage.content ? 1 : 0.5 }">
       <Message :message="newTurnMessage" :index="-2" @deleteMessage="newTurnMessage.content = ''"
-        @sendButton="operators.newRoundMessage()" />
+        @sendButton="operationCenter.newRoundMessage()" />
     </div>
 
     <el-divider content-position="left">
@@ -339,7 +339,7 @@ async function pasteThenRequestPromptLogprobs() {
   if (tokens.value.length == 0) {
     tokens.value = [{ delta: { role: "assistant", content: "" } }]
   }
-  operators.applyInputChange(tokens.value[0], pasteText)
+  operationCenter.applyInputChange(tokens.value[0], pasteText)
   responseState.requestPromptLogprobs()
 }
 
@@ -363,75 +363,75 @@ const extraParameters = computed(() => {
 
 const exampleNameToFunc = {
   "clear": () => {
-    operators.pandaState = pandaState
+    operationCenter.pandaState = pandaState
     pandaState.setEmpty()
   },
   "default": () => {
     modelName.value = props?.modelNameTags['on-panda'] || 'on-panda'
-    operators.loadMessagesWithPandaTree(welcomeMessages)
-    operators.newGenerate()
+    operationCenter.loadMessagesWithPandaTree(welcomeMessages)
+    operationCenter.newGenerate()
   },
   "R in 🍓": () => {
-    operators.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }])
-    operators.newGenerate()
+    operationCenter.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }])
+    operationCenter.newGenerate()
   },
   "image": () => {
     if (props?.modelNameTags['image']) {
       modelName.value = props?.modelNameTags['image']
     }
-    operators.loadMessagesWithPandaTree(messagesImageExample)
-    operators.newGenerate()
+    operationCenter.loadMessagesWithPandaTree(messagesImageExample)
+    operationCenter.newGenerate()
   },
   // "audio": () => {
   //   modelName.value = "audio"
-  //   operators.loadMessagesWithPandaTree(messagesAudioExample
+  //   operationCenter.loadMessagesWithPandaTree(messagesAudioExample
   //   )
-  //   operators.newGenerate()
+  //   operationCenter.newGenerate()
   // },
   "tokenizer": () => {
-    operators.loadMessagesWithPandaTree(messagesTokenizerExample
+    operationCenter.loadMessagesWithPandaTree(messagesTokenizerExample
     )
-    operators.newGenerate()
+    operationCenter.newGenerate()
   },
   "random": () => {
-    operators.loadMessagesWithPandaTree([{ role: "user", content: "just output a random float128 number without any words, no code" }]
+    operationCenter.loadMessagesWithPandaTree([{ role: "user", content: "just output a random float128 number without any words, no code" }]
     )
-    operators.newGenerate()
+    operationCenter.newGenerate()
   },
   "笑话": () => {
-    operators.loadMessagesWithPandaTree([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }]
+    operationCenter.loadMessagesWithPandaTree([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }]
     )
-    operators.newGenerate()
+    operationCenter.newGenerate()
   },
   "诗": () => {
-    operators.loadMessagesWithPandaTree([{ role: "user", content: "写藏头诗：\n人工智能，大有可为" }]
+    operationCenter.loadMessagesWithPandaTree([{ role: "user", content: "写藏头诗：\n人工智能，大有可为" }]
     )
-    operators.newGenerate()
+    operationCenter.newGenerate()
   },
   "计算": () => {
-    operators.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
+    operationCenter.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }]
     )
-    operators.newGenerate()
+    operationCenter.newGenerate()
   },
   "count": () => {
-    operators.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "How many 1 in 01011010101111011011?", description: "Answer is 13" }]
+    operationCenter.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "How many 1 in 01011010101111011011?", description: "Answer is 13" }]
     )
-    operators.newGenerate()
+    operationCenter.newGenerate()
   },
   "AIME": () => {
-    operators.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "Real numbers $x$ and $y$ with $x,y>1$ satisfy $\log_x(y^x)=\log_y(x^{4y})=10.$ What is the value of $xy$?", description: "Answer is 25" }]
+    operationCenter.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "Real numbers $x$ and $y$ with $x,y>1$ satisfy $\log_x(y^x)=\log_y(x^{4y})=10.$ What is the value of $xy$?", description: "Answer is 25" }]
     )
-    operators.newGenerate()
+    operationCenter.newGenerate()
   },
   "continue": () => {
     loadMessages(messagesContinueExample)
-    setTimeout(() => operators.continueGenerating(), 2000)
+    setTimeout(() => operationCenter.continueGenerating(), 2000)
   },
   "annotate": async () => {
     pandaState.setExample()
-    operators.pandaState = pandaState
+    operationCenter.pandaState = pandaState
     await sleep(100)
-    operators.continueGenerating()
+    operationCenter.continueGenerating()
   }
 }
 var messages
@@ -616,10 +616,10 @@ const WaitingInfo = computed(() => {
   }
 })
 
-const operators = responseState.operators
+const operationCenter = responseState.operationCenter
 const loadMessages = responseState.loadMessages
 
-provide('operators.editRole', operators.editRole)
+provide('operationCenter.editRole', operationCenter.editRole)
 
 var handleScrollDivFunctions = []
 provide('handleScrollDivFunctions', handleScrollDivFunctions)
@@ -632,7 +632,7 @@ function handleScrollDivFunction(e) {
 const newTurnMessage = responseState.newTurnMessage
 const finalMessage = responseState.finalMessage
 
-operators.loadMessagesWithPandaTree(messages.value)
+operationCenter.loadMessagesWithPandaTree(messages.value)
 
 function handleModelTagClick(event, newModelName) {
   if (event.ctrlKey) {
@@ -663,7 +663,7 @@ onMounted(async () => {
       if (localStorage.getItem('modelNameForDuplicateWindow')) {
         modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
         localStorage.removeItem('modelNameForDuplicateWindow')
-        exampleFunc = operators.newGenerate
+        exampleFunc = operationCenter.newGenerate
       }
     } else if (globalStore.isOldUser) {
       exampleFunc = () => { }
@@ -673,7 +673,7 @@ onMounted(async () => {
       // var exampleFunc = () => {
       //   // modelName.value = 'deepseek-r1-distill-qwen-32b'
       //   modelName.value = 'doubao-1.5-pro-32k'
-      //   operators.newGenerate()
+      //   operationCenter.newGenerate()
       // }
     }
 
