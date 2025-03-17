@@ -265,6 +265,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         } catch (error) {
             requestStatus.value.generating = false
             warning(error)
+            clearTimeout(firstTokenTimeoutId)
             throw error
         }
     }

@@ -1,12 +1,14 @@
-import OnPanda from './App.vue';
-import CheckboxWidgetSupportNull from './components/widgets/CheckboxWidgetSupportNull.vue'
-import MarkdownRender from './components/widgets/MarkdownRender.vue';
-import Message from './components/Message.vue';
 import { i18n } from './i18n';
 import ElementPlus from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import en from 'element-plus/es/locale/lang/en'
 
+import OnPanda from './App.vue';
+import CheckboxWidgetSupportNull from './components/widgets/CheckboxWidgetSupportNull.vue'
+import MarkdownRender from './components/widgets/MarkdownRender.vue';
+import Message from './components/Message.vue'
+import { ResponseStateClosure } from './stores/responseState.js'
+import OnPandaResponseText from './components/OnPandaResponseText.vue'
 
 export { i18n };
 const plugin = {
@@ -26,4 +28,4 @@ const plugin = {
   }
 };
 export default plugin;
-export { CheckboxWidgetSupportNull, MarkdownRender, OnPanda, Message, plugin };
+export { CheckboxWidgetSupportNull, MarkdownRender, OnPanda, Message, plugin, OnPandaResponseText, ResponseStateClosure };
