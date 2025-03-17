@@ -14,7 +14,7 @@
         <el-tooltip
             v-if="apiConfig.support_continue_final_message && tokens.length && tokens[tokens.length - 1].finish_reason == 'length'"
             content="native continue generating" placement="bottom">
-            <el-button :icon="DArrowRight" size="small" @click="opreators.continueGenerating()"
+            <el-button :icon="DArrowRight" size="small" @click="operators.continueGenerating()"
                 style="margin-left: 10px;height: 16px" />
         </el-tooltip>
     </p>
@@ -74,24 +74,24 @@
     }" style="display: flex; position: fixed">
         <textarea type="text" :placeholder="t('placeholders.submitEnter')" style="height: 25px; width:auto;"
             class="floatInputPatchInput" @focus="$event.target.select()"
-            @keydown.enter="if (!$event.shiftKey) { opreators.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
+            @keydown.enter="if (!$event.shiftKey) { operators.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
     </div>
 
-    <div ref='floatSelectedOpreationPannelRef' class="floatSelectedOpreationPannel"
-        v-show="floatSelectedOpreationPannel.visible && !floatInputPatch.visible || floatSelectedOpreationPannel.improveInputVisible"
+    <div ref='floatSelectedOperationPannelRef' class="floatSelectedOperationPannel"
+        v-show="floatSelectedOperationPannel.visible && !floatInputPatch.visible || floatSelectedOperationPannel.improveInputVisible"
         :style="{
-            left: `${floatSelectedOpreationPannel.x}px`,
-            top: `${floatSelectedOpreationPannel.y}px`,
+            left: `${floatSelectedOperationPannel.x}px`,
+            top: `${floatSelectedOperationPannel.y}px`,
         }" style="position: fixed">
-        <el-button-group class="floatSelectedOpreationPannelButtons"
-            v-show="!floatSelectedOpreationPannel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
+        <el-button-group class="floatSelectedOperationPannelButtons"
+            v-show="!floatSelectedOperationPannel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
                 token => token.selected = true
             )" :size="isMobile ? '' : 'small'">
             <el-tooltip content="Manually edit" placement="bottom">
                 <el-button :disabled="true" :icon="Edit" />
             </el-tooltip>
             <el-tooltip content="Improve by AI" placement="bottom">
-                <el-button :icon="ChatLineRound" @click="floatSelectedOpreationPannel.improveInputVisible = true" />
+                <el-button :icon="ChatLineRound" @click="floatSelectedOperationPannel.improveInputVisible = true" />
             </el-tooltip>
             <el-tooltip content="Explain by AI" placement="bottom">
                 <el-button :disabled="true" :icon="QuestionFilled" />
@@ -100,9 +100,9 @@
                 <el-button :disabled="true" :icon="Refresh" />
             </el-tooltip>
         </el-button-group>
-        <div v-show="floatSelectedOpreationPannel.improveInputVisible"
+        <div v-show="floatSelectedOperationPannel.improveInputVisible"
             style="display: flex; justify-content: space-between;">
-            <textarea v-model="floatSelectedOpreationPannel.improveInputText" type="text"
+            <textarea v-model="floatSelectedOperationPannel.improveInputText" type="text"
                 placeholder="Instruction for AI to improve" style="height: 25px; width:auto;"
                 @focus="$event.target.select()" @keydown.enter="improveSelectedText" />
 
@@ -137,7 +137,7 @@ const props = defineProps({
 const responseState = props.responseState
 const pandaState = responseState.pandaState
 const tokens = responseState.tokens
-const opreators = responseState.opreators
+const operators = responseState.operators
 const apiConfig = responseState.apiConfig
 
 const globalStore = useGlobalStore()
@@ -151,7 +151,7 @@ const rawOnPandaPannelRef = ref(null);
 const selectedNodes = useSelectedNodes(rawOnPandaPannelRef);
 
 const selectedTokens = computed(() => {
-    floatSelectedOpreationPannel.value.visible = false
+    floatSelectedOperationPannel.value.visible = false
     if (!selectedNodes.value.startNode || !selectedNodes.value.endNode) {
         return [];
     }
@@ -162,9 +162,9 @@ const selectedTokens = computed(() => {
     var endNode = selectedNodes.value.endNode
     endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
 
-    //set FloatSelectedOpreationPannel
-    setFloatSelectedOpreationPannelBelow()
-    floatSelectedOpreationPannel.value.visible = true
+    //set FloatSelectedOperationPannel
+    setFloatSelectedOperationPannelBelow()
+    floatSelectedOperationPannel.value.visible = true
 
     const startPatchIndex = Number(startNode.attributes['patch-index'].value)
     const endPatchIndex = Number(endNode.attributes['patch-index'].value)
@@ -177,7 +177,7 @@ const selectedTokens = computed(() => {
 });
 
 
-function setFloatSelectedOpreationPannelBelow() {
+function setFloatSelectedOperationPannelBelow() {
     var endNode = selectedNodes.value.endNode
     if (!endNode) {
         return
@@ -185,14 +185,14 @@ function setFloatSelectedOpreationPannelBelow() {
     endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
     var endNodeRect = endNode.getBoundingClientRect()
     const pixelsPerButton = isMobile.value ? 45 : 35
-    const x = endNodeRect.right - pixelsPerButton * document.querySelectorAll('.floatSelectedOpreationPannelButtons button').length
-    floatSelectedOpreationPannel.value.x = Math.max(x, 10)
-    floatSelectedOpreationPannel.value.y = endNodeRect.bottom + 2
+    const x = endNodeRect.right - pixelsPerButton * document.querySelectorAll('.floatSelectedOperationPannelButtons button').length
+    floatSelectedOperationPannel.value.x = Math.max(x, 10)
+    floatSelectedOperationPannel.value.y = endNodeRect.bottom + 2
 }
 
 
 
-const floatSelectedOpreationPannel = ref({
+const floatSelectedOperationPannel = ref({
     visible: false,
     improveInputText: "",
     improveInputVisible: false,
@@ -200,18 +200,18 @@ const floatSelectedOpreationPannel = ref({
     y: 0,
 })
 
-const floatSelectedOpreationPannelRef = ref(null)
-closeFloatPannelMeta(floatSelectedOpreationPannelRef, () => {
+const floatSelectedOperationPannelRef = ref(null)
+closeFloatPannelMeta(floatSelectedOperationPannelRef, () => {
     // On mobile devices it disappears immediately after clicking, rendering the tool tips position invalid.
     setTimeout(() => {
-        floatSelectedOpreationPannel.value.improveInputVisible = false
+        floatSelectedOperationPannel.value.improveInputVisible = false
     }, 10)
 })
 
 function improveSelectedText() {
     const selectedText = selectedTokens.value.map(token => token.delta.content).join("")
-    console.log('improveSelectedText', floatSelectedOpreationPannel.value.improveInputText, selectedText)
-    floatSelectedOpreationPannel.value.improveInputVisible = false
+    console.log('improveSelectedText', floatSelectedOperationPannel.value.improveInputText, selectedText)
+    floatSelectedOperationPannel.value.improveInputVisible = false
 }
 
 function createSpanInPatchSpanHTML(textContent) {
@@ -331,7 +331,7 @@ function handleLogprobItemClick(event, token, logprobItem) {
             ElMessage.success(`Copied "${content}" to clipboard`)
         })
     } else {
-        opreators.continueWithChosen(token, logprobItem);
+        operators.continueWithChosen(token, logprobItem);
     }
 }
 
@@ -420,7 +420,7 @@ function setFloatInputPatch(event, patch) {
 
 function handleReactiveFunctions() {
     setFloatPatchPannelBelow()
-    setFloatSelectedOpreationPannelBelow()
+    setFloatSelectedOperationPannelBelow()
 }
 
 // register handleReactiveFunctions to handleScrollDivFunctions

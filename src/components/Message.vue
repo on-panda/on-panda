@@ -10,10 +10,10 @@
         <el-tooltip :content="hasContent ? t('chatMessage.clear') : t('chatMessage.delete')" placement="top">
           <el-button :icon="hasContent ? Delete : Close" size="small" class="massageOperationButton"
             style="margin-right: 5px;" @click="async () => {
-              if (usingOpreators) {
+              if (usingOperators) {
                 taskQueue.addTask(async () => await sleep(1))
                 // if not sleep, will cause element-plus.js Uncaught (in promise) TypeError: Cannot read properties of null (reading 'offsetHeight')
-                taskQueue.addTask(async () => props.opreators.clearOrDeleteMessage(messageCache, props.index))
+                taskQueue.addTask(async () => props.operators.clearOrDeleteMessage(messageCache, props.index))
               } else { $emit('deleteMessage') }
             }
               " />
@@ -28,17 +28,17 @@
       <div style="display: flex; justify-content: space-between">
         <el-input class="message-content" v-model="contentAsText" type="textarea"
           :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: 50 }" @keydown.ctrl.enter="() => {
-            if (usingOpreators) {
-              taskQueue.addTask(async () => opreatorsUpdatePromptContent({ delay: false }))
-              taskQueue.addTask(props.opreators.newGenerate)
+            if (usingOperators) {
+              taskQueue.addTask(async () => operatorsUpdatePromptContent({ delay: false }))
+              taskQueue.addTask(props.operators.newGenerate)
             } else {
               $emit('sendButton')
             }
           }" @paste="handlePaste" @focus="$emit('focus')"
-          @blur="usingOpreators ? taskQueue.addTask(async () => opreatorsUpdatePromptContent({ delay: true })) : $emit('blur', getContent())"
+          @blur="usingOperators ? taskQueue.addTask(async () => operatorsUpdatePromptContent({ delay: true })) : $emit('blur', getContent())"
           ref="editor" />
 
-        <button @click="$emit('sendButton'); taskQueue.addTask(props.opreators.newGenerate)" :disabled="!hasContent"
+        <button @click="$emit('sendButton'); taskQueue.addTask(props.operators.newGenerate)" :disabled="!hasContent"
           :style="{
             cursor: hasContent ? 'pointer' : 'not-allowed'
           }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
@@ -83,7 +83,7 @@ const props = defineProps({
     type: Object,
     default: {}
   },
-  opreators: {
+  operators: {
     type: [Object, Function],
     default: mockObject
   },
@@ -94,27 +94,27 @@ const props = defineProps({
 })
 const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur',])
 
-// supoort both emit event (sample way using by newMessage) and using opreators (complex way)
-const usingOpreators = 'newGenerate' in props.opreators
+// supoort both emit event (sample way using by newMessage) and using operators (complex way)
+const usingOperators = 'newGenerate' in props.operators
 const messageCache = ref(null)
 const DELAY_MS_TO_UPDATE_CONTENT = 200  // avoid update content lead to rerender button and button click event lost
 const taskQueue = new TaskQueue()
 
-async function opreatorsUpdatePromptContent({ delay = false }) {
-  if (usingOpreators && messageCache.value) {
+async function operatorsUpdatePromptContent({ delay = false }) {
+  if (usingOperators && messageCache.value) {
     // only update if content changed
     if (JSON.stringify(messageCache.value['content']) !== JSON.stringify(props.message['content'])) {
       if (delay) {
         // only delay when update content
         await sleep(DELAY_MS_TO_UPDATE_CONTENT)
       }
-      props.opreators.updatePromptContent(getContent(), props.index)
+      props.operators.updatePromptContent(getContent(), props.index)
     }
   }
 }
 
 const getMessage = () => {
-  if (usingOpreators) {
+  if (usingOperators) {
     if (!messageCache.value) {
       messageCache.value = deepCopy(props.message)
     }

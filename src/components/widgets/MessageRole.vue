@@ -13,11 +13,11 @@ import { ref, toValue, inject } from 'vue'
 import { mockObject } from '@/utils/commonUtils'
 
 const roleNameInput = ref(null)
-const opreatorsEditRole = inject('opreators.editRole', mockObject)
+const operatorsEditRole = inject('operators.editRole', mockObject)
 
 function focus() {
     roleCache.value = props.message.role
-    opreatorsEditRole.before()
+    operatorsEditRole.before()
     editingRoleName.value = true
     roleNameInput.value.focus()
 }
@@ -25,7 +25,7 @@ function focus() {
 function blur() {
     editingRoleName.value = false
     props.message.role = roleCache.value
-    opreatorsEditRole.after()
+    operatorsEditRole.after()
 }
 
 const props = defineProps({

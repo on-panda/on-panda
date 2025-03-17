@@ -371,7 +371,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
 
 
-    class OpreatorCenter {
+    class OperatorCenter {
         // continue generating, stop, continue with chosen, continue with input, edit prompt(include role), new round, edit response, refresh, load example, load panda tree.
         constructor() {
         }
@@ -441,7 +441,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             }
         }
 
-        newRoundMessage = () => {  // TODO remove auto write back's append opreation
+        newRoundMessage = () => {  // TODO remove auto write back's append operation
             this.pandaState.beforeOperation()
             var role = newTurnMessage.value.role
             messages.value = (messagesComputed.value.concat([newTurnMessage.value]))
@@ -478,11 +478,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             before: () => {
                 this.pandaState.beforeOperation()
             },
-            after: (opreation) => {
+            after: (operation) => {
                 this.pandaState.afterOperation(Object.assign({
                     operator: "edit_prompt",
                     on_policy: false,
-                }, opreation || {}))
+                }, operation || {}))
             }
         }
 
@@ -551,7 +551,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         tokens.value.splice(token.tokenIndex, 0, token);
     }
 
-    const opreators = new OpreatorCenter()
+    const operators = new OperatorCenter()
 
     const newTurnMessage = ref({ role: 'user', content: '' })
 
@@ -658,7 +658,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         apiConfig,
         tokens,
         requestStatus,
-        opreators,
+        operators,
         loadMessages,
         newTurnMessage,
         finalMessage,
