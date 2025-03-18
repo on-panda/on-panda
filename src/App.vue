@@ -230,7 +230,7 @@ import 'element-plus/dist/index.css'
         </el-form-item>
 
         <el-form-item label="extra_parameters">
-          <el-input type="textarea" :autosize="{ minRows: 1 }" v-model="extraParametersString" size="small"
+          <el-input type="textarea" :autosize="{ minRows: 1 }" v-model="extraChatParametersString" size="small"
             style="width: 220px;" />
           <small>
             &nbsp;
@@ -355,10 +355,10 @@ const warningContent = responseState.warningContent
 const chatConfigRaw = deepCopy(defaultChatConfig)
 const chatConfig = ref(chatConfigRaw)
 
-const extraParametersString = ref("")
-const extraParameters = computed(() => {
+const extraChatParametersString = ref("")
+const extraChatParameters = computed(() => {
   try {
-    return extraParametersString.value ? JSON.parse(extraParametersString.value) : {}
+    return extraChatParametersString.value ? JSON.parse(extraChatParametersString.value) : {}
   } catch (error) {
     return {}
   }
@@ -582,7 +582,7 @@ const apiConfig = computed(() => {
   // update apiConfig with defaultApiConfig
   var apiConfig = { ...apiConfigChosen.value }  // copy instead of reference
   apiConfig.client_config = { ...defaultApiConfig.client_config, ...apiConfig.client_config }
-  apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfig.chat_config, ...chatConfig.value, ...extraParameters.value }
+  apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfig.chat_config, ...chatConfig.value, ...extraChatParameters.value }
   apiConfig = { ...defaultApiConfig, ...apiConfig }
   apiConfig.client_config.base_url = apiConfig.client_config.base_url.replace('${origin}', window.location.origin)
 
