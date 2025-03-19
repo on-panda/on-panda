@@ -1,4 +1,4 @@
-import { ref, computed, toValue, watch } from 'vue'
+import { ref, computed, toValue, watch, isRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject } from '@/utils/commonUtils.js'
@@ -43,11 +43,12 @@ export const defaultApiConfig = {
 
 export function ResponseStateClosure({ messages = null, apiConfig = null } = {}) {
     // using closure as class to avoid using 'this'
+    // both messages and apiConfig support ref or raw
     const { t } = useI18n()
     const globalStore = useGlobalStore()
 
-    var messages = ref(messages || deepCopy(defaultMessages))
-    var apiConfig = ref(apiConfig || deepCopy(defaultApiConfig))
+    var messages = isRef(messages) ? messages : ref(messages || deepCopy(defaultMessages))
+    var apiConfig = isRef(apiConfig) ? apiConfig : ref(apiConfig || deepCopy(defaultApiConfig))
 
     const pandaState = new PandaState()
     const uploadedJson = ref(null)
