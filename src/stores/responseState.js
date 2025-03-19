@@ -37,7 +37,7 @@ export const defaultApiConfig = {
     },
     "chat_config": {
         model: "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
-        ...defaultChatConfig,
+        ...deepCopy(defaultChatConfig),
     },
 }
 
@@ -46,8 +46,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     const { t } = useI18n()
     const globalStore = useGlobalStore()
 
-    var messages = ref(messages || defaultMessages)
-    var apiConfig = ref(apiConfig || defaultApiConfig)
+    var messages = ref(messages || deepCopy(defaultMessages))
+    var apiConfig = ref(apiConfig || deepCopy(defaultApiConfig))
 
     const pandaState = new PandaState()
     const uploadedJson = ref(null)

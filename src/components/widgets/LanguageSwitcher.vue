@@ -1,5 +1,5 @@
 <template>
-  <div class="language-switcher" style="display: flex; align-items: center; justify-content: right;">
+  <div class="language-switcher" style="display: flex; align-items: center; justify-content: right; cursor: pointer;">
     <el-dropdown @command="handleCommand">
       <span class="el-dropdown-link">
         <svg viewBox="0 0 24 24" width="1.3em" height="1.3em" style="margin-bottom: -0.3em; margin-right: -0.5em;">
