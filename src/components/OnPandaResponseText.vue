@@ -33,16 +33,17 @@
                     <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
                 </div>
                 <div class="tokenLogprobItems">
-                    <div v-for="logprobItem in token?.logprobs?.content[0]?.top_logprobs"
+                    <div v-for="logprobItem in (token?.logprobs?.content[0]?.top_logprobs || []).concat([{ finish_reason: 'stop' }])"
                         style="display: block; background-color: #eee; cursor:pointer"
                         @click="(event) => handleLogprobItemClick(event, token, logprobItem)"
                         @mouseover="activateLogprobItem = logprobItem"
                         @mouseenter="$event.target.style.backgroundColor = '#ddd'"
                         @mouseleave="$event.target.style.backgroundColor = ''">
-                        <span class="tokenSpan" style="color: #444;">{{ tokenToHtml(logprobItem.token) }}</span>
-                        <span
-                            :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18), "float": "right" }'
-                            style="white-space: pre-wrap;font-family: Monospace;">:{{
+                        <span class="tokenSpan" style="color: #444;">{{ (logprobItem.finish_reason &&
+                            `&lt;|${logprobItem.finish_reason}|&gt;`) || tokenToHtml(logprobItem.token) }}</span>
+                        <span v-if="logprobItem.logprob !== undefined"
+                            :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18) }'
+                            style="float: right;white-space: pre-wrap;font-family: Monospace;">:{{
                                 (Math.exp(logprobItem.logprob) * 100).toFixed(1).toString().padStart(5, ' ') }}%</span>
                     </div>
                 </div>

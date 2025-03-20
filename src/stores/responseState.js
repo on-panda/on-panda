@@ -395,14 +395,19 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         continueWithChosen = (token, logprobItem) => {
             // function clickOnLogprobItem() {
             this.pandaState.beforeOperation()
-            prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob)
+            prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob, logprobItem.finish_reason)
             this.pandaState.afterOperation({
                 operator: "continue_with_chosen",
                 on_policy: true,
                 continue_with_chosen: logprobItem,  // chosen_top_logprob
                 rejected_token: recordAsRejectedToken(token),
             }, true)
-            requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
+            if (logprobItem.finish_reason) {
+                // remove all pruned tokens
+                tokens.value = tokens.value.filter(token => !token.pruned)
+            } else {
+                requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
+            }
             if (globalStore.isMobile) {
                 window.setTimeout(closeFloatPatchPannel.value, 500)
             }
@@ -529,7 +534,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
     }
 
-    function prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob) {
+    function prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob, finish_reason) {
         for (const token_ of tokens.value) {
             token_.pruned = token_.tokenIndex >= token.tokenIndex
             if (token_.tokenIndex == token.tokenIndex) {
@@ -540,6 +545,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         // const continuePrefixToken = { delta: { content: continuePrefix }, tokenIndex: token.tokenIndex, bifurcationPoint: true, logprobs: token.logprobs }
         token = deepCopy(token)
         delete token.finish_reason
+        if (finish_reason) {
+            token.finish_reason = finish_reason
+        }
         token.delta.content = continuePrefix
         token.bifurcationPoint = true
         token.pruned = false
