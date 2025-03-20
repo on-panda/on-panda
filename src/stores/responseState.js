@@ -409,7 +409,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
             }
             if (globalStore.isMobile) {
-                window.setTimeout(closeFloatPatchPannel.value, 500)
+                setTimeout(closeFloatPatchPannel.value, 500)
             }
         }
 
@@ -644,9 +644,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     const warningState = new WarningState()
     const warning = warningState.warning
 
-    const closeFloatPatchPannel = ref(null)
-    function registerInResponseText({ closeFloatPatchPannel }) {
-        closeFloatPatchPannel.value = closeFloatPatchPannel
+    const closeFloatPatchPannel = ref(() => { })
+    function registerInResponseText({ closeFloatPatchPannel: externalCloseFloatPatchPannel }) {
+        closeFloatPatchPannel.value = externalCloseFloatPatchPannel
     }
 
     const bindApiConfig = (apiConfigRef) => {
