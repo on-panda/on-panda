@@ -167,14 +167,15 @@ import 'element-plus/dist/index.css'
         <span v-for="_ in (isMobile ? 0 : 30)">&nbsp;</span>
         <template v-for="(modelName_, tag) in props.modelNameTags">
           <el-tag :type="modelName.includes(modelName_) ? 'primary' : 'info'"
-            @click="handleModelTagClick($event, modelName_)" @dblclick="() => {
+            @click="handleModelTagClick($event, modelName_)" @mousedown="handleModelTagMousedown($event, modelName_)"
+            @dblclick="() => {
               modelName = modelName_
               operationCenter.generateNew()
             }" style="cursor: pointer;margin-left: 5px;">
             {{ tag }}
           </el-tag>
         </template>
-        <small v-if="!isMobile">
+        <small v-if="!isMobile && props.modelNameTags && Object.keys(props.modelNameTags)?.length > 1">
           &nbsp;
           <el-tooltip class="" effect="light" placement="top" raw-content>
             <template #content>
@@ -204,7 +205,7 @@ import 'element-plus/dist/index.css'
         <small>
           <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
             {{ $t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
-              'controlParameter.promptEngineering') }}
+            'controlParameter.promptEngineering') }}
           </el-tag>
           &nbsp;
           <el-tooltip class="" effect="light" placement="top" raw-content>
@@ -249,8 +250,7 @@ import 'element-plus/dist/index.css'
       </details>
 
     </el-form>
-    <div v-if="warningContent"
-      style="background-color: #fdd;white-space: pre-wrap;overflow-x: scroll; padding: 10px">
+    <div v-if="warningContent" style="background-color: #fdd;white-space: pre-wrap;overflow-x: scroll; padding: 10px">
       <h3>Error Messages:</h3>
       <div v-html="warningContent"></div>
     </div>
@@ -645,6 +645,14 @@ function handleModelTagClick(event, newModelName) {
     modelName.value = newModelName
   }
 }
+
+function handleModelTagMousedown(event, modelName_) {
+  if (event.button === 1) {
+    localStorage.setItem('modelNameForDuplicateWindow', modelName_)
+    duplicateWindow(pandaState)
+  }
+}
+
 
 onMounted(async () => {
   isMounted.value = true

@@ -49,7 +49,7 @@ export default {
     cleanUI: 'Clean UI (reading mode)',
     continueGenerating: 'Continue generating',
     stopGenerating: 'Stop generating',
-    modelTagClick: '1. Single-click the tag to switch model; double-click to switch and regenerate.\n2. If hold down the `Ctrl` key and click the tag, will open a new window containing the same message',
+    modelTagClick: '1. Single-click the tag to switch model; double-click to switch and regenerate.\n2. If hold down the `Ctrl` key and click or use the middle mouse button, will open a new window containing the same message',
     continueGeneratingSupport: 'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> ',
     refreshTokenProb: 'Refresh tokens\' probability. Or',
     dblclickToPasteAndRefresh: 'double-click to',
