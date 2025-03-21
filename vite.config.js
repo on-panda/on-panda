@@ -32,7 +32,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        '/qwen-test': {
+        '/qwen-test': {  // TODO: del if cloudflare tunnel is ready
           target: 'http://113.44.140.251:12692',
           changeOrigin: true,
           rewrite: path => path.replace(/^\/qwen-test/, '/v1/')

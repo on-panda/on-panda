@@ -31,7 +31,7 @@ export const defaultApiConfig = {
     "endpoint_name": "endpoint-name",
     "model_roles": ["assistant"],
     "client_config": {
-        base_url: window.location.origin + "/qwen-test",
+        base_url: "https://vllm-test-api.diyer22.com/v1",
         api_key: "ak-onPandaTestKey",
         dangerouslyAllowBrowser: true
     },

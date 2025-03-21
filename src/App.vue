@@ -205,7 +205,7 @@ import 'element-plus/dist/index.css'
         <small>
           <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
             {{ $t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
-            'controlParameter.promptEngineering') }}
+              'controlParameter.promptEngineering') }}
           </el-tag>
           &nbsp;
           <el-tooltip class="" effect="light" placement="top" raw-content>
@@ -297,17 +297,15 @@ e.g.:
     type: Object,
     default: {
       'on-panda': 'on-panda',
-      // 'o1': 'oone',
-      'r1': 'deepseek-r1',
-      'image': 'image',
-      // 'audio': 'audio',
-      // 'qwen': 'others-qwen2p5-72b-chat',
+      'test': 'endpoint-name',
+      'image': 'image-tag',
       'gpt4o': 'chatgpt-4o-latest',
-      'claude': 'claude',
-      'groq': 'groq',
+      'claude': 'claude-tag',
+      'r1': 'r1-tag',
+      'groq': 'groq-tag',
       'fast': 'llama-3.3-70b-versatile',
     },
-    description: `Model name tags for quick selection`,
+    description: `Model name tags for quick model selection. key is tag name, value is model retrieval name, will find first include retrieval name in apiConfigs`,
   },
   customInfoForUser: {
     type: String,
@@ -555,6 +553,9 @@ const apiConfigChosen = computed(() => {
   for (const [key, config] of Object.entries(apiConfigs.value)) {
     if (key.includes(modelName.value)) {
       apiConfigChosen = config
+      if (key !== modelName.value) {
+        modelName.value = key
+      }
       break
     }
   }
