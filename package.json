@@ -8,12 +8,11 @@
       "import": "./dist/on-panda.es.js",
       "require": "./dist/on-panda.umd.js"
     },
-    "./dist/style.css": "./dist/style.css"
+    "./dist/style.css": "./dist/style.css",
+    "./assets/style.css": "./dist/style.css"
   },
   "files": [
-    "dist",
-    "dist/img",
-    "dist/style.css"
+    "dist"
   ],
   "type": "module",
   "scripts": {
@@ -24,17 +23,17 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "vue": "^3.5.11",
-    "element-plus": "^2.3.8",
     "@element-plus/icons-vue": "^2.1.0",
     "@ryanxcharles/markdown-it-katex": "^4.0.2",
     "axios": "^1.6.0",
+    "element-plus": "^2.3.8",
     "highlight.js": "^11.9.0",
     "katex": "^0.16.9",
-    "markdown-it": "^13.0.2",
-    "pinia": "^2.1.7",
-    "openai": "^4.58.1",
     "lz-string": "^1.4.4",
+    "markdown-it": "^13.0.2",
+    "openai": "^4.58.1",
+    "pinia": "^2.1.7",
+    "vue": "^3.5.11",
     "vue-i18n": "^11.1.0"
   },
   "devDependencies": {
