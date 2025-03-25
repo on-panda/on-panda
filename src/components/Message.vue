@@ -70,10 +70,10 @@ import MarkdownResponse from './widgets/MarkdownResponse.vue'
 
 import { computed, ref, onMounted, onBeforeUnmount, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { convertImageUrlToBase64, base64ToBlob, deepCopy, mockObject, sleep, TaskQueue } from '@/utils/commonUtils'
+import { convertImageUrlToBase64, base64ToBlob, deepCopy, mockObject, sleep, TaskQueue } from '../utils/commonUtils'
 import { Close, Delete, Edit } from '@element-plus/icons-vue'
-import { getContentTypes } from '@/utils/chatUtils'
-import { useGlobalStore } from '@/stores/globalStore.js'
+import { getContentTypes } from '../utils/chatUtils'
+import { useGlobalStore } from '../stores/globalStore.js'
 
 const globalStore = useGlobalStore()
 const { t } = useI18n()

@@ -1,4 +1,4 @@
-import { useGlobalStore } from '@/stores/globalStore'
+import { useGlobalStore } from '../stores/globalStore'
 
 
 export class OpenAI {

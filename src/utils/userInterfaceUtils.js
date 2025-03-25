@@ -1,5 +1,5 @@
 import { ref, onMounted } from 'vue';
-import { useEventListener } from '@/utils/commonUtils.js'
+import { useEventListener } from '../utils/commonUtils.js'
 
 export const probToColor = (prob, transparency) => {
     const green = Math.floor((prob) * (255 - 128))

@@ -1,9 +1,9 @@
 import { ref, computed, toValue, watch, isRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject } from '@/utils/commonUtils.js'
-import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken } from '@/utils/chatUtils.js'
-import { OpenAI } from '@/utils/fetchOpenaiApi.js'
+import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject } from '../utils/commonUtils.js'
+import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken } from '../utils/chatUtils.js'
+import { OpenAI } from '../utils/fetchOpenaiApi.js'
 
 import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState'

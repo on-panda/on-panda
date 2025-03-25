@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url))
+        '@': fileURLToPath(new URL('./src', import.meta.url))  // Deprecated due to lack of support Joint Debugging with other package.
       }
     },
     build: {

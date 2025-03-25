@@ -120,11 +120,11 @@ import { ref, computed, watch, inject } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 
-import { useGlobalStore } from '@/stores/globalStore.js'
-import { useEventListener, closeFloatPannelMeta } from '@/utils/commonUtils.js'
-import { p, escapeHTML } from '@/utils/commonUtils.js'
-import { tokensToSeq, probOfToken } from '@/utils/chatUtils.js'
-import { probToColor, useSelectedNodes } from '@/utils/userInterfaceUtils.js'
+import { useGlobalStore } from '../stores/globalStore.js'
+import { useEventListener, closeFloatPannelMeta } from '../utils/commonUtils.js'
+import { p, escapeHTML } from '../utils/commonUtils.js'
+import { tokensToSeq, probOfToken } from '../utils/chatUtils.js'
+import { probToColor, useSelectedNodes } from '../utils/userInterfaceUtils.js'
 
 import { Edit, Refresh, DArrowRight, ChatLineRound, QuestionFilled, Promotion, Close } from '@element-plus/icons-vue'
 

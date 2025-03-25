@@ -6,7 +6,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { markdown } from '@/utils/markdown'
+import { markdown } from '../../utils/markdown'
 
 const props = defineProps({
   content: {

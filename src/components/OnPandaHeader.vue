@@ -48,7 +48,7 @@ import logoImageUrl from '../../public/img/on-panda-logo.png';
 import demoGifUrl from '../../public/img/onPanda-demo-candidate.gif';
 
 import { ref } from 'vue'
-import { useGlobalStore } from '@/stores/globalStore'
+import { useGlobalStore } from '../stores/globalStore'
 import LanguageSwitcher from './widgets/LanguageSwitcher.vue'
 import MarkdownRender from './widgets/MarkdownRender.vue'
 

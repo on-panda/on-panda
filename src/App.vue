@@ -269,17 +269,17 @@ import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { DocumentCopy, Edit, Refresh, VideoPause, DArrowRight, View, InfoFilled } from '@element-plus/icons-vue'
 
-import { OpenAI } from '@/utils/fetchOpenaiApi.js'
-import { p, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming, sleep } from '@/utils/commonUtils.js'
-import { tokensToSeq, messageToSeq, probOfToken } from '@/utils/chatUtils.js'
-import { useScrollSwitchSync } from '@/utils/userInterfaceUtils.js'
-import { useGlobalStore } from '@/stores/globalStore.js'
-import { ResponseStateClosure, defaultMessages, defaultApiConfig, defaultChatConfig, CONTINUE_PROMPT } from '@/stores/responseState'
+import { OpenAI } from './utils/fetchOpenaiApi.js'
+import { p, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, ObjctKeyToCamelCaseNaming, sleep } from './utils/commonUtils.js'
+import { tokensToSeq, messageToSeq, probOfToken } from './utils/chatUtils.js'
+import { useScrollSwitchSync } from './utils/userInterfaceUtils.js'
+import { useGlobalStore } from './stores/globalStore.js'
+import { ResponseStateClosure, defaultMessages, defaultApiConfig, defaultChatConfig, CONTINUE_PROMPT } from './stores/responseState'
 
 import Message from './components/Message.vue'
 import MessageRole from './components/widgets/MessageRole.vue'
 import MarkdownRender from './components/widgets/MarkdownRender.vue'
-import MarkdownResponse from '@/components/widgets/MarkdownResponse.vue'
+import MarkdownResponse from './components/widgets/MarkdownResponse.vue'
 import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import DialogControlPannel from './components/DialogControlPannel.vue'
 import OnPandaHeader from './components/OnPandaHeader.vue'
@@ -659,7 +659,7 @@ onMounted(async () => {
   isMounted.value = true
   scrollDiv.value.addEventListener('scroll', handleScrollDivFunction);
   try {
-    await import('@/assets/secret/custom.js');
+    await import('./assets/secret/custom.js');
   } catch (error) {
     console.error('Failed to load custom.js:', error);
   }

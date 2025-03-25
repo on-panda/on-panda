@@ -10,7 +10,7 @@
 </template>
 <script setup>
 import { ref, toValue, inject } from 'vue'
-import { mockObject } from '@/utils/commonUtils'
+import { mockObject } from '../../utils/commonUtils'
 
 const roleNameInput = ref(null)
 const operationCenterEditRole = inject('operationCenter.editRole', mockObject)

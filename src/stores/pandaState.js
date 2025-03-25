@@ -1,6 +1,6 @@
 import { ref, computed, watch } from 'vue'
-import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '@/utils/commonUtils'
-import { messagesDifferent, tokensToSeq, isFinalRoleModelRole, clearTokenObject } from '@/utils/chatUtils'
+import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '../utils/commonUtils'
+import { messagesDifferent, tokensToSeq, isFinalRoleModelRole, clearTokenObject } from '../utils/chatUtils'
 import { useGlobalStore } from './globalStore.js'
 import LZString from 'lz-string'
 

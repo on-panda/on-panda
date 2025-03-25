@@ -164,7 +164,7 @@ export function closeFloatPannelMeta(refElement, closeFunction, usingEscapeKey =
 }
 
 import { ElMessage } from 'element-plus'
-import { i18n } from '@/i18n'
+import { i18n } from '../i18n'
 
 export async function copyToClipboard(string) {
   await navigator.clipboard.writeText(string)
