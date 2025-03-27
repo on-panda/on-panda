@@ -7,7 +7,8 @@ import OnPanda from './App.vue';
 import CheckboxWidgetSupportNull from './components/widgets/CheckboxWidgetSupportNull.vue'
 import MarkdownRender from './components/widgets/MarkdownRender.vue';
 import Message from './components/Message.vue'
-import { ResponseStateClosure, defaultChatConfig, defaultApiConfig } from './stores/responseState.js'
+import { ResponseStateClosure} from './stores/responseState.js'
+import { ControlParameterState, defaultChatConfig, defaultApiConfig } from './stores/ControlParameterState'
 import OnPandaResponseText from './components/OnPandaResponseText.vue'
 
 export { i18n };

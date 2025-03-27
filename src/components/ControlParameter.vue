@@ -1,0 +1,149 @@
+<script setup>
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { InfoFilled } from '@element-plus/icons-vue'
+import { duplicateWindow } from '../utils/commonUtils'
+import { useGlobalStore } from '../stores/globalStore'
+import MarkdownRender from './widgets/MarkdownRender.vue'
+import { CONTINUE_PROMPT } from '../stores/ControlParameterState'
+
+const globalStore = useGlobalStore()
+const isMobile = computed(() => globalStore.isMobile)
+
+const props = defineProps({
+    controlParameterState: {
+        type: Object,
+        required: true
+    }
+})
+
+const emit = defineEmits(['dblclickModelTag'])
+
+const { t } = useI18n()
+
+const modelName = props.controlParameterState.modelName
+const modelNameTags = props.controlParameterState.modelNameTags
+const keyToApiConfigs = props.controlParameterState.keyToApiConfigs
+const chatConfig = props.controlParameterState.chatConfig
+const extraChatParametersString = props.controlParameterState.extraChatParametersString
+const apiConfig = props.controlParameterState.apiConfig
+
+function handleModelTagClick(event, newModelName) {
+    if (event.ctrlKey) {
+        localStorage.setItem('modelNameForDuplicateWindow', newModelName)
+        duplicateWindow(pandaState)
+    } else {
+        modelName.value = newModelName
+    }
+}
+
+function handleModelTagMousedown(event, modelName_) {
+    if (event.button === 1) {
+        localStorage.setItem('modelNameForDuplicateWindow', modelName_)
+        duplicateWindow(pandaState)
+    }
+}
+</script>
+
+<template>
+    <el-form class="toolbar options" label-width="140px">
+        <el-form-item :label="$t('controlParameter.model')">
+            <el-select-v2 v-model="modelName" filterable :options="Object.keys(keyToApiConfigs).map((x, idx) => ({
+                value: x,
+                label: x,
+            }))" placeholder="Select model" style="width: 440px" size="small" :height='400'
+                :class="{ 'mobile-select-model-input': isMobile }" />
+        </el-form-item>
+
+        <div style="line-height: 1.85;margin-top: -20px;margin-bottom: -5px;" :align="isMobile ? 'right' : ''">
+            <span v-for="_ in (isMobile ? 0 : 30)">&nbsp;</span>
+            <template v-for="(modelName_, tag) in modelNameTags">
+                <el-tag :type="modelName.includes(modelName_) ? 'primary' : 'info'"
+                    @click="handleModelTagClick($event, modelName_)"
+                    @mousedown="handleModelTagMousedown($event, modelName_)" @dblclick="() => {
+                        modelName = modelName_
+                        $emit('dblclickModelTag', modelName_)
+                    }" style="cursor: pointer;margin-left: 5px;">
+                    {{ tag }}
+                </el-tag>
+            </template>
+            <small v-if="!isMobile && modelNameTags && Object.keys(modelNameTags)?.length > 1">
+                &nbsp;
+                <el-tooltip class="" effect="light" placement="top" raw-content>
+                    <template #content>
+                        <MarkdownRender :content="$t('tooltips.modelTagClick')" />
+                    </template>
+                    <el-icon>
+                        <InfoFilled />
+                    </el-icon>
+                </el-tooltip>
+            </small>
+        </div>
+        <br>
+
+        <el-form-item :label="$t('controlParameter.temperature')">
+            <el-input-number v-model="chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
+        </el-form-item>
+
+        <el-form-item :label="$t('controlParameter.maxTokens')">
+            <el-input-number v-model="chatConfig.max_tokens" :min="1" :max="1048576" :step="1" size="small" />
+        </el-form-item>
+
+        <el-form-item :label="$t('controlParameter.topLogprobs')">
+            <el-input-number v-model="chatConfig.top_logprobs" :min="0" :max="50" :step="1" size="small" />
+        </el-form-item>
+
+        <el-form-item :label="$t('controlParameter.continueGenerating')">
+            <small>
+                <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
+                    {{ $t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
+                        'controlParameter.promptEngineering') }}
+                </el-tag>
+                &nbsp;
+                <el-tooltip class="" effect="light" placement="top" raw-content>
+                    <template #content>
+                        <MarkdownRender :content="$t('tooltips.continueGeneratingSupport') + CONTINUE_PROMPT" />
+                    </template>
+                    <el-icon>
+                        <InfoFilled />
+                    </el-icon>
+                </el-tooltip>
+            </small>
+        </el-form-item>
+        <details style="margin-top: -10px;margin-bottom: 10px;">
+            <summary>
+                <small style="color: #bbb;"><b>{{ t('common.advancedControl') }}</b></small>
+            </summary>
+            <el-form-item label="top_p">
+                <el-input-number v-model="chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
+            </el-form-item>
+
+            <el-form-item label="frequency_penalty">
+                <el-input-number v-model="chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01" size="small" />
+            </el-form-item>
+
+            <el-form-item label="extra_parameters">
+                <el-input type="textarea" :autosize="{ minRows: 1 }" v-model="extraChatParametersString" size="small"
+                    style="width: 220px;" />
+                <small>
+                    &nbsp;
+                    &nbsp;
+                    <el-tooltip class="" effect="light" placement="top" raw-content>
+                        <template #content>
+                            <MarkdownRender
+                                :content='"JSON for [Extra Parameters](https://docs.vllm.ai/en/stable/dev/sampling_params.html), e.g.: \n`{\"stop\": \"\\n\", \"min_tokens\": 256}`\nFor Chrome user, using `F12 -> Network -> completions` to check the request"' />
+                        </template>
+                        <el-icon>
+                            <InfoFilled />
+                        </el-icon>
+                    </el-tooltip>
+                </small>
+            </el-form-item>
+        </details>
+    </el-form>
+</template>
+<style>
+.mobile-select-model-input .el-select__wrapper {
+    font-size: 16px;
+}
+</style>

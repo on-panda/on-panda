@@ -6,40 +6,11 @@ import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejected
 import { OpenAI } from '../utils/fetchOpenaiApi.js'
 
 import { useGlobalStore } from './globalStore.js'
-import { PandaState } from './pandaState'
-import { WarningState } from './warningState'
-
-
-export const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
+import { PandaState } from './pandaState.js'
+import { WarningState } from './warningState.js'
+import { defaultApiConfig, CONTINUE_PROMPT } from './ControlParameterState.js'
 
 export const defaultMessages = [{ role: "system", content: "" }, { role: "user", content: "" }]
-
-export const defaultChatConfig = {
-    stream: true,
-    logprobs: true,
-    top_logprobs: 20,
-    // top_k: 2,
-    max_tokens: 3072,
-    temperature: 0.5,
-    stream_options: {
-        include_usage: true,
-    },
-}
-
-export const defaultApiConfig = {
-    "support_continue_final_message": true,
-    "endpoint_name": "endpoint-name",
-    "model_roles": ["assistant"],
-    "client_config": {
-        base_url: "https://vllm-test-api.diyer22.com/v1",
-        api_key: "ak-onPandaTestKey",
-        dangerouslyAllowBrowser: true
-    },
-    "chat_config": {
-        model: "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
-        ...deepCopy(defaultChatConfig),
-    },
-}
 
 export function ResponseStateClosure({ messages = null, apiConfig = null } = {}) {
     // using closure as class to avoid using 'this'

@@ -153,103 +153,8 @@ import 'element-plus/dist/index.css'
     <el-divider content-position="left">
       <b>{{ t('common.controlParameter') }}:</b>
     </el-divider>
-
-    <el-form class="toolbar options" label-width="140px">
-      <el-form-item :label="$t('controlParameter.model')">
-        <el-select-v2 v-model="modelName" filterable :options="Object.keys(apiConfigs).map((x, idx) => ({
-          value: x,
-          label: x,
-        }))" placeholder="Select model" style="width: 440px" size="small" :height='400'
-          :class="{ 'mobile-select-model-input': isMobile }" />
-      </el-form-item>
-
-      <div style="line-height: 1.85;margin-top: -20px;margin-bottom: -5px;" :align="isMobile ? 'right' : ''">
-        <span v-for="_ in (isMobile ? 0 : 30)">&nbsp;</span>
-        <template v-for="(modelName_, tag) in props.modelNameTags">
-          <el-tag :type="modelName.includes(modelName_) ? 'primary' : 'info'"
-            @click="handleModelTagClick($event, modelName_)" @mousedown="handleModelTagMousedown($event, modelName_)"
-            @dblclick="() => {
-              modelName = modelName_
-              operationCenter.generateNew()
-            }" style="cursor: pointer;margin-left: 5px;">
-            {{ tag }}
-          </el-tag>
-        </template>
-        <small v-if="!isMobile && props.modelNameTags && Object.keys(props.modelNameTags)?.length > 1">
-          &nbsp;
-          <el-tooltip class="" effect="light" placement="top" raw-content>
-            <template #content>
-              <MarkdownRender :content="$t('tooltips.modelTagClick')" />
-            </template>
-            <el-icon>
-              <InfoFilled />
-            </el-icon>
-          </el-tooltip>
-        </small>
-      </div>
-      <br>
-
-      <el-form-item :label="$t('controlParameter.temperature')">
-        <el-input-number v-model="chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
-      </el-form-item>
-
-      <el-form-item :label="$t('controlParameter.maxTokens')">
-        <el-input-number v-model="chatConfig.max_tokens" :min="1" :max="1048576" :step="1" size="small" />
-      </el-form-item>
-
-      <el-form-item :label="$t('controlParameter.topLogprobs')">
-        <el-input-number v-model="chatConfig.top_logprobs" :min="0" :max="50" :step="1" size="small" />
-      </el-form-item>
-
-      <el-form-item :label="$t('controlParameter.continueGenerating')">
-        <small>
-          <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
-            {{ $t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
-              'controlParameter.promptEngineering') }}
-          </el-tag>
-          &nbsp;
-          <el-tooltip class="" effect="light" placement="top" raw-content>
-            <template #content>
-              <MarkdownRender :content="$t('tooltips.continueGeneratingSupport') + CONTINUE_PROMPT" />
-            </template>
-            <el-icon>
-              <InfoFilled />
-            </el-icon>
-          </el-tooltip>
-        </small>
-      </el-form-item>
-      <details style="margin-top: -10px;margin-bottom: 10px;">
-        <summary>
-          <small style="color: #bbb;"><b>{{ t('common.advancedControl') }}</b></small>
-        </summary>
-        <el-form-item label="top_p">
-          <el-input-number v-model="chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
-        </el-form-item>
-
-        <el-form-item label="frequency_penalty">
-          <el-input-number v-model="chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01" size="small" />
-        </el-form-item>
-
-        <el-form-item label="extra_parameters">
-          <el-input type="textarea" :autosize="{ minRows: 1 }" v-model="extraChatParametersString" size="small"
-            style="width: 220px;" />
-          <small>
-            &nbsp;
-            &nbsp;
-            <el-tooltip class="" effect="light" placement="top" raw-content>
-              <template #content>
-                <MarkdownRender
-                  :content='"JSON for [Extra Parameters](https://docs.vllm.ai/en/stable/dev/sampling_params.html), e.g.: \n`{\"stop\": \"\\n\", \"min_tokens\": 256}`\nFor Chrome user, using `F12 -> Network -> completions` to check the request"' />
-              </template>
-              <el-icon>
-                <InfoFilled />
-              </el-icon>
-            </el-tooltip>
-          </small>
-        </el-form-item>
-      </details>
-
-    </el-form>
+    <ControlParameter :controlParameterState="controlParameterState"
+      @dblclickModelTag="responseState?.operationCenter.generateNew()" />
     <div v-if="warningContent" style="background-color: #fdd;white-space: pre-wrap;overflow-x: scroll; padding: 10px">
       <h3>Error Messages:</h3>
       <div v-html="warningContent"></div>
@@ -274,7 +179,7 @@ import { p, copyToClipboard, duplicateWindow, tryLoadDuplicateWindow, deepCopy, 
 import { tokensToSeq, messageToSeq, probOfToken } from './utils/chatUtils.js'
 import { useScrollSwitchSync } from './utils/userInterfaceUtils.js'
 import { useGlobalStore } from './stores/globalStore.js'
-import { ResponseStateClosure, defaultMessages, defaultApiConfig, defaultChatConfig, CONTINUE_PROMPT } from './stores/responseState'
+import { ResponseStateClosure, defaultMessages } from './stores/responseState'
 
 import Message from './components/Message.vue'
 import MessageRole from './components/widgets/MessageRole.vue'
@@ -284,6 +189,7 @@ import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import DialogControlPannel from './components/DialogControlPannel.vue'
 import OnPandaHeader from './components/OnPandaHeader.vue'
 import OnPandaResponseText from './components/OnPandaResponseText.vue'
+import ControlParameter from './components/ControlParameter.vue'
 
 const props = defineProps({
   apiConfigs: {
@@ -350,17 +256,6 @@ const scrollSwitch = useScrollSwitchSync(scrollDiv); // { isSwitched, scrollToPo
 const warning = responseState.warning
 const warningContent = responseState.warningContent
 
-const chatConfigRaw = deepCopy(defaultChatConfig)
-const chatConfig = ref(chatConfigRaw)
-
-const extraChatParametersString = ref("")
-const extraChatParameters = computed(() => {
-  try {
-    return extraChatParametersString.value ? JSON.parse(extraChatParametersString.value) : {}
-  } catch (error) {
-    return {}
-  }
-})
 
 const exampleNameToFunc = {
   "clear": () => {
@@ -480,65 +375,14 @@ if (globalStore.isOldUser) {
   messages = defaultMessages
 }
 
-var metaApiConfigs = ref([defaultApiConfig, ...props.apiConfigs])
 
-const apiConfigReceived = ref([])
-const apiConfigs = computed(() => {
-  const apiConfigs = {}
-  for (const configs of apiConfigReceived.value) {
-    if (configs && configs.length) {
-      for (const [index, config] of configs.entries()) {
-        var key = (config.endpoint_name ? config.endpoint_name : "endpoint") + "—" + (configs.length > 1 ? `${index + 1}—` : '') + (config.chat_config.model || '<|None|>')
-        if (isMobile.value) {
-          key = (config.chat_config.model || '<|None|>') + ' | ' + (config.endpoint_name ? config.endpoint_name : "") + ` | ${index + 1}`
-        }
-        apiConfigs[key] = config
-      }
-    }
-  }
-  return apiConfigs
-}, { flush: 'sync' })
+import { ControlParameterState } from './stores/ControlParameterState'
 
-var watchMetaApiConfigsResolver = () => { }
-watch(metaApiConfigs, async function watchMetaApiConfigs(newValue) {
-  // Asynchronous concurrent request without changing the order
-  // and not block by slow response
-  const configPromises = [];
-  apiConfigReceived.value = new Array(newValue.length).fill(null);
-
-  for (let i = 0; i < newValue.length; i++) {
-    const apiConfig = deepCopy(newValue[i]);
-    if (!apiConfig.chat_config) {
-      apiConfig.chat_config = {}
-    }
-    // If model is specified, return a promise that resolves to a single config
-    if (apiConfig.chat_config.model) {
-      apiConfigReceived.value[i] = [apiConfig]
-    } else {
-      // For configs without a model, fetch the model list concurrently
-      const fetchPromise = (async (i) => {
-        try {
-          const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.client_config));
-          const list = await openai.models.list();
-          apiConfigReceived.value[i] = list.map(model => {
-            const apiConfigWithModel = deepCopy(apiConfig);
-            apiConfigWithModel.chat_config.model = model.id;
-            return apiConfigWithModel;
-          });
-        } catch (error) {
-          warning(error)
-          console.log("Error in fetching models list");
-          console.log(error);
-        }
-      })(i);
-      configPromises.push(fetchPromise);
-    }
-  }
-  await Promise.all(configPromises);
-  watchMetaApiConfigsResolver()
-})
-
-var modelName = ref(props?.modelNameTags['on-panda'] || 'on-panda')  // using endpoint_name == 'on-panda' as default model
+const controlParameterState = ControlParameterState({ apiConfigs: props.apiConfigs, modelNameTags: props.modelNameTags })
+const modelName = controlParameterState.modelName
+const apiConfig = controlParameterState.apiConfig
+const apiConfigs = controlParameterState.apiConfigs
+const chatConfig = controlParameterState.chatConfig
 
 watch(modelName, async function watchModelName(newValue) {  // set modelName to page title
   if (document.title.endsWith("onPanda")) {
@@ -546,49 +390,6 @@ watch(modelName, async function watchModelName(newValue) {  // set modelName to 
   }
 })
 
-const chatConfigKeys = Object.keys(chatConfig.value)
-
-const apiConfigChosen = computed(() => {
-  var apiConfigChosen = defaultApiConfig
-  for (const [key, config] of Object.entries(apiConfigs.value)) {
-    if (key.includes(modelName.value)) {
-      apiConfigChosen = config
-      if (key !== modelName.value) {
-        modelName.value = key
-      }
-      break
-    }
-  }
-  const changedChatConfig = {}
-  for (const key of chatConfigKeys) { // apply apiConfigChosen.chat_config
-    if (key in apiConfigChosen.chat_config) {
-      // Using chatConfigRaw to avoid adjusting parameters causes recomputed
-      if (key !== 'model' && JSON.stringify(apiConfigChosen.chat_config[key]) !== JSON.stringify(chatConfigRaw[key])) {
-        changedChatConfig[key] = apiConfigChosen.chat_config[key]
-      }
-      chatConfig.value[key] = apiConfigChosen.chat_config[key]
-    }
-  }
-  if (Object.keys(changedChatConfig).length > 0) {
-    // If ElMessage is poped up at beginning, will raise error:
-    // TypeError: Cannot read properties of null (reading 'insertBefore')
-    if (isMounted.value) {
-      ElMessage.warning(`Change the control parameter: ${JSON.stringify(changedChatConfig)}`)
-    }
-  }
-  return apiConfigChosen
-})
-
-const apiConfig = computed(() => {
-  // update apiConfig with defaultApiConfig
-  var apiConfig = { ...apiConfigChosen.value }  // copy instead of reference
-  apiConfig.client_config = { ...defaultApiConfig.client_config, ...apiConfig.client_config }
-  apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfig.chat_config, ...chatConfig.value, ...extraChatParameters.value }
-  apiConfig = { ...defaultApiConfig, ...apiConfig }
-  apiConfig.client_config.base_url = apiConfig.client_config.base_url.replace('${origin}', window.location.origin)
-
-  return apiConfig
-})
 
 responseState.bindApiConfig(apiConfig)
 
@@ -638,22 +439,6 @@ const finalMessage = responseState.finalMessage
 
 operationCenter.loadMessagesWithPandaTree(messages.value)
 
-function handleModelTagClick(event, newModelName) {
-  if (event.ctrlKey) {
-    localStorage.setItem('modelNameForDuplicateWindow', newModelName)
-    duplicateWindow(pandaState)
-  } else {
-    modelName.value = newModelName
-  }
-}
-
-function handleModelTagMousedown(event, modelName_) {
-  if (event.button === 1) {
-    localStorage.setItem('modelNameForDuplicateWindow', modelName_)
-    duplicateWindow(pandaState)
-  }
-}
-
 
 onMounted(async () => {
   isMounted.value = true
@@ -665,10 +450,10 @@ onMounted(async () => {
   }
 
   async function afterApiConfigsReady() {
-    var watchMetaApiConfigsLoaded = new Promise(resolve => {
-      watchMetaApiConfigsResolver = resolve
+    var watchApiConfigsLoaded = new Promise(resolve => {
+      controlParameterState.watchApiConfigsResolver.value = resolve
     })
-    metaApiConfigs.value = [...metaApiConfigs.value, ...globalStore.customMetaApiConfigs]
+    apiConfigs.value = [...apiConfigs.value, ...globalStore.customApiConfigs]
     var exampleFunc = exampleNameToFunc['default']
     if (tryLoadDuplicateWindow(pandaState)) { // duplicate window has higher priority
       exampleFunc = () => { }
@@ -689,7 +474,7 @@ onMounted(async () => {
       // }
     }
 
-    await watchMetaApiConfigsLoaded
+    await watchApiConfigsLoaded
     await sleep(5)
     if (!requestStatus.value.generating) {
       await exampleFunc()
@@ -727,10 +512,6 @@ onBeforeUnmount(async () => {
 </style>
 
 <style>
-.mobile-select-model-input .el-select__wrapper {
-  font-size: 16px;
-}
-
 .onPandaContainer {
   summary {
     cursor: pointer;

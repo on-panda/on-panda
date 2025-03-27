@@ -7,7 +7,7 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
 
     const isOldUser = ref(localStorage.getItem('onPandaIsOldUser') == 'true')
 
-    const customMetaApiConfigs = ref([])
+    const customApiConfigs = ref([])
 
     const hooks = ref({ beforeCreateChatCompletion: [] })
 
@@ -25,7 +25,7 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
         localStorage.setItem('locale', locale)
     }
 
-    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customMetaApiConfigs, currentLocale, setLocale, ...widthRelatedStore }
+    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, currentLocale, setLocale, ...widthRelatedStore }
 }
 )
 
