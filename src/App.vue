@@ -38,7 +38,7 @@ import 'element-plus/dist/index.css'
           :message="message" :index="index" :operationCenter="operationCenter" />
       </div>
 
-      <div class="responsePannel" :style="globalStore.cleanMode ? { maxWidth: '1024px' } : {}">
+      <div class="responsePanel" :style="globalStore.cleanMode ? { maxWidth: '1024px' } : {}">
         <div class="finalMessageHeadBar" style="display: flex; justify-content: space-between;"
           :style="isMobile ? {} : { width: '50%' }">
           <MessageRole :message="finalMessage" />
@@ -116,10 +116,10 @@ import 'element-plus/dist/index.css'
           <small style="color: #888;" v-if="!isMobile"> rendered markdown </small>
         </div>
 
-        <div class="finalMessageTwoPannel" v-if="!globalStore.cleanMode"
+        <div class="finalMessageTwoPanel" v-if="!globalStore.cleanMode"
           style="width: 100%;overflow:scroll;overflow-y:hidden; padding-bottom: 3px;" ref="scrollDiv">
           <div style="display: flex; justify-content: space-between;" :style="{ 'width': isMobile ? '195%' : '100%' }">
-            <div class="final-message-half-pannel">
+            <div class="final-message-half-panel">
               <div style="background-color: #eee;">
                 <p style="color: #444" v-if="!tokens.length">
                   <span v-html="WaitingInfo"></span>
@@ -128,7 +128,7 @@ import 'element-plus/dist/index.css'
               </div>
             </div>
             <hr style="color:#eee">
-            <div class="final-message-half-pannel">
+            <div class="final-message-half-panel">
               <MarkdownResponse :content="finalMessage.content" :WaitingInfo="WaitingInfo" />
             </div>
           </div>
@@ -141,7 +141,7 @@ import 'element-plus/dist/index.css'
 
 
     <DialogKeysFooter :pandaState="pandaState" style="padding-top: 10px;" />
-    <DialogControlPannel :responseState="responseState" style="margin-top:-5px; margin-bottom:10px;" />
+    <DialogControlPanel :responseState="responseState" style="margin-top:-5px; margin-bottom:10px;" />
     <AnnotatorPanel
       v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment || globalStore.debug"
       :responseState="responseState" />
@@ -167,7 +167,7 @@ import 'element-plus/dist/index.css'
 
 <script setup>
 // TODO 
-// 1. split ControlParameterPannel.vue
+// 1. split ControlParameterPanel.vue
 // 2. change Messages render method, support edit and click. ctrl+z
 
 import { ref, computed, watch, provide } from 'vue'
@@ -188,7 +188,7 @@ import MessageRole from './components/widgets/MessageRole.vue'
 import MarkdownRender from './components/widgets/MarkdownRender.vue'
 import MarkdownResponse from './components/widgets/MarkdownResponse.vue'
 import AnnotatorPanel from './components/AnnotatorPanel.vue'
-import DialogControlPannel from './components/DialogControlPannel.vue'
+import DialogControlPanel from './components/DialogControlPanel.vue'
 import DialogKeysFooter from './components/DialogKeysFooter.vue'
 import OnPandaHeader from './components/OnPandaHeader.vue'
 import OnPandaResponseText from './components/OnPandaResponseText.vue'
@@ -504,7 +504,7 @@ onBeforeUnmount(async () => {
   }
 }
 
-.final-message-half-pannel {
+.final-message-half-panel {
   display: inline-block;
   width: 49.5%;
 }

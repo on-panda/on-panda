@@ -1,5 +1,5 @@
 <template>
-    <div class="dialogControlPannel" v-if="pandaState.dialogKeys.value?.length">
+    <div class="dialogControlPanel" v-if="pandaState.dialogKeys.value?.length">
         <div style="line-height:2">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
             <el-tooltip :content="t('tooltips.saveData')" raw-content placement="top">
@@ -85,7 +85,7 @@ import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore.js'
 import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled, Postcard, Reading } from '@element-plus/icons-vue'
-import { registerKeyActions, downloadJsonFile, uploadJsonFile } from '../utils/commonUtils'
+import { registerKeyActions, downloadJsonFile, uploadJsonFile } from '../utils/commonUtils.js'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()

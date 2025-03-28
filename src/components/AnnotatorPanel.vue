@@ -1,5 +1,5 @@
 <template>
-    <div class="AnnotatorPannel">
+    <div class="AnnotatorPanel">
         <div style="background-color:antiquewhite; padding: 12px; border-radius: 10px; max-width: 1024px;">
             <b style="color: #aaa">{{ t('annotator.annotatorPanel') }}</b>
             <br>
@@ -130,7 +130,7 @@ watch(() => editableCommentAsTool.value, (newVal) => {
     padding: 10px;
 }
 
-.dataPannelRow {
+.dataPanelRow {
     height: 25px;
 }
 </style>

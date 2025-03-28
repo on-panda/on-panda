@@ -19,17 +19,17 @@
         </el-tooltip>
     </p>
 
-    <div @mouseover="floatPatchPannel.waitingToHide = false" @mouseleave="floatPatchPannel.waitingToHide = true"
-        ref="floatPatchPannelRef"
+    <div @mouseover="floatPatchPanel.waitingToHide = false" @mouseleave="floatPatchPanel.waitingToHide = true"
+        ref="floatPatchPanelRef"
         style="position: fixed; padding-top: 4px;background-color: rgba(200, 200, 200, 0.3); z-index: 10;" :style="{
-            left: `${floatPatchPannel.x}px`,
-            top: `${floatPatchPannel.y}px`,
-        }" v-if="floatPatchPannel.visible">
+            left: `${floatPatchPanel.x}px`,
+            top: `${floatPatchPanel.y}px`,
+        }" v-if="floatPatchPanel.visible">
         <!-- `padding-top: 4px` to avoid next line's token activate @mouseover  -->
-        <div class="floatPatchPannel" style="position: relative;">
+        <div class="floatPatchPanel" style="position: relative;">
             <div v-for="token in activatePatch?.tokens?.filter(token => (token?.delta?.content !== undefined))"
-                class="tokenPannel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
-                <div class="floatPatchPannelHead" style="border-bottom: 2px solid #ccc;">
+                class="tokenPanel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
+                <div class="floatPatchPanelHead" style="border-bottom: 2px solid #ccc;">
                     <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
                 </div>
                 <div class="tokenLogprobItems">
@@ -48,8 +48,8 @@
                     </div>
                 </div>
             </div>
-            <footer class="tokenPannel" style="min-height: 24px; padding: 5px;">
-                <button :icon="Close" @click="closeFloatPatchPannel"
+            <footer class="tokenPanel" style="min-height: 24px; padding: 5px;">
+                <button :icon="Close" @click="closeFloatPatchPanel"
                     style="padding: 0px; margin: 0 0px -5px 0px; float:right;">❌</button>
                 <span v-if="activateLogprobItem.logprob" style="font-family: Monospace;"> {{
                     (-Math.log2(Math.exp(activateLogprobItem.logprob))).toFixed(2) }} bit
@@ -78,21 +78,21 @@
             @keydown.enter="if (!$event.shiftKey) { operationCenter.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
     </div>
 
-    <div ref='floatSelectedOperationPannelRef' class="floatSelectedOperationPannel"
-        v-show="floatSelectedOperationPannel.visible && !floatInputPatch.visible || floatSelectedOperationPannel.improveInputVisible"
+    <div ref='floatSelectedOperationPanelRef' class="floatSelectedOperationPanel"
+        v-show="floatSelectedOperationPanel.visible && !floatInputPatch.visible || floatSelectedOperationPanel.improveInputVisible"
         :style="{
-            left: `${floatSelectedOperationPannel.x}px`,
-            top: `${floatSelectedOperationPannel.y}px`,
+            left: `${floatSelectedOperationPanel.x}px`,
+            top: `${floatSelectedOperationPanel.y}px`,
         }" style="position: fixed">
-        <el-button-group class="floatSelectedOperationPannelButtons"
-            v-show="!floatSelectedOperationPannel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
+        <el-button-group class="floatSelectedOperationPanelButtons"
+            v-show="!floatSelectedOperationPanel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
                 token => token.selected = true
             )" :size="isMobile ? '' : 'small'">
             <el-tooltip content="(TBD) Manually edit" placement="bottom">
                 <el-button :disabled="true" :icon="Edit" />
             </el-tooltip>
             <el-tooltip content="(TBD) Improve by AI" placement="bottom">
-                <el-button :icon="ChatLineRound" @click="floatSelectedOperationPannel.improveInputVisible = true" />
+                <el-button :icon="ChatLineRound" @click="floatSelectedOperationPanel.improveInputVisible = true" />
             </el-tooltip>
             <el-tooltip content="(TBD) Explain by AI" placement="bottom">
                 <el-button :disabled="true" :icon="QuestionFilled" />
@@ -101,9 +101,9 @@
                 <el-button :disabled="true" :icon="Refresh" />
             </el-tooltip>
         </el-button-group>
-        <div v-show="floatSelectedOperationPannel.improveInputVisible"
+        <div v-show="floatSelectedOperationPanel.improveInputVisible"
             style="display: flex; justify-content: space-between;">
-            <textarea v-model="floatSelectedOperationPannel.improveInputText" type="text"
+            <textarea v-model="floatSelectedOperationPanel.improveInputText" type="text"
                 placeholder="(TBD) Instruction for AI to improve" style="height: 25px; width:auto;"
                 @focus="$event.target.select()" @keydown.enter="improveSelectedText" />
 
@@ -121,7 +121,7 @@ import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 
 import { useGlobalStore } from '../stores/globalStore.js'
-import { useEventListener, closeFloatPannelMeta } from '../utils/commonUtils.js'
+import { useEventListener, closeFloatPanelMeta } from '../utils/commonUtils.js'
 import { p, escapeHTML } from '../utils/commonUtils.js'
 import { tokensToSeq, probOfToken } from '../utils/chatUtils.js'
 import { probToColor, useSelectedNodes } from '../utils/userInterfaceUtils.js'
@@ -152,7 +152,7 @@ const onPandaResponseTextRef = ref(null);
 const selectedNodes = useSelectedNodes(onPandaResponseTextRef);
 
 const selectedTokens = computed(() => {
-    floatSelectedOperationPannel.value.visible = false
+    floatSelectedOperationPanel.value.visible = false
     if (!selectedNodes.value.startNode || !selectedNodes.value.endNode) {
         return [];
     }
@@ -163,9 +163,9 @@ const selectedTokens = computed(() => {
     var endNode = selectedNodes.value.endNode
     endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
 
-    //set FloatSelectedOperationPannel
-    setFloatSelectedOperationPannelBelow()
-    floatSelectedOperationPannel.value.visible = true
+    //set FloatSelectedOperationPanel
+    setFloatSelectedOperationPanelBelow()
+    floatSelectedOperationPanel.value.visible = true
 
     const startPatchIndex = Number(startNode.attributes['patch-index'].value)
     const endPatchIndex = Number(endNode.attributes['patch-index'].value)
@@ -178,7 +178,7 @@ const selectedTokens = computed(() => {
 });
 
 
-function setFloatSelectedOperationPannelBelow() {
+function setFloatSelectedOperationPanelBelow() {
     var endNode = selectedNodes.value.endNode
     if (!endNode) {
         return
@@ -186,14 +186,14 @@ function setFloatSelectedOperationPannelBelow() {
     endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
     var endNodeRect = endNode.getBoundingClientRect()
     const pixelsPerButton = isMobile.value ? 45 : 35
-    const x = endNodeRect.right - pixelsPerButton * document.querySelectorAll('.floatSelectedOperationPannelButtons button').length
-    floatSelectedOperationPannel.value.x = Math.max(x, 10)
-    floatSelectedOperationPannel.value.y = endNodeRect.bottom + 2
+    const x = endNodeRect.right - pixelsPerButton * document.querySelectorAll('.floatSelectedOperationPanelButtons button').length
+    floatSelectedOperationPanel.value.x = Math.max(x, 10)
+    floatSelectedOperationPanel.value.y = endNodeRect.bottom + 2
 }
 
 
 
-const floatSelectedOperationPannel = ref({
+const floatSelectedOperationPanel = ref({
     visible: false,
     improveInputText: "",
     improveInputVisible: false,
@@ -201,18 +201,18 @@ const floatSelectedOperationPannel = ref({
     y: 0,
 })
 
-const floatSelectedOperationPannelRef = ref(null)
-closeFloatPannelMeta(floatSelectedOperationPannelRef, () => {
+const floatSelectedOperationPanelRef = ref(null)
+closeFloatPanelMeta(floatSelectedOperationPanelRef, () => {
     // On mobile devices it disappears immediately after clicking, rendering the tool tips position invalid.
     setTimeout(() => {
-        floatSelectedOperationPannel.value.improveInputVisible = false
+        floatSelectedOperationPanel.value.improveInputVisible = false
     }, 10)
 })
 
 function improveSelectedText() {
     const selectedText = selectedTokens.value.map(token => token.delta.content).join("")
-    console.log('improveSelectedText', floatSelectedOperationPannel.value.improveInputText, selectedText)
-    floatSelectedOperationPannel.value.improveInputVisible = false
+    console.log('improveSelectedText', floatSelectedOperationPanel.value.improveInputText, selectedText)
+    floatSelectedOperationPanel.value.improveInputVisible = false
 }
 
 function createSpanInPatchSpanHTML(textContent) {
@@ -303,25 +303,25 @@ const handleMouseEnterPatchSpan = (event) => {
     activatePatch.value = patch
     if (isMobile.value) {
         // Prevents false touches due to web size changes
-        setTimeout(() => setFloatPatchPannelBelow(event.target), 1)
+        setTimeout(() => setFloatPatchPanelBelow(event.target), 1)
     } else {
-        setFloatPatchPannelBelow(event.target)
+        setFloatPatchPanelBelow(event.target)
     }
 }
 
 function handleMouseLeavePatchSpan(event) {
     // console.log(event)
-    floatPatchPannel.value.waitingToHide = true
+    floatPatchPanel.value.waitingToHide = true
     setTimeout(() => {
-        if (floatPatchPannel.value.waitingToHide) {
-            closeFloatPatchPannel()
+        if (floatPatchPanel.value.waitingToHide) {
+            closeFloatPatchPanel()
         }
     }, 300);
 }
 
-function closeFloatPatchPannel() {
-    floatPatchPannel.value.visible = false;
-    floatPatchPannel.value.waitingToHide = false;
+function closeFloatPatchPanel() {
+    floatPatchPanel.value.visible = false;
+    floatPatchPanel.value.waitingToHide = false;
     activatePatch.value = {}
 }
 
@@ -336,7 +336,7 @@ function handleLogprobItemClick(event, token, logprobItem) {
     }
 }
 
-// floatPatchPannel
+// floatPatchPanel
 const activatePatch = ref({})
 const activateLogprobItem = ref({})
 const tokenToHtml = (tokenContent) => {
@@ -350,38 +350,38 @@ const tokenToHtml = (tokenContent) => {
 }
 
 
-const floatPatchPannel = ref({
+const floatPatchPanel = ref({
     visible: false,
     waitingToHide: false,
     x: 0,
     y: 0,
 })
 
-const floatPatchPannelRef = ref(null)
+const floatPatchPanelRef = ref(null)
 
 
-// exceptTouch=true to avoide touch device close floatPatchPannel by click on another patchSpan
-closeFloatPannelMeta(floatPatchPannelRef, closeFloatPatchPannel, true, true)
+// exceptTouch=true to avoide touch device close floatPatchPanel by click on another patchSpan
+closeFloatPanelMeta(floatPatchPanelRef, closeFloatPatchPanel, true, true)
 
 watch(activatePatch, function watchActivatePatch(newValue, oldValue) {
     activateLogprobItem.value = {}
     oldValue.target?.classList.remove('ActivatePatchSpan')
 });
 
-function setFloatPatchPannelBelow(element) {
+function setFloatPatchPanelBelow(element) {
     element = element || document.querySelector('.ActivatePatchSpan')
     if (!element) {
         return
     }
     const cellRect = element.getBoundingClientRect();
-    floatPatchPannel.value.x = cellRect.left - 3
-    floatPatchPannel.value.y = cellRect.bottom - 4
-    if (floatPatchPannel.value.x + 120 > window.innerWidth) {
-        // avoid floatPatchPannel out of window
-        floatPatchPannel.value.x = floatPatchPannel.value.x - 85
+    floatPatchPanel.value.x = cellRect.left - 3
+    floatPatchPanel.value.y = cellRect.bottom - 4
+    if (floatPatchPanel.value.x + 120 > window.innerWidth) {
+        // avoid floatPatchPanel out of window
+        floatPatchPanel.value.x = floatPatchPanel.value.x - 85
     }
-    floatPatchPannel.value.waitingToHide = false;
-    floatPatchPannel.value.visible = true;
+    floatPatchPanel.value.waitingToHide = false;
+    floatPatchPanel.value.visible = true;
 }
 
 
@@ -394,16 +394,16 @@ const floatInputPatch = ref({
 
 const floatInputPatchRef = ref(null)
 
-closeFloatPannelMeta(floatInputPatchRef, () => {
+closeFloatPanelMeta(floatInputPatchRef, () => {
     floatInputPatch.value.visible = false
 })
 
 function setFloatInputPatch(event, patch) {
-    // keep floatPatchPannel on， don't know why need setTimeout
+    // keep floatPatchPanel on， don't know why need setTimeout
     setTimeout(() => {
         activatePatch.value = patch
-        floatPatchPannel.value.waitingToHide = false;
-        floatPatchPannel.value.visible = true;
+        floatPatchPanel.value.waitingToHide = false;
+        floatPatchPanel.value.visible = true;
     }, 20)
 
     const cellRect = event.target.getBoundingClientRect();
@@ -420,15 +420,15 @@ function setFloatInputPatch(event, patch) {
 }
 
 function handleReactiveFunctions() {
-    setFloatPatchPannelBelow()
-    setFloatSelectedOperationPannelBelow()
+    setFloatPatchPanelBelow()
+    setFloatSelectedOperationPanelBelow()
 }
 
 // register handleReactiveFunctions to handleScrollDivFunctions
 const handleScrollDivFunctions = inject('handleScrollDivFunctions', [])
 handleScrollDivFunctions.push(handleReactiveFunctions)
 
-responseState.registerInResponseText({ closeFloatPatchPannel })
+responseState.registerInResponseText({ closeFloatPatchPanel })
 
 useEventListener(window, 'resize', handleReactiveFunctions)
 useEventListener(window, 'scroll', handleReactiveFunctions)
@@ -436,11 +436,11 @@ useEventListener(window, 'scroll', handleReactiveFunctions)
 </script>
 
 <style scoped>
-.floatPatchPannelHead .tokenLogprobItems {
+.floatPatchPanelHead .tokenLogprobItems {
     display: block;
 }
 
-.tokenPannel {
+.tokenPanel {
     border: 1px solid #ccc;
     padding: 0px;
     border: 1px solid #ccc;

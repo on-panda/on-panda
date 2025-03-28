@@ -135,7 +135,7 @@ export function useEventListener(target, event, callback, options) {
   onUnmounted(() => target.removeEventListener(event, callback))
 }
 
-export function closeFloatPannelMeta(refElement, closeFunction, usingEscapeKey = true, exceptTouch = false) {
+export function closeFloatPanelMeta(refElement, closeFunction, usingEscapeKey = true, exceptTouch = false) {
   function handleKeyDown(event) {
     if (usingEscapeKey && event.key === 'Escape') {
       closeFunction()
