@@ -161,5 +161,5 @@ export function ControlParameterState({ apiConfigs = null, modelNameTags = null,
     })
 
 
-    return { keyToApiConfigs, modelNameTags, modelName, chatConfig, apiConfig, extraChatParametersString, extraChatParameters, watchApiConfigsResolver, apiConfigs, isMobile: globalStore.isMobile }
+    return { keyToApiConfigs, modelNameTags, modelName, chatConfig, apiConfig, extraChatParametersString, extraChatParameters, watchApiConfigsResolver, apiConfigs }
 }

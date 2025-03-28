@@ -8,7 +8,7 @@ import { OpenAI } from '../utils/fetchOpenaiApi.js'
 import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
 import { WarningState } from './warningState.js'
-import { defaultApiConfig, CONTINUE_PROMPT } from './ControlParameterState.js'
+import { defaultApiConfig, CONTINUE_PROMPT } from './controlParameterState.js'
 
 export const defaultMessages = [{ role: "system", content: "" }, { role: "user", content: "" }]
 

@@ -65,7 +65,7 @@
 <script setup>
 import MessageRole from './widgets/MessageRole.vue'
 import MarkdownRender from './widgets/MarkdownRender.vue'
-import EditableStringAttribute from './EditableStringAttribute.vue'
+import EditableStringAttribute from './widgets/EditableStringAttribute.vue'
 import MarkdownResponse from './widgets/MarkdownResponse.vue'
 
 import { computed, ref, onMounted, onBeforeUnmount, watchEffect } from 'vue'

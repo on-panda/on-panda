@@ -43,8 +43,8 @@
 </template>
 <script setup>
 
-import CheckboxWidgetSupportNull from './widgets/CheckboxWidgetSupportNull.vue';
-import MarkdownRender from './widgets/MarkdownRender.vue';
+import CheckboxWidgetSupportNull from './CheckboxWidgetSupportNull.vue';
+import MarkdownRender from './MarkdownRender.vue';
 
 
 const props = defineProps({

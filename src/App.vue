@@ -70,7 +70,7 @@ import { p, tryLoadDuplicateWindow, deepCopy, deepEqual, sleep } from './utils/c
 import { messageToSeq } from './utils/chatUtils.js'
 import { useGlobalStore } from './stores/globalStore.js'
 import { ResponseStateClosure, defaultMessages } from './stores/responseState.js'
-import { ControlParameterState, defaultApiConfig } from './stores/ControlParameterState.js'
+import { ControlParameterState, defaultApiConfig } from './stores/controlParameterState.js'
 
 import Message from './components/Message.vue'
 import MarkdownRender from './components/widgets/MarkdownRender.vue'

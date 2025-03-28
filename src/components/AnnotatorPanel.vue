@@ -76,7 +76,7 @@
     </div>
 </template>
 <script setup>
-import CustomAnnotatorTool from './CustomAnnotatorTool.vue';
+import CustomAnnotatorTool from './widgets/CustomAnnotatorTool.vue';
 import CheckboxWidgetSupportNull from './widgets/CheckboxWidgetSupportNull.vue'
 import ObjectViewerInDetails from './widgets/ObjectViewerInDetails.vue';
 

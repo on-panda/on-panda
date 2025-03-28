@@ -10,7 +10,7 @@ import MessageRole from '../components/widgets/MessageRole.vue'
 import MarkdownRender from '../components/widgets/MarkdownRender.vue'
 import MarkdownResponse from '../components/widgets/MarkdownResponse.vue'
 import OnPandaResponseText from '../components/OnPandaResponseText.vue'
-import DialogKeysFooter from './DialogKeysFooter.vue'
+import DialogKeysFooter from './widgets/DialogKeysFooter.vue'
 
 const props = defineProps({
     responseState: {

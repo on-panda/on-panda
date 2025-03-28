@@ -5,7 +5,7 @@ import { InfoFilled } from '@element-plus/icons-vue'
 import { duplicateWindow } from '../utils/commonUtils'
 import { useGlobalStore } from '../stores/globalStore'
 import MarkdownRender from './widgets/MarkdownRender.vue'
-import { CONTINUE_PROMPT } from '../stores/ControlParameterState'
+import { CONTINUE_PROMPT } from '../stores/controlParameterState'
 
 const globalStore = useGlobalStore()
 const isMobile = computed(() => globalStore.isMobile)

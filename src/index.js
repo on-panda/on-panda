@@ -8,7 +8,7 @@ import CheckboxWidgetSupportNull from './components/widgets/CheckboxWidgetSuppor
 import MarkdownRender from './components/widgets/MarkdownRender.vue';
 import Message from './components/Message.vue'
 import { ResponseStateClosure } from './stores/responseState.js'
-import { ControlParameterState, defaultChatConfig, defaultApiConfig } from './stores/ControlParameterState'
+import { ControlParameterState, defaultChatConfig, defaultApiConfig } from './stores/controlParameterState'
 import ControlParameterPanel from './components/ControlParameterPanel.vue'
 import OnPandaResponseText from './components/OnPandaResponseText.vue'
 import OnPandaResponsePanel from './components/OnPandaResponsePanel.vue'
