@@ -6,7 +6,7 @@
                 <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump({})" />
             </el-tooltip>
             <!-- TODO mv left, right button to keys foooter -->
-            <el-tooltip :content="t('tooltips.previousModification') + '<br>(Shortcut key: left)'" raw-content
+            <!-- <el-tooltip :content="t('tooltips.previousModification') + '<br>(Shortcut key: left)'" raw-content
                 placement="top">
                 <el-button id="switchToPreviousDialog" :icon="Back" size="small"
                     @click="pandaState.switchToPreviousDialog()" />
@@ -15,7 +15,7 @@
                 placement="top">
                 <el-button id="switchToNextDialog" :icon="Right" size="small"
                     @click="pandaState.switchToNextDialog()" />
-            </el-tooltip>
+            </el-tooltip> -->
             <el-tooltip :content="t('tooltips.deleteDialog')" raw-content placement="top"
                 v-if="!pandaState.isDeleted.value">
                 <el-button plain type="danger" :icon="Delete" size="small" @click="pandaState.deleteCurrentDialog()" />
