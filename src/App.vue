@@ -41,10 +41,7 @@ import 'element-plus/dist/index.css'
       <OnPandaResponsePanel :responseState="responseState" />
 
     </div>
-    <DialogControlPanel :responseState="responseState" style=" margin-bottom:10px;" />
-    <AnnotatorPanel
-      v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment || globalStore.debug"
-      :responseState="responseState" />
+    <DataControlPanel :responseState="responseState" />
 
     <el-divider content-position="left" style="margin-bottom: 5px;">{{ t('common.newMessage') }}:</el-divider>
     <div :style="{ opacity: newRoundMessage.content ? 1 : 0.5 }">
@@ -76,13 +73,13 @@ import { useI18n } from 'vue-i18n'
 import { p, tryLoadDuplicateWindow, deepCopy, deepEqual, sleep } from './utils/commonUtils.js'
 import { messageToSeq } from './utils/chatUtils.js'
 import { useGlobalStore } from './stores/globalStore.js'
-import { ResponseStateClosure, defaultMessages } from './stores/responseState'
+import { ResponseStateClosure, defaultMessages } from './stores/responseState.js'
+import { ControlParameterState, defaultApiConfig } from './stores/ControlParameterState.js'
 
 import Message from './components/Message.vue'
 import MarkdownRender from './components/widgets/MarkdownRender.vue'
 import OnPandaResponsePanel from './components/OnPandaResponsePanel.vue'
-import AnnotatorPanel from './components/AnnotatorPanel.vue'
-import DialogControlPanel from './components/DialogControlPanel.vue'
+import DataControlPanel from './components/DataControlPanel.vue'
 import OnPandaHeader from './components/OnPandaHeader.vue'
 import ControlParameterPanel from './components/ControlParameterPanel.vue'
 
@@ -251,14 +248,10 @@ if (globalStore.isOldUser) {
   messages = defaultMessages
 }
 
-
-import { ControlParameterState } from './stores/ControlParameterState'
-
 const controlParameterState = ControlParameterState({ apiConfigs: props.apiConfigs, modelNameTags: props.modelNameTags })
 const modelName = controlParameterState.modelName
 const apiConfig = controlParameterState.apiConfig
 const apiConfigs = controlParameterState.apiConfigs
-const chatConfig = controlParameterState.chatConfig
 
 watch(modelName, async function watchModelName(newValue) {  // set modelName to page title
   if (document.title.endsWith("onPanda")) {
@@ -296,7 +289,7 @@ onMounted(async () => {
     var watchApiConfigsLoaded = new Promise(resolve => {
       controlParameterState.watchApiConfigsResolver.value = resolve
     })
-    apiConfigs.value = [...apiConfigs.value, ...globalStore.customApiConfigs]
+    apiConfigs.value = [defaultApiConfig, ...apiConfigs.value, ...globalStore.customApiConfigs]
     var exampleFunc = exampleNameToFunc['default']
     if (tryLoadDuplicateWindow(pandaState)) { // duplicate window has higher priority
       exampleFunc = () => { }
@@ -310,11 +303,11 @@ onMounted(async () => {
     }
     if (globalStore.debug) {
       // var exampleFunc = exampleNameToFunc['image']
-      // var exampleFunc = () => {
-      //   // modelName.value = 'deepseek-r1-distill-qwen-32b'
-      //   modelName.value = 'doubao-1.5-pro-32k'
-      //   operationCenter.generateNew()
-      // }
+      var exampleFunc = () => {
+        // modelName.value = 'doubao-1.5-pro-32k'
+        modelName.value = defaultApiConfig.chat_config.model
+        exampleNameToFunc['笑话']()
+      }
     }
 
     await watchApiConfigsLoaded

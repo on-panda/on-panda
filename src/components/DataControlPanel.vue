@@ -1,6 +1,6 @@
 <template>
-    <div class="dialogControlPanel" v-if="pandaState.dialogKeys.value?.length">
-        <div style="line-height:2">
+    <div class="DataControlPanel" v-if="pandaState.dialogKeys.value?.length">
+        <div style="line-height:2; margin-bottom:10px;">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
             <el-tooltip :content="t('tooltips.saveData')" raw-content placement="top">
                 <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump({})" />
@@ -64,6 +64,11 @@
             </el-tooltip>
         </div>
 
+
+        <AnnotatorPanel
+            v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment || globalStore.debug"
+            :responseState="responseState" />
+
         <el-dialog v-model="isDragged" style="width: 80%;">
             <el-upload v-show="isDragged" class="dropzone" :drag="true" :auto-upload="false" :on-change="handleDropJson"
                 accept=".json" :multiple="false">
@@ -82,11 +87,12 @@
 </template>
 <script setup>
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore.js'
 import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled, Postcard, Reading } from '@element-plus/icons-vue'
 import { registerKeyActions, downloadJsonFile, uploadJsonFile } from '../utils/commonUtils.js'
-import { useI18n } from 'vue-i18n'
+import AnnotatorPanel from './AnnotatorPanel.vue'
 
 const { t } = useI18n()
 
