@@ -88,26 +88,26 @@
             v-show="!floatSelectedOperationPannel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
                 token => token.selected = true
             )" :size="isMobile ? '' : 'small'">
-            <el-tooltip content="Manually edit" placement="bottom">
+            <el-tooltip content="(TBD) Manually edit" placement="bottom">
                 <el-button :disabled="true" :icon="Edit" />
             </el-tooltip>
-            <el-tooltip content="Improve by AI" placement="bottom">
+            <el-tooltip content="(TBD) Improve by AI" placement="bottom">
                 <el-button :icon="ChatLineRound" @click="floatSelectedOperationPannel.improveInputVisible = true" />
             </el-tooltip>
-            <el-tooltip content="Explain by AI" placement="bottom">
+            <el-tooltip content="(TBD) Explain by AI" placement="bottom">
                 <el-button :disabled="true" :icon="QuestionFilled" />
             </el-tooltip>
-            <el-tooltip content="Try again" placement="bottom">
+            <el-tooltip content="(TBD) Try again" placement="bottom">
                 <el-button :disabled="true" :icon="Refresh" />
             </el-tooltip>
         </el-button-group>
         <div v-show="floatSelectedOperationPannel.improveInputVisible"
             style="display: flex; justify-content: space-between;">
             <textarea v-model="floatSelectedOperationPannel.improveInputText" type="text"
-                placeholder="Instruction for AI to improve" style="height: 25px; width:auto;"
+                placeholder="(TBD) Instruction for AI to improve" style="height: 25px; width:auto;"
                 @focus="$event.target.select()" @keydown.enter="improveSelectedText" />
 
-            <el-button :icon='Promotion' size="" @click="improveSelectedText"></el-button>
+            <el-button :disabled="true" :icon='Promotion' size="" @click="improveSelectedText"></el-button>
         </div>
     </div>
 
