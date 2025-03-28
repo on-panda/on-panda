@@ -49,7 +49,8 @@ import 'element-plus/dist/index.css'
       <b>{{ t('common.controlParameter') }}:</b>
     </el-divider>
     <ControlParameterPanel :controlParameterState="controlParameterState"
-      @dblclickModelTag="responseState?.operationCenter.generateNew()" />
+      @dblclickModelTag="responseState?.operationCenter.generateNew()"
+      @duplicateWindowWithModelName="duplicateWindowWithModelName" />
     <div v-if="warningContent" style="background-color: #fdd;white-space: pre-wrap;overflow-x: scroll; padding: 10px">
       <h3>Error Messages:</h3>
       <div v-html="warningContent"></div>
@@ -66,7 +67,7 @@ import { ref, computed, watch, provide } from 'vue'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { p, tryLoadDuplicateWindow, deepCopy, deepEqual, sleep } from './utils/commonUtils.js'
+import { p, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, sleep } from './utils/commonUtils.js'
 import { messageToSeq } from './utils/chatUtils.js'
 import { useGlobalStore } from './stores/globalStore.js'
 import { ResponseStateClosure, defaultMessages } from './stores/responseState.js'
@@ -159,6 +160,11 @@ watch(modelName, async function watchModelName(newValue) {  // set modelName to 
 })
 
 responseState.bindApiConfig(apiConfig)
+
+function duplicateWindowWithModelName(modelName) {
+  localStorage.setItem('modelNameForDuplicateWindow', modelName)
+  duplicateWindow(pandaState)
+}
 
 onMounted(async () => {
   try {

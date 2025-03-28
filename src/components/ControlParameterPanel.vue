@@ -2,7 +2,6 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { InfoFilled } from '@element-plus/icons-vue'
-import { duplicateWindow } from '../utils/commonUtils'
 import { useGlobalStore } from '../stores/globalStore'
 import MarkdownRender from './widgets/MarkdownRender.vue'
 import { CONTINUE_PROMPT } from '../stores/controlParameterState'
@@ -17,7 +16,7 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['dblclickModelTag'])
+const emit = defineEmits(['dblclickModelTag', 'duplicateWindowWithModelName'])
 
 const { t } = useI18n()
 
@@ -30,8 +29,7 @@ const apiConfig = props.controlParameterState.apiConfig
 
 function handleModelTagClick(event, newModelName) {
     if (event.ctrlKey) {
-        localStorage.setItem('modelNameForDuplicateWindow', newModelName)
-        duplicateWindow(pandaState)
+        emit('duplicateWindowWithModelName', newModelName)
     } else {
         modelName.value = newModelName
     }
@@ -39,8 +37,7 @@ function handleModelTagClick(event, newModelName) {
 
 function handleModelTagMousedown(event, modelName_) {
     if (event.button === 1) {
-        localStorage.setItem('modelNameForDuplicateWindow', modelName_)
-        duplicateWindow(pandaState)
+        emit('duplicateWindowWithModelName', modelName_)
     }
 }
 </script>
