@@ -1,10 +1,11 @@
 <template>
     <div class="dialogControlPannel" v-if="pandaState.dialogKeys.value?.length">
-        <div style="margin-top:-10px; margin-bottom:10px; line-height:2">
+        <div style="line-height:2">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
             <el-tooltip :content="t('tooltips.saveData')" raw-content placement="top">
                 <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump({})" />
             </el-tooltip>
+            <!-- TODO mv left, right button to keys foooter -->
             <el-tooltip :content="t('tooltips.previousModification') + '<br>(Shortcut key: left)'" raw-content
                 placement="top">
                 <el-button id="switchToPreviousDialog" :icon="Back" size="small"
@@ -77,21 +78,6 @@
                 </template>
             </el-upload>
         </el-dialog>
-
-        <!-- TODO mv left, right button to keys foooter -->
-        <div class='dialogKeysFooter' style="color:#555;margin-bottom: 10px;">
-            &nbsp;
-            <small v-for="(key, idx) in pandaState.dialogKeys.value"
-                style="cursor: pointer;width: 30px; display: inline-block;text-align: center;"
-                @click="pandaState.switchDialogByIndex(idx)" :style="(key in pandaState.pandaTree.value.dialogs) ? {} : {
-                    textDecorationLine: 'line-through',
-                    textDecorationColor: 'red', color: '#bbb'
-                }">
-                <span
-                    :style="idx == pandaState.currentDialogIndex.value ? { color: '#409eff', fontWeight: 550, fontSize: 'medium' } : {}">
-                    &#8202; {{ key }} &#8202;</span>
-            </small>
-        </div>
     </div>
 </template>
 <script setup>

@@ -27,7 +27,7 @@ import 'element-plus/dist/index.css'
     </el-divider>
     <div class="dialogFixedPosition"
       :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {})"
-      style="border-radius: 5px; padding-bottom: 20px;">
+      style="border-radius: 5px;">
       <div class="promptMessages">
         <!-- <Message v-for="(message, index) in messages" :message="message" 
           @sendButton="operationCenter.generateNew()"
@@ -139,7 +139,9 @@ import 'element-plus/dist/index.css'
       </div>
     </div>
 
-    <DialogControlPannel :responseState="responseState" />
+
+    <DialogKeysFooter :pandaState="pandaState" style="padding-top: 10px;" />
+    <DialogControlPannel :responseState="responseState" style="margin-top:-5px; margin-bottom:10px;" />
     <AnnotatorPanel
       v-if="pandaState.dialogCache.value?.annotate || pandaState.pandaTree.value?.description || pandaState.pandaTree.value?.comment || globalStore.debug"
       :responseState="responseState" />
@@ -187,6 +189,7 @@ import MarkdownRender from './components/widgets/MarkdownRender.vue'
 import MarkdownResponse from './components/widgets/MarkdownResponse.vue'
 import AnnotatorPanel from './components/AnnotatorPanel.vue'
 import DialogControlPannel from './components/DialogControlPannel.vue'
+import DialogKeysFooter from './components/DialogKeysFooter.vue'
 import OnPandaHeader from './components/OnPandaHeader.vue'
 import OnPandaResponseText from './components/OnPandaResponseText.vue'
 import ControlParameter from './components/ControlParameter.vue'
