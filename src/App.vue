@@ -155,7 +155,7 @@ import 'element-plus/dist/index.css'
     <el-divider content-position="left">
       <b>{{ t('common.controlParameter') }}:</b>
     </el-divider>
-    <ControlParameter :controlParameterState="controlParameterState"
+    <ControlParameterPanel :controlParameterState="controlParameterState"
       @dblclickModelTag="responseState?.operationCenter.generateNew()" />
     <div v-if="warningContent" style="background-color: #fdd;white-space: pre-wrap;overflow-x: scroll; padding: 10px">
       <h3>Error Messages:</h3>
@@ -167,8 +167,7 @@ import 'element-plus/dist/index.css'
 
 <script setup>
 // TODO 
-// 1. split ControlParameterPanel.vue
-// 2. change Messages render method, support edit and click. ctrl+z
+// - change Messages render method, support edit and click. ctrl+z
 
 import { ref, computed, watch, provide } from 'vue'
 import { onMounted, onBeforeUnmount } from 'vue'
@@ -192,7 +191,7 @@ import DialogControlPanel from './components/DialogControlPanel.vue'
 import DialogKeysFooter from './components/DialogKeysFooter.vue'
 import OnPandaHeader from './components/OnPandaHeader.vue'
 import OnPandaResponseText from './components/OnPandaResponseText.vue'
-import ControlParameter from './components/ControlParameter.vue'
+import ControlParameterPanel from './components/ControlParameterPanel.vue'
 
 const props = defineProps({
   apiConfigs: {

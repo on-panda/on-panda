@@ -7,8 +7,9 @@ import OnPanda from './App.vue';
 import CheckboxWidgetSupportNull from './components/widgets/CheckboxWidgetSupportNull.vue'
 import MarkdownRender from './components/widgets/MarkdownRender.vue';
 import Message from './components/Message.vue'
-import { ResponseStateClosure} from './stores/responseState.js'
+import { ResponseStateClosure } from './stores/responseState.js'
 import { ControlParameterState, defaultChatConfig, defaultApiConfig } from './stores/ControlParameterState'
+import ControlParameterPanel from './components/ControlParameterPanel.vue'
 import OnPandaResponseText from './components/OnPandaResponseText.vue'
 
 export { i18n };
@@ -29,4 +30,4 @@ const plugin = {
   }
 };
 export default plugin;
-export { CheckboxWidgetSupportNull, MarkdownRender, OnPanda, Message, plugin, OnPandaResponseText, ResponseStateClosure, defaultChatConfig, defaultApiConfig };
+export { CheckboxWidgetSupportNull, MarkdownRender, OnPanda, Message, plugin, OnPandaResponseText, ResponseStateClosure, defaultChatConfig, defaultApiConfig, ControlParameterPanel };
