@@ -1,11 +1,11 @@
 <script setup>
+import { provide } from 'vue'
 const { t } = useI18n()
 import { useI18n } from 'vue-i18n'
 import { messageToSeq } from '../utils/chatUtils.js'
 
 import Message from './Message.vue'
 import OnPandaResponsePanel from './OnPandaResponsePanel.vue'
-
 
 const props = defineProps({
     responseState: {
@@ -17,6 +17,7 @@ const props = defineProps({
 const { responseState } = props
 const { messages, operationCenter, pandaState, newRoundMessage } = responseState
 
+provide('operationCenter.editRole', responseState.operationCenter.editRole)
 </script>
 
 <template>

@@ -1,4 +1,3 @@
-import { ref } from 'vue'
 import { ControlParameterStateClosure } from './controlParameterState.js'
 import { ResponseStateClosure } from './responseState.js'
 

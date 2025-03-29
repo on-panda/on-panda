@@ -1,3 +1,7 @@
+// here is the global style for all components
+import 'element-plus/dist/index.css'
+import './assets/style.css'
+
 export { default as OnPanda } from './App.vue';
 
 export { DialogWithControlStateClosure } from './stores/dialogWithControlState.js'

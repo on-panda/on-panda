@@ -12,21 +12,20 @@
 import { sleep } from '../utils/commonUtils.js'
 
 const props = defineProps({
-  responseState: {
-    type: Object,
-    required: true
-  },
-  controlParameterState: {
+  dialogWithControlState: {
     type: Object,
     required: true
   }
 })
 
-const operationCenter = props.responseState.operationCenter
-const pandaState = props.responseState.pandaState
-const loadMessages = props.responseState.loadMessages
-const modelName = props.controlParameterState.modelName
-const modelNameTags = props.controlParameterState.modelNameTags
+const { responseState, controlParameterState } = props.dialogWithControlState
+
+const operationCenter = responseState.operationCenter
+const pandaState = responseState.pandaState
+const loadMessages = responseState.loadMessages
+
+const modelName = controlParameterState.modelName
+const modelNameTags = controlParameterState.modelNameTags
 // Example message templates
 const welcomeMessages = [{ role: "system", content: "" }, { role: "user", content: '🍓草莓的英文单词有几个 "R" ?' }]
 

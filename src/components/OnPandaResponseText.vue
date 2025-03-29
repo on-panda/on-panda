@@ -1,11 +1,6 @@
-<script>
-// here is the global style for all components
-import 'element-plus/dist/index.css'
-import '../assets/style.css'
-</script>
-
 <template>
-    <p ref="onPandaResponseTextRef" class="OnPandaResponseText onPandaContainers" style="white-space: pre-wrap;cursor: default;">
+    <p ref="onPandaResponseTextRef" class="OnPandaResponseText onPandaContainers"
+        style="white-space: pre-wrap;cursor: default;">
         <span class="PatchSpan" v-for="patch in patchs"
             :key="`t${pandaState.uuid.value}-d${pandaState.currentDialogKey.value}-p${patch.index}:${patch.patch}`"
             :style='{

@@ -11,15 +11,17 @@
     <el-divider content-position="left">
       {{ t('common.examples') }}:
     </el-divider>
-    <OnPandaExamples :responseState="responseState" :controlParameterState="controlParameterState" />
+    <OnPandaExamples :dialogWithControlState="dialogWithControlState" />
 
     <el-divider content-position="left" style="margin-bottom: 5px;">
       <b>{{ t('common.dialog') }}:</b>
     </el-divider>
     <OnPandaDialogWithControl :dialogWithControlState="dialogWithControlState" />
-    <div v-if="warningContent" style="background-color: #fdd;white-space: pre-wrap;overflow-x: scroll; padding: 10px">
+
+    <div v-if="responseState.warningContent.value"
+      style="background-color: #fdd;white-space: pre-wrap;overflow-x: scroll; padding: 10px">
       <h3>Error Messages:</h3>
-      <div v-html="warningContent"></div>
+      <div v-html="responseState.warningContent.value"></div>
     </div>
     <br v-for="_ in (isMobile ? 12 : 0)">
   </div>
@@ -29,11 +31,11 @@
 // TODO 
 // - change Messages render method, support edit and click. ctrl+z
 
-import { ref, computed, watch, provide } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { p, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, sleep } from './utils/commonUtils.js'
+import { p, tryLoadDuplicateWindow, deepCopy, deepEqual, sleep } from './utils/commonUtils.js'
 import { useGlobalStore } from './stores/globalStore.js'
 import { defaultMessages } from './stores/responseState.js'
 import { defaultApiConfig } from './stores/controlParameterState.js'
@@ -87,13 +89,9 @@ watch(onPandaContainer, (newVal) => {
   responseState.onPandaContainer.value = newVal
 })
 
-const warning = responseState.warning
-const warningContent = responseState.warningContent
 const tokens = responseState.tokens
 const requestStatus = responseState.requestStatus
 const operationCenter = responseState.operationCenter
-
-provide('operationCenter.editRole', operationCenter.editRole)
 
 // Initialize with welcome messages
 const welcomeMessages = [{ role: "system", content: "" }, { role: "user", content: '🍓草莓的英文单词有几个 "R" ?' }]
