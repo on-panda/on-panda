@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useEventListener } from '../utils/commonUtils'
 
 export const useGlobalStore = defineStore('onPandaGlobal', () => {
-    const debug = ref(window.location.href.includes('http://localhost') || window.location.href.includes('http://127.0.0.1'))
+    const debug = ref((window.location.href.includes('http://localhost') || window.location.href.includes('http://127.0.0.1')) && document.title.endsWith("onPanda"))
 
     const isOldUser = ref(localStorage.getItem('onPandaIsOldUser') == 'true')
 
@@ -18,7 +18,7 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
     const messageIndexStatus = ref({})
 
     const widthRelatedStore = buildWidthRelatedStore()
-    
+
     const currentLocale = ref(localStorage.getItem('locale') || navigator.language)
     function setLocale(locale) {
         currentLocale.value = locale

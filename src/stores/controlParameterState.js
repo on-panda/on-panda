@@ -86,7 +86,7 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
             if (!isWatchApiConfigsTriggered.value) {
                 watchApiConfigs(apiConfigs.value)
             }
-        }, 1000)
+        }, 2000)
     })
     async function watchApiConfigs(newValue) {
         // Asynchronous concurrent request without changing the order

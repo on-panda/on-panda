@@ -23,7 +23,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
     const pandaState = new PandaState()
     const uploadedJson = ref(null)
-    const onPandaContainer = ref(document)
+    const onPandaContainerRef = ref(document)
     
     const tokens = ref([]);
     
@@ -632,7 +632,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     return {
         pandaState,
         uploadedJson,
-        onPandaContainer,
+        onPandaContainerRef,
         messages,
         apiConfig,
         tokens,

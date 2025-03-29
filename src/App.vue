@@ -1,6 +1,6 @@
 <template>
-  <div ref="onPandaContainer" :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }"
-    class="onPandaContainer onPandaContainers">
+  <div ref="onPandaContainerRef" :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }"
+    class="onPandaContainerRef onPandaContainers">
     <OnPandaHeader />
 
     <small style="color: #555;" v-if="props.customInfoForUser">
@@ -83,11 +83,6 @@ var isMobile = computed(() => globalStore.isMobile)
 const dialogWithControlState = DialogWithControlStateClosure({ apiConfigs: props.apiConfigs, modelNameTags: props.modelNameTags })
 const { responseState, controlParameterState } = dialogWithControlState
 
-const onPandaContainer = ref(null)
-watch(onPandaContainer, (newVal) => {
-  // ref="responseState.onPandaContainer" is not work
-  responseState.onPandaContainer.value = newVal
-})
 
 const tokens = responseState.tokens
 const requestStatus = responseState.requestStatus
@@ -113,8 +108,11 @@ watch(modelName, async function watchModelName(newValue) {  // set modelName to 
   }
 })
 
+// ref="responseState.onPandaContainerRef" does not work
+const onPandaContainerRef = ref(null)
 
 onMounted(async () => {
+  responseState.onPandaContainerRef.value = onPandaContainerRef.value
   try {
     await import('./assets/secret/custom.js');
   } catch (error) {

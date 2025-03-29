@@ -1,4 +1,5 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import { duplicateWindow } from '../utils/commonUtils.js'
 import { useI18n } from 'vue-i18n'
 
@@ -22,10 +23,17 @@ function duplicateWindowWithModelName(modelName) {
     duplicateWindow(responseState.pandaState)
 }
 
+const onPandaDialogPanelRef = ref(null)
+onMounted(() => {
+    if (onPandaDialogPanelRef.value) {
+        responseState.onPandaContainerRef.value = onPandaDialogPanelRef.value
+    }
+})
+
 </script>
 
 <template>
-    <div class="onPandaContainers">
+    <div class="onPandaContainers" ref="onPandaDialogPanelRef">
         <OnPandaDialogPanel :responseState="responseState">
             <template #beforeNewRoundMessageSlot>
                 <DataControlPanel :responseState="responseState" />

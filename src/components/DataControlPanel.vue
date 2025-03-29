@@ -1,5 +1,5 @@
 <template>
-    <div class="DataControlPanel" v-if="pandaState.dialogKeys.value?.length">
+    <div class="DataControlPanel" ref="dataControlPanelRef" v-if="pandaState.dialogKeys.value?.length">
         <div style="line-height:2; margin-bottom:10px;">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
             <el-tooltip :content="t('tooltips.saveData')" raw-content placement="top">
@@ -70,8 +70,8 @@
             :responseState="responseState" />
 
         <el-dialog v-model="isDragged" style="width: 80%;">
-            <el-upload v-show="isDragged" class="dropzone" :drag="true" :auto-upload="false" :on-change="handleDropJson"
-                accept=".json" :multiple="false">
+            <el-upload v-show="isDragged" class="on-panda-dropzone" :drag="true" :auto-upload="false"
+                :on-change="handleDropJson" accept=".json" :multiple="false">
                 <el-icon class="el-icon--upload"><upload-filled /></el-icon>
                 <div class="el-upload__text">
                     {{ t('userMessages.dropJsonHere') }}
@@ -86,7 +86,7 @@
     </div>
 </template>
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore.js'
@@ -105,7 +105,7 @@ const props = defineProps({
 
 const pandaState = props.responseState.pandaState
 const uploadedJson = props.responseState.uploadedJson
-const onPandaContainer = props.responseState.onPandaContainer
+const onPandaContainerRef = props.responseState.onPandaContainerRef
 
 const globalStore = useGlobalStore()
 
@@ -158,7 +158,7 @@ const clickToDownload = async () => {
 
 
 const isDragged = ref(false)
-watch(onPandaContainer, (newContainer) => {
+watch(onPandaContainerRef, (newContainer) => {
     if (newContainer) {
         // can not use addEventListner, no need unmount
         newContainer.addEventListener('dragover', function (event) {
@@ -192,9 +192,16 @@ watch(onPandaContainer, (newContainer) => {
     }
 })
 
+const dataControlPanelRef = ref(null)
+onMounted(() => {
+    if (dataControlPanelRef.value) {
+        props.responseState.onPandaContainerRef.value = dataControlPanelRef.value
+    }
+})
+
 </script>
 <style>
-.dropzone .el-upload .el-upload-dragger {
+.on-panda-dropzone .el-upload .el-upload-dragger {
     background-color: rgb(158, 218, 255)
 }
 </style>
