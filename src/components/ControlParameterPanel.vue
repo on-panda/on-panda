@@ -51,32 +51,33 @@ function handleModelTagMousedown(event, modelName_) {
             }))" placeholder="Select model" style="width: 440px" size="small" :height='400'
                 :class="{ 'mobile-select-model-input': isMobile }" />
         </el-form-item>
-
-        <div style="line-height: 1.85;margin-top: -20px;margin-bottom: -5px;" :align="isMobile ? 'right' : ''">
-            <span v-for="_ in (isMobile ? 0 : 30)">&nbsp;</span>
-            <template v-for="(modelName_, tag) in modelNameTags">
-                <el-tag :type="modelName.includes(modelName_) ? 'primary' : 'info'"
-                    @click="handleModelTagClick($event, modelName_)"
-                    @mousedown="handleModelTagMousedown($event, modelName_)" @dblclick="() => {
-                        modelName = modelName_
-                        $emit('dblclickModelTag', modelName_)
-                    }" style="cursor: pointer;margin-left: 5px;">
-                    {{ tag }}
-                </el-tag>
-            </template>
-            <small v-if="!isMobile && modelNameTags && Object.keys(modelNameTags)?.length > 1">
-                &nbsp;
-                <el-tooltip class="" effect="light" placement="top" raw-content>
-                    <template #content>
-                        <MarkdownRender :content="$t('tooltips.modelTagClick')" />
-                    </template>
-                    <el-icon>
-                        <InfoFilled />
-                    </el-icon>
-                </el-tooltip>
-            </small>
+        <div v-if="Object.keys(modelNameTags)?.length >= 1" class="ModelNameTags">
+            <div style="line-height: 1.85;margin-top: -20px;margin-bottom: -5px;" :align="isMobile ? 'right' : ''">
+                <span v-for="_ in (isMobile ? 0 : 30)">&nbsp;</span>
+                <template v-for="(modelName_, tag) in modelNameTags">
+                    <el-tag :type="modelName.includes(modelName_) ? 'primary' : 'info'"
+                        @click="handleModelTagClick($event, modelName_)"
+                        @mousedown="handleModelTagMousedown($event, modelName_)" @dblclick="() => {
+                            modelName = modelName_
+                            $emit('dblclickModelTag', modelName_)
+                        }" style="cursor: pointer;margin-left: 5px;">
+                        {{ tag }}
+                    </el-tag>
+                </template>
+                <small v-if="!isMobile && modelNameTags && Object.keys(modelNameTags)?.length > 1">
+                    &nbsp;
+                    <el-tooltip class="" effect="light" placement="top" raw-content>
+                        <template #content>
+                            <MarkdownRender :content="$t('tooltips.modelTagClick')" />
+                        </template>
+                        <el-icon>
+                            <InfoFilled />
+                        </el-icon>
+                    </el-tooltip>
+                </small>
+            </div>
+            <br>
         </div>
-        <br>
 
         <el-form-item :label="$t('controlParameter.temperature')">
             <el-input-number v-model="chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
