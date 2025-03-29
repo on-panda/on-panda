@@ -20,18 +20,7 @@ import 'element-plus/dist/index.css'
     <el-divider content-position="left" style="margin-bottom: 5px;">
       <b>{{ t('common.dialog') }}:</b>
     </el-divider>
-    <OnPandaDialogPanel :responseState="responseState">
-      <template #beforeNewRoundMessageSlot>
-        <DataControlPanel :responseState="responseState" />
-      </template>
-    </OnPandaDialogPanel>
-
-    <el-divider content-position="left">
-      <b>{{ t('common.controlParameter') }}:</b>
-    </el-divider>
-    <ControlParameterPanel :controlParameterState="controlParameterState"
-      @dblclickModelTag="responseState?.operationCenter.generateNew()"
-      @duplicateWindowWithModelName="duplicateWindowWithModelName" />
+    <OnPandaDialogWithControl :dialogWithControlState="dialogWithControlState" />
     <div v-if="warningContent" style="background-color: #fdd;white-space: pre-wrap;overflow-x: scroll; padding: 10px">
       <h3>Error Messages:</h3>
       <div v-html="warningContent"></div>
@@ -50,15 +39,15 @@ import { useI18n } from 'vue-i18n'
 
 import { p, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, sleep } from './utils/commonUtils.js'
 import { useGlobalStore } from './stores/globalStore.js'
-import { ResponseStateClosure, defaultMessages } from './stores/responseState.js'
-import { ControlParameterState, defaultApiConfig } from './stores/controlParameterState.js'
+import { defaultMessages } from './stores/responseState.js'
+import { defaultApiConfig } from './stores/controlParameterState.js'
+import { DialogWithControlStateClosure } from './stores/dialogWithControlState.js'
 
 import MarkdownRender from './components/widgets/MarkdownRender.vue'
-import DataControlPanel from './components/DataControlPanel.vue'
 import OnPandaHeader from './components/OnPandaHeader.vue'
-import ControlParameterPanel from './components/ControlParameterPanel.vue'
 import OnPandaExamples from './components/OnPandaExamples.vue'
-import OnPandaDialogPanel from './components/OnPandaDialogPanel.vue'
+import OnPandaDialogWithControl from './components/OnPandaDialogWithControl.vue'
+
 const props = defineProps({
   apiConfigs: {
     type: Object,
@@ -93,8 +82,8 @@ const { t } = useI18n()
 const globalStore = useGlobalStore()
 var isMobile = computed(() => globalStore.isMobile)
 
-const responseState = ResponseStateClosure()
-const pandaState = responseState.pandaState
+const dialogWithControlState = DialogWithControlStateClosure({ apiConfigs: props.apiConfigs, modelNameTags: props.modelNameTags })
+const { responseState, controlParameterState } = dialogWithControlState
 
 const onPandaContainer = ref(null)
 watch(onPandaContainer, (newVal) => {
@@ -120,9 +109,8 @@ if (globalStore.isOldUser) {
 
 operationCenter.loadMessagesWithPandaTree(initialMessages)
 
-const controlParameterState = ControlParameterState({ apiConfigs: props.apiConfigs, modelNameTags: props.modelNameTags })
+
 const modelName = controlParameterState.modelName
-const apiConfig = controlParameterState.apiConfig
 const apiConfigs = controlParameterState.apiConfigs
 
 watch(modelName, async function watchModelName(newValue) {  // set modelName to page title
@@ -131,12 +119,6 @@ watch(modelName, async function watchModelName(newValue) {  // set modelName to 
   }
 })
 
-responseState.bindApiConfig(apiConfig)
-
-function duplicateWindowWithModelName(modelName) {
-  localStorage.setItem('modelNameForDuplicateWindow', modelName)
-  duplicateWindow(pandaState)
-}
 
 onMounted(async () => {
   try {
@@ -153,7 +135,7 @@ onMounted(async () => {
 
     let exampleToRun = null;
 
-    if (tryLoadDuplicateWindow(pandaState)) { // duplicate window has higher priority
+    if (tryLoadDuplicateWindow(responseState.pandaState)) { // duplicate window has higher priority
       if (localStorage.getItem('modelNameForDuplicateWindow')) {
         modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
         localStorage.removeItem('modelNameForDuplicateWindow')

@@ -34,7 +34,7 @@ export const defaultApiConfig = {
     },
 }
 
-export function ControlParameterState({ apiConfigs = null, modelNameTags = null, modelName = null } = {}) {
+export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags = null, modelName = null } = {}) {
     const globalStore = useGlobalStore()
     const isMounted = ref(false)
     onMounted(() => {
