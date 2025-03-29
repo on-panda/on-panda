@@ -41,7 +41,6 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         isMounted.value = true
     })
 
-
     var apiConfigs = isRef(apiConfigs) ? apiConfigs : ref(apiConfigs || [deepCopy(defaultApiConfig)])
     var modelNameTags = isRef(modelNameTags) ? modelNameTags : ref(modelNameTags || {})
     var modelName = isRef(modelName) ? modelName : ref(modelName || modelNameTags.value['on-panda'] || 'on-panda')   // using endpoint_name == 'on-panda' as default model
@@ -78,10 +77,22 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         return keyToApiConfigs
     }, { flush: 'sync' })
 
-    var watchApiConfigsResolver = ref(() => { })
-    watch(apiConfigs, async function watchApiConfigs(newValue) {
+    const watchApiConfigsResolver = ref(() => { })  // promise hook that will be resolved when watchApiConfigs is finished
+    const isWatchApiConfigsTriggered = ref(false)
+    // delay 1 second to trigger default watchApiConfigs update
+    // to ensure apiConfigs is updated only once if apiConfigs is changed
+    onMounted(() => {
+        setTimeout(() => {
+            if (!isWatchApiConfigsTriggered.value) {
+                watchApiConfigs(apiConfigs.value)
+            }
+        }, 1000)
+    })
+    async function watchApiConfigs(newValue) {
         // Asynchronous concurrent request without changing the order
         // and not block by slow response
+        isWatchApiConfigsTriggered.value = true
+
         const configPromises = [];
         apiConfigReceived.value = new Array(newValue.length).fill(null);
 
@@ -106,6 +117,16 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
                         });
                     } catch (error) {
                         // warning(error)
+                        setTimeout(() => {
+                            if (isMounted.value) {
+                                ElMessage({
+                                    showClose: true,
+                                    message: `Error in fetching models list of "${apiConfig.endpoint_name}":\n ${error.message}`,
+                                    type: 'error',
+                                    duration: 10000,
+                                })
+                            }
+                        }, isMounted.value ? 0 : 2000)
                         console.log("Error in fetching models list");
                         console.log(error);
                         throw error
@@ -116,7 +137,8 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         }
         await Promise.all(configPromises);
         watchApiConfigsResolver.value()
-    })
+    }
+    watch(apiConfigs, watchApiConfigs)
 
     const apiConfigChosen = computed(() => {
         var apiConfigChosen = defaultApiConfig
@@ -142,9 +164,11 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         if (Object.keys(changedChatConfig).length > 0) {
             // If ElMessage is poped up at beginning, will raise error:
             // TypeError: Cannot read properties of null (reading 'insertBefore')
-            if (isMounted.value) {
-                ElMessage.warning(`Change the control parameter: ${JSON.stringify(changedChatConfig)}`)
-            }
+            setTimeout(() => {
+                if (isMounted.value) {
+                    ElMessage.warning(`Change the control parameter: ${JSON.stringify(changedChatConfig)}`)
+                }
+            }, isMounted.value ? 0 : 2000)
         }
         return apiConfigChosen
     })
