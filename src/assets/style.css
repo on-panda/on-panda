@@ -1,0 +1,11 @@
+
+.onPandaContainers {
+    summary {
+      cursor: pointer;
+    }
+  
+    summary::marker,
+    summary::-webkit-details-marker {
+      color: #888;
+    }
+  }

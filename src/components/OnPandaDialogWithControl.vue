@@ -25,16 +25,18 @@ function duplicateWindowWithModelName(modelName) {
 </script>
 
 <template>
-    <OnPandaDialogPanel :responseState="responseState">
-        <template #beforeNewRoundMessageSlot>
-            <DataControlPanel :responseState="responseState" />
-        </template>
-    </OnPandaDialogPanel>
+    <div class="onPandaContainers">
+        <OnPandaDialogPanel :responseState="responseState">
+            <template #beforeNewRoundMessageSlot>
+                <DataControlPanel :responseState="responseState" />
+            </template>
+        </OnPandaDialogPanel>
 
-    <el-divider content-position="left">
-        <b>{{ t('common.controlParameter') }}:</b>
-    </el-divider>
-    <ControlParameterPanel :controlParameterState="controlParameterState"
-        @dblclickModelTag="responseState?.operationCenter.generateNew()"
-        @duplicateWindowWithModelName="duplicateWindowWithModelName" />
+        <el-divider content-position="left">
+            <b>{{ t('common.controlParameter') }}:</b>
+        </el-divider>
+        <ControlParameterPanel :controlParameterState="controlParameterState"
+            @dblclickModelTag="responseState?.operationCenter.generateNew()"
+            @duplicateWindowWithModelName="duplicateWindowWithModelName" />
+    </div>
 </template>

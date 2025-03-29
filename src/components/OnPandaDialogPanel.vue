@@ -20,7 +20,7 @@ const { messages, operationCenter, pandaState, newRoundMessage } = responseState
 </script>
 
 <template>
-    <div>
+    <div class="onPandaContainers">
         <div class="dialogFixedPosition"
             :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {})"
             style="border-radius: 5px;">

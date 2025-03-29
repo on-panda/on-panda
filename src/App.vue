@@ -1,10 +1,6 @@
-<script>
-import 'element-plus/dist/index.css'
-</script>
-
 <template>
   <div ref="onPandaContainer" :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }"
-    class="onPandaContainer">
+    class="onPandaContainer onPandaContainers">
     <OnPandaHeader />
 
     <small style="color: #555;" v-if="props.customInfoForUser">
@@ -183,18 +179,5 @@ onBeforeUnmount(async () => {
 
 * {
   font-family: Arial, sans-serif;
-}
-</style>
-
-<style>
-.onPandaContainer {
-  summary {
-    cursor: pointer;
-  }
-
-  summary::marker,
-  summary::-webkit-details-marker {
-    color: #888;
-  }
 }
 </style>

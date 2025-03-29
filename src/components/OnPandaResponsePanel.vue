@@ -88,7 +88,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="OnPandaResponsePanel" :style="globalStore.cleanMode ? { maxWidth: '1024px' } : {}">
+    <div class="OnPandaResponsePanel onPandaContainers" :style="globalStore.cleanMode ? { maxWidth: '1024px' } : {}">
         <div class="finalMessageHeadBar" style="display: flex; justify-content: space-between;"
             :style="isMobile ? {} : { width: '50%' }">
             <MessageRole :message="finalMessage" />
