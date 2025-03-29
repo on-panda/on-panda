@@ -20,30 +20,11 @@ import 'element-plus/dist/index.css'
     <el-divider content-position="left" style="margin-bottom: 5px;">
       <b>{{ t('common.dialog') }}:</b>
     </el-divider>
-    <div class="dialogFixedPosition"
-      :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {})"
-      style="border-radius: 5px;">
-      <div class="promptMessages">
-        <!-- <Message v-for="(message, index) in messages" :message="message" 
-          @sendButton="operationCenter.generateNew()"
-          @deleteMessage="operationCenter.clearOrDeleteMessage(message, index)" @focus="operationCenter.editPrompt.before()"
-          @blur="operationCenter.editPrompt.after()" /> -->
-        <!-- change edit in compoment to edit in operationCenter -->
-        <Message v-for="(message, index) in messages" :key="message.role + messageToSeq(message) + index"
-          :message="message" :index="index" :operationCenter="operationCenter" />
-      </div>
-
-      <OnPandaResponsePanel :responseState="responseState" />
-
-    </div>
-
-    <DataControlPanel :responseState="responseState" />
-
-    <el-divider content-position="left" style="margin-bottom: 5px;">{{ t('common.newMessage') }}:</el-divider>
-    <div :style="{ opacity: newRoundMessage.content ? 1 : 0.5 }">
-      <Message :message="newRoundMessage" :index="-2" @deleteMessage="newRoundMessage.content = ''"
-        @sendButton="operationCenter.startNewRound()" />
-    </div>
+    <OnPandaDialogPanel :responseState="responseState">
+      <template #beforeNewRoundMessageSlot>
+        <DataControlPanel :responseState="responseState" />
+      </template>
+    </OnPandaDialogPanel>
 
     <el-divider content-position="left">
       <b>{{ t('common.controlParameter') }}:</b>
@@ -68,19 +49,16 @@ import { onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { p, duplicateWindow, tryLoadDuplicateWindow, deepCopy, deepEqual, sleep } from './utils/commonUtils.js'
-import { messageToSeq } from './utils/chatUtils.js'
 import { useGlobalStore } from './stores/globalStore.js'
 import { ResponseStateClosure, defaultMessages } from './stores/responseState.js'
 import { ControlParameterState, defaultApiConfig } from './stores/controlParameterState.js'
 
-import Message from './components/Message.vue'
 import MarkdownRender from './components/widgets/MarkdownRender.vue'
-import OnPandaResponsePanel from './components/OnPandaResponsePanel.vue'
 import DataControlPanel from './components/DataControlPanel.vue'
 import OnPandaHeader from './components/OnPandaHeader.vue'
 import ControlParameterPanel from './components/ControlParameterPanel.vue'
 import OnPandaExamples from './components/OnPandaExamples.vue'
-
+import OnPandaDialogPanel from './components/OnPandaDialogPanel.vue'
 const props = defineProps({
   apiConfigs: {
     type: Object,
@@ -126,17 +104,11 @@ watch(onPandaContainer, (newVal) => {
 
 const warning = responseState.warning
 const warningContent = responseState.warningContent
-
-var messages = responseState.messages
 const tokens = responseState.tokens
-
 const requestStatus = responseState.requestStatus
-
 const operationCenter = responseState.operationCenter
 
 provide('operationCenter.editRole', operationCenter.editRole)
-
-const newRoundMessage = responseState.newRoundMessage
 
 // Initialize with welcome messages
 const welcomeMessages = [{ role: "system", content: "" }, { role: "user", content: '🍓草莓的英文单词有几个 "R" ?' }]

@@ -12,6 +12,7 @@ import { ControlParameterState, defaultChatConfig, defaultApiConfig } from './st
 import ControlParameterPanel from './components/ControlParameterPanel.vue'
 import OnPandaResponseText from './components/OnPandaResponseText.vue'
 import OnPandaResponsePanel from './components/OnPandaResponsePanel.vue'
+import OnPandaDialogPanel from './components/OnPandaDialogPanel.vue'
 
 export { i18n };
 const plugin = {
@@ -31,4 +32,4 @@ const plugin = {
   }
 };
 export default plugin;
-export { CheckboxWidgetSupportNull, MarkdownRender, OnPanda, Message, plugin, OnPandaResponseText, ResponseStateClosure, defaultChatConfig, defaultApiConfig, ControlParameterState, ControlParameterPanel, OnPandaResponsePanel };
+export { CheckboxWidgetSupportNull, MarkdownRender, OnPanda, Message, plugin, OnPandaResponseText, ResponseStateClosure, defaultChatConfig, defaultApiConfig, ControlParameterState, ControlParameterPanel, OnPandaResponsePanel, OnPandaDialogPanel };
