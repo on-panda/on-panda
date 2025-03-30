@@ -379,7 +379,7 @@ export class PandaState {
     }
     redo = () => {
     }
-    dump = async ({ includeCache = false, beforeOperation = true } = {}) => {
+    dump = async ({ includeCache = true, beforeOperation = true } = {}) => {
         if (beforeOperation) {
             this.beforeOperation()
         }

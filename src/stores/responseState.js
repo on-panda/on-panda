@@ -24,15 +24,15 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     const pandaState = new PandaState()
     const uploadedJson = ref(null)
     const onPandaContainerRef = ref(document)
-    
+
     const tokens = ref([]);
-    
+
     const requestStatus = ref({
         requestTimes: 0,
         generating: false,
     })
-    
-    function loadMessages(newMessages) {
+
+    function loadMessagesToCurrentDialogUi(newMessages) {
         if (newMessages[newMessages.length - 1].role == "assistant") {
             var lastMessage = newMessages[newMessages.length - 1]
             var isEqual = deepEqual(finalMessage.value, lastMessage)
@@ -47,7 +47,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
         messages.value = newMessages
     }
-    
+
 
     async function requestLlmServer(messages) {
         messages = toValue(messages)
@@ -496,12 +496,22 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         editResponse = () => {
         }
 
-        loadMessagesWithPandaTree = (newMessages) => {
+        loadMessages = (newMessages) => {
             this.pandaState.beforeOperation()
             this.pandaState = pandaState  // TODO 挪出去这行， beforeOperation() 会报错
             const dialogNew = { messages: deepCopy(newMessages) }
             const pandaTreeNew = { dialogs: { 1: dialogNew } }
             this.pandaState.load(pandaTreeNew)
+        }
+
+        loadPandaJson = (pandaJson) => {
+            this.pandaState.beforeOperation()
+            this.pandaState = pandaState
+            this.pandaState.load(pandaJson)
+        }
+
+        dumpPandaJson = async () => {
+            return await this.pandaState.dump({})
         }
     }
 
@@ -530,7 +540,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     }
 
     const operationCenter = new OperationCenter()
-    operationCenter.loadMessagesWithPandaTree(messages.value)
+    operationCenter.loadMessages(messages.value)
 
     const newRoundMessage = ref({ role: 'user', content: '' })
 
@@ -590,7 +600,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             if (newValue.messages) {
                 // this will stop generating when edit
                 requestStatus.value.generating = false
-                loadMessages(newValue.messages)
+                loadMessagesToCurrentDialogUi(newValue.messages)
                 pandaState.tryRestoreTokens()
                 // p(tokensToSeq(tokens.value))
                 // console.trace()
@@ -638,7 +648,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         tokens,
         requestStatus,
         operationCenter,
-        loadMessages,
         newRoundMessage,
         finalMessage,
         messagesComputed,

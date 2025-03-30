@@ -96,7 +96,7 @@ if (globalStore.isOldUser) {
   initialMessages = defaultMessages;
 }
 
-operationCenter.loadMessagesWithPandaTree(initialMessages)
+operationCenter.loadMessages(initialMessages)
 
 
 const modelName = controlParameterState.modelName
@@ -142,7 +142,7 @@ onMounted(async () => {
       if (globalStore.debug) {
         modelName.value = defaultApiConfig.chat_config.model
         // Use the example via the operationCenter directly
-        operationCenter.loadMessagesWithPandaTree([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }])
+        operationCenter.loadMessages([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }])
         exampleToRun = operationCenter.generateNew
       }
     }

@@ -5,6 +5,10 @@
             <el-tooltip :content="t('tooltips.saveData')" raw-content placement="top">
                 <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump({})" />
             </el-tooltip>
+            <el-tooltip :content="t('tooltips.clearAndReset')" raw-content placement="top">
+                <el-button plain type="danger" :icon="CloseBold" size="small"
+                    @click="pandaState.setEmpty()" />
+            </el-tooltip>
             <!-- TODO mv left, right button to keys foooter -->
             <!-- <el-tooltip :content="t('tooltips.previousModification') + '<br>(Shortcut key: left)'" raw-content
                 placement="top">
@@ -18,7 +22,7 @@
             </el-tooltip> -->
             <el-tooltip :content="t('tooltips.deleteDialog')" raw-content placement="top"
                 v-if="!pandaState.isDeleted.value">
-                <el-button plain type="danger" :icon="Delete" size="small" @click="pandaState.deleteCurrentDialog()" />
+                <el-button plain type="" :icon="Delete" size="small" @click="pandaState.deleteCurrentDialog()" />
             </el-tooltip>
             <el-tooltip :content="t('tooltips.restoreDialog')" raw-content placement="top"
                 v-if="pandaState.isDeleted.value">
@@ -26,7 +30,7 @@
             </el-tooltip>
             <el-tooltip :content="t('tooltips.eraseDialog')" raw-content placement="top"
                 v-if="pandaState.isDeleted.value">
-                <el-button plain type="danger" :icon="CloseBold" size="small"
+                <el-button default type="danger" :icon="Delete" size="small"
                     @click="pandaState.eraseCurrentDialog()" />
             </el-tooltip>
             <el-tooltip :content="t('tooltips.uploadFile') + '<br>' + t('userMessages.dropJsonHere')" raw-content
@@ -159,6 +163,7 @@ const clickToDownload = async () => {
 
 const isDragged = ref(false)
 watch(onPandaContainerRef, (newContainer) => {
+    // TODO: removeEventListener for old container
     if (newContainer) {
         // can not use addEventListner, no need unmount
         newContainer.addEventListener('dragover', function (event) {

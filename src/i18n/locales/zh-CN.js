@@ -43,6 +43,7 @@ export default {
     nextModification: '下一个修改',
     deleteDialog: '删除当前对话',
     eraseDialog: '彻底删除当前对话',
+    clearAndReset: '清空并重置整条数据',
     restoreDialog: '恢复当前对话',
     uploadFile: '上传 *.panda.json 文件',
     downloadFile: '下载为 panda.json 文件',

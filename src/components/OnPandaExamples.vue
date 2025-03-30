@@ -22,7 +22,6 @@ const { responseState, controlParameterState } = props.dialogWithControlState
 
 const operationCenter = responseState.operationCenter
 const pandaState = responseState.pandaState
-const loadMessages = responseState.loadMessages
 
 const modelName = controlParameterState.modelName
 const modelNameTags = controlParameterState.modelNameTags
@@ -70,50 +69,50 @@ const exampleNameToFunc = {
   },
   "default": () => {
     modelName.value = modelNameTags.value['on-panda'] || 'on-panda'
-    operationCenter.loadMessagesWithPandaTree(welcomeMessages)
+    operationCenter.loadMessages(welcomeMessages)
     operationCenter.generateNew()
   },
   "R in 🍓": () => {
-    operationCenter.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }])
+    operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }])
     operationCenter.generateNew()
   },
   "image": () => {
     if (modelNameTags.value['image']) {
       modelName.value = modelNameTags.value['image']
     }
-    operationCenter.loadMessagesWithPandaTree(messagesImageExample)
+    operationCenter.loadMessages(messagesImageExample)
     operationCenter.generateNew()
   },
   "tokenizer": () => {
-    operationCenter.loadMessagesWithPandaTree(messagesTokenizerExample)
+    operationCenter.loadMessages(messagesTokenizerExample)
     operationCenter.generateNew()
   },
   "random": () => {
-    operationCenter.loadMessagesWithPandaTree([{ role: "user", content: "just output a random float128 number without any words, no code" }])
+    operationCenter.loadMessages([{ role: "user", content: "just output a random float128 number without any words, no code" }])
     operationCenter.generateNew()
   },
   "笑话": () => {
-    operationCenter.loadMessagesWithPandaTree([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }])
+    operationCenter.loadMessages([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }])
     operationCenter.generateNew()
   },
   "诗": () => {
-    operationCenter.loadMessagesWithPandaTree([{ role: "user", content: "写藏头诗：\n人工智能，大有可为" }])
+    operationCenter.loadMessages([{ role: "user", content: "写藏头诗：\n人工智能，大有可为" }])
     operationCenter.generateNew()
   },
   "计算": () => {
-    operationCenter.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }])
+    operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }])
     operationCenter.generateNew()
   },
   "count": () => {
-    operationCenter.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "How many 1 in 01011010101111011011?", description: "Answer is 13" }])
+    operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "How many 1 in 01011010101111011011?", description: "Answer is 13" }])
     operationCenter.generateNew()
   },
   "AIME": () => {
-    operationCenter.loadMessagesWithPandaTree([{ role: "system", content: "" }, { role: "user", content: "Real numbers $x$ and $y$ with $x,y>1$ satisfy $\log_x(y^x)=\log_y(x^{4y})=10.$ What is the value of $xy$?", description: "Answer is 25" }])
+    operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "Real numbers $x$ and $y$ with $x,y>1$ satisfy $\log_x(y^x)=\log_y(x^{4y})=10.$ What is the value of $xy$?", description: "Answer is 25" }])
     operationCenter.generateNew()
   },
   "continue": () => {
-    loadMessages(messagesContinueExample)
+    operationCenter.loadMessages(messagesContinueExample)
     setTimeout(() => operationCenter.continueGenerating(), 2000)
   },
   "annotate": async () => {
