@@ -3,9 +3,9 @@
     class="onPandaContainerRef onPandaContainers">
     <OnPandaHeader />
 
-    <small style="color: #555;" v-if="props.customInfoForUser">
+    <small style="color: #555;" v-if="customInfoForUser">
       <br>
-      <MarkdownRender :content="props.customInfoForUser" />
+      <MarkdownRender :content="customInfoForUser" />
     </small>
 
     <el-divider content-position="left">
@@ -79,6 +79,7 @@ const { t } = useI18n()
 
 const globalStore = useGlobalStore()
 var isMobile = computed(() => globalStore.isMobile)
+const customInfoForUser = computed(() => props.customInfoForUser + globalStore.customInfoForUser)
 
 const dialogWithControlState = DialogWithControlStateClosure({ apiConfigs: props.apiConfigs, modelNameTags: props.modelNameTags })
 const { responseState, controlParameterState } = dialogWithControlState

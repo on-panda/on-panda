@@ -25,7 +25,9 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
         localStorage.setItem('locale', locale)
     }
 
-    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, currentLocale, setLocale, ...widthRelatedStore }
+    const customInfoForUser = ref('')
+
+    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser }
 }
 )
 
