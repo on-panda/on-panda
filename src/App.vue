@@ -60,7 +60,7 @@ e.g.:
       'on-panda': 'on-panda',
       'test': 'endpoint-name',
       'image': 'image-tag',
-      'rmini': 'rmini-mm-0401-rlhf-preview-onpanda',
+      'rmini': 'rmini-mm-0401-preview-rlhf-int8-onpanda',
       'gpt4o': 'chatgpt-4o-latest',
       'claude': 'claude-tag',
       'r1': 'r1-tag',
