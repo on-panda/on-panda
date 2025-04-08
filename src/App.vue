@@ -1,12 +1,15 @@
 <template>
   <div ref="onPandaContainerRef" :style="isMobile ? {} : { width: '90%', margin: '1em auto 2em' }"
     class="onPandaContainerRef onPandaContainers">
-    <OnPandaHeader />
-
-    <small style="color: #555;" v-if="customInfoForUser">
-      <br>
-      <MarkdownRender :content="customInfoForUser" />
-    </small>
+    <OnPandaHeader>
+      <template #customInfoForUser>
+        <small style="color: #555;" v-if="customInfoForUser">
+          <br>
+          <hr>
+          <MarkdownRender :content="customInfoForUser" />
+        </small>
+      </template>
+    </OnPandaHeader>
 
     <el-divider content-position="left">
       {{ t('common.examples') }}:

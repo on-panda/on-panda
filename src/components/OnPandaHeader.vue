@@ -38,6 +38,8 @@
         <br>
         <br>
         <MarkdownRender :content="$t('header.instruction')" />
+        <slot name="customInfoForUser">
+        </slot>
     </details>
 
 </template>
