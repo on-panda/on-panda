@@ -5,6 +5,7 @@ import { DArrowRight, VideoPause, Edit, View, DocumentCopy, Refresh } from '@ele
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../stores/globalStore.js'
 import { probOfToken } from '../utils/chatUtils.js'
+import { duplicateWindow, copyToClipboard } from '../utils/commonUtils.js'
 import { useScrollSwitchSync } from '../utils/userInterfaceUtils.js'
 import MessageRole from '../components/widgets/MessageRole.vue'
 import MarkdownRender from '../components/widgets/MarkdownRender.vue'
