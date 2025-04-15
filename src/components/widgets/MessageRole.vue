@@ -45,7 +45,7 @@ const editingRoleName = ref(false)
 const messageRoleNameStyle = (role) => {
     role = role || 'unknown'
     return {
-        color: { 'user': 'orange', 'assistant': 'green', 'context': "#888", "system": "#888", 'unknown': "#888" }[role] || "#f55",
+        color: { 'user': 'orange', 'assistant': 'green', "developer": "#888", "system": "#888", 'context': "#888", "tool": "#888", 'unknown': "#888" }[role] || "#f55",
         fontSize: 'larger',
         fontWeight: 'bold',
         marginBottom: '2px',
