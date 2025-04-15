@@ -151,10 +151,15 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 if (!token?.delta) {
                     continue
                 }
-                if (!token.delta?.content && token.delta?.reasoning_content) {
+                for (var reasoning_key of ["reasoning", "reasoning_content"]) {
+                    if (reasoning_key in token.delta) {
+                        break
+                    }
+                }
+                if (!token.delta?.content && token.delta?.[reasoning_key]) {
                     // handle reasoning_content item for DeepSeek R1
-                    token.delta.content = token.delta.reasoning_content
-                    delete token.delta.reasoning_content
+                    token.delta.content = token.delta[reasoning_key]
+                    delete token.delta[reasoning_key]
                     token.isReasoningContent = true
                 }
                 streamIndex++
