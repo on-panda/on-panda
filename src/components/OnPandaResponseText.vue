@@ -10,7 +10,9 @@
                 ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
                 ...(patch.tokens.some(t => t.selected) ? { "background-color": "#0078d7", "color": "#fff" } : {}),
             }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
-            @mouseleave="handleMouseLeavePatchSpan" @dblclick.prevent="setFloatInputPatch($event, patch)"></span>
+            @mouseleave="handleMouseLeavePatchSpan" @mousedown="handleMouseDownPatchSpan($event, patch)"
+            @dblclick.prevent="setFloatInputPatch($event, patch)">
+        </span>
         <el-tooltip
             v-if="apiConfig.support_continue_final_message && tokens.length && tokens[tokens.length - 1].finish_reason == 'length'"
             content="native continue generating" placement="bottom">
@@ -317,6 +319,15 @@ function handleMouseLeavePatchSpan(event) {
             closeFloatPatchPanel()
         }
     }, 300);
+}
+
+function handleMouseDownPatchSpan(event, patch) {
+    if (event.altKey) {
+        var content = patch.patch
+        navigator.clipboard.writeText(content).then(() => {
+            ElMessage.success(`Copied "${content}" to clipboard`)
+        })
+    }
 }
 
 function closeFloatPatchPanel() {
