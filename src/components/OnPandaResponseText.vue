@@ -35,7 +35,7 @@
                     <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
                 </div>
                 <div class="tokenLogprobItems">
-                    <div v-for="logprobItem in (token?.logprobs?.content[0]?.top_logprobs || []).concat([{ finish_reason: 'stop' }])"
+                    <div v-for="logprobItem in (token?.logprobs?.content?.[0]?.top_logprobs || []).concat([{ finish_reason: 'stop' }])"
                         style="display: block; background-color: #eee; cursor:pointer"
                         @click="(event) => handleLogprobItemClick(event, token, logprobItem)"
                         @mouseover="activateLogprobItem = logprobItem"

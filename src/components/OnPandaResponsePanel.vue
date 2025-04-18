@@ -40,7 +40,7 @@ const WaitingInfo = computed(() => {
 })
 
 
-var bitTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content[0]?.logprob === "number"))
+var bitTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content?.[0]?.logprob === "number"))
 
 var bitTotal = computed(
     () => bitTokens.value.reduce((sum, token) => sum + - Math.log2(probOfToken(token)), 0)

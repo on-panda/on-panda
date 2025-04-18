@@ -537,7 +537,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         token.delta.content = continuePrefix
         token.bifurcationPoint = true
         token.pruned = false
-        if (token.logprobs?.content[0]) {
+        if (token.logprobs?.content?.[0]) {
             token.logprobs.content[0].logprob = isFinite(continuePrefixLogprob) ? continuePrefixLogprob : -9999
             token.logprobs.content[0].token = continuePrefix
         }

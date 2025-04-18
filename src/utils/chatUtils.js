@@ -195,7 +195,7 @@ export function recordAsRejectedToken(token) {
 
 
 export function probOfToken(token) {
-    var logprob = token.logprobs?.content[0]?.logprob
+    var logprob = token.logprobs?.content?.[0]?.logprob
     var prob = Math.exp(logprob)
 
     if (typeof logprob !== 'number') {
