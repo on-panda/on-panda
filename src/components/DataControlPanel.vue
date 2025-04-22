@@ -2,55 +2,55 @@
     <div class="DataControlPanel" ref="dataControlPanelRef" v-if="pandaState.dialogKeys.value?.length">
         <div style="line-height:2; margin-bottom:10px;">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
-            <el-tooltip :content="t('tooltips.saveData')" raw-content placement="top">
+            <el-tooltip :content="t('tooltips.saveData')" raw-content placement="bottom">
                 <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump({})" />
             </el-tooltip>
-            <el-tooltip :content="t('tooltips.clearAndReset')" raw-content placement="top">
+            <el-tooltip :content="t('tooltips.clearAndReset')" raw-content placement="bottom">
                 <el-button plain type="danger" :icon="CloseBold" size="small"
                     @click="pandaState.setEmpty()" />
             </el-tooltip>
             <!-- TODO mv left, right button to keys foooter -->
             <!-- <el-tooltip :content="t('tooltips.previousModification') + '<br>(Shortcut key: left)'" raw-content
-                placement="top">
+                placement="bottom">
                 <el-button id="switchToPreviousDialog" :icon="Back" size="small"
                     @click="pandaState.switchToPreviousDialog()" />
             </el-tooltip>
             <el-tooltip :content="t('tooltips.nextModification') + '<br>(Shortcut key: right)'" raw-content
-                placement="top">
+                placement="bottom">
                 <el-button id="switchToNextDialog" :icon="Right" size="small"
                     @click="pandaState.switchToNextDialog()" />
             </el-tooltip> -->
-            <el-tooltip :content="t('tooltips.deleteDialog')" raw-content placement="top"
+            <el-tooltip :content="t('tooltips.deleteDialog')" raw-content placement="bottom"
                 v-if="!pandaState.isDeleted.value">
                 <el-button plain type="" :icon="Delete" size="small" @click="pandaState.deleteCurrentDialog()" />
             </el-tooltip>
-            <el-tooltip :content="t('tooltips.restoreDialog')" raw-content placement="top"
+            <el-tooltip :content="t('tooltips.restoreDialog')" raw-content placement="bottom"
                 v-if="pandaState.isDeleted.value">
                 <el-button plain type="success" :icon="Help" size="small" @click="pandaState.restoreDeletedDialog()" />
             </el-tooltip>
-            <el-tooltip :content="t('tooltips.eraseDialog')" raw-content placement="top"
+            <el-tooltip :content="t('tooltips.eraseDialog')" raw-content placement="bottom"
                 v-if="pandaState.isDeleted.value">
                 <el-button default type="danger" :icon="Delete" size="small"
                     @click="pandaState.eraseCurrentDialog()" />
             </el-tooltip>
             <el-tooltip :content="t('tooltips.uploadFile') + '<br>' + t('userMessages.dropJsonHere')" raw-content
-                placement="top">
+                placement="bottom">
                 <el-button :icon="UploadFilled" size="small" @click="uploadAndLoadJson"
                     :style="isDragged ? { backgroundColor: 'rgb(158, 218, 255)' } : {}" />
             </el-tooltip>
-            <el-tooltip :content="t('tooltips.downloadFile')" raw-content placement="top">
+            <el-tooltip :content="t('tooltips.downloadFile')" raw-content placement="bottom">
                 <el-button :icon="Download" size="small" @click="clickToDownload" />
             </el-tooltip>
-            <el-tooltip :content="t('userMessages.openAnnotatorPanel')" raw-content placement="top"
+            <el-tooltip :content="t('userMessages.openAnnotatorPanel')" raw-content placement="bottom"
                 v-if="!('is_good' in (pandaState.currentDialogData.value?.annotate || {}))">
                 <el-button :icon="Postcard" size="small"
                     @click="() => { pandaState.currentDialogData.value.annotate = { is_good: null } }" />
             </el-tooltip>
-            <el-tooltip :content="t('tooltips.cleanUI')" raw-content placement="top">
+            <el-tooltip :content="t('tooltips.cleanUI')" raw-content placement="bottom">
                 <el-button :icon="Reading" size="small" :type="globalStore.cleanMode ? 'success' : 'default'"
                     @click="globalStore.cleanMode = !globalStore.cleanMode" />
             </el-tooltip>
-            <el-tooltip :content="t('tooltips.downloadFile')" raw-content placement="top" v-if="0">
+            <el-tooltip :content="t('tooltips.downloadFile')" raw-content placement="bottom" v-if="0">
                 <el-dropdown split-button
                     @click="async () => downloadJsonFile(await pandaState.dump({}), uploadedJson && uploadedJson.name)"
                     size=small>
