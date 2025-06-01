@@ -16,7 +16,7 @@
                 taskQueue.addTask(async () => props.operationCenter.clearOrDeleteMessage(messageCache, props.index))
               } else { $emit('deleteMessage') }
             }
-              " />
+            " />
         </el-tooltip>
       </div>
     </div>
@@ -27,7 +27,8 @@
     <div v-else class="editorAndDetails">
       <div style="display: flex; justify-content: space-between">
         <el-input class="message-content" v-model="contentAsText" type="textarea"
-          :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: 50 }" @keydown.ctrl.enter="() => {
+          :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: 50 }"
+          @keydown.ctrl.enter="() => {
             if (usingOperators) {
               taskQueue.addTask(async () => operationCenterUpdatePromptContent({ delay: false }))
               taskQueue.addTask(props.operationCenter.generateNew)
@@ -38,8 +39,8 @@
           @blur="usingOperators ? taskQueue.addTask(async () => operationCenterUpdatePromptContent({ delay: true })) : $emit('blur', getContent())"
           ref="editor" />
 
-        <button @click="$emit('sendButton'); taskQueue.addTask(props.operationCenter.generateNew)" :disabled="!hasContent"
-          :style="{
+        <button @click="$emit('sendButton'); taskQueue.addTask(props.operationCenter.generateNew)"
+          :disabled="!hasContent" :style="{
             cursor: hasContent ? 'pointer' : 'not-allowed'
           }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
           <b>{{ t('chatMessage.send') }}</b><br>
@@ -167,6 +168,27 @@ const contentAsText = computed({
             imageUrlShow = chunk['blob_url']
           }
           str += `![<|ON_PANDA_IMAGE|>](${imageUrlShow})`
+        } else if (['audio_url'].includes(chunk['type'])) {
+          var type = chunk['type']
+          if (!globalStore.blobUrlToBase64Cache[type]) {
+            globalStore.blobUrlToBase64Cache[type] = {}
+          }
+
+          var hashToObjectString = globalStore.blobUrlToBase64Cache[type]
+          var hash = JSON.stringify(chunk)
+          if (!(hash in hashToObjectString)) {
+            var typeNumInCache = Object.keys(hashToObjectString).length
+            var cacheIndex = `${type}_${typeNumInCache + 1}`
+            globalStore.blobUrlToBase64Cache[cacheIndex] = chunk
+            var blob_url = "NotImplemented"
+            if (typeof chunk[type] === 'object' && typeof chunk[type]['url'] === 'string' && chunk[type]['url'].startsWith('data:')) {
+              blob_url = base64ToBlob(chunk[type]['url'])
+              globalStore.blobUrlToBase64Cache[blob_url] = chunk[type]['url']
+            }
+            var objectString = `[${cacheIndex}](${blob_url})`
+            hashToObjectString[hash] = objectString
+          }
+          str += '<|ON_PANDA_OBJECT_START|>' + hashToObjectString[hash] + '<|ON_PANDA_OBJECT_END|>'
         } else {
           str += '<|ON_PANDA_OBJECT_START|>' + JSON.stringify(chunk) + '<|ON_PANDA_OBJECT_END|>'
         }
@@ -185,19 +207,28 @@ const contentAsText = computed({
       while ((match = regex.exec(value)) !== null) {
         // Add any text before the matched special marker
         if (match.index > lastIndex) {
-          const textSegment = value.substring(lastIndex, match.index);
+          const textSegment = value.substring(lastIndex, match.index)
           content.push({ type: 'text', text: textSegment });
         }
 
         if (match[1]) {
           // Matched an ON_PANDA_OBJECT
           const objStr = match[2];
-          try {
-            const obj = JSON.parse(objStr);
-            content.push(obj);
-          } catch (e) {
-            console.error('Failed to parse JSON object:', e);
+          // using regex to find the type
+          const m = objStr.match(/^\[([A-Za-z0-9-_]+)_(\d+)\]\(.*\)$/)
+          if (m) {
+            const type = m[1]
+            const index = m[2]
+            const cacheIndex = `${type}_${index}`
+            var obj = globalStore.blobUrlToBase64Cache[cacheIndex]
+          } else {
+            try {
+              const obj = JSON.parse(objStr);
+            } catch (e) {
+              console.error('Failed to parse JSON object:', e);
+            }
           }
+          content.push(obj)
         } else if (match[3]) {
           // Matched an ON_PANDA_IMAGE
           var imageUrl = match[4];
@@ -266,11 +297,11 @@ async function handlePaste(event) {
 const detailsRef = ref(null)
 
 watchEffect(() => {
-  // auto open details when image detected
+  // auto open details when none text detected
   var content = getContent()
   var types = getContentTypes(content)
   for (let type of types) {
-    if (type.startsWith('image')) {
+    if (type.startsWith('image') || type.startsWith('audio')) {
       setTimeout(() => {
         if (detailsRef.value) {
           detailsRef.value.open = true
