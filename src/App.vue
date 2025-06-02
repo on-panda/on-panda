@@ -62,6 +62,7 @@ e.g.:
     default: {
       'on-panda': 'on-panda',
       'image': 'image-tag',
+      'audio': 'step1f-on-policy',
       // 'rmini': 'rmini-mm-0401-preview-rlhf-int8-onpanda',
       'gpt4o': 'chatgpt-4o-latest',
       'claude': 'claude-tag',
