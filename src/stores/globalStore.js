@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, defineAsyncComponent, markRaw } from 'vue'
 import { useEventListener } from '../utils/commonUtils'
 
 export const useGlobalStore = defineStore('onPandaGlobal', () => {
@@ -27,7 +27,14 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
 
     const customInfoForUser = ref('')
 
-    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser }
+    const multimodalPlugins = markRaw({
+        // type to component(<component content="chunkObject">)
+        audio_url: {
+            component: defineAsyncComponent(() => import('../components/plugins/AudioPlugin.vue'))
+        },
+    })
+
+    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins }
 }
 )
 

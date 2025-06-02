@@ -22,7 +22,7 @@
     </div>
     <p v-if="(isRenderRole && !isRenderContentEditing)"
       style="margin-top: 5px;margin-bottom: 0px;color: #555; border-radius: 5px; box-shadow: 0 0 0 1px var(--el-input-border-color,var(--el-border-color)) inset; padding:5px 11px">
-      <MarkdownRender :content="contentAsText" @dblclick="handleRenderContent" />
+      <MultimodalRender :content="contentAsText" @dblclick="handleRenderContent" />
     </p>
     <div v-else class="editorAndDetails">
       <div style="display: flex; justify-content: space-between">
@@ -50,7 +50,7 @@
         <summary>
           <small style="color: #888;">{{ t('chatMessage.renderedMarkdown') }}</small>
         </summary>
-        <MarkdownRender :content="contentAsText" />
+        <MultimodalRender :content="contentAsText" />
         <hr style="margin-top:0px;color:#ccc">
       </details>
     </div>
@@ -68,6 +68,7 @@ import MessageRole from './widgets/MessageRole.vue'
 import MarkdownRender from './widgets/MarkdownRender.vue'
 import EditableStringAttribute from './widgets/EditableStringAttribute.vue'
 import MarkdownResponse from './widgets/MarkdownResponse.vue'
+import MultimodalRender from './widgets/MultimodalRender.vue'
 
 import { computed, ref, onMounted, onBeforeUnmount, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -75,6 +76,7 @@ import { convertImageUrlToBase64, base64ToBlob, deepCopy, mockObject, sleep, Tas
 import { Close, Delete, Edit } from '@element-plus/icons-vue'
 import { getContentTypes } from '../utils/chatUtils'
 import { useGlobalStore } from '../stores/globalStore.js'
+import { multimodalChunkStringToObject } from '../utils/multimodalUtils.js'
 
 const globalStore = useGlobalStore()
 const { t } = useI18n()
@@ -175,14 +177,14 @@ const contentAsText = computed({
           }
 
           var hashToObjectString = globalStore.blobUrlToBase64Cache[type]
-          var hash = JSON.stringify(chunk)
+          var hash = JSON.stringify(chunk[type])
           if (!(hash in hashToObjectString)) {
             var typeNumInCache = Object.keys(hashToObjectString).length
             var cacheIndex = `${type}_${typeNumInCache + 1}`
             globalStore.blobUrlToBase64Cache[cacheIndex] = chunk
             var blob_url = "NotImplemented"
             if (typeof chunk[type] === 'object' && typeof chunk[type]['url'] === 'string' && chunk[type]['url'].startsWith('data:')) {
-              blob_url = base64ToBlob(chunk[type]['url'])
+              chunk['blob_url'] = blob_url = base64ToBlob(chunk[type]['url'])
               globalStore.blobUrlToBase64Cache[blob_url] = chunk[type]['url']
             }
             var objectString = `[${cacheIndex}](${blob_url})`
@@ -214,20 +216,7 @@ const contentAsText = computed({
         if (match[1]) {
           // Matched an ON_PANDA_OBJECT
           const objStr = match[2];
-          // using regex to find the type
-          const m = objStr.match(/^\[([A-Za-z0-9-_]+)_(\d+)\]\(.*\)$/)
-          if (m) {
-            const type = m[1]
-            const index = m[2]
-            const cacheIndex = `${type}_${index}`
-            var obj = globalStore.blobUrlToBase64Cache[cacheIndex]
-          } else {
-            try {
-              const obj = JSON.parse(objStr);
-            } catch (e) {
-              console.error('Failed to parse JSON object:', e);
-            }
-          }
+          const obj = multimodalChunkStringToObject(objStr, globalStore.blobUrlToBase64Cache)
           content.push(obj)
         } else if (match[3]) {
           // Matched an ON_PANDA_IMAGE
