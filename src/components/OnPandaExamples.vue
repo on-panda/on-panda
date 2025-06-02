@@ -38,7 +38,7 @@ const messagesImageExample = [{
     { type: "text", text: '图中左侧的 "v" 是由什么形状构成？\n' },
     {
       type: "image_url", image_url: {
-        url: "https://docs.vllm.ai/en/latest/_static/vllm-logo-text-light.png"
+        url: "https://docs.vllm.ai/en/latest/assets/logos/vllm-logo-text-light.png"
       },
     }
   ]
