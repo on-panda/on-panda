@@ -72,11 +72,11 @@ import MultimodalRender from './widgets/MultimodalRender.vue'
 
 import { computed, ref, onMounted, onBeforeUnmount, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { convertImageUrlToBase64, base64ToBlob, deepCopy, mockObject, sleep, TaskQueue } from '../utils/commonUtils'
+import { convertImageUrlToBase64, base64ToBlob, deepCopy, mockObject, sleep, TaskQueue } from '../utils/commonUtils.js'
 import { Close, Delete, Edit } from '@element-plus/icons-vue'
 import { getContentTypes } from '../utils/chatUtils'
 import { useGlobalStore } from '../stores/globalStore.js'
-import { multimodalChunkStringToObject } from '../utils/multimodalUtils.js'
+import { multimodalChunkStringToObject, multimodalChunkObjectToBase64 } from '../utils/multimodalUtils.js'
 
 const globalStore = useGlobalStore()
 const { t } = useI18n()
@@ -181,19 +181,12 @@ const contentAsText = computed({
           if (!(hash in hashToObjectString)) {
             var typeNumInCache = Object.keys(hashToObjectString).length
             var cacheIndex = `${type}_${typeNumInCache + 1}`
-            globalStore.blobUrlToBase64Cache[cacheIndex] = chunk
-            var blob_url = "NotImplemented"
-            if (typeof chunk[type] === 'object') {
-              if (typeof chunk[type]['url'] === 'string' && chunk[type]['url'].startsWith('data:')) {
-                chunk['blob_url'] = blob_url = base64ToBlob(chunk[type]['url'])
-                globalStore.blobUrlToBase64Cache[blob_url] = chunk[type]['url']
-              }
-              if (type.startsWith("input_") && typeof chunk[type]['data'] === 'string' && typeof chunk[type]['format'] === 'string') {
-                var base64 = `data:${type.slice(6)}/${chunk[type]['format']};base64,${chunk[type]['data']}`
-                chunk['blob_url'] = blob_url = base64ToBlob(base64)
-                globalStore.blobUrlToBase64Cache[blob_url] = base64
-              }
+            var base64Object = multimodalChunkObjectToBase64(chunk)
+            if (base64Object){
+              globalStore.blobUrlToBase64Cache[base64Object.blob_url] = base64Object.base64_url
             }
+            var blob_url = base64Object?.blob_url || "NotImplemented"
+            globalStore.blobUrlToBase64Cache[cacheIndex] = chunk
             var objectString = `[${cacheIndex}](${blob_url})`
             hashToObjectString[hash] = objectString
           }

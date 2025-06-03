@@ -17,6 +17,7 @@
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import WaveSurfer from 'wavesurfer.js'
 import Hover from 'wavesurfer.js/dist/plugins/hover.js'
+import { multimodalChunkObjectToBase64 } from '../../utils/multimodalUtils.js'
 
 const props = defineProps({
     content: {
@@ -32,11 +33,11 @@ const waveSurferLoaded = ref(false)
 let wavesurfer = null
 
 const audioUrl = computed(() => {
-    if (props.content.blob_url) {
-        return props.content.blob_url
-    }
-    console.log(props.content)
-    return props.content["audio_url"]["url"]
+    // may  GET blob:http://localhost:8888/554f94e8-50e3-4671-b1a0-68361b923207 net::ERR_FILE_NOT_FOUND
+    // if (props.content.blob_url) {  
+    //     return props.content.blob_url
+    // }
+    return multimodalChunkObjectToBase64(props.content).base64_url
 })
 
 const initializeWaveSurfer = () => {
