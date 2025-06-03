@@ -9,6 +9,8 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
 
     const customApiConfigs = ref([])
 
+    const customExampleNameToFunc = ref({}) // exampleFunc(dialogWithControlState)
+
     const hooks = ref({ beforeCreateChatCompletion: [] })
 
     const cleanMode = ref(false)
@@ -32,9 +34,12 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
         audio_url: {
             component: defineAsyncComponent(() => import('../components/plugins/AudioPlugin.vue'))
         },
+        input_audio: {
+            component: defineAsyncComponent(() => import('../components/plugins/AudioPlugin.vue'))
+        },
     })
 
-    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins }
+    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, customExampleNameToFunc, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins }
 }
 )
 

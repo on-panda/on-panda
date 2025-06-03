@@ -1,7 +1,7 @@
 <template>
   <div style="line-height: 2">
     <template v-for="(func, name) in exampleNameToFunc">
-      <el-tag type="info" @click="func()" style="cursor: pointer; margin-left: 5px;">
+      <el-tag type="info" @click="func(props.dialogWithControlState)" style="cursor: pointer; margin-left: 5px;">
         {{ name }}
       </el-tag>
     </template>
@@ -9,7 +9,11 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { sleep } from '../utils/commonUtils.js'
+import { useGlobalStore } from '../stores/globalStore.js'
+
+const globalStore = useGlobalStore()
 
 const props = defineProps({
   dialogWithControlState: {
@@ -62,7 +66,7 @@ const messagesAudioExample = [
 ]
 
 // Define all example functions
-const exampleNameToFunc = {
+const defaultExampleNameToFunc = {
   "clear": () => {
     operationCenter.pandaState = pandaState
     pandaState.setEmpty()
@@ -122,4 +126,12 @@ const exampleNameToFunc = {
     operationCenter.continueGenerating()
   }
 }
+
+const exampleNameToFunc = computed(() => {
+  return {
+    ...defaultExampleNameToFunc,
+    ...globalStore.customExampleNameToFunc
+  }
+})
+
 </script>

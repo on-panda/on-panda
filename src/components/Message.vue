@@ -170,7 +170,7 @@ const contentAsText = computed({
             imageUrlShow = chunk['blob_url']
           }
           str += `![<|ON_PANDA_IMAGE|>](${imageUrlShow})`
-        } else if (['audio_url'].includes(chunk['type'])) {
+        } else if (Object.keys(globalStore.multimodalPlugins).includes(chunk['type'])) {
           var type = chunk['type']
           if (!globalStore.blobUrlToBase64Cache[type]) {
             globalStore.blobUrlToBase64Cache[type] = {}
@@ -183,9 +183,16 @@ const contentAsText = computed({
             var cacheIndex = `${type}_${typeNumInCache + 1}`
             globalStore.blobUrlToBase64Cache[cacheIndex] = chunk
             var blob_url = "NotImplemented"
-            if (typeof chunk[type] === 'object' && typeof chunk[type]['url'] === 'string' && chunk[type]['url'].startsWith('data:')) {
-              chunk['blob_url'] = blob_url = base64ToBlob(chunk[type]['url'])
-              globalStore.blobUrlToBase64Cache[blob_url] = chunk[type]['url']
+            if (typeof chunk[type] === 'object') {
+              if (typeof chunk[type]['url'] === 'string' && chunk[type]['url'].startsWith('data:')) {
+                chunk['blob_url'] = blob_url = base64ToBlob(chunk[type]['url'])
+                globalStore.blobUrlToBase64Cache[blob_url] = chunk[type]['url']
+              }
+              if (type.startsWith("input_") && typeof chunk[type]['data'] === 'string' && typeof chunk[type]['format'] === 'string') {
+                var base64 = `data:${type.slice(6)}/${chunk[type]['format']};base64,${chunk[type]['data']}`
+                chunk['blob_url'] = blob_url = base64ToBlob(base64)
+                globalStore.blobUrlToBase64Cache[blob_url] = base64
+              }
             }
             var objectString = `[${cacheIndex}](${blob_url})`
             hashToObjectString[hash] = objectString
@@ -290,7 +297,7 @@ watchEffect(() => {
   var content = getContent()
   var types = getContentTypes(content)
   for (let type of types) {
-    if (type.startsWith('image') || type.startsWith('audio')) {
+    if (type.startsWith('image') || globalStore.multimodalPlugins[type]) {
       setTimeout(() => {
         if (detailsRef.value) {
           detailsRef.value.open = true
