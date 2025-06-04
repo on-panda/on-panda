@@ -499,11 +499,15 @@ export class PandaState {
             }
         }
 
-        // set operations default value
         for (var key in pandaTree.dialogs) {
             var dialog = pandaTree.dialogs[key]
+            // set operations default value
             if (!dialog.operations) {
                 dialog.operations = []
+            }
+            // set is_good default when has annotate
+            if (dialog.annotate && !('is_good' in dialog.annotate)) {
+                dialog.annotate.is_good = null
             }
         }
         return pandaTree
