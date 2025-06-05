@@ -105,7 +105,7 @@ export default {
 - Select text to edit or let AI optimize it
 
 **Advanced Features:**
-- Paste images directly for visual language model support
+- Paste images and audios directly for multimodal language model support
 - Single-click image to enlarge, double-click to open
 - Double-click role labels to edit them
 - Hold down the \`Alt\` key while clicking to copy the content of the suggestion.

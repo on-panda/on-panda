@@ -146,6 +146,29 @@ const isRenderContentEditing = ref(false)
 
 const isRenderContentEditingButton = ref(null)
 
+function multimodalChunkObjectToMarkdown(chunk) {
+  var type = chunk['type']
+  if (!globalStore.blobUrlToBase64Cache[type]) {
+    globalStore.blobUrlToBase64Cache[type] = {}
+  }
+
+  var hashToObjectString = globalStore.blobUrlToBase64Cache[type]
+  var hash = JSON.stringify(chunk[type])
+  if (!(hash in hashToObjectString)) {
+    var typeNumInCache = Object.keys(hashToObjectString).length
+    var cacheIndex = `${type}_${typeNumInCache + 1}`
+    var base64Object = multimodalChunkObjectToBase64(chunk)
+    if (base64Object) {
+      globalStore.blobUrlToBase64Cache[base64Object.blob_url] = base64Object.base64_url
+    }
+    var blob_url = base64Object?.blob_url || "NotImplemented"
+    globalStore.blobUrlToBase64Cache[cacheIndex] = chunk
+    var objectString = `[${cacheIndex}](${blob_url})`
+    hashToObjectString[hash] = objectString
+  }
+  return hashToObjectString[hash]
+}
+
 const contentAsText = computed({
   // convert object content to markdown
   get() {
@@ -171,26 +194,7 @@ const contentAsText = computed({
           }
           str += `![<|ON_PANDA_IMAGE|>](${imageUrlShow})`
         } else if (Object.keys(globalStore.multimodalPlugins).includes(chunk['type'])) {
-          var type = chunk['type']
-          if (!globalStore.blobUrlToBase64Cache[type]) {
-            globalStore.blobUrlToBase64Cache[type] = {}
-          }
-
-          var hashToObjectString = globalStore.blobUrlToBase64Cache[type]
-          var hash = JSON.stringify(chunk[type])
-          if (!(hash in hashToObjectString)) {
-            var typeNumInCache = Object.keys(hashToObjectString).length
-            var cacheIndex = `${type}_${typeNumInCache + 1}`
-            var base64Object = multimodalChunkObjectToBase64(chunk)
-            if (base64Object){
-              globalStore.blobUrlToBase64Cache[base64Object.blob_url] = base64Object.base64_url
-            }
-            var blob_url = base64Object?.blob_url || "NotImplemented"
-            globalStore.blobUrlToBase64Cache[cacheIndex] = chunk
-            var objectString = `[${cacheIndex}](${blob_url})`
-            hashToObjectString[hash] = objectString
-          }
-          str += '<|ON_PANDA_OBJECT_START|>' + hashToObjectString[hash] + '<|ON_PANDA_OBJECT_END|>'
+          str += '<|ON_PANDA_OBJECT_START|>' + multimodalChunkObjectToMarkdown(chunk) + '<|ON_PANDA_OBJECT_END|>'
         } else {
           str += '<|ON_PANDA_OBJECT_START|>' + JSON.stringify(chunk) + '<|ON_PANDA_OBJECT_END|>'
         }
@@ -249,17 +253,20 @@ const contentAsText = computed({
 
 
 const editor = ref(null)
-function handlePasteImages(event) {
+function handlePasteMultimodal(event) {
   const clipboardData = event.clipboardData || window.clipboardData;
   const items = clipboardData.items;
   var blobUrls = {}
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     // console.log('clipboardData.items',item, JSON.parse(JSON.stringify([item.type, item.getAsFile(), item.getAsFile()?.type, item.kind,])))
-    if (item.type.indexOf("image") !== -1) {
+    if (item.type.indexOf("image") !== -1 || item.type.indexOf("audio") !== -1) {
+      // console.log('type', item.type) // image/png
       const file = item.getAsFile();
       const blobUrl = URL.createObjectURL(file);
-      blobUrls[blobUrl] = file
+      var chunkType = item.type.split("/")[0] + '_url'
+      var chunk = { type: chunkType, [chunkType]: { url: blobUrl } }
+      blobUrls[blobUrl] = chunk
     }
   }
   if (Object.keys(blobUrls).length) {
@@ -269,16 +276,32 @@ function handlePasteImages(event) {
 }
 
 async function handlePaste(event) {
-  var blobUrls = handlePasteImages(event)
+  var blobUrls = handlePasteMultimodal(event)
   if (Object.keys(blobUrls).length) {
     for (let blobUrl in blobUrls) {
       globalStore.blobUrlToBase64Cache[blobUrl] = await convertImageUrlToBase64(blobUrl);
     }
-    const markdownImage = Object.keys(blobUrls).map(blobUrl => `![<|ON_PANDA_IMAGE|>](${blobUrl})`).join('\n')
+    const markdownInsert = Object.keys(blobUrls).map(blobUrl => {
+      var chunk = blobUrls[blobUrl]
+      if (chunk['type'].indexOf("image") !== -1) {
+        return `![<|ON_PANDA_IMAGE|>](${blobUrl})`
+      } else if (chunk['type'].indexOf("audio") !== -1) {
+        if (chunk?.audio_url?.url && chunk.audio_url.url.startsWith('blob:')) {
+          chunk.audio_url.url = globalStore.blobUrlToBase64Cache[chunk.audio_url.url]
+        }
+        // convert audio_url to input_audio "data:image/png;base64,iVBO...
+        var base64Split = chunk.audio_url.url.split(';base64,')
+        var format = base64Split[0].split('/')[1]
+        if (["mp3", "wav"].includes(format)) {  // input_audio of vLLM only support those formats, and gpt-4o-audio-preview only support input_audio
+          chunk = { type: 'input_audio', input_audio: { data: base64Split[1], format: format } }
+        }
+        return '<|ON_PANDA_OBJECT_START|>' + multimodalChunkObjectToMarkdown(chunk) + '<|ON_PANDA_OBJECT_END|>'
+      }
+    }).join('\n')
     const cursorPosition = event.target.selectionStart
     const currentValue = contentAsText.value
     contentAsText.value = currentValue.slice(0, cursorPosition) +
-      markdownImage +
+      markdownInsert +
       currentValue.slice(cursorPosition)
   }
 }
