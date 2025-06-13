@@ -146,7 +146,7 @@ onMounted(async () => {
         exampleToRun = operationCenter.generateNew
       }
       if (globalStore.debug) {
-        modelName.value = defaultApiConfig.chat_config.model
+        // modelName.value = defaultApiConfig.chat_config.model
         // Use the example via the operationCenter directly
         operationCenter.loadMessages([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }])
         exampleToRun = operationCenter.generateNew

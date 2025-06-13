@@ -151,7 +151,7 @@ onBeforeUnmount(() => {
                     <span v-else-if="bitTokens.length <= 1"> ｜ tokens: {{ tokens.length }} </span>
                 </span>
                 <span v-if="bitTokens.length > 1"> ｜
-                    <el-tooltip class="" effect="light" placement="bottom" raw-content>
+                    <el-tooltip class="" effect="light" placement="top" raw-content>
                         <template #content>
                             <MarkdownRender
                                 content="${\text{bits}} = - \sum_{i} \log_2(p_i)$. // note for vLLM server model: 
