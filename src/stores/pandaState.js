@@ -250,7 +250,16 @@ export class PandaState {
         // messages should using cache to store current state, so need deep copy
         this.dialogCache.value.messages = newValue.messages ? deepCopy(newValue.messages) : undefined
     }.bind(this), { flush: 'sync' })
-
+    isDialogKeyIsGood = (key) => {
+        if (key in this.pandaTree.value.dialogs) {
+            if (this.pandaTree.value.dialogs[key]?.annotate?.is_good === null) {
+                return this.dialogKeys.value[this.dialogMaxIndexRemain.value] === key
+            } else {
+                return Boolean(this.pandaTree.value.dialogs[key]?.annotate?.is_good)
+            }
+        }
+        return false
+    }
     switchDialogByIndex = (index) => {
         var oldIndex = this.currentDialogIndex.value
         this.beforeOperation()
