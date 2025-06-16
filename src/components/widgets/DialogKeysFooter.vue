@@ -6,6 +6,16 @@ const props = defineProps({
     }
 })
 
+function isDialogKeyBelongGenerateNew(key) {
+    var dialog = pandaState.pandaTree.value.dialogs[key]
+    // only show generated new hint when the dialog is annotated
+    // otherwise, it's visually confusing
+    if (dialog?.annotate?.is_good === undefined) {
+        return
+    }
+    return dialog?.operations[0]?.operator === "generate_new"
+}
+
 var pandaState = props.pandaState
 </script>
 <template>
@@ -20,11 +30,16 @@ var pandaState = props.pandaState
             <span
                 :style="idx == pandaState.currentDialogIndex.value ? { color: '#409eff', fontWeight: 550, fontSize: 'medium' } : {}">
                 &#8202; {{ key }}<div
-                    style="width: 0px; height: 0px; overflow:visible;display: inline-block;position: relative;left: 2px;top: -4px;">
+                    style="width: 0px; height: 0px; overflow:visible;display: inline-block;position: relative;left: 2px;bottom: 10px;align-items: bottom;">
                     <!-- color dots for hinting, must remove all spaces before and after the dot div -->
                     <!-- hinting is_good dialog -->
                     <div class="onPandaDotHint"
                         :style="pandaState.isDialogKeyIsGood(key) ? { backgroundColor: '#67c23a' } : { backgroundColor: 'rgba(0,0,255,0)' }">
+                    </div>
+                    <div style="height:3px"></div>
+                    <!-- hinting generate_new dialog -->
+                    <div class="onPandaDotHint"
+                        :style="isDialogKeyBelongGenerateNew(key) ? { backgroundColor: '#409eff' } : { backgroundColor: 'rgba(0,0,255,0)' }">
                     </div>
                 </div>&#8202;
             </span>
@@ -36,6 +51,6 @@ var pandaState = props.pandaState
 .onPandaDotHint {
     height: 4px;
     width: 4px;
-    border-radius: 50%
+    border-radius: 50%;
 }
 </style>
