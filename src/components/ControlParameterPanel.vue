@@ -44,7 +44,7 @@ function handleModelTagMousedown(event, modelName_) {
 
 <template>
     <el-form class="toolbar options" label-width="140px">
-        <el-form-item :label="$t('controlParameter.model')">
+        <el-form-item :label="t('controlParameter.model')">
             <el-select-v2 v-model="modelName" filterable :options="Object.keys(keyToApiConfigs).map((x, idx) => ({
                 value: x,
                 label: x,
@@ -68,7 +68,7 @@ function handleModelTagMousedown(event, modelName_) {
                     &nbsp;
                     <el-tooltip class="" effect="light" placement="top" raw-content>
                         <template #content>
-                            <MarkdownRender :content="$t('tooltips.modelTagClick')" />
+                            <MarkdownRender :content="t('tooltips.modelTagClick')" />
                         </template>
                         <el-icon>
                             <InfoFilled />
@@ -79,28 +79,28 @@ function handleModelTagMousedown(event, modelName_) {
             <br>
         </div>
 
-        <el-form-item :label="$t('controlParameter.temperature')">
+        <el-form-item :label="t('controlParameter.temperature')">
             <el-input-number v-model="chatConfig.temperature" :min="0" :max="10" :step="0.01" size="small" />
         </el-form-item>
 
-        <el-form-item :label="$t('controlParameter.maxTokens')">
+        <el-form-item :label="t('controlParameter.maxTokens')">
             <el-input-number v-model="chatConfig.max_tokens" :min="1" :max="1048576" :step="1" size="small" />
         </el-form-item>
 
-        <el-form-item :label="$t('controlParameter.topLogprobs')">
+        <el-form-item :label="t('controlParameter.topLogprobs')">
             <el-input-number v-model="chatConfig.top_logprobs" :min="0" :max="50" :step="1" size="small" />
         </el-form-item>
 
-        <el-form-item :label="$t('controlParameter.continueGenerating')">
+        <el-form-item :label="t('controlParameter.continueGenerating')">
             <small>
                 <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
-                    {{ $t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
+                    {{ t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
                         'controlParameter.promptEngineering') }}
                 </el-tag>
                 &nbsp;
                 <el-tooltip class="" effect="light" placement="top" raw-content>
                     <template #content>
-                        <MarkdownRender :content="$t('tooltips.continueGeneratingSupport') + CONTINUE_PROMPT" />
+                        <MarkdownRender :content="t('tooltips.continueGeneratingSupport') + CONTINUE_PROMPT" />
                     </template>
                     <el-icon>
                         <InfoFilled />

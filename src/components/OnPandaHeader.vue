@@ -4,18 +4,18 @@
     </div>
     <details>
         <summary>
-            <small style="color: #888;">{{ $t('header.asDataAnnotator') }}:</small>
+            <small style="color: #888;">{{ t('header.asDataAnnotator') }}:</small>
         </summary>
         <h2>onPanda: on-Policy Alignment Data Annotator</h2>
-        <code>{{ $t('header.dataAnnotatorDesc') }}</code>
+        <code>{{ t('header.dataAnnotatorDesc') }}</code>
     </details>
 
     <details>
         <summary>
-            <small style="color: #888;">{{ $t('header.asWritingTool') }}:</small>
+            <small style="color: #888;">{{ t('header.asWritingTool') }}:</small>
         </summary>
         <h2>onPanda: LLM-Native Collaborative Writing Tool </h2>
-        <code>{{ $t('header.writingToolDesc') }}</code>
+        <code>{{ t('header.writingToolDesc') }}</code>
     </details>
 
     <div style="text-align: center;">
@@ -30,14 +30,14 @@
 
     <details>
         <summary>
-            <small style="color: #888;">{{ $t('header.usage') }}:</small>
+            <small style="color: #888;">{{ t('header.usage') }}:</small>
         </summary>
         <br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img :src="demoGifUrl" loading="lazy"
             style="box-shadow: 0 0px 8px rgba(0, 0, 0, 0.5);width: 406px;max-width: 90%;">
         <br>
         <br>
-        <MarkdownRender :content="$t('header.instruction')" />
+        <MarkdownRender :content="t('header.instruction')" />
         <slot name="customInfoForUser">
         </slot>
     </details>
@@ -50,10 +50,13 @@ import logoImageUrl from '../../public/img/on-panda-logo.png';
 import demoGifUrl from '../../public/img/onPanda-demo-candidate.gif';
 
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../stores/globalStore'
 import LanguageSwitcher from './widgets/LanguageSwitcher.vue'
 import MarkdownRender from './widgets/MarkdownRender.vue'
 
 const globalStore = useGlobalStore()
 const _isLogoRotated = ref(false)
+
+const { t } = useI18n()
 </script>
