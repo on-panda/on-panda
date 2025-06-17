@@ -38,6 +38,11 @@ export default {
     clickSendButton: '➡️ 请点击生成按钮'
   },
   tooltips: {
+    dialogKeyHint: `对话标签页说明：
+1. 鼠标点击标签，切换至对应对话
+2. 也可以使用左右方向键切换对话
+3. 绿色小圆点表示对应对话是良好对话
+4. 蓝色小圆点表示对应对话的答复是新生成的，而不是基于续写的`,
     saveData: '保存数据',
     previousModification: '上一个修改',
     nextModification: '下一个修改',

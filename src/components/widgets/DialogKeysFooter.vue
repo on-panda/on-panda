@@ -1,4 +1,10 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
+import { InfoFilled } from '@element-plus/icons-vue'
+import MarkdownRender from './MarkdownRender.vue'
+
+const { t } = useI18n()
+
 const props = defineProps({
     pandaState: {
         type: Object,
@@ -34,7 +40,7 @@ var pandaState = props.pandaState
                     <!-- color dots for hinting, must remove all spaces before and after the dot div -->
                     <!-- hinting is_good dialog -->
                     <div class="onPandaDotHint"
-                        :style="pandaState.isDialogKeyIsGood(key) ? { backgroundColor: '#67c23a' } : { backgroundColor: 'rgba(0,0,255,0)' }">
+                        :style="pandaState.isDialogKeyIsGood(key) ? { backgroundColor: '#07c20a' } : { backgroundColor: 'rgba(0,0,255,0)' }">
                     </div>
                     <div style="height:3px"></div>
                     <!-- hinting generate_new dialog -->
@@ -43,6 +49,16 @@ var pandaState = props.pandaState
                     </div>
                 </div>&#8202;
             </span>
+        </small>
+        <small style="margin-left: 12px;" v-if="pandaState.dialogCache.value?.annotate?.is_good !== undefined">
+            <el-tooltip class="" effect="light" placement="bottom" raw-content>
+                <template #content>
+                    <MarkdownRender :content="t('tooltips.dialogKeyHint')" />
+                </template>
+                <el-icon>
+                    <InfoFilled style="width: 11px;height: 11px;" />
+                </el-icon>
+            </el-tooltip>
         </small>
     </div>
 </template>

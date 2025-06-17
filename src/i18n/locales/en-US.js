@@ -38,6 +38,11 @@ export default {
     clickSendButton: '➡️ Please click the send button.'
   },
   tooltips: {
+    dialogKeyHint: `Dialog tab:
+1. Click the tag to switch to the corresponding dialog
+2. You can also use the left and right arrow keys to switch dialog
+3. Green dot indicates that the corresponding dialog's \`is_good\` is \`Y\`
+4. Blue dot indicates that the corresponding dialog's response is new generated rather than continued`,
     saveData: 'Save the data',
     previousModification: 'Previous modification',
     nextModification: 'Next modification',
