@@ -15,7 +15,7 @@
         <div style="width: 90%; max-width: 950px;">
             <el-button-group v-if="props.tool.type == 'single_choice'" size="">
                 <el-button v-for="choice in props.tool.single_choice" :type="choiceToButtonType(choice)"
-                    @click="() => { for (let c of props.tool.single_choice) { c.v = c.k == choice.k } }"
+                    @click="() => { for (let c of props.tool.single_choice) { c.v = c.k == choice.k }; emit('updateSingleChoice', choice.k) }"
                     :disabled="props.tool.disabled">
                     <b>{{ choice.k }}</b>
                 </el-button>
@@ -46,6 +46,7 @@
 import CheckboxWidgetSupportNull from './CheckboxWidgetSupportNull.vue';
 import MarkdownRender from './MarkdownRender.vue';
 
+const emit = defineEmits(['updateSingleChoice'])
 
 const props = defineProps({
     tool: {

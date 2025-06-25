@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { InfoFilled } from '@element-plus/icons-vue'
 import { useGlobalStore } from '../stores/globalStore'
 import MarkdownRender from './widgets/MarkdownRender.vue'
+import CustomAnnotatorTool from './widgets/CustomAnnotatorTool.vue'
 import { CONTINUE_PROMPT } from '../stores/controlParameterState'
 
 const globalStore = useGlobalStore()
@@ -23,7 +24,8 @@ const { t } = useI18n()
 const modelName = props.controlParameterState.modelName
 const modelNameTags = props.controlParameterState.modelNameTags
 const keyToApiConfigs = props.controlParameterState.keyToApiConfigs
-const chatConfig = props.controlParameterState.chatConfig
+const apiConfigControllable = props.controlParameterState.apiConfigControllable
+const chatConfig = props.controlParameterState.apiConfigControllable.value.chat_config
 const extraChatParametersString = props.controlParameterState.extraChatParametersString
 const apiConfig = props.controlParameterState.apiConfig
 
@@ -40,6 +42,30 @@ function handleModelTagMousedown(event, modelName_) {
         emit('duplicateWindowWithModelName', modelName_)
     }
 }
+
+var requestImageDetial = computed(() => {
+    const image_detail_level = apiConfig.value.image_detail_level
+    return {
+        "name": "image_detail",
+        "type": "single_choice",
+        "single_choice": [
+            {
+                "k": "auto",
+                "v": image_detail_level && image_detail_level == "auto"
+            },
+            {
+                "k": "low",
+                "v": image_detail_level && image_detail_level == "low"
+            },
+            {
+                "k": "high",
+                "v": image_detail_level && image_detail_level == "high"
+            }
+        ],
+        "tips": "image_detail parameter for vision language model. Only works when there is image in the prompt."
+    }
+})
+
 </script>
 
 <template>
@@ -137,6 +163,8 @@ function handleModelTagMousedown(event, modelName_) {
                     </el-tooltip>
                 </small>
             </el-form-item>
+            <CustomAnnotatorTool :tool="requestImageDetial"
+                @updateSingleChoice="(v) => { apiConfigControllable.image_detail_level = v }" size="small" />
         </details>
     </el-form>
 </template>

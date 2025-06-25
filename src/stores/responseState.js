@@ -49,6 +49,25 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     }
 
 
+    function modifyRequest(requestBody, apiConfig) {
+        apiConfig = toValue(apiConfig)
+        var body = normalizeRequest(requestBody)
+        for (let message of body.messages) {
+            if (typeof message.content === "object") {
+                for (let chunk of message.content) {
+
+                    // set image_detail_level
+                    if (chunk.type.indexOf('image') != -1) {
+                        if (apiConfig.image_detail_level) {
+                            chunk[chunk.type].detail = apiConfig.image_detail_level
+                        }
+                    }
+                }
+            }
+        }
+        return body
+    }
+
     async function requestLlmServer(messages) {
         messages = toValue(messages)
         const modelRoles = apiConfig.value?.model_roles || ["assistant"]
@@ -107,7 +126,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         try {
             const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
-            var stream = await openai.chat.completions.create(normalizeRequest(body), { signal: fetchController.signal });
+            var requestBody = modifyRequest(body, apiConfig.value)  // deepCopyed
+            var stream = await openai.chat.completions.create(requestBody, { signal: fetchController.signal });
 
             var tokenIndex = 0
             var streamIndex = -1
@@ -277,7 +297,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 return
             }
             const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
-            var json = await openai.chat.completions.create(normalizeRequest(body))
+            var requestBody = modifyRequest(body, apiConfig.value)
+            var json = await openai.chat.completions.create(requestBody)
             if (requestID !== requestStatus.value.requestTimes) {
                 console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))
                 return

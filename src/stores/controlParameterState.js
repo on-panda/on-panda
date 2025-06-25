@@ -21,6 +21,7 @@ export const defaultChatConfig = {
 
 export const defaultApiConfig = {
     "support_continue_final_message": true,
+    // "image_detail_level": "auto",
     "endpoint_name": "endpoint-name",
     "model_roles": ["assistant"],
     "client_config": {
@@ -45,12 +46,13 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     var modelNameTags = isRef(modelNameTags) ? modelNameTags : ref(modelNameTags || {})
     var modelName = isRef(modelName) ? modelName : ref(modelName || modelNameTags.value['on-panda'] || 'on-panda')   // using endpoint_name == 'on-panda' as default model
 
+    const apiConfigControllableRaw = { chat_config: deepCopy(defaultChatConfig) }
+    const chatConfigControllableRaw = apiConfigControllableRaw.chat_config
+    const apiConfigControllable = ref(apiConfigControllableRaw)
+    const chatConfigControllable = ref(chatConfigControllableRaw)
+    const chatConfigControllableKeys = Object.keys(chatConfigControllable.value)
 
-    const chatConfigRaw = deepCopy(defaultChatConfig)
-    const chatConfig = ref(chatConfigRaw)
-    const chatConfigKeys = Object.keys(chatConfig.value)
-
-
+    // TODO: add "set" button to set extra_parameters and pop ElMessage when parsing error. if same, button will be disabled.
     const extraChatParametersString = ref("")
     const extraChatParameters = computed(() => {
         try {
@@ -79,7 +81,7 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
 
     const watchApiConfigsResolver = ref(() => { })  // promise hook that will be resolved when watchApiConfigs is finished
     const isWatchApiConfigsTriggered = ref(false)
-    // delay 1 second to trigger default watchApiConfigs update
+    // delay seconds to trigger default watchApiConfigs update
     // to ensure apiConfigs is updated only once if apiConfigs is changed
     onMounted(() => {
         setTimeout(() => {
@@ -152,13 +154,13 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
             }
         }
         const changedChatConfig = {}
-        for (const key of chatConfigKeys) { // apply apiConfigChosen.chat_config
+        for (const key of chatConfigControllableKeys) { // apply apiConfigChosen.chat_config
             if (key in apiConfigChosen.chat_config) {
-                // Using chatConfigRaw to avoid adjusting parameters causes recomputed
-                if (key !== 'model' && JSON.stringify(apiConfigChosen.chat_config[key]) !== JSON.stringify(chatConfigRaw[key])) {
+                // Using chatConfigControllableRaw to avoid adjusting parameters causes recomputed
+                if (key !== 'model' && JSON.stringify(apiConfigChosen.chat_config[key]) !== JSON.stringify(chatConfigControllableRaw[key])) {
                     changedChatConfig[key] = apiConfigChosen.chat_config[key]
                 }
-                chatConfig.value[key] = apiConfigChosen.chat_config[key]
+                chatConfigControllable.value[key] = apiConfigChosen.chat_config[key]
             }
         }
         if (Object.keys(changedChatConfig).length > 0) {
@@ -176,14 +178,13 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     const apiConfig = computed(() => {
         // update apiConfig with defaultApiConfig
         var apiConfig = { ...apiConfigChosen.value }  // copy instead of reference
-        apiConfig.client_config = { ...defaultApiConfig.client_config, ...apiConfig.client_config }
-        apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfig.chat_config, ...chatConfig.value, ...extraChatParameters.value }
-        apiConfig = { ...defaultApiConfig, ...apiConfig }
+        apiConfig = { ...defaultApiConfig, ...apiConfigChosen.value, ...apiConfigControllable.value }
+        apiConfig.client_config = { ...defaultApiConfig.client_config, ...apiConfigChosen.value.client_config }
+        apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfigChosen.value.chat_config, ...chatConfigControllable.value, ...extraChatParameters.value }
         apiConfig.client_config.base_url = apiConfig.client_config.base_url.replace('${origin}', window.location.origin)
-
         return apiConfig
     })
 
 
-    return { keyToApiConfigs, modelNameTags, modelName, chatConfig, apiConfig, extraChatParametersString, extraChatParameters, watchApiConfigsResolver, apiConfigs }
+    return { keyToApiConfigs, modelNameTags, modelName, apiConfigControllable, apiConfig, extraChatParametersString, extraChatParameters, watchApiConfigsResolver, apiConfigs }
 }
