@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { InfoFilled } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore'
 import MarkdownRender from './widgets/MarkdownRender.vue'
 import CustomAnnotatorTool from './widgets/CustomAnnotatorTool.vue'
@@ -65,6 +66,19 @@ var requestImageDetial = computed(() => {
         "tips": "image_detail parameter for vision language model. Only works when there is image in the prompt."
     }
 })
+
+function checkExtraChatParameters() {
+    if (extraChatParametersString.value) {
+        try {
+            var v = JSON.parse(extraChatParametersString.value)
+        } catch (error) {
+            ElMessage.error(`Invalid extra_parameters
+: JSON.parse("${extraChatParametersString.value}") `)
+            return
+        }
+        ElMessage.success(`Set extra_parameters: ${JSON.stringify(v)}`)
+    }
+}
 
 </script>
 
@@ -148,14 +162,14 @@ var requestImageDetial = computed(() => {
 
             <el-form-item label="extra_parameters">
                 <el-input type="textarea" :autosize="{ minRows: 1 }" v-model="extraChatParametersString" size="small"
-                    style="width: 220px;" />
+                    @blur="checkExtraChatParameters" style="width: 220px;" />
                 <small>
                     &nbsp;
                     &nbsp;
                     <el-tooltip class="" effect="light" placement="top" raw-content>
                         <template #content>
                             <MarkdownRender
-                                :content='"JSON for [Extra Parameters](https://docs.vllm.ai/en/stable/dev/sampling_params.html), e.g.: \n`{\"stop\": \"\\n\", \"min_tokens\": 256}`\nFor Chrome user, using `F12 -> Network -> completions` to check the request"' />
+                                :content='"JSON for [Extra Parameters](https://docs.vllm.ai/en/stable/serving/openai_compatible_server.html#chat-api_1), e.g.: \n`{\"stop\": \"\\n\", \"min_tokens\": 256}`\nFor Chrome user, using `F12 -> Network -> completions -> Payload` to check the real request parameters"' />
                         </template>
                         <el-icon>
                             <InfoFilled />
