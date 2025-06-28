@@ -71,6 +71,11 @@ export class OpenAI {
                 if (jsonData.trim() !== "[DONE]") {
                   try {
                     const parsedData = JSON.parse(jsonData);
+                    if ((parsedData?.object == "error") && (parsedData?.code) && (parsedData.code != 200)) {
+                      // forward real error when API that does not support HTTP status code
+                      throw new Error(`Failed to fetch completions (Code: ${parsedData.code}): ${JSON.stringify(parsedData)} `);
+                    }
+
                     yield parsedData; // 返回解析的 JSON 数据
                   } catch (error) {
                     console.error('Error parsing JSON:', error);
