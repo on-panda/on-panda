@@ -99,8 +99,8 @@ export default {
     beginnerTips: '新手提示',
     asDataAnnotator: '作为标注工具',
     asWritingTool: '作为写作工具',
-    dataAnnotatorDesc: '在扩大数据规模之前提高数据效率。',
-    writingToolDesc: '为大语言模型写作提供精确的字节级控制。',
+    dataAnnotatorDesc: 'Token-level 标注，提高数据效率，开启 reasoning 新范式。',
+    writingToolDesc: '为大语言模型写作提供精确的字符级控制。',
     instruction: `
 ### onPanda 数据标注指南
 **基本功能**

@@ -99,7 +99,7 @@ export default {
     beginnerTips: 'Beginner\'s tips',
     asDataAnnotator: 'as Data Annotator',
     asWritingTool: 'as Writing Tool',
-    dataAnnotatorDesc: 'Scaling up your data efficiency before scaling up your data.',
+    dataAnnotatorDesc: 'Scaling up your data efficiency with token-level supervision.',
     writingToolDesc: 'Precision byte-level control for LLM writing.',
     instruction: `
 ### Usage:
