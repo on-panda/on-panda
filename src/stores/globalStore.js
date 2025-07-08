@@ -9,6 +9,8 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
 
     const customApiConfigs = ref([])
 
+    const customModelNameTags = ref({})
+    
     const customExampleNameToFunc = ref({}) // exampleFunc(dialogWithControlState)
 
     const hooks = ref({ beforeCreateChatCompletion: [] })
@@ -39,7 +41,7 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
         },
     })
 
-    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, customExampleNameToFunc, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins }
+    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, customModelNameTags, customExampleNameToFunc, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins }
 }
 )
 

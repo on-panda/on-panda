@@ -59,18 +59,7 @@ e.g.:
   },
   modelNameTags: {
     type: Object,
-    default: {
-      'on-panda': 'on-panda',
-      'image': 'image-tag',
-      'audio': 'step1f-on-policy',
-      'r-mini': 'step-r1-v-mini',
-      'gpt4o': 'chatgpt-4o-latest',
-      'claude': 'claude-tag',
-      'r1': 'r1-tag',
-      // 'groq': 'groq-tag',
-      'fast': 'fast-tag',
-      // 'test': 'endpoint-name',
-    },
+    default: null,
     description: `Model name tags for quick model selection. key is tag name, value is model retrieval name, will find first include retrieval name in apiConfigs`,
   },
   customInfoForUser: {
@@ -85,8 +74,28 @@ const { t } = useI18n()
 const globalStore = useGlobalStore()
 var isMobile = computed(() => globalStore.isMobile)
 const customInfoForUser = computed(() => props.customInfoForUser + globalStore.customInfoForUser)
-
-const dialogWithControlState = DialogWithControlStateClosure({ apiConfigs: props.apiConfigs, modelNameTags: props.modelNameTags })
+const defaultModelNameTags = {
+  'on-panda': 'on-panda',
+  'image': 'image-tag',
+  'audio': 'step1f-on-policy',
+  'r-mini': 'step-r1-v-mini',
+  'gpt4o': 'chatgpt-4o-latest',
+  'claude': 'claude-tag',
+  'r1': 'r1-tag',
+  // 'groq': 'groq-tag',
+  'fast': 'fast-tag',
+  // 'test': 'endpoint-name',
+}
+const modelNameTags = computed(() => {
+  // only use defaultModelNameTags if both props.modelNameTags and globalStore.customModelNameTags is not set
+  if (props.modelNameTags) {
+    var modelNameTags = { ...props.modelNameTags, ...globalStore.customModelNameTags }
+  } else {
+    var modelNameTags = Object.keys(globalStore.customModelNameTags).length ? globalStore.customModelNameTags : defaultModelNameTags
+  }
+  return modelNameTags
+})
+const dialogWithControlState = DialogWithControlStateClosure({ apiConfigs: props.apiConfigs, modelNameTags: modelNameTags })
 const { responseState, controlParameterState } = dialogWithControlState
 
 
@@ -121,6 +130,7 @@ onMounted(async () => {
   responseState.onPandaContainerRef.value = onPandaContainerRef.value
   try {
     await import('./assets/secret/custom.js');
+    // await import('./assets/secret/publicDemo/publicDemoCustom.js');
   } catch (error) {
     console.error('Failed to load custom.js:', error);
   }
@@ -142,7 +152,7 @@ onMounted(async () => {
     } else {
       if (!globalStore.isOldUser) {
         // Set default model for new users
-        modelName.value = props?.modelNameTags['on-panda'] || 'on-panda'
+        modelName.value = modelNameTags.value['on-panda'] || 'on-panda'
         exampleToRun = operationCenter.generateNew
       }
       if (globalStore.debug) {
