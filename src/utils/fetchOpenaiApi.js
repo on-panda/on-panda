@@ -1,4 +1,5 @@
 import { useGlobalStore } from '../stores/globalStore'
+import { ElMessage } from 'element-plus'
 
 
 export class OpenAI {
@@ -71,13 +72,23 @@ export class OpenAI {
                 if (jsonData.trim() !== "[DONE]") {
                   try {
                     const parsedData = JSON.parse(jsonData);
+                    // forward real error when API that does not support HTTP status code (SADO-platform)
                     if ((parsedData?.object == "error") && (parsedData?.code) && (parsedData.code != 200)) {
-                      // forward real error when API that does not support HTTP status code
                       throw new Error(`Failed to fetch completions (Code: ${parsedData.code}): ${JSON.stringify(parsedData)} `);
                     }
-
-                    yield parsedData; // 返回解析的 JSON 数据
+                    if (!parsedData.choices && parsedData.detail) {
+                      throw new Error(`Failed to fetch completions: ${JSON.stringify(parsedData)}`);
+                    }
+                    yield parsedData
                   } catch (error) {
+                    setTimeout(() => {
+                      ElMessage({
+                        showClose: true,
+                        message: `${error.message}`,
+                        type: 'error',
+                        duration: 10000,
+                      })
+                    }, 1000)
                     console.error('Error parsing JSON:', error);
                     continue; // 如果解析错误，跳过当前 chunk
                   }
