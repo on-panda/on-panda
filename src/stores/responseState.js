@@ -88,7 +88,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 // body['chat_template_kwargs'] = { continue_final_message: continue_final_message }
                 body['continue_final_message'] = continue_final_message
                 body['echo'] = false
-
+                if (apiConfig.value.chat_config.model.toLowerCase().indexOf("kimi") != -1) {
+                    // for kimi-api
+                    messages[messages.length - 1]['partial'] = true
+                }
             } else {
                 if (lastMessageContent.length < 20000000) {
                     messages = messages.concat([
