@@ -135,6 +135,16 @@ export function normalizeRequest(requestBody) {
         delete body.logprobs
         delete body.top_logprobs
     }
+    if (body.max_tokens == 0) {  // turn off max_tokens
+        delete body.max_tokens
+    }
+    if (body.model.indexOf('gpt-') >= 0) {
+        // convert max_tokens to max_completion_tokens for GPT model
+        body.max_completion_tokens = body.max_tokens
+        delete body.max_tokens
+    }
+
+
     return body
 }
 

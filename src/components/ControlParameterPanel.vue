@@ -124,7 +124,7 @@ function checkExtraChatParameters() {
         </el-form-item>
 
         <el-form-item :label="t('controlParameter.maxTokens')">
-            <el-input-number v-model="chatConfig.max_tokens" :min="1" :max="1048576" :step="1" size="small" />
+            <el-input-number v-model="chatConfig.max_tokens" :min="0" :max="1048576" :step="1" size="small" />
         </el-form-item>
 
         <el-form-item :label="t('controlParameter.topLogprobs')">
