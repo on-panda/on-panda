@@ -1,6 +1,6 @@
 {
   "name": "@on-panda/on-panda",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "main": "./dist/on-panda.umd.js",
   "module": "./dist/on-panda.es.js",
   "exports": {
@@ -41,6 +41,8 @@
     "@vitejs/plugin-vue": "^5.0.5",
     "eslint": "^8.57.0",
     "eslint-plugin-vue": "^9.23.0",
+    "postcss": "^8.5.6",
+    "postcss-prefix-selector": "^2.1.1",
     "vite": "^5.3.1"
   }
 }
