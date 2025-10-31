@@ -260,37 +260,60 @@ const patchToSpanHTML = (patch) => {
 }
 
 const patchs = computed(() => {
-    const assistentResponseContentAll = tokens.value.map((token) => token.delta.content).join("");
+    const assistantResponseContentAll = tokens.value.map((token) => token.delta.content).join("");
     const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-    const visableSegments = Array.from(segmenter.segment(assistentResponseContentAll));
+    const visableSegments = Array.from(segmenter.segment(assistantResponseContentAll));
     // add a empty segment at the end for EOT token
-    Array.from({ length: 4 }, (_, i) => visableSegments.push({ segment: "" }));
-    var patchs = []
-    var tokenToSegmentString = "";
-    var segmentIndex = 0;
-    var tokenStartIndex = 0;
-    for (const token of tokens.value) {
-        const tokenContent = (token.delta?.content || "");
-        var tokenIndex = token.tokenIndex
-        tokenToSegmentString += tokenContent;
-        var patchString = visableSegments[segmentIndex].segment
-        if (tokenToSegmentString.length >= patchString.length) {
-            while (tokenToSegmentString.length > patchString.length) {
-                segmentIndex++
-                patchString += visableSegments[segmentIndex].segment
-            }
-            if (tokenToSegmentString != patchString) {
-                // TODO: support segment split inside one token
-                // assert 
-                throw new Error("tokenToSegmentString != segment: " + tokenToSegmentString + " != " + patchString)
-            }
-            var patchTokens = tokens.value.slice(tokenStartIndex, tokenIndex + 1)
-            patchs.push({ patch: patchString, tokens: patchTokens, prob: patchTokens.reduce((acc, token) => acc * probOfToken(token), 1), index: patchs.length })
+    Array.from({ length: 4 }, () => visableSegments.push({ segment: "" }));
+
+    const patchs = []
+    let segmentIndex = 0
+    let currentSegmentString = visableSegments[segmentIndex]?.segment ?? ""
+    let tokenToSegmentString = ""
+    let tokenStartIndex = 0
+
+    tokens.value.forEach((token, tokenIndex) => {
+        const tokenContent = token.delta?.content || ""
+        tokenToSegmentString += tokenContent
+
+        while (
+            segmentIndex < visableSegments.length - 1 &&
+            tokenToSegmentString.length > currentSegmentString.length
+        ) {
+            segmentIndex += 1
+            currentSegmentString += visableSegments[segmentIndex].segment
+        }
+
+        if (tokenToSegmentString === currentSegmentString) {
+            const patchTokens = tokens.value.slice(tokenStartIndex, tokenIndex + 1)
+            patchs.push({
+                patch: currentSegmentString,
+                tokens: patchTokens,
+                prob: patchTokens.reduce((acc, currentToken) => acc * probOfToken(currentToken), 1),
+                index: patchs.length,
+            })
             tokenStartIndex = tokenIndex + 1
             tokenToSegmentString = ""
-            segmentIndex++
+            segmentIndex += 1
+            currentSegmentString = visableSegments[segmentIndex]?.segment ?? ""
+        } else if (
+            currentSegmentString &&
+            !currentSegmentString.startsWith(tokenToSegmentString)
+        ) {
+            const patchTokens = tokens.value.slice(tokenStartIndex, tokenIndex + 1)
+            patchs.push({
+                patch: tokenToSegmentString,
+                tokens: patchTokens,
+                prob: patchTokens.reduce((acc, currentToken) => acc * probOfToken(currentToken), 1),
+                index: patchs.length,
+            })
+            tokenStartIndex = tokenIndex + 1
+            tokenToSegmentString = ""
+            segmentIndex += 1
+            currentSegmentString = visableSegments[segmentIndex]?.segment ?? ""
         }
-    }
+    })
+
     return patchs
 });
 
