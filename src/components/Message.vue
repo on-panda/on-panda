@@ -46,11 +46,11 @@
           <b>{{ t('chatMessage.send') }}</b><br>
           <small>{{ t('chatMessage.ctrlEnter') }}</small> </button>
       </div>
-      <details ref="detailsRef">
+      <details ref="detailsRef" @toggle="handleDetailsToggle">
         <summary>
           <small style="color: #888;">{{ t('chatMessage.renderedMarkdown') }}</small>
         </summary>
-        <MultimodalRender :content="contentAsText" />
+        <MultimodalRender :content="detailsContent" />
         <hr style="margin-top:0px;color:#ccc">
       </details>
     </div>
@@ -70,7 +70,7 @@ import EditableStringAttribute from './widgets/EditableStringAttribute.vue'
 import MarkdownResponse from './widgets/MarkdownResponse.vue'
 import MultimodalRender from './widgets/MultimodalRender.vue'
 
-import { computed, ref, onMounted, onBeforeUnmount, watchEffect } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { convertImageUrlToBase64, base64ToBlob, deepCopy, mockObject, sleep, TaskQueue } from '../utils/commonUtils.js'
 import { Close, Delete, Edit } from '@element-plus/icons-vue'
@@ -102,6 +102,21 @@ const usingOperators = 'generateNew' in props.operationCenter
 const messageCache = ref(null)
 const DELAY_MS_TO_UPDATE_CONTENT = 200  // avoid update content lead to rerender button and button click event lost
 const taskQueue = new TaskQueue()
+
+const PLACEHOLDER = '<|PLACEHOLDER|>'
+const detailsContent = ref(PLACEHOLDER)
+
+const syncDetailsContent = () => {
+  if (detailsRef.value?.open) {
+    detailsContent.value = contentAsText.value
+  } else {
+    detailsContent.value = PLACEHOLDER
+  }
+}
+
+const handleDetailsToggle = () => {
+  syncDetailsContent()
+}
 
 async function operationCenterUpdatePromptContent({ delay = false }) {
   if (usingOperators && messageCache.value) {
@@ -308,6 +323,12 @@ async function handlePaste(event) {
 
 const detailsRef = ref(null)
 
+watch(contentAsText, () => {
+  if (detailsRef.value?.open) {
+    detailsContent.value = contentAsText.value
+  }
+})
+
 watchEffect(() => {
   // auto open details when none text detected
   var content = getContent()
@@ -317,6 +338,7 @@ watchEffect(() => {
       setTimeout(() => {
         if (detailsRef.value) {
           detailsRef.value.open = true
+          syncDetailsContent()
         }
       }, 100)
       break
@@ -344,6 +366,7 @@ onMounted(() => {
       detailsRef.value.open = false
     }
   }
+  syncDetailsContent()
 })
 
 onBeforeUnmount(() => {

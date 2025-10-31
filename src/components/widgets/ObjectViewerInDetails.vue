@@ -29,10 +29,10 @@ const props = defineProps({
 
 const detailsRef = ref(null)
 // lazy load the content for better performance and avoid repeated key word find in the content
-const content = ref('PLACEHOLDER')
+const content = ref('<|PLACEHOLDER|>')
 
 const handleToggle = () => {
-    content.value = detailsRef.value?.open ? JSON.stringify(props.object, null, 2) : 'PLACEHOLDER'
+    content.value = detailsRef.value?.open ? JSON.stringify(props.object, null, 2) : '<|PLACEHOLDER|>'
 }
 
 </script>
