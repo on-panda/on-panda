@@ -170,6 +170,23 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                         continue  // if first chunk only not has content, no more role for continue_final_message
                     }
                 }
+                if (!chunk?.choices?.length) {  // set usage and model if noly in last token
+                    if (chunk.usage) {
+                        if (tokenBatch.length) {
+                            tokenBatch[tokenBatch.length - 1].usage = chunk.usage
+                        } else if (tokensValuePtr.length) {
+                            tokensValuePtr[tokensValuePtr.length - 1].usage = chunk.usage
+                        }
+                    }
+                    if (chunk.model) {
+                        if (tokenBatch.length) {
+                            tokenBatch[tokenBatch.length - 1].model = chunk.model
+                        } else if (tokensValuePtr.length) {
+                            tokensValuePtr[tokensValuePtr.length - 1].model = chunk.model
+                        }
+                    }
+                    continue
+                }
                 var token = chunk.choices[0];
                 if (!token?.delta) {
                     continue
