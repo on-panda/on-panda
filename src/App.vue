@@ -79,12 +79,12 @@ const defaultModelNameTags = {
   'step3': 'step3-tag',
   'image': 'image-tag',
   'gpt': 'gpt-tag',
-  'claude': 'claude-tag',
+  // 'claude': 'claude-tag',
   'audio': 'step1f-on-policy',
   'ds': 'ds-tag',
   // 'groq': 'groq-tag',
+  'test': 'test-tag',
   'fast': 'fast-tag',
-  // 'test': 'endpoint-name',
 }
 const modelNameTags = computed(() => {
   // only use defaultModelNameTags if both props.modelNameTags and globalStore.customModelNameTags is not set

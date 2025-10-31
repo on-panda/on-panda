@@ -84,7 +84,7 @@ function modelNameToMobileModelName(modelName) {
     if (globalStore.isMobile) {
         // split modelName by '—'
         const parts = modelName.split('—')
-        var mobileModelName = `${parts[parts.length-1]} | ${parts[0]}`
+        var mobileModelName = `${parts[parts.length - 1]} | ${parts[0]}`
         if (parts.length > 2) {
             mobileModelName += ` | ${parts[1]}`
         }
