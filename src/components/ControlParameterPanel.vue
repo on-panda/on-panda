@@ -80,6 +80,19 @@ function checkExtraChatParameters() {
     }
 }
 
+function modelNameToMobileModelName(modelName) {
+    if (globalStore.isMobile) {
+        // split modelName by '—'
+        const parts = modelName.split('—')
+        var mobileModelName = `${parts[parts.length-1]} | ${parts[0]}`
+        if (parts.length > 2) {
+            mobileModelName += ` | ${parts[1]}`
+        }
+        return mobileModelName
+    }
+    return modelName
+}
+
 </script>
 
 <template>
@@ -87,7 +100,7 @@ function checkExtraChatParameters() {
         <el-form-item :label="t('controlParameter.model')">
             <el-select-v2 v-model="modelName" filterable :options="Object.keys(keyToApiConfigs).map((x, idx) => ({
                 value: x,
-                label: x,
+                label: modelNameToMobileModelName(x),
             }))" placeholder="Select model" style="width: 440px" size="small" :height='400'
                 :class="{ 'mobile-select-model-input': isMobile }" />
         </el-form-item>

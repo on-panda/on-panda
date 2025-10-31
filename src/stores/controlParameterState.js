@@ -69,9 +69,6 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
             if (configs && configs.length) {
                 for (const [index, config] of configs.entries()) {
                     var key = (config.endpoint_name ? config.endpoint_name : "endpoint") + "—" + (configs.length > 1 ? `${index + 1}—` : '') + (config.chat_config.model || '<|None|>')
-                    if (globalStore.isMobile.value) {
-                        key = (config.chat_config.model || '<|None|>') + ' | ' + (config.endpoint_name ? config.endpoint_name : "") + ` | ${index + 1}`
-                    }
                     keyToApiConfigs[key] = config
                 }
             }
