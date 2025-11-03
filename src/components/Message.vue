@@ -13,12 +13,14 @@
               if (usingOperators) {
                 taskQueue.addTask(async () => await sleep(1))
                 // if not sleep, will cause element-plus.js Uncaught (in promise) TypeError: Cannot read properties of null (reading 'offsetHeight')
-                taskQueue.addTask(async () => props.operationCenter.clearOrDeleteMessage(messageCache, props.index))
+                taskQueue.addTask(async () => props.operationCenter.clearOrDeleteMessage(messageCache, props.messageIndex))
               } else { $emit('deleteMessage') }
             }
             " />
         </el-tooltip>
       </div>
+      <span style="color: #888; margin-top: 12px;font-size: 15px;" v-if="props.messageIndex >= 0">&nbsp;#{{
+        props.messageIndex + 1 }}</span>
     </div>
     <p v-if="(isRenderRole && !isRenderContentEditing)"
       style="margin-top: 5px;margin-bottom: 0px;color: #555; border-radius: 5px; box-shadow: 0 0 0 1px var(--el-input-border-color,var(--el-border-color)) inset; padding:5px 11px">
@@ -90,7 +92,7 @@ const props = defineProps({
     type: [Object, Function],
     default: mockObject
   },
-  index: {
+  messageIndex: {
     type: Number,
     default: -1
   },
@@ -126,7 +128,7 @@ async function operationCenterUpdatePromptContent({ delay = false }) {
         // only delay when update content
         await sleep(DELAY_MS_TO_UPDATE_CONTENT)
       }
-      props.operationCenter.updatePromptContent(getContent(), props.index)
+      props.operationCenter.updatePromptContent(getContent(), props.messageIndex)
     }
   }
 }
@@ -359,7 +361,7 @@ onMounted(() => {
   // to avoid details open status lost when rerender
   // special for after edit content, details open status will lost
   if (detailsRef.value) {
-    const detailsOpen = globalStore.messageIndexStatus[props.index]?.detailsOpen
+    const detailsOpen = globalStore.messageIndexStatus[props.messageIndex]?.detailsOpen
     if (detailsOpen == true) {
       detailsRef.value.open = true
     } else if (detailsOpen == false) {
@@ -372,8 +374,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (detailsRef.value) {
     // set details open status
-    globalStore.messageIndexStatus[props.index] = globalStore.messageIndexStatus[props.index] || {}
-    globalStore.messageIndexStatus[props.index].detailsOpen = detailsRef.value.open
+    globalStore.messageIndexStatus[props.messageIndex] = globalStore.messageIndexStatus[props.messageIndex] || {}
+    globalStore.messageIndexStatus[props.messageIndex].detailsOpen = detailsRef.value.open
   }
 })
 

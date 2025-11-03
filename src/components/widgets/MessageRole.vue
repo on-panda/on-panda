@@ -1,8 +1,9 @@
 <template>
 
-    <p class="role-name" v-show="!editingRoleName" @dblclick="focus" :style="messageRoleNameStyle(props.message.role)">
+    <span class="role-name" v-show="!editingRoleName" @dblclick="focus"
+        :style="messageRoleNameStyle(props.message.role)">
         {{
-            props.message.role || 'unknown' }}:</p>
+            props.message.role || 'unknown' }}:</span>
     <el-input ref="roleNameInput" v-show="editingRoleName" @blur="blur()" @keydown.enter="blur()" v-model="roleCache"
         style="width: 100px;" />
 
@@ -49,7 +50,7 @@ const messageRoleNameStyle = (role) => {
         fontSize: 'larger',
         fontWeight: 'bold',
         marginBottom: '2px',
-        marginTop: '10px'
+        marginTop: '10px',
     }
 }
 </script>

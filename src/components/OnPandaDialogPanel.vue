@@ -26,13 +26,14 @@ provide('operationCenter.editRole', responseState.operationCenter.editRole)
             :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {})"
             style="border-radius: 5px;">
             <div class="promptMessages">
-                <!-- <Message v-for="(message, index) in messages" :message="message" 
+                <!-- <Message v-for="(message, messageIndex) in messages" :message="message" 
           @sendButton="operationCenter.generateNew()"
-          @deleteMessage="operationCenter.clearOrDeleteMessage(message, index)" @focus="operationCenter.editPrompt.before()"
+          @deleteMessage="operationCenter.clearOrDeleteMessage(message, messageIndex)" @focus="operationCenter.editPrompt.before()"
           @blur="operationCenter.editPrompt.after()" /> -->
                 <!-- change edit in compoment to edit in operationCenter -->
-                <Message v-for="(message, index) in messages" :key="message.role + messageToSeq(message) + index"
-                    :message="message" :index="index" :operationCenter="operationCenter" />
+                <Message v-for="(message, messageIndex) in messages"
+                    :key="message.role + messageToSeq(message) + messageIndex" :message="message"
+                    :messageIndex="messageIndex" :operationCenter="operationCenter" />
             </div>
         </div>
         <OnPandaResponsePanel :responseState="responseState" />
@@ -40,7 +41,7 @@ provide('operationCenter.editRole', responseState.operationCenter.editRole)
 
         <el-divider content-position="left" style="margin-bottom: 5px;">{{ t('common.newMessage') }}:</el-divider>
         <div :style="{ opacity: newRoundMessage.content ? 1 : 0.5 }">
-            <Message :message="newRoundMessage" :index="-2" @deleteMessage="newRoundMessage.content = ''"
+            <Message :message="newRoundMessage" :messageIndex="-2" @deleteMessage="newRoundMessage.content = ''"
                 @sendButton="operationCenter.startNewRound()" />
         </div>
     </div>
