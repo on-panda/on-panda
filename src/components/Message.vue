@@ -67,9 +67,7 @@
 
 <script setup>
 import MessageRole from './widgets/MessageRole.vue'
-import MarkdownRender from './widgets/MarkdownRender.vue'
 import EditableStringAttribute from './widgets/EditableStringAttribute.vue'
-import MarkdownResponse from './widgets/MarkdownResponse.vue'
 import MultimodalRender from './widgets/MultimodalRender.vue'
 
 import { computed, ref, onMounted, onBeforeUnmount, watch, watchEffect } from 'vue'
@@ -102,8 +100,6 @@ const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur',])
 // supoort both emit event (sample way using by newMessage) and using operationCenter (complex way)
 const usingOperators = 'generateNew' in props.operationCenter
 const messageCache = ref(null)
-const DELAY_MS_TO_UPDATE_CONTENT = 200  // avoid update content lead to rerender button and button click event lost
-const taskQueue = new TaskQueue()
 
 const PLACEHOLDER = '<|PLACEHOLDER|>'
 const detailsContent = ref(PLACEHOLDER)
@@ -119,6 +115,13 @@ const syncDetailsContent = () => {
 const handleDetailsToggle = () => {
   syncDetailsContent()
 }
+
+// avoid update content lead to rerender button and button click event lost
+// when user edit content, and then click button right now, what thing happens?
+// 1. text area blur event is triggered, add a async task to taskQueue for updating content with a delay
+// 2. button click event is triggered, add a async task to taskQueue for updatePromptContent and generating new message
+const DELAY_MS_TO_UPDATE_CONTENT = 200
+const taskQueue = new TaskQueue()
 
 async function operationCenterUpdatePromptContent({ delay = false }) {
   if (usingOperators && messageCache.value) {
