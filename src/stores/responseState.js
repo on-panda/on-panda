@@ -446,17 +446,23 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
         }
 
-        generateNew = () => {
-            if (!finalMessage.value.content && finalMessage.value.role && apiConfig.value.support_continue_final_message) {
+        generateNew = ({ messageIndex = -1 } = {}) => {
+            const shouldContinueFinalMessage = messageIndex === -1 && !finalMessage.value.content && finalMessage.value.role && apiConfig.value.support_continue_final_message
+            if (shouldContinueFinalMessage) {
                 // if only has role, try using continue generating
                 this.continueGenerating()
             } else {
                 this.pandaState.beforeOperation()
+                if (messageIndex >= 0 && messages.value.length) {
+                    const clampedIndex = Math.min(messageIndex, messages.value.length - 1)
+                    messages.value = messages.value.slice(0, clampedIndex + 1)
+                }
                 tokens.value = []
                 this.pandaState.afterOperation({
                     operator: "generate_new",
                     is_new_generated: true,
                     on_policy: true,
+                    message_index: messageIndex,
                 })
                 requestLlmServer(messages.value).then(() => this.pandaState.beforeOperation())
             }
@@ -702,6 +708,5 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         bindApiConfig
     }
 }
-
 
 

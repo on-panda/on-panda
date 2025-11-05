@@ -33,7 +33,7 @@
           @keydown.ctrl.enter="() => {
             if (usingOperators) {
               taskQueue.addTask(async () => operationCenterUpdatePromptContent({ delay: false }))
-              taskQueue.addTask(props.operationCenter.generateNew)
+              taskQueue.addTask(() => props.operationCenter.generateNew({ messageIndex: props.messageIndex }))
             } else {
               $emit('sendButton')
             }
@@ -41,7 +41,8 @@
           @blur="usingOperators ? taskQueue.addTask(async () => operationCenterUpdatePromptContent({ delay: true })) : $emit('blur', getContent())"
           ref="editor" />
 
-        <button @click="$emit('sendButton'); taskQueue.addTask(props.operationCenter.generateNew)"
+        <button
+          @click="$emit('sendButton'); taskQueue.addTask(() => props.operationCenter.generateNew({ messageIndex: props.messageIndex }))"
           :disabled="!hasContent" :style="{
             cursor: hasContent ? 'pointer' : 'not-allowed'
           }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
