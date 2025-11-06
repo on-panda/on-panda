@@ -14,7 +14,7 @@
     <el-divider content-position="left">
       {{ t('common.examples') }}:
     </el-divider>
-    <OnPandaExamples :dialogWithControlState="dialogWithControlState" />
+    <OnPandaExamples :dialogWithControlState="dialogWithControlState" ref="onPandaExamplesRef" />
 
     <el-divider content-position="left" style="margin-bottom: 5px;">
       <b>{{ t('common.dialog') }}:</b>
@@ -104,6 +104,7 @@ const requestStatus = responseState.requestStatus
 const operationCenter = responseState.operationCenter
 
 // Initialize with welcome messages
+const onPandaExamplesRef = ref(null)
 const welcomeMessages = [{ role: "system", content: "" }, { role: "user", content: '🍓草莓的英文单词有几个 "R" ?' }]
 let initialMessages = welcomeMessages;
 
@@ -158,8 +159,9 @@ onMounted(async () => {
       if (globalStore.debug) {
         // modelName.value = defaultApiConfig.chat_config.model
         // Use the example via the operationCenter directly
-        operationCenter.loadMessages([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }])
-        exampleToRun = operationCenter.generateNew
+        // operationCenter.loadMessages([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }])
+        // exampleToRun = operationCenter.generateNew
+        exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
       }
     }
 

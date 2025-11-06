@@ -120,7 +120,7 @@ const defaultExampleNameToFunc = {
     setTimeout(() => operationCenter.continueGenerating(), 2000)
   },
   "tools": () => {
-    operationCenter.loadMessages([{ role: "user", content: "What is temperature in New York City (Celsius)" }])
+    operationCenter.loadMessages([{ role: "user", content: "Say Hi and tell me what is temperature in New York City (Celsius)" }])
     if (modelNameTags.value['test']) {
       modelName.value = modelNameTags.value['test']
     }
@@ -140,6 +140,10 @@ const exampleNameToFunc = computed(() => {
     ...defaultExampleNameToFunc,
     ...globalStore.customExampleNameToFunc
   }
+})
+
+defineExpose({
+  exampleNameToFunc
 })
 
 </script>
