@@ -119,6 +119,14 @@ const defaultExampleNameToFunc = {
     operationCenter.loadMessages(messagesContinueExample)
     setTimeout(() => operationCenter.continueGenerating(), 2000)
   },
+  "tools": () => {
+    operationCenter.loadMessages([{ role: "user", content: "What is temperature in New York City (Celsius)" }])
+    if (modelNameTags.value['test']) {
+      modelName.value = modelNameTags.value['test']
+    }
+    modelName.value = 'tools-tag'
+    operationCenter.generateNew()
+  },
   "annotate": async () => {
     pandaState.setExample()
     operationCenter.pandaState = pandaState

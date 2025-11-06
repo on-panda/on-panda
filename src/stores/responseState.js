@@ -294,17 +294,20 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         var messages = messagesComputed.value
         messages = messages.filter(message => message.content)
         console.assert(messages[messages.length - 1].role == "assistant", "last message should be assistant", messages)
-        var body = {
-            messages: messages,
-            model: apiConfig.value.chat_config.model,
-            temperature: apiConfig.value.chat_config.temperature,
-            logprobs: true,
-            add_generation_prompt: false,
-            continue_final_message: true,
-            max_tokens: 1,
-            top_logprobs: apiConfig.value.chat_config.top_logprobs,
-            prompt_logprobs: apiConfig.value.chat_config.top_logprobs,
-        }
+
+        var body = JSON.parse(JSON.stringify(apiConfig.value.chat_config))
+        delete body.stream
+        delete body.stream_options
+
+        body.messages = messages
+        body.model = apiConfig.value.chat_config.model
+        body.temperature = apiConfig.value.chat_config.temperature
+        body.logprobs = true
+        body.add_generation_prompt = false
+        body.continue_final_message = true
+        body.max_tokens = 1
+        body.top_logprobs = apiConfig.value.chat_config.top_logprobs
+        body.prompt_logprobs = apiConfig.value.chat_config.top_logprobs
 
         requestStatus.value.requestTimes++
         var requestID = requestStatus.value.requestTimes
@@ -336,6 +339,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 })
                 return
             }
+            console.log("prompt:")
+            console.log(json.prompt_logprobs_list.map(x => x.content[0].token).join(''))
             for (var i = json.prompt_logprobs_list.length - 1; i >= 0; i--) {
                 var logprobs = json.prompt_logprobs_list[i]
                 var token_content = logprobs.content[0].token
