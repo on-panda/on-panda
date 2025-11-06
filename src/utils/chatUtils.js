@@ -216,3 +216,29 @@ export function probOfToken(token) {
     }
     return prob
 }
+
+export function mergeTwoDeltas(delta1, delta2) {
+    // Merge two deltas
+    // 1. if delta1 not has one key, set deepCopy delta2
+    // 2. if value is string, concate string
+    // 3. if value is number, assert same number
+    // 4. if value is obj, recurse
+    var merged = { ...delta1 }
+    for (const key in delta2) {
+        if (!(key in delta1)) {
+            merged[key] = deepCopy(delta2[key])
+        } else {
+            const value1 = delta1[key]
+            const value2 = delta2[key]
+            if (typeof value1 === "string" && typeof value2 === "string") {
+                merged[key] = value1 + value2
+            } else if (typeof value1 === "number" && typeof value2 === "number") {
+                console.assert(value1 === value2, `Number mismatch: ${value1} !== ${value2}`)
+                merged[key] = value1
+            } else if (typeof value1 === "object" && typeof value2 === "object") {
+                merged[key] = mergeTwoDeltas(value1, value2)
+            }
+        }
+    }
+    return merged
+}

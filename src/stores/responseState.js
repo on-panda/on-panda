@@ -2,7 +2,7 @@ import { ref, computed, toValue, watch, isRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject } from '../utils/commonUtils.js'
-import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken } from '../utils/chatUtils.js'
+import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas } from '../utils/chatUtils.js'
 import { OpenAI } from '../utils/fetchOpenaiApi.js'
 
 import { useGlobalStore } from './globalStore.js'
@@ -616,6 +616,20 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         ).reduce((delta1, delta2) => {
             const delta = { ...delta1 }
             for (var key in delta2) {
+                if (key === "tool_calls") {
+                    var toolCalls = delta.tool_calls || []
+                    var toolCall2 = delta2.tool_calls[0]
+                    console.assert(delta2.tool_calls.length === 1)
+                    console.assert(typeof toolCall2.index === "number")
+                    if (toolCall2.index === toolCalls.length) {
+                        toolCalls.push(toolCall2)
+                    } else {
+                        var toolCall1 = toolCalls[toolCall2.index]
+                        toolCalls[toolCall2.index] = mergeTwoDeltas(toolCall1, toolCall2)
+                    }
+                    delta.tool_calls = toolCalls
+                    continue
+                }
                 delta[key] = (delta[key] || "") + (delta2[key] || "")
                 if (key === "role" && delta2.role) {
                     role = delta2.role
