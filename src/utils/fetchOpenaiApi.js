@@ -1,6 +1,32 @@
 import { useGlobalStore } from '../stores/globalStore'
 import { ElMessage } from 'element-plus'
 
+const promptLogprobsToTopLogprobs = (promptLogprob, chosenTokenId) => {
+  // list of {token_id: obj} => same as top_logprobs, TokenId are string
+  var sortPrompt = (a, b) => {
+    if (a == chosenTokenId) {
+      return -1;
+    }
+    if (b == chosenTokenId) {
+      return 1;
+    }
+    return promptLogprob[a].rank - promptLogprob[b].rank;
+  }
+  var sortedTokenIds = Object.keys(promptLogprob).sort(sortPrompt);
+
+  var top_logprobs = sortedTokenIds.map(tokenId => {
+    let logprob = promptLogprob[tokenId]
+    logprob.token = logprob.decoded_token
+    logprob.token_id = tokenId
+    return logprob
+  });
+  var logprobChosen = JSON.parse(JSON.stringify(top_logprobs[0]))
+  logprobChosen.top_logprobs = top_logprobs
+  var logprobs = {
+    content: [logprobChosen]
+  }
+  return logprobs
+}
 
 export class OpenAI {
   // imitate openai-node without x-stainless-os 
@@ -102,41 +128,25 @@ export class OpenAI {
       var raw = await response.text();
       const json = JSON.parse(raw);
       if (json.prompt_logprobs) {
-        // workround for unknow which token is chosen in prompt_logprobs (vLLM BUG)
-        // list of {token_id: obj} => same as top_logprobs
-        var prompt_logprobs_raw = raw.split("prompt_logprobs")[1]
+        if (json.prompt_token_ids) {
+          var chosens = json.prompt_token_ids.map(x => x.toString())
+          if (chosens.length == json.prompt_logprobs.length && !json.prompt_logprobs[0]) {
+            // aovid first prompt token is null
+            chosens = chosens.slice(1)
+          }
+        } else {
+          // workround for unknow which token is chosen in prompt_logprobs (vLLM BUG)
+          var prompt_logprobs_raw = raw.split("prompt_logprobs")[1]
 
-        const regex = /}},\{"(\d+)":/g;
-        const allMatches = prompt_logprobs_raw.match(regex);
-        const chosens = allMatches.map(match => match.match(/(\d+)/)[1])
-
-
+          const regex = /}},\{"(\d+)":/g;
+          const allMatches = prompt_logprobs_raw.match(regex);
+          var chosens = allMatches.map(match => match.match(/(\d+)/)[1])
+          chosens = [raw.match(/{"(\d+)":\{"logprob":/)[1], ...chosens]
+        }
         json.prompt_logprobs_list = chosens.map((chosenTokenId, index) => {
           var reverseIndex = index - chosens.length;
           var promptLogprob = json.prompt_logprobs[json.prompt_logprobs.length + reverseIndex];
-          var sortPrompt = (a, b) => {
-            if (a == chosenTokenId) {
-              return -1;
-            }
-            if (b == chosenTokenId) {
-              return 1;
-            }
-            return promptLogprob[a].rank - promptLogprob[b].rank;
-          }
-          var sortedTokenIds = Object.keys(promptLogprob).sort(sortPrompt);
-
-          var top_logprobs = sortedTokenIds.map(tokenId => {
-            let logprob = promptLogprob[tokenId]
-            logprob.token = logprob.decoded_token
-            logprob.token_id = tokenId
-            return logprob
-          });
-          var logprobChosen = JSON.parse(JSON.stringify(top_logprobs[0]))
-          logprobChosen.top_logprobs = top_logprobs
-          var logprobs = {
-            content: [logprobChosen]
-          }
-          return logprobs
+          return promptLogprobsToTopLogprobs(promptLogprob, chosenTokenId);
         });
       }
       return json;
