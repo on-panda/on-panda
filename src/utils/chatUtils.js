@@ -231,7 +231,7 @@ export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
             const value1 = delta1[key]
             const value2 = delta2[key]
             if (unmergedKeys.includes(key)) {
-                merged[key] = deepCopy(delta2[key])
+                merged[key] = deepCopy(merged[key])
             } else if (typeof value1 === "string" && typeof value2 === "string") {
                 merged[key] = value1 + value2
             } else if (typeof value1 === "number" && typeof value2 === "number") {

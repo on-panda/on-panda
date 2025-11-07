@@ -73,11 +73,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         const modelRoles = apiConfig.value?.model_roles || ["assistant"]
         const continue_final_message = modelRoles.includes(messages[messages.length - 1].role)
         if (continue_final_message) { // if continue_final_message, not filter the final message with role
-            messages = messages.slice(0, messages.length - 1).filter(message => message.content).concat([
+            messages = filterEmptyMessage(messages.slice(0, messages.length - 1)).concat([
                 messages[messages.length - 1],
             ])
         } else {
-            messages = messages.filter(message => message.content)
+            messages = filterEmptyMessage(messages)
         }
         var body = JSON.parse(JSON.stringify(apiConfig.value.chat_config))
         if (continue_final_message) {
@@ -281,8 +281,16 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             requestStatus.value.generating = false
             // operations according to finish_reason
             var finishReason = finalMessage.value.finish_reason
+
             if (["user", "tool"].includes(newRoundMessage.value.role)) {
                 newRoundMessage.value.role = finishReason == "tool_calls" ? "tool" : "user"
+            }
+            if (finishReason == "tool_calls") {
+                newRoundMessage.value.tool_call_id = finalMessage.value.tool_calls[0].id
+                newRoundMessage.value.name = finalMessage.value.tool_calls[0].function.name
+            } else {
+                delete newRoundMessage.value.tool_call_id
+                delete newRoundMessage.value.name
             }
 
         } catch (error) {
@@ -293,12 +301,16 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
     }
 
+    function filterEmptyMessage(messages) {
+        return messages.filter(message => message.content || message.tool_calls?.length)
+    }
+
     async function requestPromptLogprobs() {
         // TODO auto run when chat_config is changed?
         // may delete the stop/<EOT> token
         // on_policy
         var messages = messagesComputed.value
-        messages = messages.filter(message => message.content)
+        messages = filterEmptyMessage(messages)
         console.assert(messages[messages.length - 1].role == "assistant", "last message should be assistant", messages)
 
         var body = JSON.parse(JSON.stringify(apiConfig.value.chat_config))
