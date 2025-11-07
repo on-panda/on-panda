@@ -161,7 +161,7 @@ const hasContent = computed(() => {
   return getContent().length > 0
 })
 
-const isRenderRole = computed(() => ['assistant', 'context', 'tool'].includes(getMessage()['role']))
+const isRenderRole = computed(() => ['assistant', 'context'].includes(getMessage()['role']))
 
 const isRenderContentEditing = ref(false)
 

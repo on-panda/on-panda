@@ -279,6 +279,12 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 }
             }
             requestStatus.value.generating = false
+            // operations according to finish_reason
+            var finishReason = finalMessage.value.finish_reason
+            if (["user", "tool"].includes(newRoundMessage.value.role)) {
+                newRoundMessage.value.role = finishReason == "tool_calls" ? "tool" : "user"
+            }
+
         } catch (error) {
             requestStatus.value.generating = false
             warning(error)
@@ -308,6 +314,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         body.max_tokens = 1
         body.top_logprobs = apiConfig.value.chat_config.top_logprobs
         body.prompt_logprobs = apiConfig.value.chat_config.top_logprobs
+        body.return_token_ids = true
 
         requestStatus.value.requestTimes++
         var requestID = requestStatus.value.requestTimes
@@ -625,7 +632,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                         toolCalls.push(toolCall2)
                     } else {
                         var toolCall1 = toolCalls[toolCall2.index]
-                        toolCalls[toolCall2.index] = mergeTwoDeltas(toolCall1, toolCall2)
+                        toolCalls[toolCall2.index] = mergeTwoDeltas(toolCall1, toolCall2, ["type"])
                     }
                     delta.tool_calls = toolCalls
                     continue
