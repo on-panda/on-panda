@@ -646,6 +646,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                     delta.tool_calls = toolCalls
                     continue
                 }
+                if (key === "reasoning_details") {
+                    delta.reasoning_details = [mergeTwoDeltas(delta.reasoning_details?.[0], delta2.reasoning_details?.[0], ["type", "format"])]
+                    continue
+                }
                 delta[key] = (delta[key] || "") + (delta2[key] || "")
                 if (key === "role" && delta2.role) {
                     role = delta2.role

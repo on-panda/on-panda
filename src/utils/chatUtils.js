@@ -225,7 +225,7 @@ export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
     // 4. if value is obj, recurse
     var merged = { ...delta1 }
     for (const key in delta2) {
-        if (!(key in delta1)) {
+        if (!(key in merged)) {
             merged[key] = deepCopy(delta2[key])
         } else {
             const value1 = delta1[key]
