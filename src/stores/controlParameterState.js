@@ -128,7 +128,8 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
                         }, isMounted.value ? 0 : 2000)
                         console.log("Error in fetching models list");
                         console.log(error);
-                        throw error
+                        // keep resolver chain alive even when list fetch fails
+                        apiConfigReceived.value[i] = []
                     }
                 })(i);
                 configPromises.push(fetchPromise);
