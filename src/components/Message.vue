@@ -1,5 +1,5 @@
 <template>
-  <div class="message" style="max-width: 1024px;">
+  <div class="message" :id="messageAnchorId || null" style="max-width: 1024px;">
     <div style="display :flex;">
       <MessageRole :message="props.message" />
       <span class="stretch" style="margin-right: auto" />
@@ -19,8 +19,8 @@
             " />
         </el-tooltip>
       </div>
-      <span style="color: #888; margin-top: 12px;font-size: 15px;" v-if="props.messageIndex >= 0">&nbsp;#{{
-        props.messageIndex + 1 }}</span>
+      <a v-if="props.messageIndex >= 0" :href="messageAnchorHref" style="color: #888; margin-top: 12px;font-size: 15px; text-decoration: none;">&nbsp;#{{
+        props.messageIndex + 1 }}</a>
     </div>
     <p v-if="(isRenderRole && !isRenderContentEditing)"
       style="margin-top: 5px;margin-bottom: 0px;color: #555; border-radius: 5px; box-shadow: 0 0 0 1px var(--el-input-border-color,var(--el-border-color)) inset; padding:5px 11px">
@@ -101,6 +101,8 @@ const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur',])
 // supoort both emit event (sample way using by newMessage) and using operationCenter (complex way)
 const usingOperators = 'generateNew' in props.operationCenter
 const messageCache = ref(null)
+const messageAnchorId = computed(() => props.messageIndex >= 0 ? `message-${props.messageIndex + 1}` : '')
+const messageAnchorHref = computed(() => messageAnchorId.value ? `#${messageAnchorId.value}` : undefined)
 
 const currentUuid = globalStore.uuid
 const PLACEHOLDER = '<|PLACEHOLDER|>'

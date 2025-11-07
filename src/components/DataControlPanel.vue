@@ -90,7 +90,7 @@
     </div>
 </template>
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore.js'
@@ -110,6 +110,7 @@ const props = defineProps({
 const pandaState = props.responseState.pandaState
 const uploadedJson = props.responseState.uploadedJson
 const onPandaContainerRef = props.responseState.onPandaContainerRef
+const messages = props.responseState.messages
 
 const globalStore = useGlobalStore()
 
@@ -124,6 +125,7 @@ async function uploadAndLoadJson() {
     uploadedJson.value = await uploadJsonFile()
     pandaState.load(uploadedJson.value.data)
     ElMessage.success('JSON file uploaded successfully.');
+    jumpToLatestUserIfNeeded()
 }
 
 const handleDropJson = (uploadFile) => {
@@ -140,6 +142,7 @@ const handleDropJson = (uploadFile) => {
             pandaState.load(data);
             uploadedJson.value = { name: file.name, file, data, }
             ElMessage.success('JSON file uploaded successfully.');
+            jumpToLatestUserIfNeeded()
         } catch (error) {
             ElMessage.error('Invalid JSON file!');
             console.error(error);
@@ -198,6 +201,29 @@ watch(onPandaContainerRef, (newContainer) => {
 })
 
 const dataControlPanelRef = ref(null)
+
+async function jumpToLatestUserIfNeeded() {
+    await nextTick()
+    await nextTick()
+    const currentMessages = messages?.value || []
+    const userIndices = []
+    currentMessages.forEach((message, index) => {
+        if (message.role === 'user') {
+            userIndices.push(index)
+        }
+    })
+    if (currentMessages.length >= 10 && userIndices.length) {
+        const anchorId = `message-${userIndices[userIndices.length - 1] + 1}`
+        setTimeout(() => {
+            requestAnimationFrame(() => {
+                const target = document.getElementById(anchorId)
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+            })
+        }, 100)
+    }
+}
 onMounted(() => {
     if (dataControlPanelRef.value) {
         props.responseState.onPandaContainerRef.value = dataControlPanelRef.value
