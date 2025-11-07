@@ -244,3 +244,7 @@ export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
     }
     return merged
 }
+
+export function filterEmptyMessage(messages) {
+    return messages.filter(message => message.content || message.tool_calls?.length)
+}

@@ -2,7 +2,7 @@ import { ref, computed, toValue, watch, isRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject } from '../utils/commonUtils.js'
-import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas } from '../utils/chatUtils.js'
+import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage } from '../utils/chatUtils.js'
 import { OpenAI } from '../utils/fetchOpenaiApi.js'
 
 import { useGlobalStore } from './globalStore.js'
@@ -301,9 +301,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
     }
 
-    function filterEmptyMessage(messages) {
-        return messages.filter(message => message.content || message.tool_calls?.length)
-    }
 
     async function requestPromptLogprobs() {
         // TODO auto run when chat_config is changed?
@@ -743,7 +740,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         messagesComputed,
         ...warningState,
         registerInResponseText,
-        bindApiConfig
+        bindApiConfig,
+        requestPromptLogprobs,
+        requestLlmServer
     }
 }
 

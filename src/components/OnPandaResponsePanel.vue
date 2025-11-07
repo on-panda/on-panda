@@ -154,8 +154,7 @@ onBeforeUnmount(() => {
                     <el-tooltip class="" effect="light" placement="top" raw-content>
                         <template #content>
                             <MarkdownRender
-                                content="${\text{bits}} = - \sum_{i} \log_2(p_i)$. // note for vLLM server model: 
-                  Logprob value are affected by sampling parameters, click: [🔗URL](https://github.com/vllm-project/vllm/issues/9453)" />
+                                content="${\text{bits}} = - \sum_{i} \log_2(p_i)$." />
                         </template>
                         bits
                     </el-tooltip>
