@@ -102,6 +102,7 @@ const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur',])
 const usingOperators = 'generateNew' in props.operationCenter
 const messageCache = ref(null)
 
+const currentUuid = globalStore.uuid
 const PLACEHOLDER = '<|PLACEHOLDER|>'
 const detailsContent = ref(PLACEHOLDER)
 
@@ -376,7 +377,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  if (detailsRef.value) {
+  if (detailsRef.value && currentUuid.value === globalStore.uuid) {
     // set details open status
     globalStore.messageIndexStatus[props.messageIndex] = globalStore.messageIndexStatus[props.messageIndex] || {}
     globalStore.messageIndexStatus[props.messageIndex].detailsOpen = detailsRef.value.open

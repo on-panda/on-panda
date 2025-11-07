@@ -427,18 +427,13 @@ export class PandaState {
     }
     clearCache = () => {
         this.cacheTree = {}
-
-        const globalStore = useGlobalStore();
-        for (var blobUrl in globalStore.blobUrlToBase64Cache) {
-            URL.revokeObjectURL(blobUrl)
-            delete globalStore.blobUrlToBase64Cache.blobUrl
-        }
     }
     load = (obj) => {
         var pandaTree = this.asPandaTree(obj)
         pandaTree = this.setDefaultToPandaTree(pandaTree)
         pandaTree = recoverHashMap(pandaTree)
         this.clearCache()
+        useGlobalStore().loadPandaTree(pandaTree)
         if (pandaTree.cache_tree) {
             var cacheTree = typeof pandaTree.cache_tree === 'string' ? JSON.parse(pandaTree.cache_tree) : pandaTree.cache_tree
             if (cacheTree.compressed_type === 'lz-string') { // abandon original lz-string `LZString.compress()`, bigger size and has garbled characters

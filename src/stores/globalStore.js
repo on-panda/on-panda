@@ -19,7 +19,7 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
 
     const blobUrlToBase64Cache = ref({})
 
-    const messageIndexStatus = ref({})
+    const messageIndexStatus = ref({})  // details open status
 
     const widthRelatedStore = buildWidthRelatedStore()
 
@@ -41,7 +41,18 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
         },
     })
 
-    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, customModelNameTags, customExampleNameToFunc, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins }
+    const uuid = ref(null)
+
+    const loadPandaTree = (pandaTree) => {
+        messageIndexStatus.value = {}
+        for (var blobUrl in blobUrlToBase64Cache.value) {
+            URL.revokeObjectURL(blobUrl)
+            delete blobUrlToBase64Cache.value[blobUrl]
+        }
+        uuid.value = pandaTree.uuid
+    }
+
+    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, customModelNameTags, customExampleNameToFunc, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins, uuid, loadPandaTree }
 }
 )
 
