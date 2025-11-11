@@ -8,7 +8,6 @@ import { probOfToken } from '../utils/chatUtils.js'
 import { duplicateWindow, copyToClipboard } from '../utils/commonUtils.js'
 import { useScrollSwitchSync } from '../utils/userInterfaceUtils.js'
 import MessageRole from '../components/widgets/MessageRole.vue'
-import MarkdownRender from '../components/widgets/MarkdownRender.vue'
 import MarkdownResponse from '../components/widgets/MarkdownResponse.vue'
 import OnPandaResponseText from '../components/OnPandaResponseText.vue'
 import DialogKeysFooter from './widgets/DialogKeysFooter.vue'
@@ -30,6 +29,8 @@ const requestStatus = responseState.requestStatus
 const apiConfig = responseState.apiConfig
 const operationCenter = responseState.operationCenter
 const finalMessage = responseState.finalMessage
+
+const bitsTooltipHtml = 'bits = - &sum;<sub>i</sub> log<sub>2</sub>(p<sub>i</sub>)'
 
 const WaitingInfo = computed(() => {
     if (requestStatus.value.generating) {
@@ -151,11 +152,7 @@ onBeforeUnmount(() => {
                     <span v-else-if="bitTokens.length <= 1"> ｜ tokens: {{ tokens.length }} </span>
                 </span>
                 <span v-if="bitTokens.length > 1"> ｜
-                    <el-tooltip class="" effect="light" placement="top" raw-content>
-                        <template #content>
-                            <MarkdownRender
-                                content="${\text{bits}} = - \sum_{i} \log_2(p_i)$." />
-                        </template>
+                    <el-tooltip class="" effect="light" placement="left" raw-content :content="bitsTooltipHtml">
                         bits
                     </el-tooltip>
                     / tokens: {{ bitTotal.toFixed(1) }} ÷ {{ bitTokens.length }} = {{ (bitTotal /
