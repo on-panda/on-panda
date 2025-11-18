@@ -105,8 +105,14 @@ function refreshModelList() {
     }
     apiConfigs.value = [...apiConfigs.value]
 }
-
+import { openDialogEditor } from '../utils/dialogEditor'
 function editLocalStorageApiConfigs() {
+    openDialogEditor({
+        content: 'test',
+        documentation: '# test\n\n## test\n\n### test'
+    }).then((result) => {
+        console.log(result)
+    })
 }
 
 </script>
