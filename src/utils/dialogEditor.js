@@ -22,7 +22,7 @@ const normalizeInput = (value) => {
   }
 }
 
-export function openDialogEditor(initialValue = '') {
+export function openDialogEditor(initialValue = '', appContext = null) {
   return new Promise((resolve) => {
     const container = document.createElement('div')
     document.body.appendChild(container)
@@ -60,7 +60,10 @@ export function openDialogEditor(initialValue = '') {
       }
     })
 
+    if (appContext) {
+      vnode.appContext = appContext
+    }
+
     render(vnode, container)
   })
 }
-

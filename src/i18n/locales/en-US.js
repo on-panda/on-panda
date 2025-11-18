@@ -11,6 +11,7 @@ export default {
     paste: 'Paste',
     refresh: 'Refresh',
     examples: 'examples',
+    instructions: 'Instructions',
     dialog: 'dialog',
     newMessage: 'new message',
     controlParameter: 'control parameter',

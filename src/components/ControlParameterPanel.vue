@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, getCurrentInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import JSON5 from 'json5'
 import { InfoFilled, RefreshRight, Edit } from '@element-plus/icons-vue'
@@ -7,9 +7,11 @@ import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore'
 import MarkdownRender from './widgets/MarkdownRender.vue'
 import CustomAnnotatorTool from './widgets/CustomAnnotatorTool.vue'
+import { openDialogEditor } from '../utils/dialogEditor'
 import { CONTINUE_PROMPT } from '../stores/controlParameterState'
 
 const globalStore = useGlobalStore()
+const instance = getCurrentInstance()
 const isMobile = computed(() => globalStore.isMobile)
 
 const props = defineProps({
@@ -105,12 +107,13 @@ function refreshModelList() {
     }
     apiConfigs.value = [...apiConfigs.value]
 }
-import { openDialogEditor } from '../utils/dialogEditor'
+
 function editLocalStorageApiConfigs() {
     openDialogEditor({
+        title: t('controlParameter.editLocalStorageApiConfigs'),
         content: 'test',
         documentation: '# test\n\n## test\n\n### test'
-    }).then((result) => {
+    }, instance?.appContext).then((result) => {
         console.log(result)
     })
 }

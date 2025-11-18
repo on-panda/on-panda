@@ -11,6 +11,7 @@ export default {
     paste: '粘贴',
     refresh: '刷新',
     examples: '示例',
+    instructions: '说明',
     dialog: '对话',
     newMessage: '新消息',
     controlParameter: '控制参数',

@@ -4,13 +4,13 @@
         <div>
             <div class="dialog-footer">
                 <div class="dialog-footer__buttons">
-                    <el-button @click="handleCancel">Cancel</el-button>
-                    <el-button type="primary" @click="handleConfirm">OK</el-button>
+                    <el-button @click="handleCancel">{{ t('common.cancel') }}</el-button>
+                    <el-button type="primary" @click="handleConfirm">{{ t('common.confirm') }}</el-button>
                 </div>
             </div>
         </div>
         <div v-if="props.documentation">
-            <h4>Documentation:</h4>
+            <h4>{{ t('common.instructions') }}:</h4>
             <MarkdownRender :content="props.documentation" class="dialog-footer__doc" />
         </div>
     </el-dialog>
@@ -20,6 +20,9 @@
 import { ref, watch } from 'vue'
 import MarkdownRender from './MarkdownRender.vue'
 import { ElDialog, ElInput, ElButton } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
     modelValue: {
