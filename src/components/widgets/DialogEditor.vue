@@ -1,5 +1,6 @@
 <template>
-    <el-dialog v-model="innerVisible" :title="props.title" destroy-on-close append-to-body fullscreen>
+    <el-dialog v-model="innerVisible" :title="props.title" destroy-on-close append-to-body :width="dialogWidth"
+        style="max-width: 1024px;">
         <el-input v-model="localValue" type="textarea" :autosize="{ minRows: 8 }" placeholder="Enter text" />
         <div>
             <div class="dialog-footer">
@@ -17,12 +18,15 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import MarkdownRender from './MarkdownRender.vue'
 import { ElDialog, ElInput, ElButton } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import { useGlobalStore } from '../../stores/globalStore'
 
 const { t } = useI18n()
+const globalStore = useGlobalStore()
+const dialogWidth = computed(() => globalStore.isMobile ? '95%' : '80%')
 
 const props = defineProps({
     modelValue: {
