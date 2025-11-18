@@ -36,6 +36,28 @@ export const defaultApiConfig = {
     },
 }
 
+const isEndpointModelMatchIgnoringIndex = (key, modelNameValue) => {
+    if (typeof key !== 'string' || typeof modelNameValue !== 'string') {
+        return false
+    }
+    const parseEndpointAndModel = (value) => {
+        const parts = value.split('—')
+        if (parts.length < 3) {
+            return null
+        }
+        return {
+            endpoint: parts[0],
+            model: parts[parts.length - 1],
+        }
+    }
+    const keyParts = parseEndpointAndModel(key)
+    const modelNameParts = parseEndpointAndModel(modelNameValue)
+    if (!keyParts || !modelNameParts) {
+        return false
+    }
+    return keyParts.endpoint === modelNameParts.endpoint && keyParts.model === modelNameParts.model
+}
+
 export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags = null, modelName = null } = {}) {
     const globalStore = useGlobalStore()
     const isMounted = ref(false)
@@ -93,7 +115,9 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         isWatchApiConfigsTriggered.value = true
 
         const configPromises = [];
-        apiConfigReceived.value = new Array(newValue.length).fill(null);
+        if (apiConfigReceived.value.length !== newValue.length) {
+            apiConfigReceived.value = new Array(newValue.length).fill(null);
+        }
 
         for (let i = 0; i < newValue.length; i++) {
             const apiConfig = deepCopy(newValue[i]);
@@ -142,8 +166,10 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
 
     const apiConfigChosen = computed(() => {
         var apiConfigChosen = defaultApiConfig
+        const currentModelName = modelName.value || ''
         for (const [key, config] of Object.entries(keyToApiConfigs.value)) {
-            if (key.includes(modelName.value)) {
+            const isMatch = key.includes(currentModelName) || isEndpointModelMatchIgnoringIndex(key, currentModelName)  // keep current model name when refreshing model list
+            if (isMatch) {
                 apiConfigChosen = config
                 if (key !== modelName.value) {
                     modelName.value = key

@@ -132,7 +132,7 @@ function refreshModelList() {
                         </el-icon>
                     </el-tag>
                 </el-tooltip>
-                <span style="margin: 0 5px;">|</span>
+                <span style="margin: 0px 0px 0px 3px; color: #ccc;">|</span>
                 <template v-for="(modelName_, tag) in modelNameTags">
                     <el-tag :type="modelName.includes(modelName_) ? 'primary' : 'info'"
                         @click="handleModelTagClick($event, modelName_)"
@@ -174,7 +174,7 @@ function refreshModelList() {
             <small>
                 <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
                     {{ t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
-                    'controlParameter.promptEngineering') }}
+                        'controlParameter.promptEngineering') }}
                 </el-tag>
                 &nbsp;
                 <el-tooltip class="" effect="light" placement="top" raw-content>
@@ -224,6 +224,7 @@ function refreshModelList() {
 .mobile-select-model-input .el-select__wrapper {
     font-size: 16px;
 }
+
 .modelNameTag {
     cursor: pointer;
     margin-left: 5px;
