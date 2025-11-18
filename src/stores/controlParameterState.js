@@ -53,7 +53,6 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     const chatConfigControllable = ref(chatConfigControllableRaw)
     const chatConfigControllableKeys = Object.keys(chatConfigControllable.value)
 
-    // TODO: add "set" button to set extra_parameters and pop ElMessage when parsing error. if same, button will be disabled.
     const extraChatParametersString = ref("")
     const extraChatParameters = computed(() => {
         try {
