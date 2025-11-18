@@ -80,7 +80,7 @@ const defaultModelNameTags = {
   'image': 'image-tag',
   'gpt': 'gpt-tag',
   // 'claude': 'claude-tag',
-  'audio': 'step1f-on-policy',
+  // 'audio': 'step1f-on-policy',
   'ds': 'ds-tag',
   // 'groq': 'groq-tag',
   'test': 'test-tag',

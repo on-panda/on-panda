@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import JSON5 from 'json5'
-import { InfoFilled, RefreshRight } from '@element-plus/icons-vue'
+import { InfoFilled, RefreshRight, Edit } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore'
 import MarkdownRender from './widgets/MarkdownRender.vue'
@@ -106,6 +106,9 @@ function refreshModelList() {
     apiConfigs.value = [...apiConfigs.value]
 }
 
+function editLocalStorageApiConfigs() {
+}
+
 </script>
 
 <template>
@@ -121,7 +124,7 @@ function refreshModelList() {
             <div style="line-height: 1.85;margin-top: -20px;margin-bottom: -5px;" :align="isMobile ? 'right' : ''">
                 <span v-for="_ in (isMobile ? 0 : 30)">&nbsp;</span>
 
-                <el-tooltip class="" effect="light" placement="bottom">
+                <el-tooltip effect="light" placement="top">
                     <template #content>
                         {{ t('controlParameter.refreshModelList') }}
                     </template>
@@ -129,6 +132,17 @@ function refreshModelList() {
                         size="small">
                         <el-icon>
                             <RefreshRight />
+                        </el-icon>
+                    </el-tag>
+                </el-tooltip>
+                <el-tooltip effect="light" placement="top">
+                    <template #content>
+                        {{ t('controlParameter.editLocalStorageApiConfigs') }}
+                    </template>
+                    <el-tag @click="editLocalStorageApiConfigs" @selectstart.prevent class="modelNameTag" type="info"
+                        size="small">
+                        <el-icon>
+                            <Edit />
                         </el-icon>
                     </el-tag>
                 </el-tooltip>

@@ -25,7 +25,8 @@ export default {
     continueGenerating: '续写方案',
     native: '原生',
     promptEngineering: '提示工程',
-    refreshModelList: '刷新模型列表'
+    refreshModelList: '刷新模型列表',
+    editLocalStorageApiConfigs: '编辑 localStorage 中的 API 配置'
   },
   userMessages: {
     waiting: '等待中...',
