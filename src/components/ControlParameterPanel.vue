@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import JSON5 from 'json5'
-import { InfoFilled } from '@element-plus/icons-vue'
+import { InfoFilled, RefreshRight } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore'
 import MarkdownRender from './widgets/MarkdownRender.vue'
@@ -26,6 +26,8 @@ const { t } = useI18n()
 const modelName = props.controlParameterState.modelName
 const modelNameTags = props.controlParameterState.modelNameTags
 const keyToApiConfigs = props.controlParameterState.keyToApiConfigs
+const apiConfigs = props.controlParameterState.apiConfigs
+const watchApiConfigsResolver = props.controlParameterState.watchApiConfigsResolver
 const apiConfigControllable = props.controlParameterState.apiConfigControllable
 const chatConfig = props.controlParameterState.apiConfigControllable.value.chat_config
 const extraChatParametersString = props.controlParameterState.extraChatParametersString
@@ -94,6 +96,16 @@ function modelNameToMobileModelName(modelName) {
     return modelName
 }
 
+function refreshModelList() {
+    const previousResolver = watchApiConfigsResolver.value
+    watchApiConfigsResolver.value = () => {
+        previousResolver?.()
+        ElMessage.success(t('userMessages.modelsRefreshed'))
+        watchApiConfigsResolver.value = previousResolver
+    }
+    apiConfigs.value = [...apiConfigs.value]
+}
+
 </script>
 
 <template>
@@ -108,13 +120,26 @@ function modelNameToMobileModelName(modelName) {
         <div v-if="Object.keys(modelNameTags)?.length >= 1" class="ModelNameTags">
             <div style="line-height: 1.85;margin-top: -20px;margin-bottom: -5px;" :align="isMobile ? 'right' : ''">
                 <span v-for="_ in (isMobile ? 0 : 30)">&nbsp;</span>
+
+                <el-tooltip class="" effect="light" placement="bottom">
+                    <template #content>
+                        {{ t('controlParameter.refreshModelList') }}
+                    </template>
+                    <el-tag @click="refreshModelList" @selectstart.prevent class="modelNameTag" type="info"
+                        size="small">
+                        <el-icon>
+                            <RefreshRight />
+                        </el-icon>
+                    </el-tag>
+                </el-tooltip>
+                <span style="margin: 0 5px;">|</span>
                 <template v-for="(modelName_, tag) in modelNameTags">
                     <el-tag :type="modelName.includes(modelName_) ? 'primary' : 'info'"
                         @click="handleModelTagClick($event, modelName_)"
                         @mousedown="handleModelTagMousedown($event, modelName_)" @selectstart.prevent @dblclick="() => {
                             modelName = modelName_
                             $emit('dblclickModelTag', modelName_)
-                        }" style="cursor: pointer;margin-left: 5px;user-select: none;">
+                        }" class="modelNameTag">
                         {{ tag }}
                     </el-tag>
                 </template>
@@ -149,7 +174,7 @@ function modelNameToMobileModelName(modelName) {
             <small>
                 <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
                     {{ t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
-                        'controlParameter.promptEngineering') }}
+                    'controlParameter.promptEngineering') }}
                 </el-tag>
                 &nbsp;
                 <el-tooltip class="" effect="light" placement="top" raw-content>
@@ -178,8 +203,7 @@ function modelNameToMobileModelName(modelName) {
                 <el-input type="textarea" :autosize="{ minRows: 1 }" v-model="extraChatParametersString" size="small"
                     @blur="checkExtraChatParameters" style="width: 220px;" />
                 <small>
-                    &nbsp;
-                    &nbsp;
+                    &nbsp; &nbsp;
                     <el-tooltip class="" effect="light" placement="top" raw-content>
                         <template #content>
                             <MarkdownRender
@@ -199,5 +223,10 @@ function modelNameToMobileModelName(modelName) {
 <style>
 .mobile-select-model-input .el-select__wrapper {
     font-size: 16px;
+}
+.modelNameTag {
+    cursor: pointer;
+    margin-left: 5px;
+    user-select: none;
 }
 </style>

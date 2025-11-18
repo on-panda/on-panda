@@ -24,12 +24,14 @@ export default {
     topLogprobs: 'top_logprobs',
     continueGenerating: 'continue generating',
     native: 'native',
-    promptEngineering: 'prompt engineering'
+    promptEngineering: 'prompt engineering',
+    refreshModelList: 'refresh model list'
   },
   userMessages: {
     waiting: 'Waiting...',
     copied: 'Copied to clipboard',
     responseRefreshed: 'Response probability refreshed',
+    modelsRefreshed: 'Model list refreshed',
     noPromptLogprobs: 'No prompt_logprobs in response, maybe the model does not support prompt_logprobs',
     dropJsonHere: 'Drop JSON file here!',
     onlyOneJsonFile: 'Only one JSON file can be uploaded',
