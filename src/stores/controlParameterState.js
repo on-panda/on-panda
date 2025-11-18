@@ -1,8 +1,9 @@
 import { ref, computed, toValue, watch, isRef, onMounted } from 'vue'
+import JSON5 from 'json5'
+import { OpenAI } from '../utils/fetchOpenaiApi'
+import { ElMessage } from 'element-plus'
 import { deepCopy } from '../utils/commonUtils'
 import { useGlobalStore } from './globalStore'
-import { ElMessage } from 'element-plus'
-import { OpenAI } from '../utils/fetchOpenaiApi'
 import { ObjctKeyToCamelCaseNaming } from '../utils/commonUtils'
 
 export const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
@@ -56,7 +57,7 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     const extraChatParametersString = ref("")
     const extraChatParameters = computed(() => {
         try {
-            return extraChatParametersString.value ? JSON.parse(extraChatParametersString.value) : {}
+            return extraChatParametersString.value ? JSON5.parse(extraChatParametersString.value) : {}
         } catch (error) {
             return {}
         }

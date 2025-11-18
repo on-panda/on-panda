@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import JSON5 from 'json5'
 import { InfoFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore'
@@ -70,7 +71,7 @@ var requestImageDetial = computed(() => {
 function checkExtraChatParameters() {
     if (extraChatParametersString.value) {
         try {
-            var v = JSON.parse(extraChatParametersString.value)
+            var v = JSON5.parse(extraChatParametersString.value)
         } catch (error) {
             ElMessage.error(`Invalid extra_parameters
 : JSON.parse("${extraChatParametersString.value}") `)

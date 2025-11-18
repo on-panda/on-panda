@@ -35,7 +35,8 @@
     "pinia": "^2.1.7",
     "vue": "^3.5.11",
     "vue-i18n": "^11.1.0",
-    "wavesurfer.js": "^7.9.5"
+    "wavesurfer.js": "^7.9.5",
+    "json5": "^2.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.5",
