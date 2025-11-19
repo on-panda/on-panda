@@ -8,8 +8,7 @@ import { useGlobalStore } from '../stores/globalStore'
 import MarkdownRender from './widgets/MarkdownRender.vue'
 import CustomAnnotatorTool from './widgets/CustomAnnotatorTool.vue'
 import { openDialogEditor } from '../utils/dialogEditor'
-import { CONTINUE_PROMPT } from '../stores/controlParameterState'
-import { parseApiConfigsJSON5 } from '../stores/controlParameterState'
+import { CONTINUE_PROMPT, parseApiConfigsJSON5 } from '../stores/controlParameterState'
 
 const globalStore = useGlobalStore()
 const instance = getCurrentInstance()
@@ -134,9 +133,9 @@ function editLocalStorageApiConfigs() {
             return
         }
         localStorageApiConfigsBuffer.value = result
-        const apiConfigs = parseApiConfigsJSON5(result)
-        console.log(apiConfigs, result)
-        if (apiConfigs) {
+        const parsedApiConfigs = parseApiConfigsJSON5(result)
+        console.log(parsedApiConfigs, result)
+        if (parsedApiConfigs) {
             localStorage.setItem('onPandaApiConfigsJSON5', result)
             refreshModelList()
             console.log(result)

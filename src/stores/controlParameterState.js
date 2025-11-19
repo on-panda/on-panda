@@ -91,16 +91,22 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         isMounted.value = true
     })
 
-    var apiConfigs = isRef(apiConfigs) ? apiConfigs : ref(apiConfigs || [deepCopy(defaultApiConfig)])
-    var modelNameTags = isRef(modelNameTags) ? modelNameTags : ref(modelNameTags || {})
-    // integrate onPandaApiConfigsJSON5@localStorage if exists
-    if (localStorage.getItem('onPandaApiConfigsJSON5')) {
-        const localStorageApiConfigs = parseApiConfigsJSON5(localStorage.getItem('onPandaApiConfigsJSON5'))
-        if (localStorageApiConfigs) {
-            apiConfigs = ref([...localStorageApiConfigs, ...apiConfigs.value])
+    const apiConfigsInput = isRef(apiConfigs) ? apiConfigs : ref(apiConfigs || [deepCopy(defaultApiConfig)])
+    const apiConfigsLocalStorage = ref([])
+    function refreshApiConfigs() {
+        apiConfigsInput.value = [...apiConfigsInput.value]
+        // integrate onPandaApiConfigsJSON5@localStorage if exists
+        if (localStorage.getItem('onPandaApiConfigsJSON5')) {
+            const localStorageApiConfigs = parseApiConfigsJSON5(localStorage.getItem('onPandaApiConfigsJSON5'))
+            if (localStorageApiConfigs) {
+                apiConfigsLocalStorage.value = localStorageApiConfigs
+            }
         }
     }
-
+    var apiConfigs = computed(() => {
+        return [...apiConfigsLocalStorage.value, ...apiConfigsInput.value]
+    })
+    var modelNameTags = isRef(modelNameTags) ? modelNameTags : ref(modelNameTags || {})
     var modelName = isRef(modelName) ? modelName : ref(modelName || Object.keys(modelNameTags.value)[0] || 'on-panda')   // using first tag as default model
 
     const apiConfigControllableRaw = { chat_config: deepCopy(defaultChatConfig) }

@@ -95,7 +95,9 @@ const modelNameTags = computed(() => {
   }
   return modelNameTags
 })
-const dialogWithControlState = DialogWithControlStateClosure({ apiConfigs: props.apiConfigs, modelNameTags: modelNameTags })
+
+const apiConfigs = computed(() => [defaultApiConfig, ...props.apiConfigs, ...globalStore.customApiConfigs])
+const dialogWithControlState = DialogWithControlStateClosure({ apiConfigs: apiConfigs, modelNameTags: modelNameTags })
 const { responseState, controlParameterState } = dialogWithControlState
 
 
@@ -116,7 +118,6 @@ operationCenter.loadMessages(initialMessages)
 
 
 const modelName = controlParameterState.modelName
-const apiConfigs = controlParameterState.apiConfigs
 
 watch(modelName, async function watchModelName(newValue) {  // set modelName to page title
   if (document.title.endsWith("onPanda")) {
@@ -140,7 +141,6 @@ onMounted(async () => {
     var watchApiConfigsLoaded = new Promise(resolve => {
       controlParameterState.watchApiConfigsResolver.value = resolve
     })
-    apiConfigs.value = [defaultApiConfig, ...apiConfigs.value, ...globalStore.customApiConfigs]
 
     let exampleToRun = null;
 
