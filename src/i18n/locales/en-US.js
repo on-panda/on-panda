@@ -26,7 +26,7 @@ export default {
     continueGenerating: 'continue generating',
     native: 'native',
     promptEngineering: 'prompt engineering',
-    refreshModelList: 'Model list refresh completed',
+    refreshModelList: 'Refresh model list',
     editLocalStorageApiConfigs: 'Edit private API configs',
     editLocalStorageApiConfigsInstructions: `
 - Connect your own private APIs to onPanda
@@ -63,7 +63,7 @@ export default {
     waiting: 'Waiting...',
     copied: 'Copied to clipboard',
     responseRefreshed: 'Response probability refreshed',
-    modelsRefreshed: 'Model list refreshed',
+    modelsRefreshed: 'Model list refresh completed',
     noPromptLogprobs: 'No prompt_logprobs in response, maybe the model does not support prompt_logprobs',
     dropJsonHere: 'Drop JSON file here!',
     onlyOneJsonFile: 'Only one JSON file can be uploaded',
