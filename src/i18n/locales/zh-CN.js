@@ -33,7 +33,7 @@ export default {
     waiting: '等待中...',
     copied: '已复制到剪贴板',
     responseRefreshed: '响应概率已刷新',
-    modelsRefreshed: '模型列表已刷新',
+    modelsRefreshed: '模型列表刷新完成',
     noPromptLogprobs: '响应中没有 prompt_logprobs，可能当前模型不支持刷新概率和候选',
     dropJsonHere: '拖放JSON文件到这里！',
     onlyOneJsonFile: '只能上传一个JSON文件',

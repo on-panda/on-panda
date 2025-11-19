@@ -8,7 +8,7 @@ import { useGlobalStore } from '../stores/globalStore'
 import MarkdownRender from './widgets/MarkdownRender.vue'
 import CustomAnnotatorTool from './widgets/CustomAnnotatorTool.vue'
 import { openDialogEditor } from '../utils/dialogEditor'
-import { CONTINUE_PROMPT, parseApiConfigsJSON5 } from '../stores/controlParameterState'
+import { CONTINUE_PROMPT, parseApiConfigsJson5 } from '../stores/controlParameterState'
 
 const globalStore = useGlobalStore()
 const instance = getCurrentInstance()
@@ -28,7 +28,6 @@ const { t } = useI18n()
 const modelName = props.controlParameterState.modelName
 const modelNameTags = props.controlParameterState.modelNameTags
 const keyToApiConfigs = props.controlParameterState.keyToApiConfigs
-const apiConfigs = props.controlParameterState.apiConfigs
 const watchApiConfigsResolver = props.controlParameterState.watchApiConfigsResolver
 const apiConfigControllable = props.controlParameterState.apiConfigControllable
 const chatConfig = props.controlParameterState.apiConfigControllable.value.chat_config
@@ -105,7 +104,7 @@ function refreshModelList() {
         ElMessage.success(t('userMessages.modelsRefreshed'))
         watchApiConfigsResolver.value = previousResolver
     }
-    apiConfigs.value = [...apiConfigs.value]
+    props.controlParameterState.refreshApiConfigs()
 }
 
 function editLocalStorageApiConfigs() {
@@ -118,13 +117,14 @@ function editLocalStorageApiConfigs() {
     {
         "support_continue_final_message": true,
         "endpoint_name": "example",
-        "tag_name": "qwen2p5-7b",
+        "client_config": {
+            "base_url": "/cast/v1"
+        },
         "chat_config": {
-            "max_tokens": 2,
-            "top_logprobs": 2,
-            "model": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
+            // "model": "step",
+            "top_logprobs": 20,
         }
-    }
+    },
 ]
 \`\`\`
 `
@@ -133,12 +133,10 @@ function editLocalStorageApiConfigs() {
             return
         }
         localStorageApiConfigsBuffer.value = result
-        const parsedApiConfigs = parseApiConfigsJSON5(result)
-        console.log(parsedApiConfigs, result)
+        const parsedApiConfigs = parseApiConfigsJson5(result)
         if (parsedApiConfigs) {
-            localStorage.setItem('onPandaApiConfigsJSON5', result)
+            localStorage.setItem('onPandaApiConfigsJson5', result)
             refreshModelList()
-            console.log(result)
         }
     })
 }
@@ -149,11 +147,11 @@ every refreshModelList, read real localStorage
 comfirm && string: set localStorageApiConfigsBuffer and try to verfiy JSON5 format with ElMessage
     - invalid: ElMessage.error
     - verified: 
-        - set onPandaApiConfigsJSON5@localStorage
+        - set onPandaApiConfigsJson5@localStorage
         - refreshModelList
  */
 
-const localStorageApiConfigsBuffer = ref(localStorage.getItem('onPandaApiConfigsJSON5') || '')
+const localStorageApiConfigsBuffer = ref(localStorage.getItem('onPandaApiConfigsJson5') || '')
 
 </script>
 
@@ -181,7 +179,7 @@ const localStorageApiConfigsBuffer = ref(localStorage.getItem('onPandaApiConfigs
                         </el-icon>
                     </el-tag>
                 </el-tooltip>
-                <el-tooltip effect="light" placement="top">
+                <el-tooltip effect="light" placement="top" v-if="globalStore.enableLocalStorageApiConfigs">
                     <template #content>
                         {{ t('controlParameter.editLocalStorageApiConfigs') }}
                     </template>

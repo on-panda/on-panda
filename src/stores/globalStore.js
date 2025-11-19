@@ -10,12 +10,14 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
     const customApiConfigs = ref([])
 
     const customModelNameTags = ref({})
-    
+
     const customExampleNameToFunc = ref({}) // exampleFunc(dialogWithControlState)
 
     const hooks = ref({ beforeCreateChatCompletion: [] })
 
     const cleanMode = ref(false)
+
+    const enableLocalStorageApiConfigs = ref(true)
 
     const blobUrlToBase64Cache = ref({})
 
@@ -52,7 +54,7 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
         uuid.value = pandaTree.uuid
     }
 
-    return { debug, isOldUser, hooks, cleanMode, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, customModelNameTags, customExampleNameToFunc, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins, uuid, loadPandaTree }
+    return { debug, isOldUser, hooks, cleanMode, enableLocalStorageApiConfigs, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, customModelNameTags, customExampleNameToFunc, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins, uuid, loadPandaTree }
 }
 )
 

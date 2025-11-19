@@ -60,26 +60,26 @@ const isEndpointModelMatchIgnoringIndex = (key, modelNameValue) => {
 
 export function isValidApiConfigs(apiConfigs) {
     if (!Array.isArray(apiConfigs)) {
-        ElMessage.error(`Invalid apiConfigsJSON5: not an array`)
+        ElMessage.error(`Invalid apiConfigsJson5: not an array`)
         return null
     }
     return true
 }
 
-export function parseApiConfigsJSON5(apiConfigsJSON5String) {
+export function parseApiConfigsJson5(apiConfigsJson5String) {
     try {
-        apiConfigsJSON5String = apiConfigsJSON5String.trim()
-        if (!apiConfigsJSON5String) {
+        apiConfigsJson5String = apiConfigsJson5String.trim()
+        if (!apiConfigsJson5String) {
             return []
         }
-        const apiConfigs = JSON5.parse(apiConfigsJSON5String)
+        const apiConfigs = JSON5.parse(apiConfigsJson5String)
         if (!isValidApiConfigs(apiConfigs)) {
             return null
         }
         return apiConfigs
 
     } catch (error) {
-        ElMessage.error(`Invalid apiConfigsJSON5: ${error.message}`)
+        ElMessage.error(`Invalid apiConfigsJson5: ${error.message}`)
         return null
     }
 }
@@ -94,16 +94,18 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     const apiConfigsInput = isRef(apiConfigs) ? apiConfigs : ref(apiConfigs || [deepCopy(defaultApiConfig)])
     const apiConfigsLocalStorage = ref([])
     function refreshApiConfigs() {
-        apiConfigsInput.value = [...apiConfigsInput.value]
-        // integrate onPandaApiConfigsJSON5@localStorage if exists
-        if (localStorage.getItem('onPandaApiConfigsJSON5')) {
-            const localStorageApiConfigs = parseApiConfigsJSON5(localStorage.getItem('onPandaApiConfigsJSON5'))
+        var newLocalStorageApiConfigs = []
+        if (globalStore.enableLocalStorageApiConfigs && localStorage.getItem('onPandaApiConfigsJson5')) {
+            // integrate onPandaApiConfigsJson5@localStorage if exists
+            const localStorageApiConfigs = parseApiConfigsJson5(localStorage.getItem('onPandaApiConfigsJson5'))
             if (localStorageApiConfigs) {
-                apiConfigsLocalStorage.value = localStorageApiConfigs
+                newLocalStorageApiConfigs = localStorageApiConfigs
             }
         }
+        apiConfigsLocalStorage.value = newLocalStorageApiConfigs  // refresh any way
     }
-    var apiConfigs = computed(() => {
+    refreshApiConfigs()
+    const apiConfigsComputed = computed(() => {
         return [...apiConfigsLocalStorage.value, ...apiConfigsInput.value]
     })
     var modelNameTags = isRef(modelNameTags) ? modelNameTags : ref(modelNameTags || {})
@@ -145,7 +147,7 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     onMounted(() => {
         setTimeout(() => {
             if (!isWatchApiConfigsTriggered.value) {
-                watchApiConfigs(apiConfigs.value)
+                watchApiConfigs(apiConfigsComputed.value)
             }
         }, 2000)
     })
@@ -202,7 +204,7 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         await Promise.all(configPromises);
         watchApiConfigsResolver.value()
     }
-    watch(apiConfigs, watchApiConfigs)
+    watch(apiConfigsComputed, watchApiConfigs)
 
     const apiConfigChosen = computed(() => {
         var apiConfigChosen = defaultApiConfig
@@ -250,5 +252,5 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     })
 
 
-    return { keyToApiConfigs, modelNameTags, modelName, apiConfigControllable, apiConfig, extraChatParametersString, extraChatParameters, watchApiConfigsResolver, apiConfigs }
+    return { keyToApiConfigs, modelNameTags, modelName, apiConfigControllable, apiConfig, extraChatParametersString, extraChatParameters, watchApiConfigsResolver, apiConfigsComputed, apiConfigsInput, refreshApiConfigs }
 }

@@ -26,7 +26,7 @@ export default {
     continueGenerating: 'continue generating',
     native: 'native',
     promptEngineering: 'prompt engineering',
-    refreshModelList: 'refresh model list',
+    refreshModelList: 'Model list refresh completed',
     editLocalStorageApiConfigs: 'edit API configs in localStorage'
   },
   userMessages: {
