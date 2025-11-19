@@ -27,7 +27,29 @@ export default {
     native: '原生',
     promptEngineering: '提示工程',
     refreshModelList: '刷新模型列表',
-    editLocalStorageApiConfigs: '编辑 localStorage 中的 API 配置'
+    editLocalStorageApiConfigs: '编辑 localStorage 中的 API 配置',
+    editLocalStorageApiConfigsInstructions: `
+- 支持 JSON5 格式，必须是数组
+- 例子如下
+\`\`\`js
+[
+    {
+        // 是否支持原生续写 assistant 消息（开源模型、Claude 支持、OpenAI 不支持）
+        "support_continue_final_message": true,
+        "endpoint_name": "example",  // API 别名
+        "client_config": {
+            "base_url": "https://vllm-test-api.diyer22.com/v1",  // API 地址
+            "api_key": "ak-onPandaTestKey",  // API 密钥
+        },
+        "chat_config": {  // chat completion 请求的参数
+            // 模型名称，若未指定，则会自动访问 /models 接口获取模型列表
+            "model": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
+            "top_logprobs": 5,  // 候选词数量
+        }
+    },
+]
+\`\`\`
+`.replaceAll('{', '&#123;').replaceAll('}', '&#125;')
   },
   userMessages: {
     waiting: '等待中...',

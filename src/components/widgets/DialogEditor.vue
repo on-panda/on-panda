@@ -10,9 +10,9 @@
                 </div>
             </div>
         </div>
-        <div v-if="props.documentation">
+        <div v-if="props.instructions">
             <h4>{{ t('common.instructions') }}:</h4>
-            <MarkdownRender :content="props.documentation" class="dialog-footer__doc" />
+            <MarkdownRender :content="instructions" class="dialog-footer__doc" />
         </div>
     </el-dialog>
 </template>
@@ -41,12 +41,13 @@ const props = defineProps({
         type: String,
         default: 'Text Editor'
     },
-    documentation: {
+    instructions: {
         type: String,
         default: ''
     }
 })
 
+const instructions = computed(() => props.instructions.replaceAll('&#123;', '{').replaceAll('&#125;', '}'))
 const emit = defineEmits(['update:modelValue', 'update:visible', 'confirm', 'cancel'])
 
 const innerVisible = ref(props.visible)
@@ -105,7 +106,6 @@ const handleCancel = () => {
     padding: 12px;
     background: #f5f7fa;
     border-radius: 6px;
-    max-height: 200px;
     overflow: auto;
 }
 </style>

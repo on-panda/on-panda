@@ -10,7 +10,7 @@ const normalizeInput = (value) => {
   if (value && typeof value === 'object') {
     const extraProps = {}
     if (value.title != null) extraProps.title = value.title
-    if (value.documentation != null) extraProps.documentation = value.documentation
+    if (value.instructions != null) extraProps.instructions = value.instructions
     return {
       text: toText(value.content),
       props: extraProps

@@ -27,7 +27,29 @@ export default {
     native: 'native',
     promptEngineering: 'prompt engineering',
     refreshModelList: 'Model list refresh completed',
-    editLocalStorageApiConfigs: 'edit API configs in localStorage'
+    editLocalStorageApiConfigs: 'edit API configs in localStorage',
+    editLocalStorageApiConfigsInstructions: '' || `
+- Accepts JSON5, must be an array
+- Example
+\`\`\`js
+[
+    {
+        // Whether the endpoint supports native assistant continuation
+        "support_continue_final_message": true,
+        "endpoint_name": "example",
+        "client_config": {
+            "base_url": "https://vllm-test-api.diyer22.com/v1",
+            "api_key": "ak-onPandaTestKey",
+        },
+        "chat_config": {
+            // Model name, fetch /models if omitted
+            "model": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
+            "top_logprobs": 5,
+        }
+    },
+]
+\`\`\`
+`.replaceAll('{', '&#123;').replaceAll('}', '&#125;')
   },
   userMessages: {
     waiting: 'Waiting...',

@@ -111,23 +111,7 @@ function editLocalStorageApiConfigs() {
     openDialogEditor({
         title: t('controlParameter.editLocalStorageApiConfigs'),
         content: localStorageApiConfigsBuffer.value,
-        documentation: `
-\`\`\`js
-[
-    {
-        "support_continue_final_message": true,
-        "endpoint_name": "example",
-        "client_config": {
-            "base_url": "/cast/v1"
-        },
-        "chat_config": {
-            // "model": "step",
-            "top_logprobs": 20,
-        }
-    },
-]
-\`\`\`
-`
+        instructions: t('controlParameter.editLocalStorageApiConfigsInstructions')
     }, instance?.appContext).then((result) => {
         if (result == null) {
             return
