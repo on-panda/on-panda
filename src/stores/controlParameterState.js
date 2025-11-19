@@ -58,6 +58,32 @@ const isEndpointModelMatchIgnoringIndex = (key, modelNameValue) => {
     return keyParts.endpoint === modelNameParts.endpoint && keyParts.model === modelNameParts.model
 }
 
+export function isValidApiConfigs(apiConfigs) {
+    if (!Array.isArray(apiConfigs)) {
+        ElMessage.error(`Invalid apiConfigsJSON5: not an array`)
+        return null
+    }
+    return true
+}
+
+export function parseApiConfigsJSON5(apiConfigsJSON5String) {
+    try {
+        apiConfigsJSON5String = apiConfigsJSON5String.trim()
+        if (!apiConfigsJSON5String) {
+            return []
+        }
+        const apiConfigs = JSON5.parse(apiConfigsJSON5String)
+        if (!isValidApiConfigs(apiConfigs)) {
+            return null
+        }
+        return apiConfigs
+
+    } catch (error) {
+        ElMessage.error(`Invalid apiConfigsJSON5: ${error.message}`)
+        return null
+    }
+}
+
 export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags = null, modelName = null } = {}) {
     const globalStore = useGlobalStore()
     const isMounted = ref(false)
@@ -67,7 +93,15 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
 
     var apiConfigs = isRef(apiConfigs) ? apiConfigs : ref(apiConfigs || [deepCopy(defaultApiConfig)])
     var modelNameTags = isRef(modelNameTags) ? modelNameTags : ref(modelNameTags || {})
-    var modelName = isRef(modelName) ? modelName : ref(modelName || modelNameTags.value['on-panda'] || 'on-panda')   // using endpoint_name == 'on-panda' as default model
+    // integrate onPandaApiConfigsJSON5@localStorage if exists
+    if (localStorage.getItem('onPandaApiConfigsJSON5')) {
+        const localStorageApiConfigs = parseApiConfigsJSON5(localStorage.getItem('onPandaApiConfigsJSON5'))
+        if (localStorageApiConfigs) {
+            apiConfigs = ref([...localStorageApiConfigs, ...apiConfigs.value])
+        }
+    }
+
+    var modelName = isRef(modelName) ? modelName : ref(modelName || Object.keys(modelNameTags.value)[0] || 'on-panda')   // using first tag as default model
 
     const apiConfigControllableRaw = { chat_config: deepCopy(defaultChatConfig) }
     const chatConfigControllableRaw = apiConfigControllableRaw.chat_config

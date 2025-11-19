@@ -9,6 +9,7 @@ import MarkdownRender from './widgets/MarkdownRender.vue'
 import CustomAnnotatorTool from './widgets/CustomAnnotatorTool.vue'
 import { openDialogEditor } from '../utils/dialogEditor'
 import { CONTINUE_PROMPT } from '../stores/controlParameterState'
+import { parseApiConfigsJSON5 } from '../stores/controlParameterState'
 
 const globalStore = useGlobalStore()
 const instance = getCurrentInstance()
@@ -111,12 +112,49 @@ function refreshModelList() {
 function editLocalStorageApiConfigs() {
     openDialogEditor({
         title: t('controlParameter.editLocalStorageApiConfigs'),
-        content: 'test',
-        documentation: '# test\n\n## test\n\n### test'
+        content: localStorageApiConfigsBuffer.value,
+        documentation: `
+\`\`\`js
+[
+    {
+        "support_continue_final_message": true,
+        "endpoint_name": "example",
+        "tag_name": "qwen2p5-7b",
+        "chat_config": {
+            "max_tokens": 2,
+            "top_logprobs": 2,
+            "model": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
+        }
+    }
+]
+\`\`\`
+`
     }, instance?.appContext).then((result) => {
-        console.log(result)
+        if (result == null) {
+            return
+        }
+        localStorageApiConfigsBuffer.value = result
+        const apiConfigs = parseApiConfigsJSON5(result)
+        console.log(apiConfigs, result)
+        if (apiConfigs) {
+            localStorage.setItem('onPandaApiConfigsJSON5', result)
+            refreshModelList()
+            console.log(result)
+        }
     })
 }
+
+/* 
+init: read real localStorage
+every refreshModelList, read real localStorage
+comfirm && string: set localStorageApiConfigsBuffer and try to verfiy JSON5 format with ElMessage
+    - invalid: ElMessage.error
+    - verified: 
+        - set onPandaApiConfigsJSON5@localStorage
+        - refreshModelList
+ */
+
+const localStorageApiConfigsBuffer = ref(localStorage.getItem('onPandaApiConfigsJSON5') || '')
 
 </script>
 
