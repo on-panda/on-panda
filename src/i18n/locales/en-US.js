@@ -27,28 +27,36 @@ export default {
     native: 'native',
     promptEngineering: 'prompt engineering',
     refreshModelList: 'Model list refresh completed',
-    editLocalStorageApiConfigs: 'edit API configs in localStorage',
-    editLocalStorageApiConfigsInstructions: '' || `
-- Accepts JSON5, must be an array
-- Example
+    editLocalStorageApiConfigs: 'Edit private API configs',
+    editLocalStorageApiConfigsInstructions: `
+- Connect your own private APIs to onPanda
+- Supports JSON5 (a more relaxed JSON format)
+- The outer structure must be an array
+- Copy-paste runnable example:
 \`\`\`js
 [
-    {
-        // Whether the endpoint supports native assistant continuation
-        "support_continue_final_message": true,
-        "endpoint_name": "example",
-        "client_config": {
-            "base_url": "https://vllm-test-api.diyer22.com/v1",
-            "api_key": "ak-onPandaTestKey",
-        },
-        "chat_config": {
-            // Model name, fetch /models if omitted
-            "model": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
-            "top_logprobs": 5,
-        }
+    { // openAI chat completion API format
+      "client_config": {
+          "base_url": "https://vllm-test-api.diyer22.com/v1",
+          "api_key": "ak-onPandaTestKey",  // API key
+      },
+      "chat_config": {  // chat completion request parameters
+          // If no model is specified, /models will be called automatically to fetch the list
+          "model": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
+          "top_logprobs": 5,  // number of candidates; set to 0 to disable logprobs
+      },
+      // Optional fields below
+      // Whether native assistant continuation is supported (e.g., open-source models and Claude support it, OpenAI does not). Default true
+      "support_continue_final_message": true,
+      "endpoint_name": "example",  // API alias
     },
+    // { ... } another API config
 ]
 \`\`\`
+
+**Privacy notice:**
+- Private API configs are stored locally in your browser (localStorage)
+- When you use a private API, onPanda sends the request directly from your browser and never uploads anything to third-party servers
 `.replaceAll('{', '&#123;').replaceAll('}', '&#125;')
   },
   userMessages: {
