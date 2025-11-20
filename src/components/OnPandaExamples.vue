@@ -28,7 +28,7 @@ const operationCenter = responseState.operationCenter
 const pandaState = responseState.pandaState
 
 const modelName = controlParameterState.modelName
-const modelNameTags = controlParameterState.modelNameTags
+const modelNameTags = controlParameterState.modelNameTagsComputed
 // Example message templates
 const welcomeMessages = [{ role: "system", content: "" }, { role: "user", content: '🍓草莓的英文单词有几个 "R" ?' }]
 

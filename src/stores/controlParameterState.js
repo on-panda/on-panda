@@ -108,8 +108,28 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     const apiConfigsComputed = computed(() => {
         return [...apiConfigsLocalStorage.value, ...apiConfigsInput.value]
     })
-    var modelNameTags = isRef(modelNameTags) ? modelNameTags : ref(modelNameTags || {})
-    var modelName = isRef(modelName) ? modelName : ref(modelName || Object.keys(modelNameTags.value)[0] || 'on-panda')   // using first tag as default model
+    const modelNameTagsInput = isRef(modelNameTags) ? modelNameTags : ref(modelNameTags || {})
+
+    function getModelNameTags(apiConfigs) {
+        const modelNameTags = {}
+        for (const apiConfig of apiConfigs) {
+            if (apiConfig.tag_name) {
+                if (apiConfig?.chat_config?.model) {
+                    var modelQuery = (apiConfig.endpoint_name || "<|endpoint|>") + "—" + apiConfig?.chat_config?.model
+                } else {
+                    var modelQuery = (apiConfig.endpoint_name || "<|endpoint|>") + "—"
+                }
+                modelNameTags[apiConfig.tag_name] = modelQuery
+            }
+        }
+        return modelNameTags
+    }
+
+    const modelNameTagsComputed = computed(() => {
+        return { ...getModelNameTags(apiConfigsComputed.value), ...modelNameTagsInput.value }
+    })
+
+    var modelName = isRef(modelName) ? modelName : ref(modelName || Object.keys(modelNameTagsComputed.value)[0] || 'on-panda')   // using first tag as default model
 
     const apiConfigControllableRaw = { chat_config: deepCopy(defaultChatConfig) }
     const chatConfigControllableRaw = apiConfigControllableRaw.chat_config
@@ -132,7 +152,7 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         for (const configs of apiConfigReceived.value) {
             if (configs && configs.length) {
                 for (const [index, config] of configs.entries()) {
-                    var key = (config.endpoint_name ? config.endpoint_name : "endpoint") + "—" + (configs.length > 1 ? `${index + 1}—` : '') + (config.chat_config.model || '<|None|>')
+                    var key = (config.endpoint_name ? config.endpoint_name : "<|endpoint|>") + "—" + (configs.length > 1 ? `${index + 1}—` : '') + (config.chat_config.model || '<|None|>')
                     keyToApiConfigs[key] = config
                 }
             }
@@ -252,5 +272,18 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     })
 
 
-    return { keyToApiConfigs, modelNameTags, modelName, apiConfigControllable, apiConfig, extraChatParametersString, extraChatParameters, watchApiConfigsResolver, apiConfigsComputed, apiConfigsInput, refreshApiConfigs }
+    return {
+        keyToApiConfigs,
+        modelNameTagsComputed,
+        modelNameTagsInput,
+        modelName,
+        apiConfigControllable,
+        apiConfig,
+        extraChatParametersString,
+        extraChatParameters,
+        watchApiConfigsResolver,
+        apiConfigsComputed,
+        apiConfigsInput,
+        refreshApiConfigs
+    }
 }

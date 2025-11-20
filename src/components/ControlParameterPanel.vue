@@ -26,7 +26,7 @@ const emit = defineEmits(['dblclickModelTag', 'duplicateWindowWithModelName'])
 const { t } = useI18n()
 
 const modelName = props.controlParameterState.modelName
-const modelNameTags = props.controlParameterState.modelNameTags
+const modelNameTags = props.controlParameterState.modelNameTagsComputed
 const keyToApiConfigs = props.controlParameterState.keyToApiConfigs
 const watchApiConfigsResolver = props.controlParameterState.watchApiConfigsResolver
 const apiConfigControllable = props.controlParameterState.apiConfigControllable

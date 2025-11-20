@@ -27,7 +27,7 @@ export default {
     native: '原生',
     promptEngineering: '提示工程',
     refreshModelList: '刷新模型列表',
-    editLocalStorageApiConfigs: '编辑私有 API 配置',
+    editLocalStorageApiConfigs: '私有 API 配置',
     editLocalStorageApiConfigsInstructions: `
 - 将您自己的私有 API 接入 onPanda
 - 支持 JSON5 格式（一种宽泛的 JSON 格式）
@@ -44,11 +44,13 @@ export default {
           // 若未指定 model，则会自动访问 /models 接口获取模型列表
           "model": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
           "top_logprobs": 5,  // 候选词数量，为 0 则关闭 logprobs 功能
+          // ... 支持其他任何 chat 参数
       },
-      // 以下为非必填项
+      // 以下为非必填项：
       // 是否支持原生续写 assistant 消息（比如：开源模型、Claude 支持、OpenAI 不支持），默认 true
       "support_continue_final_message": true,
       "endpoint_name": "example",  // API 别名
+      "tag_name": "private",  // 在 onPanda UI 上添加模型快捷标签
     },
     // { ... } 另一个 API 配置
 ]
@@ -89,7 +91,7 @@ export default {
     cleanUI: '简洁界面（阅读模式）',
     continueGenerating: '继续生成',
     stopGenerating: '停止生成',
-    modelTagClick: '1. 单击标签切换模型；双击标签切换模型并重新生成。\n2. 如果按住 `Ctrl` 键并点击或者用鼠标中键点击，将在新窗口中打开包含相同消息的对话',
+    modelTagClick: '1. 单击标签切换模型；双击标签切换模型并重新生成。\n2. 如果按住 `Ctrl` 键并点击或者用鼠标中键点击，将打开新窗口并用对应模型重新生成',
     continueGeneratingSupport: '此模型是否支持原生续写 assistant 消息？\n\n如果不支持，将使用提示工程(prompt engineering)进行续写：\n\n> ',
     refreshTokenProb: '更新词组概率和候选',
     dblclickToPasteAndRefresh: '或双击',

@@ -44,11 +44,13 @@ export default {
           // If no model is specified, /models will be called automatically to fetch the list
           "model": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
           "top_logprobs": 5,  // number of candidates; set to 0 to disable logprobs
+          // ... supports any other chat parameters
       },
-      // Optional fields below
+      // Optional fields below:
       // Whether native assistant continuation is supported (e.g., open-source models and Claude support it, OpenAI does not). Default true
       "support_continue_final_message": true,
       "endpoint_name": "example",  // API alias
+      "tag_name": "private",  // Quick model tag shown in the onPanda UI
     },
     // { ... } another API config
 ]
@@ -89,7 +91,7 @@ export default {
     cleanUI: 'Clean UI (reading mode)',
     continueGenerating: 'Continue generating',
     stopGenerating: 'Stop generating',
-    modelTagClick: '1. Single-click the tag to switch model; double-click to switch and regenerate.\n2. If hold down the `Ctrl` key and click or use the middle mouse button, will open a new window containing the same message',
+    modelTagClick: '1. Single-click the tag to switch model; double-click to switch and regenerate.\n2. If hold down the `Ctrl` key and click or use the middle mouse button, will open a new window and regenerate using the chosen model.',
     continueGeneratingSupport: 'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> ',
     refreshTokenProb: 'Refresh tokens\' probability. Or',
     dblclickToPasteAndRefresh: 'double-click to',
