@@ -55,6 +55,7 @@ export default {
     // { ... } another API config
 ]
 \`\`\`
+- You can view the current API configuration under \`Advanced Control\` → \`Current API config JSON\`.
 
 **Privacy notice:**
 - Private API configs are stored locally in your browser (localStorage)

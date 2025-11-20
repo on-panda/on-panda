@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, getCurrentInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { deepCopy } from '../utils/commonUtils'
 import JSON5 from 'json5'
 import { InfoFilled, RefreshRight, Edit } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -9,6 +10,7 @@ import MarkdownRender from './widgets/MarkdownRender.vue'
 import CustomAnnotatorTool from './widgets/CustomAnnotatorTool.vue'
 import { openDialogEditor } from '../utils/dialogEditor'
 import { CONTINUE_PROMPT, parseApiConfigsJson5 } from '../stores/controlParameterState'
+import ObjectViewerInDetails from './widgets/ObjectViewerInDetails.vue'
 
 const globalStore = useGlobalStore()
 const instance = getCurrentInstance()
@@ -137,6 +139,15 @@ comfirm && string: set localStorageApiConfigsBuffer and try to verfiy JSON5 form
 
 const localStorageApiConfigsBuffer = ref(localStorage.getItem('onPandaApiConfigsJson5') || '')
 
+function maskApiKeyInApiConfig(apiConfig) {
+    if (apiConfig?.client_config?.api_key) {
+        apiConfig = deepCopy(apiConfig)
+        const apiKey = apiConfig.client_config.api_key
+        apiConfig.client_config.api_key = apiKey.slice(0, 6) + '*'.repeat(apiKey.length - 6 - 3) + apiKey.slice(-3)
+    }
+    return apiConfig
+}
+
 </script>
 
 <template>
@@ -233,32 +244,38 @@ const localStorageApiConfigsBuffer = ref(localStorage.getItem('onPandaApiConfigs
             <summary>
                 <small style="color: #bbb;"><b>{{ t('common.advancedControl') }}</b></small>
             </summary>
-            <el-form-item label="top_p">
-                <el-input-number v-model="chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
-            </el-form-item>
+            <div
+                style="background-color: antiquewhite ;padding: 15px 0px 15px 0px; border-radius: 10px; max-width: 1024px;">
+                <el-form-item label="top_p">
+                    <el-input-number v-model="chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
+                </el-form-item>
 
-            <el-form-item label="frequency_penalty">
-                <el-input-number v-model="chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01" size="small" />
-            </el-form-item>
+                <el-form-item label="frequency_penalty">
+                    <el-input-number v-model="chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01"
+                        size="small" />
+                </el-form-item>
 
-            <el-form-item label="extra_parameters">
-                <el-input type="textarea" :autosize="{ minRows: 1 }" v-model="extraChatParametersString" size="small"
-                    @blur="checkExtraChatParameters" style="width: 220px;" />
-                <small>
-                    &nbsp; &nbsp;
-                    <el-tooltip class="" effect="light" placement="top" raw-content>
-                        <template #content>
-                            <MarkdownRender
-                                :content='"JSON for [Extra Parameters](https://docs.vllm.ai/en/stable/serving/openai_compatible_server.html#chat-api_1), e.g.: \n`{\"stop\": \"\\n\", \"min_tokens\": 256}`\nFor Chrome user, using `F12 -> Network -> completions -> Payload` to check the real request parameters"' />
-                        </template>
-                        <el-icon>
-                            <InfoFilled />
-                        </el-icon>
-                    </el-tooltip>
-                </small>
-            </el-form-item>
-            <CustomAnnotatorTool :tool="requestImageDetial"
-                @updateSingleChoice="(v) => { apiConfigControllable.image_detail_level = v }" size="small" />
+                <el-form-item label="extra_parameters">
+                    <el-input type="textarea" :autosize="{ minRows: 1 }" v-model="extraChatParametersString"
+                        size="small" @blur="checkExtraChatParameters" style="width: 220px;" />
+                    <small>
+                        &nbsp; &nbsp;
+                        <el-tooltip class="" effect="light" placement="top" raw-content>
+                            <template #content>
+                                <MarkdownRender
+                                    :content='"JSON for [Extra Parameters](https://docs.vllm.ai/en/stable/serving/openai_compatible_server.html#chat-api_1), e.g.: \n`{\"stop\": \"\\n\", \"min_tokens\": 256}`\nFor Chrome user, using `F12 -> Network -> completions -> Payload` to check the real request parameters"' />
+                            </template>
+                            <el-icon>
+                                <InfoFilled />
+                            </el-icon>
+                        </el-tooltip>
+                    </small>
+                </el-form-item>
+                <CustomAnnotatorTool :tool="requestImageDetial"
+                    @updateSingleChoice="(v) => { apiConfigControllable.image_detail_level = v }" size="small" />
+                <ObjectViewerInDetails :object="maskApiKeyInApiConfig(props.controlParameterState.apiConfig.value)"
+                    summary="Current API config JSON" style="max-width: 800px; margin-left: 20px" />
+            </div>
         </details>
     </el-form>
 </template>

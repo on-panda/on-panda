@@ -55,6 +55,7 @@ export default {
     // { ... } 另一个 API 配置
 ]
 \`\`\`
+- 可以从 \`高级控制\` -> \`Current API config JSON\` 中查看当前 API 的配置
 
 **隐私声明：**
 - 私有 API 配置文件存储在您的浏览器本地（localStorage）
