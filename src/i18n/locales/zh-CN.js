@@ -65,6 +65,7 @@ export default {
   userMessages: {
     waiting: '等待中...',
     copied: '已复制到剪贴板',
+    copyFailed: '复制失败，请重试',
     responseRefreshed: '响应概率已刷新',
     modelsRefreshed: '模型列表刷新完成',
     noPromptLogprobs: '响应中没有 prompt_logprobs，可能当前模型不支持刷新概率和候选',

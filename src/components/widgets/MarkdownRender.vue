@@ -1,11 +1,12 @@
 <template>
-  <div class="on-panda-markdown-content" v-html="htmlContent" @dblclick="handleDoubleClickInMarkdown"
-    @click="handleClickInMarkdown">
+  <div class="on-panda-markdown-content" ref="markdownContainer" v-html="htmlContent"
+    @dblclick="handleDoubleClickInMarkdown" @click="handleClickInMarkdown">
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { markdown } from '../../utils/markdown'
 
 const props = defineProps({
@@ -14,6 +15,9 @@ const props = defineProps({
     default: ''
   },
 })
+
+const markdownContainer = ref(null)
+const { t, locale } = useI18n()
 
 const htmlContent = computed(() => {
   if (!props.content) {
@@ -27,6 +31,30 @@ const htmlContent = computed(() => {
   }
   return html
 })
+
+// for fancy copy button
+const updateCopyButtonLabels = () => {
+  const container = markdownContainer.value
+  if (!container) {
+    return
+  }
+  const buttons = container.querySelectorAll('.markdown-it-code-copy')
+  buttons.forEach(button => {
+    const label = t('common.copy')
+    button.title = label
+    button.setAttribute('aria-label', label)
+    if (button.dataset.copyFeedback === 'active') {
+      return
+    }
+    const span = button.querySelector('span')
+    if (span) {
+      span.textContent = label
+    }
+  })
+}
+const scheduleCopyButtonUpdate = () => nextTick(updateCopyButtonLabels)
+watch(htmlContent, scheduleCopyButtonUpdate, { immediate: true })
+watch(locale, scheduleCopyButtonUpdate)
 
 function handleDoubleClickInMarkdown(event) {
   if (event.target.tagName === 'IMG') {
@@ -90,6 +118,42 @@ function handleClickInMarkdown(event) {
     line-height: 1.45;
     display: block;
     padding: 1em;
+  }
+  /* for fancy copy button */
+  pre {
+    margin: 0;
+  }
+
+  .markdown-it-code-copy {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    border: none;
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.4);
+    padding: 2px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    opacity: 0.15;
+    transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+  }
+
+  pre:hover+.markdown-it-code-copy,
+  .markdown-it-code-copy:hover,
+  .markdown-it-code-copy:focus-visible {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+  }
+
+  .markdown-it-code-copy:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+  }
+
+  .markdown-it-code-copy span {
+    font-size: 12px;
   }
 }
 

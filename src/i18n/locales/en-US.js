@@ -65,6 +65,7 @@ export default {
   userMessages: {
     waiting: 'Waiting...',
     copied: 'Copied to clipboard',
+    copyFailed: 'Copy failed, please try again',
     responseRefreshed: 'Response probability refreshed',
     modelsRefreshed: 'Model list refresh completed',
     noPromptLogprobs: 'No prompt_logprobs in response, maybe the model does not support prompt_logprobs',
