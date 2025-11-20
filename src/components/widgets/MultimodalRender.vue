@@ -21,10 +21,6 @@ const props = defineProps({
     type: String,
     default: ''
   },
-  replaceBBCodeLatexDelimiters: {
-    type: Boolean,
-    default: true
-  },
 })
 
 const globalStore = useGlobalStore()

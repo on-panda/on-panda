@@ -13,29 +13,13 @@ const props = defineProps({
     type: String,
     default: ''
   },
-  replaceBBCodeLatexDelimiters: {
-    type: Boolean,
-    default: true
-  },
 })
 
 const htmlContent = computed(() => {
   if (!props.content) {
     return ''
   }
-  var content = props.content
-  if (props.replaceBBCodeLatexDelimiters) {
-    content = content
-      .replace(/\\\[ /g, "$$")
-      .replace(/ \\]/g, "$$")
-      .replace(/\\\(\s/g, "$")
-      .replace(/\s\\\)/g, "$")
-      .replace(/\\\[/g, "$$")
-      .replace(/\\\]/g, "$$")
-      .replace(/\\\(/g, "$")
-      .replace(/\\\)/g, "$");
-  }
-  var html = markdown.render(content).trim()
+  var html = markdown.render(props.content).trim()
   if (html.startsWith('<p>') && html.endsWith('</p>')) {
     html = html.slice(3, -4)
     // 去掉了 p 标签, 会导致动态 markdown 渲染不稳定，一直跳动，需要的话自己加上
