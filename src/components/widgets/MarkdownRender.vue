@@ -143,7 +143,7 @@ function handleClickInMarkdown(event) {
   .markdown-it-code-copy:hover,
   .markdown-it-code-copy:focus-visible {
     opacity: 1;
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(128, 128, 128, 0.5);
     color: #fff;
   }
 
