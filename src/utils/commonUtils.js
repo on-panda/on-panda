@@ -167,7 +167,24 @@ import { ElMessage } from 'element-plus'
 import { i18n } from '../i18n'
 
 export async function copyToClipboard(string) {
-  await navigator.clipboard.writeText(string)
+  const useNavigatorClipboard = navigator?.clipboard?.writeText && window.isSecureContext
+  if (useNavigatorClipboard) {
+    await navigator.clipboard.writeText(string)
+  } else {  // fallback to document.execCommand('copy'), only works when user click
+    const textarea = document.createElement('textarea')
+    textarea.value = string
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    textarea.style.pointerEvents = 'none'
+    document.body.appendChild(textarea)
+    textarea.focus()
+    textarea.select()
+    try {
+      document.execCommand('copy')
+    } finally {
+      document.body.removeChild(textarea)
+    }
+  }
   ElMessage({
     showClose: true,
     message: i18n.global.t('userMessages.copied'),
