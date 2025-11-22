@@ -25,7 +25,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     const uploadedJson = ref(null)
     const onPandaContainerRef = ref(document)
 
-    const tokens = ref([]);
+    const tokens = ref([])
+    const promptLogprobsTokens = ref([])
 
     const requestStatus = ref({
         requestTimes: 0,
@@ -402,7 +403,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             promptLogprobs.map((token, tokenIndex) => {
                 token.tokenIndex = tokenIndex
             })
-            // promptLogprobsTokens.value = promptLogprobs
+            promptLogprobsTokens.value = promptLogprobs
 
             tokens.value = tokensNew
             ElMessage({
@@ -747,6 +748,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         messages,
         apiConfig,
         tokens,
+        promptLogprobsTokens,
         requestStatus,
         operationCenter,
         newRoundMessage,

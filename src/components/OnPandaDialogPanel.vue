@@ -1,5 +1,5 @@
 <script setup>
-import { provide } from 'vue'
+import { provide, computed } from 'vue'
 const { t } = useI18n()
 import { useI18n } from 'vue-i18n'
 import { messageToSeq } from '../utils/chatUtils.js'
@@ -18,6 +18,21 @@ const { responseState } = props
 const { messages, operationCenter, pandaState, newRoundMessage } = responseState
 
 provide('operationCenter.editRole', responseState.operationCenter.editRole)
+
+import { ResponseStateClosure } from '../stores/responseState.js'
+function setPromptLogprobsResponseState() {
+    if (responseState.promptLogprobsTokens.value.length){
+        const promptLogprobsResponseState = ResponseStateClosure({
+            messages: [{role:"user", content: "test"}, {role: "assistant", content: "test"}],
+            apiConfig: responseState.apiConfig,
+        })
+        console.log(responseState.promptLogprobsTokens.value)
+        promptLogprobsResponseState.tokens.value = responseState.promptLogprobsTokens.value
+        return promptLogprobsResponseState
+    }
+}
+const promptLogprobsResponseState = computed(setPromptLogprobsResponseState)
+
 </script>
 
 <template>
@@ -36,6 +51,12 @@ provide('operationCenter.editRole', responseState.operationCenter.editRole)
                     :messageIndex="messageIndex" :operationCenter="operationCenter" />
             </div>
         </div>
+        {{ responseState.promptLogprobsTokens.value.length }}
+        <div v-if="responseState.promptLogprobsTokens.value.length">
+            promptLogprobsResponseState:
+            <OnPandaResponsePanel :responseState="promptLogprobsResponseState" />
+        </div>
+        
         <OnPandaResponsePanel :responseState="responseState" />
         <slot name="beforeNewRoundMessageSlot"></slot>
 
