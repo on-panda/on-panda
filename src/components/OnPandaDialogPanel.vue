@@ -21,15 +21,20 @@ provide('operationCenter.editRole', responseState.operationCenter.editRole)
 
 import { ResponseStateClosure } from '../stores/responseState.js'
 function setPromptLogprobsResponseState() {
-    if (responseState.promptLogprobsTokens.value.length){
+    if (responseState.promptLogprobsTokens.value.length) {
+        console.log("prompt:")
+        var prompt = responseState.promptLogprobsTokens.value.map(x => x.delta.content).join('')
+        // console.log(prompt)
+        console.trace()
+        var endOfText = "<|im_end|>\n<|endoftext|>"  // Make chatML compatible with chat API
         const promptLogprobsResponseState = ResponseStateClosure({
-            messages: [{role:"user", content: "test"}, {role: "assistant", content: "test"}],
+            messages: [{ role: "user", content: "Hi" }, { role: "assistant", content: "Hello!" + endOfText + prompt }],
             apiConfig: responseState.apiConfig,
         })
-        console.log(responseState.promptLogprobsTokens.value)
         promptLogprobsResponseState.tokens.value = responseState.promptLogprobsTokens.value
         return promptLogprobsResponseState
     }
+    return null
 }
 const promptLogprobsResponseState = computed(setPromptLogprobsResponseState)
 
@@ -51,12 +56,11 @@ const promptLogprobsResponseState = computed(setPromptLogprobsResponseState)
                     :messageIndex="messageIndex" :operationCenter="operationCenter" />
             </div>
         </div>
-        {{ responseState.promptLogprobsTokens.value.length }}
-        <div v-if="responseState.promptLogprobsTokens.value.length">
-            promptLogprobsResponseState:
+        <div v-if="responseState.promptLogprobsTokens.value.length"
+            style="padding: 5px 20px 5px 20px;border-radius: 5px;border: 2px solid rgb(255, 85, 85);">
             <OnPandaResponsePanel :responseState="promptLogprobsResponseState" />
         </div>
-        
+
         <OnPandaResponsePanel :responseState="responseState" />
         <slot name="beforeNewRoundMessageSlot"></slot>
 

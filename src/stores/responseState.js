@@ -356,21 +356,19 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 })
                 return
             }
-            var promptLogprobs = json.prompt_logprobs_list
-            console.log("prompt:")
-            console.log(promptLogprobs.map(x => x.content[0].token).join(''))
-            for (var i = json.prompt_logprobs_list.length - 1; i >= 0; i--) {
-                var logprobs = json.prompt_logprobs_list[i]
-                var token_content = logprobs.content[0].token
+            var promptLogprobsTokensNew = json.prompt_logprobs_list.map(x => ({
+                delta: { role: tokens.value[0].delta.role, content: x.content[0].token },
+                logprobs: x,
+                model: tokens.value[0].model,
+            }))
+            for (var i = promptLogprobsTokensNew.length - 1; i >= 0; i--) {
+                var token = promptLogprobsTokensNew[i]
+                var token_content = token.delta.content
 
                 if ((token_content + lastMessageContent_).length > lastMessageContent.length) {
                     break
                 }
-                tokensNew.unshift({
-                    delta: { role: tokens.value[0].delta.role, content: token_content },
-                    logprobs: logprobs,
-                    model: tokens.value[0].model,
-                })
+                tokensNew.unshift(token)
                 lastMessageContent_ = token_content + lastMessageContent_
             }
             var decodeToken = json.choices[0]
@@ -391,19 +389,18 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 }
                 tokensNew.push(stopToken)
                 usage.completion_tokens += 1
-                promptLogprobs = [...promptLogprobs, stopToken]
+                promptLogprobsTokensNew = [...promptLogprobsTokensNew, stopToken]
             }
 
-            var lastToken = { delta: { role: tokens.value[0].role, content: "" }, model: json.model, usage: usage }
-            tokensNew.push(lastToken)
-            promptLogprobs.push(lastToken)
+            tokensNew.push({ delta: { role: tokens.value[0].role, content: "" }, model: json.model, usage: usage })
+            promptLogprobsTokensNew.push({ delta: { role: "prompt", content: "" }, model: json.model, })
             tokensNew.map((token, tokenIndex) => {
                 token.tokenIndex = tokenIndex
             })
-            promptLogprobs.map((token, tokenIndex) => {
+            promptLogprobsTokensNew.map((token, tokenIndex) => {
                 token.tokenIndex = tokenIndex
             })
-            promptLogprobsTokens.value = promptLogprobs
+            promptLogprobsTokens.value = deepCopy(promptLogprobsTokensNew)
 
             tokens.value = tokensNew
             ElMessage({
