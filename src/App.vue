@@ -161,7 +161,15 @@ onMounted(async () => {
         // Use the example via the operationCenter directly
         // operationCenter.loadMessages([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }])
         // exampleToRun = operationCenter.generateNew
-        exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
+        // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
+        exampleToRun = () => {
+          operationCenter.loadMessages([{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }])
+          if (modelNameTags.value['test']) {
+            modelName.value = modelNameTags.value['test']
+          }
+          modelName.value = "tools-tag"
+          operationCenter.refreshResponseProbability()
+        }
       }
     }
 

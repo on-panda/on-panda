@@ -27,6 +27,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
     const tokens = ref([])
     const promptLogprobsTokens = ref([])
+    const isPromptLogprobsState = ref(false)
 
     const requestStatus = ref({
         requestTimes: 0,
@@ -393,7 +394,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             }
 
             tokensNew.push({ delta: { role: tokens.value[0].role, content: "" }, model: json.model, usage: usage })
-            promptLogprobsTokensNew.push({ delta: { role: "prompt", content: "" }, model: json.model, })
+            promptLogprobsTokensNew.push({ delta: { role: tokens.value[0].role, content: "" }, model: json.model, })
             tokensNew.map((token, tokenIndex) => {
                 token.tokenIndex = tokenIndex
             })
@@ -746,6 +747,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         apiConfig,
         tokens,
         promptLogprobsTokens,
+        isPromptLogprobsState,
         requestStatus,
         operationCenter,
         newRoundMessage,
@@ -754,8 +756,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         ...warningState,
         registerInResponseText,
         bindApiConfig,
-        requestPromptLogprobs,
-        requestLlmServer
+        // requestPromptLogprobs, // using operationCenter instead
+        // requestLlmServer
     }
 }
 

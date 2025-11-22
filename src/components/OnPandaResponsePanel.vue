@@ -66,7 +66,7 @@ async function pasteThenRequestPromptLogprobs() {
         tokens.value = [{ delta: { role: "assistant", content: "" } }]
     }
     operationCenter.applyInputChange(tokens.value[0], pasteText)
-    responseState.requestPromptLogprobs()
+    operationCenter.refreshResponseProbability()
 }
 
 const scrollDiv = ref(null)
@@ -93,7 +93,7 @@ onBeforeUnmount(() => {
     <div class="OnPandaResponsePanel onPandaContainers" :style="globalStore.cleanMode ? { maxWidth: '1024px' } : {}">
         <div class="finalMessageHeadBar" style="display: flex; justify-content: space-between;"
             :style="isMobile ? {} : { width: '50%' }">
-            <MessageRole :message="finalMessage" />
+            <MessageRole :message="responseState.isPromptLogprobsState.value ? { role: 'prompt' } : finalMessage" />
             <span class="stretch" style="margin-right: auto" />
             <footer class="finalMessageControlButtons" style="display :flex; margin-top:5px; margin-bottom:-5px">
                 <span class="stretch" style="margin-right: auto" />

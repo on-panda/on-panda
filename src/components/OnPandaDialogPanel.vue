@@ -22,16 +22,20 @@ provide('operationCenter.editRole', responseState.operationCenter.editRole)
 import { ResponseStateClosure } from '../stores/responseState.js'
 function setPromptLogprobsResponseState() {
     if (responseState.promptLogprobsTokens.value.length) {
-        console.log("prompt:")
         var prompt = responseState.promptLogprobsTokens.value.map(x => x.delta.content).join('')
-        // console.log(prompt)
-        console.trace()
+        // console.log("prompt:", prompt)
+        // console.trace()
         var endOfText = "<|im_end|>\n<|endoftext|>"  // Make chatML compatible with chat API
         const promptLogprobsResponseState = ResponseStateClosure({
-            messages: [{ role: "user", content: "Hi" }, { role: "assistant", content: "Hello!" + endOfText + prompt }],
+            messages: [{ role: "system", content: "None" }, { role: "user", content: "Just reply `prompt logprobs`" }],// { role: "assistant", content: "prompt logprobs:" + endOfText + prompt }],
             apiConfig: responseState.apiConfig,
         })
-        promptLogprobsResponseState.tokens.value = responseState.promptLogprobsTokens.value
+        const prefixTokens = { delta: { role: "assistant", content: "prompt logprobs" + endOfText } }
+        promptLogprobsResponseState.tokens.value = [prefixTokens, ...responseState.promptLogprobsTokens.value].map((token, tokenIndex) => {
+            token.tokenIndex = tokenIndex
+            return token
+        })
+        promptLogprobsResponseState.isPromptLogprobsState.value = true
         return promptLogprobsResponseState
     }
     return null
@@ -56,9 +60,11 @@ const promptLogprobsResponseState = computed(setPromptLogprobsResponseState)
                     :messageIndex="messageIndex" :operationCenter="operationCenter" />
             </div>
         </div>
+        <!-- still don't know why `v-if="promptLogprobsResponseState"` is not working -->
         <div v-if="responseState.promptLogprobsTokens.value.length"
-            style="padding: 5px 20px 5px 20px;border-radius: 5px;border: 2px solid rgb(255, 85, 85);">
+            style="padding: 5px 20px 5px 20px;border-radius: 5px;border: 2px solid #f554;">
             <OnPandaResponsePanel :responseState="promptLogprobsResponseState" />
+            {{ promptLogprobsResponseState.messagesComputed }}
         </div>
 
         <OnPandaResponsePanel :responseState="responseState" />
