@@ -1,6 +1,5 @@
 <script setup>
-import { provide, computed } from 'vue'
-const { t } = useI18n()
+import { provide, computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { messageToSeq } from '../utils/chatUtils.js'
 
@@ -14,23 +13,32 @@ const props = defineProps({
     },
 })
 
+const { t } = useI18n()
 const { responseState } = props
 const { messages, operationCenter, pandaState, newRoundMessage } = responseState
 
 provide('operationCenter.editRole', responseState.operationCenter.editRole)
 
 import { ResponseStateClosure } from '../stores/responseState.js'
-function setPromptLogprobsResponseState() {
+
+const promptLogprobsText = computed(() => {
     if (responseState.promptLogprobsTokens.value.length) {
         var prompt = responseState.promptLogprobsTokens.value.map(x => x.delta.content).join('')
         // console.log("prompt:", prompt)
-        // console.trace()
-        var endOfText = "<|im_end|>\n<|endoftext|>"  // Make chatML compatible with chat API
+        return prompt
+    }
+    return ""
+})
+function setPromptLogprobsResponseState() {
+    if (responseState.promptLogprobsTokens.value.length) {
+        // Make chatML compatible with chat API (now only for Qwen tokenizer)
+        // TODO: Compatible special tokens with other models, maybe by special_tokens config?
+        var endOfText = "<|im_end|>\n<|endoftext|>"
         const promptLogprobsResponseState = ResponseStateClosure({
-            messages: [{ role: "system", content: "None" }, { role: "user", content: "Just reply `prompt logprobs`" }],// { role: "assistant", content: "prompt logprobs:" + endOfText + prompt }],
+            messages: [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }],
             apiConfig: responseState.apiConfig,
         })
-        const prefixTokens = { delta: { role: "assistant", content: "prompt logprobs" + endOfText } }
+        const prefixTokens = { delta: { role: "assistant", content: "Hi!" + endOfText } }
         promptLogprobsResponseState.tokens.value = [prefixTokens, ...responseState.promptLogprobsTokens.value].map((token, tokenIndex) => {
             token.tokenIndex = tokenIndex
             return token
@@ -61,10 +69,9 @@ const promptLogprobsResponseState = computed(setPromptLogprobsResponseState)
             </div>
         </div>
         <!-- still don't know why `v-if="promptLogprobsResponseState"` is not working -->
-        <div v-if="responseState.promptLogprobsTokens.value.length"
+        <div v-if="responseState.promptLogprobsTokens.value.length" :key="promptLogprobsText"
             style="padding: 5px 20px 5px 20px;border-radius: 5px;border: 2px solid #f554;">
             <OnPandaResponsePanel :responseState="promptLogprobsResponseState" />
-            {{ promptLogprobsResponseState.messagesComputed }}
         </div>
 
         <OnPandaResponsePanel :responseState="responseState" />

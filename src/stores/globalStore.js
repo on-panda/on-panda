@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, defineAsyncComponent, markRaw } from 'vue'
 import { useEventListener } from '../utils/commonUtils'
+import { useI18n } from 'vue-i18n'
 
 export const useGlobalStore = defineStore('onPandaGlobal', () => {
     const debug = ref((window.location.href.includes('http://localhost') || window.location.href.includes('http://127.0.0.1')) && document.title.endsWith("onPanda"))
@@ -53,8 +54,9 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
         }
         uuid.value = pandaTree.uuid
     }
+    const { t } = useI18n()
 
-    return { debug, isOldUser, hooks, cleanMode, enableLocalStorageApiConfigs, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, customModelNameTags, customExampleNameToFunc, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins, uuid, loadPandaTree }
+    return { debug, isOldUser, hooks, cleanMode, enableLocalStorageApiConfigs, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, customModelNameTags, customExampleNameToFunc, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins, uuid, loadPandaTree, t }
 }
 )
 

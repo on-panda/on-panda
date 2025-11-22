@@ -34,7 +34,7 @@ export function useScrollSwitchSync(scrollDiv) {
     // 滚动到相应位置
     const scrollToPosition = () => {
         // 移除滚动事件监听，避免触发 syncSwitchWithScroll
-        scrollDiv.value.removeEventListener('scroll', syncSwitchWithScroll);
+        scrollDiv.value?.removeEventListener('scroll', syncSwitchWithScroll);
 
         // 滚动到对应位置
         scrollDiv.value.scrollTo({

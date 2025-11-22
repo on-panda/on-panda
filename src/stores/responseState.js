@@ -1,5 +1,4 @@
 import { ref, computed, toValue, watch, isRef } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject } from '../utils/commonUtils.js'
 import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage } from '../utils/chatUtils.js'
@@ -15,8 +14,8 @@ export const defaultMessages = [{ role: "system", content: "" }, { role: "user",
 export function ResponseStateClosure({ messages = null, apiConfig = null } = {}) {
     // using closure as class to avoid using 'this'
     // both messages and apiConfig support ref or raw
-    const { t } = useI18n()
     const globalStore = useGlobalStore()
+    const { t } = globalStore
 
     var messages = isRef(messages) ? messages : ref(messages || deepCopy(defaultMessages))
     var apiConfig = isRef(apiConfig) ? apiConfig : ref(apiConfig || deepCopy(defaultApiConfig))
@@ -54,6 +53,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     function modifyRequest(requestBody, apiConfig) {
         apiConfig = toValue(apiConfig)
         var body = normalizeRequest(requestBody)
+        if (isPromptLogprobsState.value) {
+            delete body.tools
+        }
         for (let message of body.messages) {
             if (typeof message.content === "object") {
                 for (let chunk of message.content) {

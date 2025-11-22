@@ -85,7 +85,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-    scrollDiv.value.removeEventListener('scroll', handleScrollDivFunction);
+    scrollDiv.value?.removeEventListener('scroll', handleScrollDivFunction);
 })
 </script>
 
