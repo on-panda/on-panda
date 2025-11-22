@@ -400,10 +400,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             tokensNew.map((token, tokenIndex) => {
                 token.tokenIndex = tokenIndex
             })
-            promptLogprobsTokensNew.map((token, tokenIndex) => {
+            const promptLogprobsTokensCloned = deepCopy(promptLogprobsTokensNew)
+            promptLogprobsTokensCloned.map((token, tokenIndex) => {
                 token.tokenIndex = tokenIndex
             })
-            promptLogprobsTokens.value = deepCopy(promptLogprobsTokensNew)
+            promptLogprobsTokens.value = promptLogprobsTokensCloned
 
             tokens.value = tokensNew
             ElMessage({
@@ -762,5 +763,4 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         // requestLlmServer
     }
 }
-
 
