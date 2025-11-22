@@ -21,6 +21,7 @@ provide('operationCenter.editRole', responseState.operationCenter.editRole)
 
 import { ResponseStateClosure } from '../stores/responseState.js'
 
+
 const promptLogprobsText = computed(() => {
     if (responseState.promptLogprobsTokens.value.length) {
         var prompt = responseState.promptLogprobsTokens.value.map(x => x.delta.content).join('')
@@ -29,6 +30,7 @@ const promptLogprobsText = computed(() => {
     }
     return ""
 })
+
 function setPromptLogprobsResponseState() {
     if (responseState.promptLogprobsTokens.value.length) {
         // Make chatML compatible with chat API (now only for Qwen tokenizer)
@@ -68,11 +70,17 @@ const promptLogprobsResponseState = computed(setPromptLogprobsResponseState)
                     :messageIndex="messageIndex" :operationCenter="operationCenter" />
             </div>
         </div>
-        <!-- still don't know why `v-if="promptLogprobsResponseState"` is not working -->
-        <div v-if="responseState.promptLogprobsTokens.value.length" :key="promptLogprobsText"
-            style="padding: 5px 20px 5px 20px;border-radius: 5px;border: 2px solid #f554;">
-            <OnPandaResponsePanel :responseState="promptLogprobsResponseState" />
-        </div>
+        <details v-if="promptLogprobsResponseState" class="prompt-logprobs-details">
+            <summary class="prompt-logprobs-summary">
+                <el-tooltip effect="dark" placement="top" :content="t('dialogPanel.promptLogprobsTooltip')">
+                    <span>{{ t('dialogPanel.promptVisualizationLabel') }}</span>
+                </el-tooltip>
+            </summary>
+            <div class="prompt-logprobs-body" v-if="promptLogprobsResponseState"
+                :key="JSON.stringify(responseState.promptLogprobsTokens.value.slice(-10))">
+                <OnPandaResponsePanel :responseState="promptLogprobsResponseState" />
+            </div>
+        </details>
 
         <OnPandaResponsePanel :responseState="responseState" />
         <slot name="beforeNewRoundMessageSlot"></slot>
@@ -84,3 +92,36 @@ const promptLogprobsResponseState = computed(setPromptLogprobsResponseState)
         </div>
     </div>
 </template>
+
+<style scoped>
+.prompt-logprobs-details {
+    border: 2px solid transparent;
+    border-radius: 5px;
+    margin-top: 10px;
+    background-color: transparent;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+    padding: 6px 20px 12px 0px;
+}
+
+.prompt-logprobs-details[open] {
+    border-color: #f554;
+    background-color: #fff;
+    padding: 6px 20px 12px;
+}
+
+.prompt-logprobs-summary {
+    font-size: small;
+    font-weight: 500;
+    color: #888;
+    cursor: pointer;
+}
+
+.prompt-logprobs-summary::marker,
+.prompt-logprobs-summary::-webkit-details-marker {
+    color: #888;
+}
+
+.prompt-logprobs-body {
+    margin-top: 10px;
+}
+</style>

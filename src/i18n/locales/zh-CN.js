@@ -130,6 +130,10 @@ export default {
     send: '生成➡️',
     ctrlEnter: 'ctrl+enter'
   },
+  dialogPanel: {
+    promptLogprobsTooltip: '更新词组概率后，可查看整条 prompt 的 logprobs 可视化（chat templates）',
+    promptVisualizationLabel: '整条 prompt 可视化 🪄'
+  },
   header: {
     usage: '使用说明',
     basicFeatures: '基本功能',

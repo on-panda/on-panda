@@ -130,6 +130,10 @@ export default {
     send: 'Send➡️',
     ctrlEnter: 'ctrl+enter'
   },
+  dialogPanel: {
+    promptLogprobsTooltip: 'After refreshing token probabilities, you can inspect the entire prompt logprobs visualization (chat templates).',
+    promptVisualizationLabel: 'Full prompt visualization 🪄'
+  },
   header: {
     usage: 'Usage',
     basicFeatures: 'Basic Features',
