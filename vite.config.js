@@ -3,6 +3,11 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
+function verifyIsLlmApiCall(url) {
+  // check is LLM api call by /models or /completions
+  return /\/models|\/completions/.test(url);
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const config = {
@@ -47,6 +52,10 @@ export default defineConfig(({ mode }) => {
                 var url = new URL(req.url.replace(/^\/bypass-CORS\//, ''))
                 // console.log(proxy.options)
                 // console.log('url:', url)
+                if (!verifyIsLlmApiCall(url)) {
+                  // raise error
+                  throw new Error(`Not a valid LLM API call: ${url} that should match /models or /completions, not allowed using /bypass-CORS`);
+                }
                 proxy.options.target = url.origin;
                 proxyReq.path = url.pathname
               } catch (e) {
@@ -54,6 +63,11 @@ export default defineConfig(({ mode }) => {
               }
             });
           },
+        },
+        '/using-server-proxy': {
+          // Forward request with proxy@server
+          // setting URL example: `/using-server-proxy/http://127.0.0.1:1087/https://target.com/v1`
+          proxyUrl: 'socks5://127.0.0.1:1080',
         },
         '/cast': {
           target: 'http://127.0.0.1:9200',
