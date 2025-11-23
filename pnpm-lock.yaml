@@ -69,6 +69,9 @@ importers:
       postcss-prefix-selector:
         specifier: ^2.1.1
         version: 2.1.1(postcss@8.5.6)
+      undici:
+        specifier: ^7.16.0
+        version: 7.16.0
       vite:
         specifier: ^5.3.1
         version: 5.4.3(@types/node@18.19.50)
@@ -1134,6 +1137,10 @@ packages:
 
   undici-types@5.26.5:
     resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
+
+  undici@7.16.0:
+    resolution: {integrity: sha512-QEg3HPMll0o3t2ourKwOeUAZ159Kn9mx5pnzHRQO8+Wixmh88YdZRiIwat0iNzNNXn0yoEtXJqFpyW7eM8BV7g==}
+    engines: {node: '>=20.18.1'}
 
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
@@ -2252,6 +2259,8 @@ snapshots:
   uc.micro@2.1.0: {}
 
   undici-types@5.26.5: {}
+
+  undici@7.16.0: {}
 
   uri-js@4.4.1:
     dependencies:

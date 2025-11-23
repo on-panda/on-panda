@@ -1,7 +1,9 @@
 import { fileURLToPath, URL } from 'node:url'
+import { Readable } from 'node:stream'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { ProxyAgent } from 'undici'
 
 function verifyIsLlmApiCall(url) {
   // check is LLM api call by /models or /completions
@@ -10,9 +12,84 @@ function verifyIsLlmApiCall(url) {
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
+  const usingServerProxyPlugin = {
+    // Forward request with proxy@server
+    // setting URL example: `/using-server-proxy/http://127.0.0.1:1087/https://target.com/v1`
+    name: 'using-server-proxy-middleware',
+    configureServer(server) {
+      server.middlewares.use('/using-server-proxy', async (req, res) => {
+        try {
+          const rawPath = req.url || ''
+          const withoutPrefix = rawPath.startsWith('/using-server-proxy/')
+            ? rawPath.replace(/^\/using-server-proxy\//, '')
+            : rawPath.replace(/^\/+/, '')
+          const incomingPath = decodeURIComponent(withoutPrefix)
+          const match = incomingPath.match(/^(?<proxy>[a-zA-Z][a-zA-Z0-9+.-]*:\/\/[^/]+)\/(?<target>https?:\/\/.+)$/)
+          if (!match || !match.groups) {
+            res.statusCode = 400
+            res.end('Invalid proxy request: expected /using-server-proxy/<proxy>/<target>')
+            return
+          }
+          const { proxy: proxyUrl, target } = match.groups
+          const targetUrl = new URL(target)
+          if (!verifyIsLlmApiCall(targetUrl)) {
+            throw new Error(`Not a valid LLM API call: ${targetUrl}`)
+          }
+
+          const method = req.method || 'GET'
+          const hopByHopHeaders = new Set(['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'transfer-encoding', 'upgrade', 'host'])
+          const headers = new Headers()
+          Object.entries(req.headers).forEach(([key, value]) => {
+            if (!value || hopByHopHeaders.has(key.toLowerCase())) {
+              return
+            }
+            const values = Array.isArray(value) ? value : [value]
+            values.forEach(val => headers.append(key, val))
+          })
+
+          const fetchInit = {
+            method,
+            headers,
+            dispatcher: new ProxyAgent(proxyUrl),
+            compress: false
+          }
+          const hasBody = !['GET', 'HEAD'].includes(method.toUpperCase())
+          if (hasBody) {
+            fetchInit.body = req
+            fetchInit.duplex = 'half'
+          }
+
+          // console.log(`Proxying request from ${req.url} to ${targetUrl} with agent proxy ${proxyUrl}`)
+          const upstreamResponse = await fetch(targetUrl.toString(), fetchInit)
+          res.statusCode = upstreamResponse.status
+          res.setHeader('content-encoding', 'identity')
+          upstreamResponse.headers.forEach((value, key) => {
+            if (key.toLowerCase() === 'content-encoding') {
+              return
+            }
+            res.setHeader(key, value)
+          })
+          if (!upstreamResponse.body) {
+            res.end()
+            return
+          }
+          Readable.fromWeb(upstreamResponse.body).pipe(res)
+        } catch (error) {
+          console.error('Server proxy failed', error)
+          if (!res.headersSent) {
+            res.statusCode = 500
+            res.setHeader('content-type', 'text/plain')
+          }
+          res.end(`Proxy error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        }
+      })
+    }
+  }
+
   const config = {
     plugins: [
       vue(),
+      usingServerProxyPlugin
     ],
     resolve: {
       alias: {
@@ -63,11 +140,6 @@ export default defineConfig(({ mode }) => {
               }
             });
           },
-        },
-        '/using-server-proxy': {
-          // Forward request with proxy@server
-          // setting URL example: `/using-server-proxy/http://127.0.0.1:1087/https://target.com/v1`
-          proxyUrl: 'socks5://127.0.0.1:1080',
         },
         '/cast': {
           target: 'http://127.0.0.1:9200',
