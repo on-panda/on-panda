@@ -28,9 +28,9 @@ export default {
     native: '原生',
     promptEngineering: '提示工程',
     refreshModelList: '刷新模型列表',
-    editLocalStorageApiConfigs: '私有 API 配置',
+    editLocalStorageApiConfigs: '自定义 API 配置',
     editLocalStorageApiConfigsInstructions: `
-- 将您自己的私有 API 接入 onPanda
+- 将您自己的自定义 API 接入 onPanda
 - 支持 JSON5 格式（一种宽泛的 JSON 格式）
 - 外层必须是数组
 - 复制粘贴就能跑的例子：
@@ -51,7 +51,7 @@ export default {
       // 是否支持原生续写 assistant 消息（比如：开源模型、Claude 支持、OpenAI 不支持），默认 true
       "support_continue_final_message": true,
       "endpoint_name": "example",  // API 别名
-      "tag_name": "private",  // 在 onPanda UI 上添加模型快捷标签
+      "tag_name": "custom",  // 在 onPanda UI 上添加模型快捷标签
     },
     // { ... } 另一个 API 配置
 ]
@@ -59,8 +59,8 @@ export default {
 - 可以从 \`高级控制\` -> \`Current API config JSON\` 中查看当前 API 的配置
 
 **隐私声明：**
-- 私有 API 配置文件存储在您的浏览器本地（localStorage）
-- 使用私有 API 配置时，onPanda 会通过您的浏览器直接向 API 发起请求，不会上传到任何第三方服务器
+- 自定义 API 配置文件存储在您的浏览器本地（localStorage）
+- 使用自定义 API 配置时，onPanda 会通过您的浏览器直接向 API 发起请求，不会上传到任何第三方服务器
 `.replaceAll('{', '&#123;').replaceAll('}', '&#125;')
   },
   userMessages: {

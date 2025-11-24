@@ -28,9 +28,9 @@ export default {
     native: 'native',
     promptEngineering: 'prompt engineering',
     refreshModelList: 'Refresh model list',
-    editLocalStorageApiConfigs: 'Edit private API configs',
+    editLocalStorageApiConfigs: 'Edit custom API configs',
     editLocalStorageApiConfigsInstructions: `
-- Connect your own private APIs to onPanda
+- Connect your own custom APIs to onPanda
 - Supports JSON5 (a more relaxed JSON format)
 - The outer structure must be an array
 - Copy-paste runnable example:
@@ -51,7 +51,7 @@ export default {
       // Whether native assistant continuation is supported (e.g., open-source models and Claude support it, OpenAI does not). Default true
       "support_continue_final_message": true,
       "endpoint_name": "example",  // API alias
-      "tag_name": "private",  // Quick model tag shown in the onPanda UI
+      "tag_name": "custom",  // Quick model tag shown in the onPanda UI
     },
     // { ... } another API config
 ]
@@ -59,8 +59,8 @@ export default {
 - You can view the current API configuration under \`Advanced Control\` → \`Current API config JSON\`.
 
 **Privacy notice:**
-- Private API configs are stored locally in your browser (localStorage)
-- When you use a private API, onPanda sends the request directly from your browser and never uploads anything to third-party servers
+- Custom API configs are stored locally in your browser (localStorage)
+- When you use a custom API, onPanda sends the request directly from your browser and never uploads anything to third-party servers
 `.replaceAll('{', '&#123;').replaceAll('}', '&#125;')
   },
   userMessages: {
