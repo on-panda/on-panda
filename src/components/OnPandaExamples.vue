@@ -65,6 +65,50 @@ const messagesAudioExample = [
   }
 ]
 
+const messagesToolsExample = [
+  { "role": "system", "content": "You are a weather inquiry agent." },
+  {
+    "role": "user",
+    "content": "Say hi and tell me what are the temperatures in New York City and San Francisco (Celsius) today?"
+  },
+  {
+    "role": "assistant",
+    "content": "Hi! I'll check the current temperatures in New York City and San Francisco for you in Celsius.\n\n\n",
+    "tool_calls": [
+      {
+        "id": "chatcmpl-tool-40f0751a7acb45dd9e204605da6433f3",
+        "type": "function",
+        "index": 0,
+        "function": {
+          "name": "get_weather",
+          "arguments": "{\"location\": \"New York City, NY\", \"unit\": \"celsius\"}"
+        }
+      },
+      {
+        "id": "chatcmpl-tool-64fb5b79628847ee97521acf4493e61e",
+        "type": "function",
+        "index": 1,
+        "function": {
+          "name": "get_weather",
+          "arguments": "{\"location\": \"San Francisco, CA\", \"unit\": \"celsius\"}"
+        }
+      }
+    ]
+  },
+  {
+    "role": "tool",
+    "content": "Weather in New York City, NY:  -4°C, snowy.",
+    "tool_call_id": "chatcmpl-tool-40f0751a7acb45dd9e204605da6433f3",
+    "name": "get_weather"
+  },
+  {
+    "role": "tool",
+    "content": "Weather in San Francisco, CA: 13°C, sunny.",
+    "tool_call_id": "chatcmpl-tool-64fb5b79628847ee97521acf4493e61e",
+    "name": "get_weather"
+  }
+]
+
 // Define all example functions
 const defaultExampleNameToFunc = {
   "clear": () => {
@@ -120,10 +164,7 @@ const defaultExampleNameToFunc = {
     setTimeout(() => operationCenter.continueGenerating(), 2000)
   },
   "tools": () => {
-    operationCenter.loadMessages([{ role: "user", content: "Say hi and tell me what are the temperatures in New York City and San Francisco (Celsius) today?" }])
-    if (modelNameTags.value['test']) {
-      modelName.value = modelNameTags.value['test']
-    }
+    operationCenter.loadMessages(messagesToolsExample)
     modelName.value = 'tools-tag'
     operationCenter.generateNew()
   },
