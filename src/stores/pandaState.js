@@ -171,6 +171,7 @@ var pandaTreeExample = {
 }
 
 export class PandaState {
+    /* Data and data manipulation */
     cacheTree = {}
     uuid = computed(() => (this.pandaTree.uuid || dateStringNow(true)))
     constructor() {

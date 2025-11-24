@@ -12,8 +12,15 @@ import { defaultApiConfig, CONTINUE_PROMPT } from './controlParameterState.js'
 export const defaultMessages = [{ role: "system", content: "" }, { role: "user", content: "" }]
 
 export function ResponseStateClosure({ messages = null, apiConfig = null } = {}) {
-    // using closure as class to avoid using 'this'
-    // both messages and apiConfig support ref or raw
+    /*
+    A large core class:
+    - Operation-related items should be placed in the operationCenter
+    - Data-related items should be placed in the pandaState
+    - UI-related items should be placed in setup functions of OnPandaResponseText.vue
+    
+    * using closure as class to avoid using 'this'
+    * both messages and apiConfig support ref or raw
+    */
     const globalStore = useGlobalStore()
     const { t } = globalStore
 
@@ -27,6 +34,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     const tokens = ref([])
     const promptLogprobsTokens = ref([])
 
+    // set rawPromptLogprobsTokens only when this responseState is promptLogprobsState
     const rawPromptLogprobsTokens = ref([])
     const isPromptLogprobsState = computed(() => {
         return rawPromptLogprobsTokens.value.length > 0
@@ -427,6 +435,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
 
     class OperationCenter {
+        // All operations are here to manipulate the pandaState and responseState
         // continue generating, stop, continue with chosen, continue with input, edit prompt(include role), new round, edit response, refresh, load example, load panda tree.
         pandaState = buildMockObject()
         continueGenerating = () => {
