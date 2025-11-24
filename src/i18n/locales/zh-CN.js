@@ -52,6 +52,7 @@ export default {
       "support_continue_final_message": true,
       "endpoint_name": "example",  // API 别名
       "tag_name": "custom",  // 在 onPanda UI 上添加模型快捷标签
+      "low_priority": false,  // 是否为低优先级。将排在模型列表中最后，被匹配的优先级也最低
     },
     // { ... } 另一个 API 配置
 ]

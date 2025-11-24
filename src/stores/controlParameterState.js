@@ -106,7 +106,8 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     }
     refreshApiConfigs()
     const apiConfigsComputed = computed(() => {
-        return [...apiConfigsLocalStorage.value, ...apiConfigsInput.value]
+        // apply low_priority
+        return [...apiConfigsLocalStorage.value.filter(apiConfig => !apiConfig.low_priority), ...apiConfigsInput.value.filter(apiConfig => !apiConfig.low_priority), ...apiConfigsLocalStorage.value.filter(apiConfig => apiConfig.low_priority), ...apiConfigsInput.value.filter(apiConfig => apiConfig.low_priority)]
     })
     const modelNameTagsInput = isRef(modelNameTags) ? modelNameTags : ref(modelNameTags || {})
 
@@ -115,7 +116,12 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         for (const apiConfig of apiConfigs) {
             if (apiConfig.tag_name) {
                 if (apiConfig?.chat_config?.model) {
-                    var modelQuery = (apiConfig.endpoint_name || "<|endpoint|>") + "—" + apiConfig?.chat_config?.model
+                    if (apiConfig.endpoint_name) {
+                        var modelQuery = apiConfig.endpoint_name + "—" + apiConfig?.chat_config?.model
+                    } else {
+                        // if has tag_name and model name, no endpoint_name, consider using a fuzzier matching approach
+                        var modelQuery = apiConfig.chat_config.model
+                    }
                 } else {
                     var modelQuery = (apiConfig.endpoint_name || "<|endpoint|>") + "—"
                 }
@@ -126,7 +132,7 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     }
 
     const modelNameTagsComputed = computed(() => {
-        return { ...getModelNameTags(apiConfigsComputed.value), ...modelNameTagsInput.value }
+        return { ...getModelNameTags(apiConfigsComputed.value.filter(apiConfig => !apiConfig.low_priority)), ...modelNameTagsInput.value, ...getModelNameTags(apiConfigsComputed.value.filter(apiConfig => apiConfig.low_priority)) }
     })
 
     var modelName = isRef(modelName) ? modelName : ref(modelName || Object.keys(modelNameTagsComputed.value)[0] || 'on-panda')   // using first tag as default model
