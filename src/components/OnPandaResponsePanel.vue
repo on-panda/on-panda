@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, provide, onMounted, onBeforeUnmount } from 'vue'
-import { DArrowRight, VideoPause, Edit, View, DocumentCopy, Refresh } from '@element-plus/icons-vue'
+import { DArrowRight, VideoPause, Edit, View, DocumentCopy, Refresh, Close } from '@element-plus/icons-vue'
 
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../stores/globalStore.js'
@@ -97,6 +97,11 @@ onBeforeUnmount(() => {
             <span class="stretch" style="margin-right: auto" />
             <footer class="finalMessageControlButtons" style="display :flex; margin-top:5px; margin-bottom:-5px">
                 <span class="stretch" style="margin-right: auto" />
+                <el-tooltip v-if="responseState.isPromptLogprobsState.value" :content="t('common.close')"
+                    placement="top">
+                    <el-button :icon="Close" size="small"
+                        @click="responseState.rawPromptLogprobsTokens.value.length = 0" />
+                </el-tooltip>
                 <el-tooltip v-if="!requestStatus.generating" :content="t('tooltips.continueGenerating')"
                     placement="top">
                     <el-button :icon="DArrowRight" size="small" :disabled="!tokens?.length"

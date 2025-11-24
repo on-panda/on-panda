@@ -45,7 +45,7 @@ function setPromptLogprobsResponseState() {
             token.tokenIndex = tokenIndex
             return token
         })
-        promptLogprobsResponseState.isPromptLogprobsState.value = true
+        promptLogprobsResponseState.rawPromptLogprobsTokens.value = responseState.promptLogprobsTokens.value
         return promptLogprobsResponseState
     }
     return null

@@ -2,6 +2,7 @@ export default {
   common: {
     save: 'Save',
     delete: 'Delete',
+    close: 'Close',
     edit: 'Edit',
     cancel: 'Cancel',
     confirm: 'Confirm',

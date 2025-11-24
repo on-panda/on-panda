@@ -26,7 +26,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
     const tokens = ref([])
     const promptLogprobsTokens = ref([])
-    const isPromptLogprobsState = ref(false)
+
+    const rawPromptLogprobsTokens = ref([])
+    const isPromptLogprobsState = computed(() => {
+        return rawPromptLogprobsTokens.value.length > 0
+    })
 
     const requestStatus = ref({
         requestTimes: 0,
@@ -750,6 +754,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         apiConfig,
         tokens,
         promptLogprobsTokens,
+        rawPromptLogprobsTokens,
         isPromptLogprobsState,
         requestStatus,
         operationCenter,
