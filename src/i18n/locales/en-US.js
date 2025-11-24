@@ -52,7 +52,7 @@ export default {
       "support_continue_final_message": true,
       "endpoint_name": "example",  // API alias
       "tag_name": "custom",  // Quick model tag shown in the onPanda UI
-      "low_priority": false,  // Whether low priority. Placed at the end of the model list, and the matching priority is also the lowest
+      "low_priority": false,  // Whether low priority. Will be placed at the end of the model list, and the matching priority is also the lowest
     },
     // { ... } another API config
 ]
