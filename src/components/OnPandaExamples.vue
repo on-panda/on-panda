@@ -69,14 +69,14 @@ const messagesToolsExample = [
   { "role": "system", "content": "You are a weather inquiry agent." },
   {
     "role": "user",
-    "content": "Say hi and tell me what are the temperatures in New York City and San Francisco (Celsius) today?"
+    "content": "Say hi and tell me the current temperatures(°C) in New York City and San Francisco?"
   },
   {
     "role": "assistant",
-    "content": "Hi! I'll check the current temperatures in New York City and San Francisco for you in Celsius.\n\n\n",
+    "content": "Hi! Let me get the current temperatures for you.",
     "tool_calls": [
       {
-        "id": "chatcmpl-tool-40f0751a7acb45dd9e204605da6433f3",
+        "id": "functions.get_weather:0",
         "type": "function",
         "index": 0,
         "function": {
@@ -85,7 +85,7 @@ const messagesToolsExample = [
         }
       },
       {
-        "id": "chatcmpl-tool-64fb5b79628847ee97521acf4493e61e",
+        "id": "functions.get_weather:1",
         "type": "function",
         "index": 1,
         "function": {
@@ -97,14 +97,14 @@ const messagesToolsExample = [
   },
   {
     "role": "tool",
-    "content": "Weather in New York City, NY:  -4°C, snowy.",
-    "tool_call_id": "chatcmpl-tool-40f0751a7acb45dd9e204605da6433f3",
+    "content": "Weather in New York City, NY: -4°C, snowy.",
+    "tool_call_id": "functions.get_weather:0",
     "name": "get_weather"
   },
   {
     "role": "tool",
     "content": "Weather in San Francisco, CA: 13°C, sunny.",
-    "tool_call_id": "chatcmpl-tool-64fb5b79628847ee97521acf4493e61e",
+    "tool_call_id": "functions.get_weather:1",
     "name": "get_weather"
   }
 ]
