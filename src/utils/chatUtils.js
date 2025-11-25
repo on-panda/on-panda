@@ -143,8 +143,9 @@ export function normalizeRequest(requestBody) {
         body.max_completion_tokens = body.max_tokens
         delete body.max_tokens
     }
-
-
+    if (body.tools && !body.tools.length) {  // turn off tools if no tools
+        delete body.tools
+    }
     return body
 }
 

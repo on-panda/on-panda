@@ -25,7 +25,7 @@ import { ResponseStateClosure } from '../stores/responseState.js'
 const promptLogprobsText = computed(() => {
     if (responseState.promptLogprobsTokens.value.length) {
         var prompt = responseState.promptLogprobsTokens.value.map(x => x.delta.content).join('')
-        // console.log("prompt:", prompt)
+        // console.log("prompt:", responseState.promptLogprobsTokens.value.map(x => x.delta.content).slice(-40))
         return prompt
     }
     return ""
