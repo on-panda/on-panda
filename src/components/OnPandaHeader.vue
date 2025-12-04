@@ -23,7 +23,7 @@
         <summary>
             <small style="color: #888;">{{ t('header.asDrivingMode') }}:</small>
         </summary>
-        <h2>(WIP) Driving Mode: You are Secretly an Agent Model</h2>
+        <h2>(WIP) Driving Mode: You are Secretly an Agentic Model</h2>
         <code>{{ t('header.drivingModeDesc') }}</code>
     </details>
 
