@@ -14,8 +14,17 @@
         <summary>
             <small style="color: #888;">{{ t('header.asWritingTool') }}:</small>
         </summary>
-        <h2>onPanda: LLM-Native Collaborative Writing Tool </h2>
+        <h2>onPanda: LLM-Native Collaborative Writing Tool</h2>
         <code>{{ t('header.writingToolDesc') }}</code>
+    </details>
+
+
+    <details>
+        <summary>
+            <small style="color: #888;">{{ t('header.asDrivingMode') }}:</small>
+        </summary>
+        <h2>(WIP) Driving Mode: You are Secretly an Agent Model</h2>
+        <code>{{ t('header.drivingModeDesc') }}</code>
     </details>
 
     <div style="text-align: center;">

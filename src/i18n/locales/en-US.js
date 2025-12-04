@@ -143,8 +143,10 @@ export default {
     beginnerTips: 'Beginner\'s tips',
     asDataAnnotator: 'as Data Annotator',
     asWritingTool: 'as Writing Tool',
+    asDrivingMode: 'as Model API',
     dataAnnotatorDesc: 'Scaling up your data efficiency with token-level supervision.',
     writingToolDesc: 'Precision byte-level control for LLM writing.',
+    drivingModeDesc: 'You will disguise as an API and guide the model to complete tasks.',
     instruction: `
 ### Usage:
 **Basic Features:**
