@@ -146,7 +146,7 @@ export default {
     asDrivingMode: 'as Model API',
     dataAnnotatorDesc: 'Scaling up your data efficiency with token-level supervision.',
     writingToolDesc: 'Precision byte-level control for LLM writing.',
-    drivingModeDesc: 'You will disguise as an API and guide the model to complete tasks.',
+    drivingModeDesc: 'You will disguise as an API, guiding the model to complete tasks while collecting annotated data.',
     instruction: `
 ### Usage:
 **Basic Features:**

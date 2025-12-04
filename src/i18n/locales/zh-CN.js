@@ -146,7 +146,7 @@ export default {
     asDrivingMode: '作为模型 API',
     dataAnnotatorDesc: 'Token-level 标注，提高数据效率，开启 reasoning 新范式。',
     writingToolDesc: '为大语言模型写作提供精确的字符级控制。',
-    drivingModeDesc: '你将伪装成 API 并指导模型完成任务。',
+    drivingModeDesc: '你将伪装成 API，在指导模型完成任务的同时收获标注数据。',
     instruction: `
 ### onPanda 数据标注指南
 **基本功能**
