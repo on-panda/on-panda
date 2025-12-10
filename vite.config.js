@@ -69,7 +69,19 @@ export default defineConfig(({ mode }) => {
           res.end()
           return
         }
-        Readable.fromWeb(upstreamResponse.body).pipe(res)
+        const proxyStream = Readable.fromWeb(upstreamResponse.body)
+        // Avoid crashing the preview/dev server if the upstream connection errors mid-stream.
+        proxyStream.on('error', (err) => {
+          console.error('Server proxy stream failed', err)
+          if (!res.headersSent) {
+            res.statusCode = 502
+            res.setHeader('content-type', 'text/plain')
+            res.end('Proxy stream error')
+          } else {
+            res.destroy(err)
+          }
+        })
+        proxyStream.pipe(res)
       } catch (error) {
         console.error('Server proxy failed', error)
         if (!res.headersSent) {
