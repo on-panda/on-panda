@@ -140,7 +140,7 @@ const defaultExampleNameToFunc = {
     operationCenter.generateNew()
   },
   "笑话": () => {
-    operationCenter.loadMessages([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }])
+    operationCenter.loadMessages([{ role: "user", content: "讲一个关于西游记的笑话, 100字左右" }])
     operationCenter.generateNew()
   },
   "诗": () => {

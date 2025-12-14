@@ -159,7 +159,7 @@ onMounted(async () => {
       if (globalStore.debug) {
         // modelName.value = defaultApiConfig.chat_config.model
         // Use the example via the operationCenter directly
-        // operationCenter.loadMessages([{ role: "user", content: "讲一个关于西游记的笑话, 100字" }])
+        // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
         // exampleToRun = operationCenter.generateNew
         // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
         exampleToRun = () => {
