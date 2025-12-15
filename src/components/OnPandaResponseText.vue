@@ -79,41 +79,9 @@
             class="floatInputPatchInput" @focus="$event.target.select()"
             @keydown.enter="if (!$event.shiftKey) { operationCenter.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
     </div>
-
-    <div ref='floatSelectedOperationPanelRef' class="floatSelectedOperationPanel"
-        v-show="floatSelectedOperationPanel.visible && !floatInputPatch.visible || floatSelectedOperationPanel.improveInputVisible"
-        :style="{
-            left: `${floatSelectedOperationPanel.x}px`,
-            top: `${floatSelectedOperationPanel.y}px`,
-        }" style="position: fixed">
-        <el-button-group class="floatSelectedOperationPanelButtons"
-            v-show="!floatSelectedOperationPanel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
-                token => token.selected = true
-            )" :size="isMobile ? '' : 'small'">
-            <el-tooltip content="(TBD) Replacement edit" placement="bottom">
-                <el-button :disabled="true" :icon="Edit" />
-            </el-tooltip>
-            <el-tooltip content="(TBD) Improve by AI" placement="bottom">
-                <el-button :icon="ChatLineRound" @click="floatSelectedOperationPanel.improveInputVisible = true" />
-            </el-tooltip>
-            <el-tooltip content="(TBD) Explain by AI" placement="bottom">
-                <el-button :disabled="true" :icon="QuestionFilled" />
-            </el-tooltip>
-            <el-tooltip content="(TBD) Try again" placement="bottom">
-                <el-button :disabled="true" :icon="Refresh" />
-            </el-tooltip>
-        </el-button-group>
-        <div v-show="floatSelectedOperationPanel.improveInputVisible"
-            style="display: flex; justify-content: space-between;">
-            <textarea v-model="floatSelectedOperationPanel.improveInputText" type="text"
-                placeholder="(TBD) Instruction for AI to improve" style="height: 25px; width:auto;"
-                @focus="$event.target.select()" @keydown.enter="improveSelectedText" />
-
-            <el-button :disabled="true" :icon='Promotion' size="" @click="improveSelectedText"></el-button>
-        </div>
+    <div v-show="!floatInputPatch.visible">
+        <SelectedTextPannel :selectedTextState="selectedTextState" />
     </div>
-
-    <pre v-show="false">{{JSON.stringify(selectedTokens.map(token => token.delta.content), null, 2)}}</pre>
 </template>
 
 <script setup>
@@ -124,11 +92,13 @@ import { useI18n } from 'vue-i18n'
 
 import { useGlobalStore } from '../stores/globalStore.js'
 import { useEventListener, closeFloatPanelMeta } from '../utils/commonUtils.js'
-import { p, escapeHTML } from '../utils/commonUtils.js'
-import { tokensToSeq, probOfToken } from '../utils/chatUtils.js'
-import { probToColor, useSelectedNodes } from '../utils/userInterfaceUtils.js'
+import { escapeHTML } from '../utils/commonUtils.js'
+import { probOfToken } from '../utils/chatUtils.js'
+import { probToColor } from '../utils/userInterfaceUtils.js'
+import { SelectedTextStateClosure } from '../stores/SelectedTextState.js'
 
-import { Edit, Refresh, DArrowRight, ChatLineRound, QuestionFilled, Promotion, Close } from '@element-plus/icons-vue'
+import SelectedTextPannel from './SelectedTextPannel.vue'
+import { DArrowRight, Close } from '@element-plus/icons-vue'
 
 const props = defineProps({
     responseState: {
@@ -151,71 +121,6 @@ const { t } = useI18n()
 
 
 const onPandaResponseTextRef = ref(null);
-const selectedNodes = useSelectedNodes(onPandaResponseTextRef);
-
-const selectedTokens = computed(() => {
-    floatSelectedOperationPanel.value.visible = false
-    if (!selectedNodes.value.startNode || !selectedNodes.value.endNode) {
-        return [];
-    }
-    // avoid select the span-in-span patch
-    var startNode = selectedNodes.value.startNode
-    startNode = ('patch-index' in startNode.attributes) ? startNode : startNode.parentElement
-
-    var endNode = selectedNodes.value.endNode
-    endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
-
-    //set FloatSelectedOperationPanel
-    setFloatSelectedOperationPanelBelow()
-    floatSelectedOperationPanel.value.visible = true
-
-    const startPatchIndex = Number(startNode.attributes['patch-index'].value)
-    const endPatchIndex = Number(endNode.attributes['patch-index'].value)
-    // console.log('selectedNodes', startPatchIndex, endPatchIndex)
-
-    const startTokenIndex = patchs.value[startPatchIndex].tokens[0].tokenIndex
-    const endPatch = patchs.value[endPatchIndex]
-    const endTokenIndex = endPatch.tokens[endPatch.tokens.length - 1].tokenIndex
-    return tokens.value.slice(startTokenIndex, endTokenIndex + 1)
-});
-
-
-function setFloatSelectedOperationPanelBelow() {
-    var endNode = selectedNodes.value.endNode
-    if (!endNode) {
-        return
-    }
-    endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
-    var endNodeRect = endNode.getBoundingClientRect()
-    const pixelsPerButton = isMobile.value ? 45 : 35
-    const x = endNodeRect.right - pixelsPerButton * document.querySelectorAll('.floatSelectedOperationPanelButtons button').length
-    floatSelectedOperationPanel.value.x = Math.max(x, 10)
-    floatSelectedOperationPanel.value.y = endNodeRect.bottom + 2
-}
-
-
-
-const floatSelectedOperationPanel = ref({
-    visible: false,
-    improveInputText: "",
-    improveInputVisible: false,
-    x: 0,
-    y: 0,
-})
-
-const floatSelectedOperationPanelRef = ref(null)
-closeFloatPanelMeta(floatSelectedOperationPanelRef, () => {
-    // On mobile devices it disappears immediately after clicking, rendering the tool tips position invalid.
-    setTimeout(() => {
-        floatSelectedOperationPanel.value.improveInputVisible = false
-    }, 10)
-})
-
-function improveSelectedText() {
-    const selectedText = selectedTokens.value.map(token => token.delta.content).join("")
-    console.log('improveSelectedText', floatSelectedOperationPanel.value.improveInputText, selectedText)
-    floatSelectedOperationPanel.value.improveInputVisible = false
-}
 
 function createSpanInPatchSpanHTML(textContent) {
     const span = document.createElement('span')
@@ -317,6 +222,12 @@ const patchs = computed(() => {
     return patchs
 });
 
+const selectedTextState = SelectedTextStateClosure({
+    onPandaResponseTextRef,
+    patchs,
+    tokens,
+    isMobile,
+})
 
 
 const handleMouseEnterPatchSpan = (event) => {
@@ -455,7 +366,7 @@ function setFloatInputPatch(event, patch) {
 
 function handleReactiveFunctions() {
     setFloatPatchPanelBelow()
-    setFloatSelectedOperationPanelBelow()
+    selectedTextState.setFloatSelectedOperationPanelBelow()
 }
 
 // register handleReactiveFunctions to handleScrollDivFunctions
