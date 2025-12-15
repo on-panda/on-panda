@@ -90,7 +90,7 @@
             v-show="!floatSelectedOperationPanel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
                 token => token.selected = true
             )" :size="isMobile ? '' : 'small'">
-            <el-tooltip content="(TBD) Manually edit" placement="bottom">
+            <el-tooltip content="(TBD) Replacement edit" placement="bottom">
                 <el-button :disabled="true" :icon="Edit" />
             </el-tooltip>
             <el-tooltip content="(TBD) Improve by AI" placement="bottom">
