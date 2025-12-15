@@ -1,4 +1,5 @@
 <script setup>
+import { useGlobalStore } from '../stores/globalStore.js'
 import { Edit, Refresh, ChatLineRound, QuestionFilled, Promotion } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -8,26 +9,26 @@ const props = defineProps({
     },
 })
 
+const globalStore = useGlobalStore()
+
 const selectedTextState = props.selectedTextState
 
 const floatSelectedOperationPanel = selectedTextState.floatSelectedOperationPanel
 const selectedTokens = selectedTextState.selectedTokens
 const improveSelectedText = selectedTextState.improveSelectedText
 const floatSelectedOperationPanelRef = selectedTextState.floatSelectedOperationPanelRef
-const isMobile = selectedTextState.isMobile
 </script>
 
 <template>
     <div ref='floatSelectedOperationPanelRef' class="floatSelectedOperationPanel"
-        v-show="floatSelectedOperationPanel.visible || floatSelectedOperationPanel.improveInputVisible"
-        :style="{
+        v-show="floatSelectedOperationPanel.visible || floatSelectedOperationPanel.improveInputVisible" :style="{
             left: `${floatSelectedOperationPanel.x}px`,
             top: `${floatSelectedOperationPanel.y}px`,
         }" style="position: fixed">
         <el-button-group class="floatSelectedOperationPanelButtons"
             v-show="!floatSelectedOperationPanel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
                 token => token.selected = true
-            )" :size="isMobile ? '' : 'small'">
+            )" :size="globalStore.isMobile ? '' : 'small'">
             <el-tooltip content="(TBD) Replacement edit" placement="bottom">
                 <el-button :disabled="true" :icon="Edit" />
             </el-tooltip>

@@ -2,14 +2,15 @@ import { ref, computed } from 'vue'
 
 import { closeFloatPanelMeta } from '../utils/commonUtils.js'
 import { useSelectedNodes } from '../utils/userInterfaceUtils.js'
+import { useGlobalStore } from './globalStore.js'
 
 export function SelectedTextStateClosure({
     onPandaResponseTextRef = null,
     patchs = null,
     tokens = null,
-    isMobile = null,
 } = {}) {
     const selectedNodes = useSelectedNodes(onPandaResponseTextRef);
+    const globalStore = useGlobalStore();
 
     const floatSelectedOperationPanel = ref({
         visible: false,
@@ -34,8 +35,8 @@ export function SelectedTextStateClosure({
         }
         endNode = ('patch-index' in endNode.attributes) ? endNode : endNode.parentElement
         var endNodeRect = endNode.getBoundingClientRect()
-        const pixelsPerButton = isMobile?.value ? 45 : 35
-        const x = endNodeRect.right - pixelsPerButton * document.querySelectorAll('.floatSelectedOperationPanelButtons button').length
+        const pixelsPerButton = globalStore.isMobile ? 45 : 35
+        const x = endNodeRect.right - pixelsPerButton * onPandaResponseTextRef.value.parentNode.querySelectorAll('.floatSelectedOperationPanelButtons button').length
         floatSelectedOperationPanel.value.x = Math.max(x, 10)
         floatSelectedOperationPanel.value.y = endNodeRect.bottom + 2
     }
@@ -78,6 +79,5 @@ export function SelectedTextStateClosure({
         floatSelectedOperationPanelRef,
         setFloatSelectedOperationPanelBelow,
         improveSelectedText,
-        isMobile,
     }
 }
