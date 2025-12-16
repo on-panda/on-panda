@@ -37,7 +37,7 @@
                 <div class="tokenLogprobItems">
                     <div v-for="logprobItem in (token?.logprobs?.content?.[0]?.top_logprobs || []).concat([{ finish_reason: 'stop' }])"
                         style="display: block; background-color: #eee; cursor:pointer"
-                        @click="(event) => handleLogprobItemClick(event, token, logprobItem)"
+                        @mousedown="(event) => handleLogprobItemClick(event, token, logprobItem)"
                         @mouseover="activateLogprobItem = logprobItem"
                         @mouseenter="$event.target.style.backgroundColor = '#ddd'"
                         @mouseleave="$event.target.style.backgroundColor = ''">
@@ -91,8 +91,7 @@ import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 
 import { useGlobalStore } from '../stores/globalStore.js'
-import { useEventListener, closeFloatPanelMeta } from '../utils/commonUtils.js'
-import { escapeHTML } from '../utils/commonUtils.js'
+import { useEventListener, closeFloatPanelMeta, copyToClipboard, escapeHTML } from '../utils/commonUtils.js'
 import { probOfToken } from '../utils/chatUtils.js'
 import { probToColor } from '../utils/userInterfaceUtils.js'
 import { SelectedTextStateClosure } from '../stores/SelectedTextState.js'
@@ -127,7 +126,7 @@ function createSpanInPatchSpanHTML(textContent) {
     span.className = 'spanInPatchSpan'  // .spanInPatchSpan CSS not work?
     span.textContent = textContent
     span.style['color'] = "rgb(180,180,180)"
-    span.style['size'] = "small"
+    span.style['fontSize'] = "small"
     span.style['user-select'] = "none"
     span.style['-webkit-user-select'] = "none"  // for safari
     span.style['margin-left'] = "10px"
@@ -255,10 +254,15 @@ function handleMouseLeavePatchSpan(event) {
     }, 300);
 }
 
+function isEventForCopy(event) {
+    // if the event is triggered with the Alt key or middle mouse button, copy the text
+    return event.altKey || event.button == 1;
+}
+
 function handleMouseDownPatchSpan(event, patch) {
-    if (event.altKey) {
+    if (isEventForCopy(event)) {
         var content = patch.patch
-        navigator.clipboard.writeText(content).then(() => {
+        copyToClipboard(content).then(() => {
             ElMessage.success(`Copied "${content}" to clipboard`)
         })
     }
@@ -271,9 +275,9 @@ function closeFloatPatchPanel() {
 }
 
 function handleLogprobItemClick(event, token, logprobItem) {
-    if (event.altKey) {
+    if (isEventForCopy(event)) {
         var content = logprobItem.token
-        navigator.clipboard.writeText(content).then(() => {
+        copyToClipboard(content).then(() => {
             ElMessage.success(`Copied "${content}" to clipboard`)
         })
     } else {

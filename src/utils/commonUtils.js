@@ -160,11 +160,8 @@ export function closeFloatPanelMeta(refElement, closeFunction, usingEscapeKey = 
       }
     }
   }
-  useEventListener(window, supportsPointerEvent ? 'PointerEvent' : 'click', handleMouseClick)
+  useEventListener(window, supportsPointerEvent ? 'pointerup' : 'click', handleMouseClick)
 }
-
-import { ElMessage } from 'element-plus'
-import { i18n } from '../i18n'
 
 export async function copyToClipboard(string) {
   const useNavigatorClipboard = navigator?.clipboard?.writeText && window.isSecureContext
@@ -185,12 +182,6 @@ export async function copyToClipboard(string) {
       document.body.removeChild(textarea)
     }
   }
-  ElMessage({
-    showClose: true,
-    message: i18n.global.t('userMessages.copied'),
-    type: 'success',
-    duration: 2000,
-  })
 }
 
 export async function duplicateWindow(pandaState) {

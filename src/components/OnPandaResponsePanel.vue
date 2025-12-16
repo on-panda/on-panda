@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, provide, onMounted, onBeforeUnmount } from 'vue'
 import { DArrowRight, VideoPause, Edit, View, DocumentCopy, Refresh, Close } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../stores/globalStore.js'
@@ -59,6 +60,16 @@ const tokensModelNames = computed(() => {
     }
     return tokensModelNames.join(", ")
 })
+
+async function handleCopyButtonClick() {
+    await copyToClipboard(finalMessage.value.content)
+    ElMessage({
+        showClose: true,
+        message: t('userMessages.copied'),
+        type: 'success',
+        duration: 2000,
+    })
+}
 
 async function pasteThenRequestPromptLogprobs() {
     var pasteText = await navigator.clipboard.readText()
@@ -136,7 +147,7 @@ onBeforeUnmount(() => {
                         </el-button>
                     </template>
                     <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
-                        @click="copyToClipboard(finalMessage.content)" @dblclick="duplicateWindow(pandaState)" />
+                        @click="handleCopyButtonClick" @dblclick="duplicateWindow(pandaState)" />
                 </el-tooltip>
                 &nbsp;&nbsp;&nbsp;
                 <hr v-if="!isMobile" style="color:#eee; margin-top: -5px; margin-bottom: 4px">
