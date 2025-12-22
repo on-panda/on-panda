@@ -468,6 +468,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             if (logprobItem.finish_reason) {
                 // remove all pruned tokens
                 tokens.value = tokens.value.filter(token => !token.pruned)
+                // if chosen <stop> in first token, clear tokens
+                if (logprobItem.finish_reason == "stop" && tokens.value.length <= 1 && !finalMessage.value.content) {
+                    tokens.value = []
+                }
             } else {
                 requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
             }
