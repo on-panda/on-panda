@@ -16,6 +16,7 @@ export function SelectedTextStateClosure({
         visible: false,
         improveInputText: "",
         improveInputVisible: false,
+        replacementInputVisible: false,
         x: 0,
         y: 0,
     })
@@ -25,6 +26,7 @@ export function SelectedTextStateClosure({
         // On mobile devices it disappears immediately after clicking, rendering the tool tips position invalid.
         setTimeout(() => {
             floatSelectedOperationPanel.value.improveInputVisible = false
+            floatSelectedOperationPanel.value.replacementInputVisible = false
         }, 10)
     })
 
@@ -66,15 +68,21 @@ export function SelectedTextStateClosure({
         return tokens.value.slice(startTokenIndex, endTokenIndex + 1)
     });
 
+    const selectedText = computed(() => {
+        if (!selectedTokens.value.length) {
+            return ""
+        }
+        return selectedTokens.value.map(token => token.delta?.content || "").join("")
+    })
+
     function improveSelectedText() {
-        const selectedText = selectedTokens.value.map(token => token.delta.content).join("")
-        console.log('improveSelectedText', floatSelectedOperationPanel.value.improveInputText, selectedText)
         floatSelectedOperationPanel.value.improveInputVisible = false
     }
 
     return {
         selectedNodes,
         selectedTokens,
+        selectedText,
         floatSelectedOperationPanel,
         floatSelectedOperationPanelRef,
         setFloatSelectedOperationPanelBelow,

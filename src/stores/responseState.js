@@ -458,12 +458,13 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         continueWithChosen = (token, logprobItem) => {
             // function clickOnLogprobItem() {
             this.pandaState.beforeOperation()
+            const rejected_token = recordAsRejectedToken(token, tokens)  // record rejected token before change tokens
             prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob, logprobItem.finish_reason)
             this.pandaState.afterOperation({
                 operator: "continue_with_chosen",
                 on_policy: true,
                 continue_with_chosen: logprobItem,  // chosen_top_logprob
-                rejected_token: recordAsRejectedToken(token),
+                rejected_token: rejected_token,
             }, true)
             if (logprobItem.finish_reason) {
                 // remove all pruned tokens
@@ -482,12 +483,13 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         applyInputChange = (token, continuePrefix, continuePrefixLogprob) => {
             this.pandaState.beforeOperation()
+            const rejected_token = recordAsRejectedToken(token, tokens)  // record rejected token before change tokens
             prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob)
             this.pandaState.afterOperation({
                 operator: "continue_with_input",
                 on_policy: true,
                 continue_with_input: { input_patch: continuePrefix },
-                rejected_token: recordAsRejectedToken(token),
+                rejected_token: rejected_token,
             }, true)
         }
 
@@ -596,6 +598,43 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         editResponse = () => {
+        }
+
+        replacementEdit = (tokensToReplace, replacementText) => {
+            if (!tokensToReplace?.length) {
+                return
+            }
+            const startIndex = tokens.value.indexOf(tokensToReplace[0])
+            const endIndex = tokens.value.indexOf(tokensToReplace[tokensToReplace.length - 1])
+            if (startIndex === -1 || endIndex === -1) {
+                return
+            }
+            const rejected_token = recordAsRejectedToken(tokensToReplace[0], tokens)  // record rejected token before change tokens
+            this.pandaState.beforeOperation()
+            const baseToken = deepCopy(tokensToReplace[0])
+            delete baseToken.selected
+            baseToken.bifurcationPoint = true
+            const nextContent = replacementText ?? ""
+            baseToken.delta = baseToken.delta || {}
+            baseToken.delta.content = nextContent
+            if (baseToken.logprobs?.content?.[0]) {
+                baseToken.logprobs.content[0].token = nextContent
+                baseToken.logprobs.content[0].logprob = -9999
+            }
+            const replaceStart = Math.min(startIndex, endIndex)
+            const replaceEnd = Math.max(startIndex, endIndex)
+            tokens.value.splice(replaceStart, replaceEnd - replaceStart + 1, baseToken)
+            tokens.value.forEach((token, tokenIndex) => {
+                token.tokenIndex = tokenIndex
+            })
+            const rejected_tokens_text = tokensToReplace.map(token => token.delta?.content || "").join("")
+            this.pandaState.afterOperation({
+                operator: "replacement_edit",
+                on_policy: false,
+                replacement_tokens_text: replacementText,
+                rejected_tokens_text: rejected_tokens_text,
+                rejected_token: rejected_token
+            })
         }
 
         loadMessages = (newMessages) => {
@@ -781,4 +820,3 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         // requestLlmServer
     }
 }
-

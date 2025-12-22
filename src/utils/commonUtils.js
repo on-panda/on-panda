@@ -32,6 +32,45 @@ export function deepEqual(obj1, obj2, visited = new Set()) {
   return true;
 }
 
+export function createLruObject(maxSize = 100) {
+  const cache = new Map()
+  const touch = (key, value) => {
+    cache.delete(key)
+    cache.set(key, value)
+  }
+  return {
+    _cache: cache,
+    get(key, defaultValue) {
+      if (!cache.has(key)) {
+        touch(key, defaultValue)
+        return defaultValue
+      }
+      const value = cache.get(key)
+      touch(key, value)
+      return value
+    },
+    set(key, value) {
+      if (cache.has(key)) {
+        cache.delete(key)
+      }
+      cache.set(key, value)
+      if (cache.size > maxSize) {
+        const oldestKey = cache.keys().next().value
+        cache.delete(oldestKey)
+      }
+    },
+    has(key) {
+      return cache.has(key)
+    },
+    delete(key) {
+      return cache.delete(key)
+    },
+    clear() {
+      cache.clear()
+    },
+  }
+}
+
 export async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }

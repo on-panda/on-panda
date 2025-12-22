@@ -192,7 +192,8 @@ export function clearTokenObject(token) {
     }
 }
 
-export function recordAsRejectedToken(token) {
+export function recordAsRejectedToken(token, tokens) {
+    // if provide tokens, record the rejected_token.unicode_start_index
     var rejected_token = deepCopy(token)
     clearTokenObject(rejected_token)
     delete rejected_token.model
@@ -201,6 +202,15 @@ export function recordAsRejectedToken(token) {
     delete rejected_token.delta?.role
     delete rejected_token.pruned
     delete rejected_token.bifurcationPoint
+    if (tokens) {
+        const index = tokens.value.indexOf(token)
+        console.assert(index !== -1, 'Token not found in tokens array')
+        if (index !== -1) {
+            const prefixTokens = tokens.value.slice(0, index)
+            const prefixText = prefixTokens.map(token => token.delta?.content || "").join("")
+            rejected_token.unicode_start_index = getUnicodeLength(prefixText)
+        }
+    }
     return rejected_token
 }
 

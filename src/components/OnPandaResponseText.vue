@@ -80,7 +80,7 @@
             @keydown.enter="if (!$event.shiftKey) { operationCenter.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
     </div>
     <div v-show="!floatInputPatch.visible">
-        <SelectedTextPannel :selectedTextState="selectedTextState" />
+        <SelectedTextPannel :selectedTextState="selectedTextState" :operationCenter="operationCenter" />
     </div>
 </template>
 
