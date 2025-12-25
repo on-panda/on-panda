@@ -166,7 +166,7 @@ const defaultExampleNameToFunc = {
   "multi-turn": () => {
     // operationCenter.loadMessages([{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "How many letter “r”s are there in the English word for 🍓?" }, { role: "assistant", content: "The English word for “strawberry” contains two letter “r”s." }, { role: "user", content: "You're wrong, you should break the word into letters and count them one by one." }])
     // { role: "user", content: "“p”s in 🍍?" }
-    operationCenter.loadMessages([{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "List three types of fruits." }, { role: "assistant", content: "Apple, potato, banana." }, { role: "user", content: "Potatoe is not fruit." }])
+    operationCenter.loadMessages([{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "List three types of fruits." }, { role: "assistant", content: "Apple, potato, banana." }, { role: "user", content: "Potato is not fruit." }])
     operationCenter.generateNew()
   },
   "tools": () => {
