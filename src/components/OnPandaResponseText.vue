@@ -5,10 +5,12 @@
             :key="`t${pandaState.uuid.value}-d${pandaState.currentDialogKey.value}-p${patch.index}:${patch.patch}`"
             :style='{
                 "border-bottom": "3px solid " + probToColor(patch.prob),
-                ...(patch.tokens.some(t => t.pruned) ? { "color": "#999" } : {}),
-                ...(patch.tokens.some(t => t.isReasoningContent) ? { "color": "#666" } : {}),
                 ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
+                ...(patch.tokens.some(t => t.pruned) ? { "text-decoration": "line-through", "color": "#777" } : {}),
                 ...(patch.tokens.some(t => t.selected) ? { "background-color": "#0078d7", "color": "#fff" } : {}),
+                ...(patch.tokens.some(t => t.isReasoningContent) ? { "color": "#666" } : {}),
+                // ...(patch.tokens.some(t => t.isReasoningContent) ? { "text-decoration": "underline dotted #999" } : {}),
+                // ...(patch.tokens.some(t => t.isReasoningContent) ? { "background": "linear-gradient(to bottom, transparent 85%, #09f5 85%)" } : {}),
             }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
             @mouseleave="handleMouseLeavePatchSpan" @mousedown="handleMouseDownPatchSpan($event, patch)"
             @dblclick.prevent="setFloatInputPatch($event, patch)">
@@ -130,6 +132,9 @@ function createSpanInPatchSpanHTML(textContent) {
     span.style['user-select'] = "none"
     span.style['-webkit-user-select'] = "none"  // for safari
     span.style['margin-left'] = "10px"
+    // inline-block to prevent text-decoration: line-through from parent node
+    span.style['display'] = "inline-block"
+    span.style['text-decoration'] = "none"
     return span.outerHTML
 }
 
