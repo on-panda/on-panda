@@ -30,7 +30,7 @@ const improveSelectedText = selectedTextState.improveSelectedText
 const floatSelectedOperationPanelRef = selectedTextState.floatSelectedOperationPanelRef
 
 const replacementTextKey = ref("")
-const replacementSelectedTokens = ref([])
+const editSelectedTokens = ref([])
 const replacementTextareaRef = ref(null)
 
 const replacementText = ref("")
@@ -42,12 +42,12 @@ function setSelectedTokensState(tokens, selected) {
     tokens.forEach(token => token.selected = selected)
 }
 
-function openReplacementEdit() {
+function openEditSelection() {
     const textKey = selectedText.value
     if (!textKey || !selectedTokens.value.length) {
         return
     }
-    replacementSelectedTokens.value = selectedTokens.value.slice()
+    editSelectedTokens.value = selectedTokens.value.slice()
     if (!replacementTextCache.value.has(textKey)) {
         replacementTextCache.value.set(textKey, textKey)
     } else {
@@ -57,14 +57,14 @@ function openReplacementEdit() {
     replacementTextKey.value = textKey
     floatSelectedOperationPanel.value.improveInputVisible = false
     floatSelectedOperationPanel.value.replacementInputVisible = true
-    setSelectedTokensState(replacementSelectedTokens.value, true)
+    setSelectedTokensState(editSelectedTokens.value, true)
     nextTick(() => {
         replacementTextareaRef.value?.focus()
         replacementTextareaRef.value?.select()
     })
 }
 
-function applyReplacementEdit() {
+function applyEditSelection() {
     if (replacementText.value == replacementTextKey.value) {
         ElMessage({
             message: 'No changes made',
@@ -72,34 +72,34 @@ function applyReplacementEdit() {
         })
         return
     }
-    if (replacementSelectedTokens.value.length) {
-        operationCenter?.replacementEdit(replacementSelectedTokens.value, replacementText.value)
+    if (editSelectedTokens.value.length) {
+        operationCenter?.editSelection(editSelectedTokens.value, replacementText.value)
     }
     floatSelectedOperationPanel.value.replacementInputVisible = false
     replacementText.value = ""
     replacementTextKey.value = ""
-    replacementSelectedTokens.value = []
+    editSelectedTokens.value = []
 }
 
-function cancelReplacementEdit() {
+function cancelEditSelection() {
     floatSelectedOperationPanel.value.replacementInputVisible = false
 }
 
-function handleReplacementEditClick() {
+function handleEditSelectionClick() {
     if (floatSelectedOperationPanel.value.replacementInputVisible) {
-        cancelReplacementEdit()
+        cancelEditSelection()
     } else {
-        openReplacementEdit()
+        openEditSelection()
     }
 }
 
 watch(floatSelectedOperationPanel, (newValue) => {
-    if (!newValue.replacementInputVisible && replacementSelectedTokens.value.length) {
-        if (replacementSelectedTokens.value.length) {
-            setSelectedTokensState(replacementSelectedTokens.value, false)
+    if (!newValue.replacementInputVisible && editSelectedTokens.value.length) {
+        if (editSelectedTokens.value.length) {
+            setSelectedTokensState(editSelectedTokens.value, false)
         }
         replacementTextKey.value = ""
-        replacementSelectedTokens.value = []
+        editSelectedTokens.value = []
     }
 }, { deep: true, flush: 'sync' })
 
@@ -116,8 +116,8 @@ watch(floatSelectedOperationPanel, (newValue) => {
             v-show="!floatSelectedOperationPanel.improveInputVisible" style="z-index: 15;" @click="selectedTokens.map(
                 token => token.selected = true
             )" :size="globalStore.isMobile ? '' : 'small'">
-            <el-tooltip content="Replacement edit" placement="bottom">
-                <el-button :icon="Edit" @mousedown.prevent="handleReplacementEditClick" />
+            <el-tooltip content="Edit selection" placement="bottom">
+                <el-button :icon="Edit" @mousedown.prevent="handleEditSelectionClick" />
             </el-tooltip>
             <el-tooltip content="(TBD) Improve by AI" placement="bottom">
                 <el-button :icon="ChatLineRound"
@@ -132,12 +132,12 @@ watch(floatSelectedOperationPanel, (newValue) => {
         </el-button-group>
         <div v-show="floatSelectedOperationPanel.replacementInputVisible"
             style="display: flex; flex-direction: column; gap: 4px; background-color: white; padding: 7px;">
-            <textarea ref="replacementTextareaRef" v-model="replacementText" type="text" placeholder="Replacement text"
+            <textarea ref="replacementTextareaRef" v-model="replacementText" type="text" placeholder="Edit selection text"
                 style="height: 60px; width:auto;" @focus="$event.target.select()" />
             <div style="display: flex; justify-content: flex-end; gap: 6px;">
-                <el-button :size="globalStore.isMobile ? '' : 'small'" @click="cancelReplacementEdit">cancel</el-button>
+                <el-button :size="globalStore.isMobile ? '' : 'small'" @click="cancelEditSelection">cancel</el-button>
                 <el-button :size="globalStore.isMobile ? '' : 'small'" type="primary"
-                    @click="applyReplacementEdit">replacement</el-button>
+                    @click="applyEditSelection">edit selection</el-button>
             </div>
         </div>
         <div v-show="floatSelectedOperationPanel.improveInputVisible"

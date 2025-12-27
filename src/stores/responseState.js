@@ -600,18 +600,18 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         editResponse = () => {
         }
 
-        replacementEdit = (tokensToReplace, replacementText) => {
-            if (!tokensToReplace?.length) {
+        editSelection = (selectedTokens, replacementText) => {
+            if (!selectedTokens?.length) {
                 return
             }
-            const startIndex = tokens.value.indexOf(tokensToReplace[0])
-            const endIndex = tokens.value.indexOf(tokensToReplace[tokensToReplace.length - 1])
+            const startIndex = tokens.value.indexOf(selectedTokens[0])
+            const endIndex = tokens.value.indexOf(selectedTokens[selectedTokens.length - 1])
             if (startIndex === -1 || endIndex === -1) {
                 return
             }
-            const rejected_token = recordAsRejectedToken(tokensToReplace[0], tokens)  // record rejected token before change tokens
+            const rejected_token = recordAsRejectedToken(selectedTokens[0], tokens)  // record rejected token before change tokens
             this.pandaState.beforeOperation()
-            const baseToken = deepCopy(tokensToReplace[0])
+            const baseToken = deepCopy(selectedTokens[0])
             delete baseToken.selected
             baseToken.bifurcationPoint = true
             const nextContent = replacementText ?? ""
@@ -627,11 +627,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             tokens.value.forEach((token, tokenIndex) => {
                 token.tokenIndex = tokenIndex
             })
-            const rejected_tokens_text = tokensToReplace.map(token => token.delta?.content || "").join("")
+            const rejected_tokens_text = selectedTokens.map(token => token.delta?.content || "").join("")
             this.pandaState.afterOperation({
-                operator: "replacement_edit",
+                operator: "edit_selection",
                 on_policy: false,
-                replacement_tokens_text: replacementText,
+                edit_selection_text: replacementText,
                 rejected_tokens_text: rejected_tokens_text,
                 rejected_token: rejected_token
             })
