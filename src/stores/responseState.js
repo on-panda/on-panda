@@ -614,6 +614,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             const baseToken = deepCopy(selectedTokens[0])
             delete baseToken.selected
             baseToken.bifurcationPoint = true
+            baseToken.modifiedByEditSelection = true
             const nextContent = replacementText ?? ""
             baseToken.delta = baseToken.delta || {}
             baseToken.delta.content = nextContent
