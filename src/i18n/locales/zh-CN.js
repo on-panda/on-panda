@@ -165,6 +165,16 @@ export default {
 - 请删掉非标注相关的历史对话后再保存
 
 若您使用 onPanda 不是为了标注数据，推荐点击右上角语言切换为英文界面，有进阶功能介绍
-`
+`,
+  },
+  selectedTextPanel: {
+    editSelection: '编辑选中内容',
+    improveByAI: '(WIP) AI 改进',
+    explainByAI: '(WIP) AI 解释',
+    regenerateSelection: '(WIP) 重新生成所选内容',
+    editSelectionTextPlaceholder: '编辑选中内容',
+    confirmEditSelection: '确认修改',
+    instructionForAIImprovePlaceholder: '(WIP) AI 改进指令',
+    noChangesMade: '未做任何修改'
   }
-} 
+}

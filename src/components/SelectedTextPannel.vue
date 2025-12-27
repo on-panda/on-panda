@@ -1,5 +1,6 @@
 <script setup>
 import { nextTick, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../stores/globalStore.js'
 import { createLruObject } from '../utils/commonUtils.js'
 import { Edit, Refresh, ChatLineRound, QuestionFilled, Promotion } from '@element-plus/icons-vue'
@@ -19,6 +20,7 @@ const props = defineProps({
 })
 
 const globalStore = useGlobalStore()
+const { t } = useI18n()
 
 const selectedTextState = props.selectedTextState
 const operationCenter = props.operationCenter
@@ -67,7 +69,7 @@ function openEditSelection() {
 function applyEditSelection() {
     if (replacementText.value == replacementTextKey.value) {
         ElMessage({
-            message: 'No changes made',
+            message: t('selectedTextPanel.noChangesMade'),
             type: 'error',
         })
         return
@@ -115,36 +117,35 @@ watch(floatSelectedOperationPanel, (newValue) => {
         <el-button-group class="floatSelectedOperationPanelButtons" @click="selectedTokens.map(
             token => token.selected = true
         )" :size="globalStore.isMobile ? '' : 'small'">
-            <el-tooltip content="Edit selection" placement="bottom">
+            <el-tooltip :content="t('selectedTextPanel.editSelection')" placement="bottom">
                 <el-button :icon="Edit" :type="floatSelectedOperationPanel.replacementInputVisible ? 'primary' : ''"
                     @mousedown.prevent="handleEditSelectionClick" />
             </el-tooltip>
-            <el-tooltip content="(WIP) Improve by AI" placement="bottom">
+            <el-tooltip :content="t('selectedTextPanel.improveByAI')" placement="bottom">
                 <el-button :icon="ChatLineRound"
                     :type="floatSelectedOperationPanel.improveInputVisible ? 'primary' : ''"
                     @click="floatSelectedOperationPanel.improveInputVisible = true; floatSelectedOperationPanel.replacementInputVisible = false" />
             </el-tooltip>
-            <el-tooltip content="(WIP) Explain by AI" placement="bottom">
+            <el-tooltip :content="t('selectedTextPanel.explainByAI')" placement="bottom">
                 <el-button :disabled="true" :icon="QuestionFilled" />
             </el-tooltip>
-            <el-tooltip content="(WIP) Try again" placement="bottom">
+            <el-tooltip :content="t('selectedTextPanel.regenerateSelection')" placement="bottom">
                 <el-button :disabled="true" :icon="Refresh" />
             </el-tooltip>
         </el-button-group>
         <div v-show="floatSelectedOperationPanel.replacementInputVisible"
             style="display: flex; flex-direction: column; gap: 4px; background-color: white; padding: 7px;">
             <textarea ref="replacementTextareaRef" v-model="replacementText" type="text"
-                placeholder="Edit selection text" style="height: 60px; width:auto;" @focus="$event.target.select()" />
+                :placeholder="t('selectedTextPanel.editSelectionTextPlaceholder')" style="height: 60px; width:auto;" @focus="$event.target.select()" />
             <div style="display: flex; justify-content: flex-end; gap: 6px;">
-                <el-button :size="globalStore.isMobile ? '' : 'small'" @click="cancelEditSelection">cancel</el-button>
-                <el-button :size="globalStore.isMobile ? '' : 'small'" type="primary" @click="applyEditSelection">edit
-                    selection</el-button>
+                <el-button :size="globalStore.isMobile ? '' : 'small'" @click="cancelEditSelection">{{ t('common.cancel') }}</el-button>
+                <el-button :size="globalStore.isMobile ? '' : 'small'" type="primary" @click="applyEditSelection">{{ t('selectedTextPanel.confirmEditSelection') }}</el-button>
             </div>
         </div>
         <div v-show="floatSelectedOperationPanel.improveInputVisible"
             style="display: flex; justify-content: space-between;">
             <textarea v-model="floatSelectedOperationPanel.improveInputText" type="text"
-                placeholder="(WIP) Instruction for AI to improve" style="height: 25px; width:auto;"
+                :placeholder="t('selectedTextPanel.instructionForAIImprovePlaceholder')" style="height: 25px; width:auto;"
                 @focus="$event.target.select()" @keydown.enter="improveSelectedText" />
 
             <el-button :disabled="true" :icon='Promotion' size="" @click="improveSelectedText"></el-button>

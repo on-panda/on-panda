@@ -164,6 +164,16 @@ export default {
 **Beginner's tips:**
 - You can try any button freely, except save button.
 - Recommend clicking on all the examples below once.
-        `
+        `,
+  },
+  selectedTextPanel: {
+    editSelection: 'Edit selection',
+    improveByAI: '(WIP) Improve by AI',
+    explainByAI: '(WIP) Explain by AI',
+    regenerateSelection: '(WIP) Regenerate selection',
+    editSelectionTextPlaceholder: 'Edit selection text',
+    confirmEditSelection: 'Edit selection',
+    instructionForAIImprovePlaceholder: '(WIP) Instruction for AI to improve',
+    noChangesMade: 'No changes made'
   }
-} 
+}
