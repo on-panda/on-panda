@@ -76,7 +76,7 @@ var isMobile = computed(() => globalStore.isMobile)
 const customInfoForUser = computed(() => props.customInfoForUser + globalStore.customInfoForUser)
 const defaultModelNameTags = {
   'on-panda': 'on-panda',
-  'step3': 'step3-tag',
+  'step3.5': 'step3.5-tag',
   'image': 'image-tag',
   'gpt': 'gpt-tag',
   // 'claude': 'claude-tag',
