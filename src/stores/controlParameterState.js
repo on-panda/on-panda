@@ -15,6 +15,7 @@ export const defaultChatConfig = {
     // top_k: 2,
     max_tokens: 8192,
     temperature: 0.5,
+    top_p: 0.95,
     stream_options: {
         include_usage: true,
     },
