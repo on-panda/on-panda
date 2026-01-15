@@ -236,6 +236,10 @@ const selectedTextState = SelectedTextStateClosure({
 
 
 const handleMouseEnterPatchSpan = (event) => {
+    if (event.buttons === 1) {
+        return // If left mouse button is pressed, don't open panel
+    }
+
     const patchIndex = event.target.attributes["patch-index"].value
     const patch = patchs.value[parseInt(patchIndex)]
 
