@@ -54,9 +54,8 @@
 </template>
 
 <script setup>
-// static relative asset path
-import logoImageUrl from '../../public/img/on-panda-logo.png';
-import demoGifUrl from '../../public/img/onPanda-demo-candidate.gif';
+import logoImageUrl from '/img/on-panda-logo.png';
+import demoGifUrl from '/img/onPanda-demo-candidate.gif';
 
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'

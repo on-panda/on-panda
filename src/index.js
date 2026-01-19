@@ -1,6 +1,5 @@
 // here is the global style for all components
-import 'element-plus/dist/index.css'
-import './assets/style.css'
+import './style.css'
 
 export { default as OnPanda } from './App.vue';
 

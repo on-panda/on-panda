@@ -1,0 +1,41 @@
+{
+  "name": "@on-panda/on-panda-core",
+  "version": "0.3.0",
+  "type": "module",
+  "main": "./dist/on-panda-core.es.js",
+  "module": "./dist/on-panda-core.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/on-panda-core.es.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.5",
+    "rollup-plugin-visualizer": "^6.0.5",
+    "vite": "^5.3.1"
+  },
+  "peerDependencies": {
+    "vue": "^3.x",
+    "pinia": "^2.x",
+    "element-plus": "^2.x",
+    "@mdit/plugin-katex": "^0.23.2",
+    "katex": "^0.16.x",
+    "wavesurfer.js": "^7.x",
+    "vue-i18n": "^11.x",
+    "lz-string": "^1.x",
+    "json5": "^2.x",
+    "openai": "^4.x",
+    "axios": "^1.x",
+    "@element-plus/icons-vue": "^2.x",
+    "markdown-it": "^14.x",
+    "markdown-it-code-copy": "^0.x",
+    "highlight.js": "^11.x"
+  }
+}
