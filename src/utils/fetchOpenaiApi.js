@@ -28,6 +28,69 @@ const promptLogprobsToTopLogprobs = (promptLogprob, chosenTokenId) => {
   return logprobs
 }
 
+export async function* splitMultiTokensChunk(stream) {
+  for await (const chunk of stream) {
+    const choices = chunk?.choices
+    if (!Array.isArray(choices) || choices.length !== 1) {
+      yield chunk
+      continue
+    }
+
+    const choice = choices[0]
+    const logprobsContent = choice?.logprobs?.content
+    if (!Array.isArray(logprobsContent) || logprobsContent.length <= 1) {
+      yield chunk
+      continue
+    }
+
+    const delta = choice?.delta
+    const deltaField = delta && (('content' in delta && 'content') ||
+      ('reasoning_content' in delta && 'reasoning_content') ||
+      ('reasoning' in delta && 'reasoning'))
+    if (!deltaField) {
+      yield chunk
+      continue
+    }
+    choice.tokenInfo = choice.tokenInfo ?? ''  // add tokenInfo for debugging TODO: remove
+    choice.tokenInfo += delta?.[deltaField] ?? ''
+
+    const deltaText = delta?.[deltaField] ?? ''
+    const tokensText = logprobsContent.map(item => item?.token ?? '').join('')
+
+    for (let i = 0; i < logprobsContent.length; i++) {
+      const logprobItem = logprobsContent[i]
+      const isLast = i === logprobsContent.length - 1
+      if (tokensText == deltaText) {  // try to split
+        var splitTokenText = logprobItem?.token ?? ''
+      } else {  // else its one patch
+        var splitTokenText = isLast ? deltaText : ''
+      }
+      const splitDelta = { ...delta, [deltaField]: splitTokenText }
+      if (i > 0 && 'role' in splitDelta) {
+        delete splitDelta.role
+      }
+
+      const splitChoice = {
+        ...choice,
+        delta: splitDelta,
+        logprobs: { ...choice.logprobs, content: [logprobItem] },
+      }
+      if (!isLast && 'finish_reason' in splitChoice) {
+        delete splitChoice.finish_reason
+      }
+
+      const splitChunk = {
+        ...chunk,
+        choices: [splitChoice],
+      }
+      if (!isLast && 'usage' in splitChunk) {
+        delete splitChunk.usage
+      }
+      yield splitChunk
+    }
+  }
+}
+
 export class OpenAI {
   // imitate openai-node without x-stainless-os 
   // x-stainless-os in header may not allowed in browser

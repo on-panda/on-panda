@@ -41,7 +41,7 @@
                     <div v-for="logprobItem in (token?.logprobs?.content?.[0]?.top_logprobs || []).concat([{ finish_reason: 'stop' }])"
                         style="display: block; background-color: #eee; cursor:pointer"
                         @mousedown="(event) => handleLogprobItemClick(event, token, logprobItem)"
-                        @mouseover="activateLogprobItem = logprobItem"
+                        @mouseover="activateLogprobItem = logprobItem; activateToken = token"
                         @mouseenter="$event.target.style.backgroundColor = '#ddd'"
                         @mouseleave="$event.target.style.backgroundColor = ''">
                         <span class="tokenSpan" style="color: #444;">{{ (logprobItem.finish_reason &&
@@ -56,11 +56,14 @@
             <footer class="tokenPanel" style="min-height: 24px; padding: 5px;">
                 <button :icon="Close" @click="closeFloatPatchPanel"
                     style="padding: 0px; margin: 0 0px -5px 0px; float:right;">❌</button>
+                <span v-if="activateToken.tokenInfo" style="font-family: Monospace;"> info:
+                    {{ JSON.stringify(activateToken.tokenInfo) }}<br>
+                </span>
                 <span v-if="activateLogprobItem.logprob" style="font-family: Monospace;"> {{
                     (-Math.log2(Math.exp(activateLogprobItem.logprob))).toFixed(2) }} bit
                     <br>
-                    {{
-                        Math.exp(activateLogprobItem.logprob) * 100 }}%<br></span>
+                    {{ Math.exp(activateLogprobItem.logprob) * 100 }}%<br>
+                </span>
                 <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
                     [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') :
                         activateLogprobItem.bytes }}]
@@ -298,6 +301,7 @@ function handleLogprobItemClick(event, token, logprobItem) {
 // floatPatchPanel
 const activatePatch = ref({})
 const activateLogprobItem = ref({})
+const activateToken = ref({})
 const tokenToHtml = (tokenContent) => {
     if (tokenContent === undefined) {
         return "undefined"
@@ -324,6 +328,7 @@ closeFloatPanelMeta(floatPatchPanelRef, closeFloatPatchPanel, true, true)
 
 watch(activatePatch, function watchActivatePatch(newValue, oldValue) {
     activateLogprobItem.value = {}
+    activateToken.value = {}
     oldValue.target?.classList.remove('ActivatePatchSpan')
 });
 

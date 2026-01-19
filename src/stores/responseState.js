@@ -2,7 +2,7 @@ import { ref, computed, toValue, watch, isRef } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject } from '../utils/commonUtils.js'
 import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage } from '../utils/chatUtils.js'
-import { OpenAI } from '../utils/fetchOpenaiApi.js'
+import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
 
 import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
@@ -147,6 +147,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
             var requestBody = modifyRequest(body, apiConfig.value)  // deepCopyed
             var stream = await openai.chat.completions.create(requestBody, { signal: fetchController.signal });
+            stream = splitMultiTokensChunk(stream)
 
             var tokenIndex = 0
             var streamIndex = -1
