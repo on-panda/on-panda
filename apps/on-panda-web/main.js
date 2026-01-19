@@ -1,7 +1,8 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import App from './App.vue'
-import onPandaPlugin from './index.js'
+import App from '../../src/App.vue'
+import onPandaPlugin from '../../src/index.js'
+import 'element-plus/dist/index.css'
 
 const app = createApp(App)
 const pinia = createPinia()

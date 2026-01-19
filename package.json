@@ -1,43 +1,47 @@
 {
   "name": "@on-panda/on-panda",
-  "version": "0.2.1",
-  "main": "./dist/on-panda.umd.js",
+  "version": "0.3.0",
+  "type": "module",
+  "main": "./dist/on-panda.es.js",
   "module": "./dist/on-panda.es.js",
   "exports": {
     ".": {
-      "import": "./dist/on-panda.es.js",
-      "require": "./dist/on-panda.umd.js"
+      "import": "./dist/on-panda.es.js"
     },
-    "./dist/style.css": "./dist/style.css",
-    "./assets/style.css": "./dist/style.css"
+    "./style.css": "./dist/style.css"
   },
   "files": [
     "dist"
   ],
-  "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --config apps/on-panda-web/vite.config.js",
     "build": "vite build",
-    "preview": "vite preview",
-    "app": "vite build --mode app && vite preview",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
+    "build:web": "vite build --config apps/on-panda-web/vite.config.js",
+    "build:core": "pnpm --dir packages/on-panda-core build",
+    "install:core": "pnpm --dir packages/on-panda-core install",
+    "analyze": "vite build --mode analyze",
+    "analyze:web": "vite build --mode analyze --config apps/on-panda-web/vite.config.js",
+    "analyze:core": "cd packages/on-panda-core && pnpm vite build --mode analyze",
+    "preview": "vite preview --config apps/on-panda-web/vite.config.js",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
+    "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@element-plus/icons-vue": "^2.1.0",
+    "vue": "^3.x",
+    "pinia": "^2.x",
+    "element-plus": "^2.x",
     "@mdit/plugin-katex": "^0.23.2",
-    "axios": "^1.6.0",
-    "element-plus": "^2.3.8",
-    "highlight.js": "^11.9.0",
-    "json5": "^2.0.0",
-    "katex": "^0.16.9",
-    "lz-string": "^1.4.4",
-    "markdown-it": "^14.1.0",
-    "markdown-it-code-copy": "^0.2.2",
-    "openai": "^4.58.1",
-    "pinia": "^2.1.7",
-    "vue": "^3.5.11",
-    "vue-i18n": "^11.1.0",
-    "wavesurfer.js": "^7.9.5"
+    "katex": "^0.16.x",
+    "wavesurfer.js": "^7.x",
+    "vue-i18n": "^11.x",
+    "lz-string": "^1.x",
+    "json5": "^2.x",
+    "openai": "^4.x",
+    "axios": "^1.x",
+    "@element-plus/icons-vue": "^2.x",
+    "markdown-it": "^14.x",
+    "markdown-it-code-copy": "^0.x",
+    "highlight.js": "^11.x"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.5",
@@ -45,6 +49,7 @@
     "eslint-plugin-vue": "^9.23.0",
     "postcss": "^8.5.6",
     "postcss-prefix-selector": "^2.1.1",
+    "rollup-plugin-visualizer": "^6.0.5",
     "undici": "^7.16.0",
     "vite": "^5.3.1"
   }
