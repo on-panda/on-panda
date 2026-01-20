@@ -28,7 +28,7 @@
     </details>
 
     <div style="text-align: center;">
-        <img width="128" :src="logoImageUrl"
+        <img width="128" src="/img/on-panda-logo-256x256.png"
             :style="{ transform: _isLogoRotated ? 'rotate(360deg)' : 'rotate(0deg)', transition: 'transform 3s' }"
             @click="_isLogoRotated = !_isLogoRotated" />
         <br>
@@ -42,8 +42,10 @@
             <small style="color: #888;">{{ t('header.usage') }}:</small>
         </summary>
         <br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img :src="demoGifUrl" loading="lazy"
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <video controls loading="lazy"
             style="box-shadow: 0 0px 8px rgba(0, 0, 0, 0.5);width: 406px;max-width: 90%;">
+            <source src="/img/on-panda-demo-candidate-continue-generating-cn.mp4" type="video/mp4">
+        </video>
         <br>
         <br>
         <MarkdownRender :content="t('header.instruction')" />
@@ -54,9 +56,6 @@
 </template>
 
 <script setup>
-import logoImageUrl from '/img/on-panda-logo.png';
-import demoGifUrl from '/img/onPanda-demo-candidate.gif';
-
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../stores/globalStore'
