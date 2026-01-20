@@ -44,6 +44,9 @@ export async function* splitMultiTokensChunk(stream) {
     }
 
     const delta = choice?.delta
+    if (delta.content === null) {
+      delete delta.content
+    }
     const deltaField = delta && (('content' in delta && 'content') ||
       ('reasoning_content' in delta && 'reasoning_content') ||
       ('reasoning' in delta && 'reasoning'))
