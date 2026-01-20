@@ -126,7 +126,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),  // @ 指向 src 目录
-        '@custom': resolvedCustomModule,
+        './utils/defaultCustom.js': resolvedCustomModule,
       }
     },
     build: {

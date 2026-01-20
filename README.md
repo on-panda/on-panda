@@ -6,7 +6,7 @@ Scaling up your data efficiency before scaling up your data.
 
 ## Custom module configuration
 
-You can inject deployment-specific custom logic at build time by pointing Vite to a custom module. The app loads it via `import('@custom')`, and Vite resolves `@custom` to the path from env. Each build target uses its own env key (all read from the repo root `.env.local`):
+You can inject deployment-specific custom logic at build time by pointing Vite to a custom module. The app loads it via `import('./utils/defaultCustom.js')`, and Vite resolves `./utils/defaultCustom.js` to the path from env. Each build target uses its own env key (all read from the repo root `.env.local`):
 
 - `WEB_IMPORT_CUSTOM_CODE` for `apps/on-panda-web`
 - `CORE_IMPORT_CUSTOM_CODE` for `packages/on-panda-core`

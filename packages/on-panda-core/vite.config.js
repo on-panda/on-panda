@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
     envDir,
     resolve: {
       alias: {
-        "@custom": resolvedCustomModule,
+        "./utils/defaultCustom.js": resolvedCustomModule,
       },
     },
     plugins: [

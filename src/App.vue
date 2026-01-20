@@ -131,8 +131,7 @@ const onPandaContainerRef = ref(null)
 onMounted(async () => {
   responseState.onPandaContainerRef.value = onPandaContainerRef.value
   try {
-    await import('@custom');
-    // await import('./assets/secret/publicDemo/publicDemoCustom.js');
+    await import('./utils/defaultCustom.js');  // important: './utils/defaultCustom.js' will be resolve by different vite.config.js according different env var, do not change it
   } catch (error) {
     console.error('Failed to load custom.js:', error);
   }
