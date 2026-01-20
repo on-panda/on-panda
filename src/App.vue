@@ -131,7 +131,7 @@ const onPandaContainerRef = ref(null)
 onMounted(async () => {
   responseState.onPandaContainerRef.value = onPandaContainerRef.value
   try {
-    await import('./assets/secret/custom.js');
+    await import('@custom');
     // await import('./assets/secret/publicDemo/publicDemoCustom.js');
   } catch (error) {
     console.error('Failed to load custom.js:', error);

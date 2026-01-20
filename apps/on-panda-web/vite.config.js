@@ -1,7 +1,8 @@
 import { fileURLToPath, URL } from 'node:url'
 import { Readable } from 'node:stream'
 
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
+import path from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { ProxyAgent } from 'undici'
 import { visualizer } from 'rollup-plugin-visualizer'
@@ -13,6 +14,13 @@ function verifyIsLlmApiCall(url) {
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
+  const envDir = path.resolve(__dirname, '../../')
+  const env = loadEnv(mode, envDir, '')
+  const defaultCustom = fileURLToPath(new URL('../../src/utils/defaultCustom.js', import.meta.url))
+  const customModulePath = env.WEB_IMPORT_CUSTOM_CODE
+  const resolvedCustomModule = customModulePath
+    ? (path.isAbsolute(customModulePath) ? customModulePath : path.resolve(envDir, customModulePath))
+    : defaultCustom
   function createServerProxyMiddleware() {
     return async (req, res) => {
       try {
@@ -103,6 +111,7 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
+    envDir,
     root: fileURLToPath(new URL('.', import.meta.url)),
     publicDir: fileURLToPath(new URL('../../public', import.meta.url)),  // 静态资源目录在根目录的 public/
     plugins: [
@@ -116,7 +125,8 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url))  // @ 指向 src 目录
+        '@': fileURLToPath(new URL('./src', import.meta.url)),  // @ 指向 src 目录
+        '@custom': resolvedCustomModule,
       }
     },
     build: {
