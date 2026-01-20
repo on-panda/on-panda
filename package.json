@@ -18,6 +18,7 @@
     "build": "vite build",
     "build:web": "vite build --config apps/on-panda-web/vite.config.js",
     "build:core": "pnpm --dir packages/on-panda-core build",
+    "publish:core": "pnpm --dir packages/on-panda-core build && pnpm --dir packages/on-panda-core publish",
     "install:core": "pnpm --dir packages/on-panda-core install",
     "analyze": "vite build --mode analyze",
     "analyze:web": "vite build --mode analyze --config apps/on-panda-web/vite.config.js",
