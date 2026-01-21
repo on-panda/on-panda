@@ -25,7 +25,7 @@ import ElementPlus from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import en from 'element-plus/es/locale/lang/en'
 
-const plugin = {
+const onPandaPlugin = {
   install: (app, options = {}) => {
     app.use(i18n);
     const isElementRegistered = app.component('ElButton') !== undefined;
@@ -41,5 +41,4 @@ const plugin = {
     }
   }
 };
-export default plugin;
-export { i18n, plugin };
+export { i18n, onPandaPlugin };
