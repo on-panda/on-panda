@@ -135,11 +135,6 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        '/qwen-test': {
-          target: 'http://113.44.140.251:12692',
-          changeOrigin: true,
-          rewrite: path => path.replace(/^\/qwen-test/, '/v1/')
-        },
         '/bypass-CORS': {
           target: 'https://api.github.com/',
           changeOrigin: true,
