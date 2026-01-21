@@ -32,7 +32,7 @@ export default defineConfig(({ mode }) => {
     publicDir: "../../public",
     build: {
       lib: {
-        entry: "../../src/index.js",
+        entry: "../../src/index.core.js",
         name: "OnPandaCore",
         formats: ["es"],
         fileName: () => "on-panda-core.es.js",
