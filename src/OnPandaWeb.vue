@@ -135,7 +135,7 @@ onMounted(async () => {
       return
     }
     try {
-      const runtimeUrl = '/on-panda-web-runtime.js'  // Fix endpoint for configurations that are included in `pnpm dev`/`preview` but not in git or the build.
+      const runtimeUrl = '/on-panda-web-runtime.js'  // Fix endpoint for configurations that are included in `pnpm dev`/`preview` but not in git or build.
       const mod = await import(/* @vite-ignore */ runtimeUrl)
       await mod.default({ globalStore })  // Apply runtime configuration by function
     } catch (error) {
@@ -145,7 +145,8 @@ onMounted(async () => {
   await loadRuntimeImport()
   responseState.onPandaContainerRef.value = onPandaContainerRef.value
   try {
-    await import('./utils/defaultCustom.js');  // important: './utils/defaultCustom.js' will be resolve by different vite.config.js according different env var, do not change it
+    await import('./utils/defaultCustom.js');  // important: './utils/defaultCustom.js' will be resolve by different vite.config.js according different env var, do not change it.
+    // Custom configurations that are included in build, but not in git
   } catch (error) {
     console.error('Failed to load custom.js:', error);
   }
