@@ -129,6 +129,20 @@ watch(modelName, async function watchModelName(newValue) {  // set modelName to 
 const onPandaContainerRef = ref(null)
 
 onMounted(async () => {
+  async function loadRuntimeImport() {
+    const runtimeImport = import.meta.env.VITE_ON_PANDA_WEB_RUNTIME_IMPORT
+    if (!runtimeImport) {
+      return
+    }
+    try {
+      const runtimeUrl = '/on-panda-web-runtime.js'  // Fix endpoint for configurations that are included in `pnpm dev`/`preview` but not in git or the build.
+      const mod = await import(/* @vite-ignore */ runtimeUrl)
+      await mod.default({ globalStore })  // Apply runtime configuration by function
+    } catch (error) {
+      console.warn(`Runtime config load failed (VITE_ON_PANDA_WEB_RUNTIME_IMPORT).`, error)
+    }
+  }
+  await loadRuntimeImport()
   responseState.onPandaContainerRef.value = onPandaContainerRef.value
   try {
     await import('./utils/defaultCustom.js');  // important: './utils/defaultCustom.js' will be resolve by different vite.config.js according different env var, do not change it

@@ -135,7 +135,9 @@ export function p(varName, obj) {
   return obj
 }
 
-window.p = p
+if (typeof window !== 'undefined') {
+  window.p = p
+}
 
 export function getUnicodeLength(str) {
   return Array.from(str).length;

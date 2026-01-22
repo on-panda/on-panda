@@ -1,5 +1,10 @@
 import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils'
 
+export function verifyUrlIsLlmApiCall(url) {
+    // check is LLM api call by /models or /completions
+    return /\/models|\/completions/.test(url);
+}
+
 export function isFinalRoleModelRole(messages, modelRoles = ['assistant',]) {
     return modelRoles.includes(messages[messages.length - 1].role)
 }
