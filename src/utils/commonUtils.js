@@ -2,6 +2,19 @@ export function deepCopy(obj) {
   return JSON.parse(JSON.stringify(obj))
 }
 
+export function safeArrayExtend(target, source, chunkSize = 10240) {
+  if (!source || source.length === 0) {
+    return target
+  }
+  if (!chunkSize || chunkSize <= 0) {
+    chunkSize = 10240
+  }
+  for (let i = 0; i < source.length; i += chunkSize) {
+    target.push(...source.slice(i, i + chunkSize))
+  }
+  return target
+}
+
 export function deepEqual(obj1, obj2, visited = new Set()) {
   if (obj1 === obj2) {
     return true;

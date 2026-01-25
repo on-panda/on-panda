@@ -1,5 +1,5 @@
 import { ref, computed, watch } from 'vue'
-import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '../utils/commonUtils'
+import { deepCopy, hashObjectSHA256Base64, dateStringNow, safeArrayExtend } from '../utils/commonUtils'
 import { messagesDifferent, tokensToSeq, isFinalRoleModelRole, clearTokenObject } from '../utils/chatUtils'
 import { useGlobalStore } from './globalStore.js'
 import LZString from 'lz-string'
@@ -195,7 +195,7 @@ export class PandaState {
             if (seqNow === seqCache) {
                 this.tokens.value.length = 0
                 // must deep copy to aviod edit by reference
-                this.tokens.value.push(...deepCopy(tokensCache))
+                safeArrayExtend(this.tokens.value, deepCopy(tokensCache))
             } else {
                 console.trace('seqNow !== seqCache')
                 console.log('Warning! When tryRestoreTokens, unexpected seqNow !== seqCache:', seqNow === seqCache, '\n', seqNow, '\n----\n', seqCache, '\npruned now:', this.tokens.value.filter(token => token.pruned).length, 'pruned cache:', tokensCache.filter(token => token.pruned).length)
@@ -586,5 +586,4 @@ export const uploadedJson = ref(null)
 
 // export const dialogIndex = ref(-1)
 // export const dialog = computed(() => panda.value.historys[(panda.value.historys.length * 20 + dialogIndex.value) % panda.value.historys.length])
-
 
