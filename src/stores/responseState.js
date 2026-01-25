@@ -1,6 +1,6 @@
 import { ref, computed, toValue, watch, isRef } from 'vue'
 import { ElMessage } from 'element-plus'
-import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject } from '../utils/commonUtils.js'
+import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
 import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage } from '../utils/chatUtils.js'
 import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
 
@@ -250,7 +250,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                     var concatTokens = () => {
                         if (tokenBatch.length > 0) {
                             console.assert(tokensValuePtr === tokens.value)
-                            tokensValuePtr.push(...tokenBatch)
+                            safeArrayExtend(tokensValuePtr, tokenBatch)
                             tokenBatch = []
                         }
                     }
