@@ -8,10 +8,11 @@
                 ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
                 ...(patch.tokens.some(t => t.pruned) ? { "text-decoration": "line-through", "color": "#777" } : {}),
                 ...(patch.tokens.some(t => t.selected) ? { "background-color": "#3064ce", "color": "#fff" } : {}),
-                ...(patch.tokens.some(t => t.isReasoningContent) ? { "color": "#666" } : {}),
+                ...(patch.tokens.some(t => t.isReasoningContent) ? { "color": "#757575" } : {}),
                 // ...(patch.tokens.some(t => t.isReasoningContent) ? { "text-decoration": "underline dotted #999" } : {}),
                 // ...(patch.tokens.some(t => t.isReasoningContent) ? { "background": "linear-gradient(to bottom, transparent 85%, #09f5 85%)" } : {}),
-                ...(patch.tokens.some(t => t.modifiedByEditSelection) ? { "border-bottom": "3px solid #09f" } : {}),
+                // ...(patch.tokens.some(t => t.modifiedByEditSelection) ? { "border-bottom": "3px solid #09f" } : {}),
+                ...(patch.tokens.some(t => t.modifiedByEditSelection) ? { "background-color": "skyblue" } : {}),  // avoid conflict with probToColor
             }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
             @mouseleave="handleMouseLeavePatchSpan" @mousedown="handleMouseDownPatchSpan($event, patch)"
             @dblclick.prevent="setFloatInputPatch($event, patch)">
@@ -39,7 +40,7 @@
                 </div>
                 <div class="tokenLogprobItems">
                     <div v-for="logprobItem in (token?.logprobs?.content?.[0]?.top_logprobs || []).concat([{ finish_reason: 'stop' }])"
-                        style="display: block; background-color: #eee; cursor:pointer"
+                        style="display: block; background-color: #eee; cursor:pointer" @contextmenu.prevent
                         @mousedown="(event) => handleLogprobItemClick(event, token, logprobItem)"
                         @mouseover="activateLogprobItem = logprobItem; activateToken = token"
                         @mouseenter="$event.target.style.backgroundColor = '#ddd'"
@@ -272,6 +273,11 @@ function isEventForCopy(event) {
     return event.altKey || event.button == 1;
 }
 
+function isEventForPatchReplacement(event) {
+    // if the event is triggered with the Ctrl key or right mouse button, replace the patch
+    return event.ctrlKey || event.button == 2;
+}
+
 function handleMouseDownPatchSpan(event, patch) {
     if (isEventForCopy(event)) {
         var content = patch.patch
@@ -287,8 +293,28 @@ function closeFloatPatchPanel() {
     activatePatch.value = {}
 }
 
+function usingLogprobItemReplacePatch(logprobItem) {
+    const patchIndex = Number(activatePatch.value?.target?.attributes?.["patch-index"]?.value)
+    const patch = patchs.value?.[patchIndex]
+    const patchTokens = patch?.tokens
+    if (!patchTokens?.length) {
+        return
+    }
+    operationCenter?.editSelection(patchTokens, logprobItem)
+    setTimeout(() => {
+        const updatedPatch = patchs.value?.[patchIndex]
+        updatedPatch.target = activatePatch.value?.target
+        activatePatch.value = updatedPatch
+        floatPatchPanel.value.waitingToHide = false
+        floatPatchPanel.value.visible = true
+    }, 1)
+}
+
 function handleLogprobItemClick(event, token, logprobItem) {
-    if (isEventForCopy(event)) {
+    if (isEventForPatchReplacement(event)) {
+        event.preventDefault()
+        usingLogprobItemReplacePatch(logprobItem)
+    } else if (isEventForCopy(event)) {
         var content = logprobItem.token
         copyToClipboard(content).then(() => {
             ElMessage.success(`Copied "${content}" to clipboard`)

@@ -148,22 +148,31 @@ export default {
     writingToolDesc: 'Precision byte-level control for LLM writing.',
     drivingModeDesc: 'You will disguise as an API, guiding the model to complete tasks while collecting annotated data.',
     instruction: `
-### Usage:
-**Basic Features:**
-- Hover over any word to see alternative suggestions
-- Click a suggestion to continue generating from that point
-- Double-click any word to manually edit and continue
-- Select text to edit or let AI optimize it
+### onPanda Instructions:
+**Basic Features**
+- Probability visualization: responses are composed of token chunks; the color under each chunk reflects its probability (green = high, red = low)
+- Candidate continuations: hover over response text to see candidate chunks; click a candidate to continue from it
+- Double-click to edit: double-click a chunk to modify it, then the model continues from your edit
 
-**Advanced Features:**
-- Paste images and audios directly for multimodal language model support
-- Single-click image to enlarge, double-click to open
-- Double-click role labels to edit them
-- Hold down the \`Alt\` key while clicking to copy the content of the suggestion.
+**Image Features**
+- You can paste images and audio directly into the input box
+- Single-click an image to zoom in/out, double-click to open it
+- Note: only specific models support image inputs
 
-**Beginner's tips:**
-- You can try any button freely, except save button.
-- Recommend clicking on all the examples below once.
+**Getting Started Tips**
+- Feel free to try any button, most of them come with built-in tooltips.
+- Recommend clicking all examples below in order to get familiar with onPanda
+
+**Annotation Requirements**
+- If you are not using onPanda for data annotation, you can ignore this section
+- Prefer “candidate continuation”; if no suitable candidate exists, use “double-click edit” for problematic chunks
+- Delete non-annotation-related history before saving
+
+**Advanced Features**
+- Select & rewrite: select a span of text to rewrite; rewritten text will be marked with a blue background
+- Candidate chunks:
+  - Right-click or Ctrl+click a candidate to replace the current chunk
+  - Middle-click or Alt+click a candidate to copy it to the clipboard
         `,
   },
   selectedTextPanel: {

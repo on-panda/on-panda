@@ -601,7 +601,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         editResponse = () => {
         }
 
-        editSelection = (selectedTokens, replacementText) => {
+        editSelection = (selectedTokens, replacementInput) => {
             if (!selectedTokens?.length) {
                 return
             }
@@ -616,12 +616,19 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             delete baseToken.selected
             baseToken.bifurcationPoint = true
             baseToken.modifiedByEditSelection = true
-            const nextContent = replacementText ?? ""
+            const isLogprobItem = replacementInput && typeof replacementInput === 'object'
+            const replacementText = isLogprobItem ? (replacementInput.token ?? "") : (replacementInput ?? "")
+            const nextContent = replacementText
             baseToken.delta = baseToken.delta || {}
             baseToken.delta.content = nextContent
             if (baseToken.logprobs?.content?.[0]) {
-                baseToken.logprobs.content[0].token = nextContent
-                baseToken.logprobs.content[0].logprob = -9999
+                const logprobsContent = baseToken.logprobs.content[0]
+                if (isLogprobItem) {
+                    Object.assign(logprobsContent, replacementInput)
+                } else {
+                    delete logprobsContent.logprob
+                }
+                logprobsContent.token = nextContent
             }
             const replaceStart = Math.min(startIndex, endIndex)
             const replaceEnd = Math.max(startIndex, endIndex)
@@ -630,13 +637,18 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 token.tokenIndex = tokenIndex
             })
             const rejected_tokens_text = selectedTokens.map(token => token.delta?.content || "").join("")
-            this.pandaState.afterOperation({
+            const operation = {
                 operator: "edit_selection",
                 on_policy: false,
                 edit_selection_text: replacementText,
                 rejected_tokens_text: rejected_tokens_text,
-                rejected_token: rejected_token
-            })
+                rejected_token: rejected_token,
+                is_logprob_item: isLogprobItem,
+            }
+            if (isLogprobItem) {
+                operation.replacement_token = replacementInput
+            }
+            this.pandaState.afterOperation(operation)
         }
 
         loadMessages = (newMessages) => {
