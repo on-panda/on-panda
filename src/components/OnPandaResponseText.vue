@@ -36,7 +36,8 @@
             <div v-for="token in activatePatch?.tokens?.filter(token => (token?.delta?.content !== undefined))"
                 class="tokenPanel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
                 <div class="floatPatchPanelHead" style="border-bottom: 2px solid #ccc;">
-                    <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))" />
+                    <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))"
+                        @mouseover="activateLogprobItem = token?.logprobs?.content?.[0]" />
                 </div>
                 <div class="tokenLogprobItems">
                     <div v-for="logprobItem in (token?.logprobs?.content?.[0]?.top_logprobs || []).concat([{ finish_reason: 'stop' }])"
@@ -63,7 +64,7 @@
                 <span v-if="activateLogprobItem.logprob" style="font-family: Monospace;"> {{
                     (-Math.log2(Math.exp(activateLogprobItem.logprob))).toFixed(2) }} bit
                     <br>
-                    {{ Math.exp(activateLogprobItem.logprob) * 100 }}%<br>
+                    {{ formatProbabilityPercent(Math.exp(activateLogprobItem.logprob)) }}%<br>
                 </span>
                 <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
                     [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') :
@@ -336,6 +337,16 @@ const tokenToHtml = (tokenContent) => {
         return "<|unsee|>"
     }
     return JSON.stringify(tokenContent)
+}
+
+const formatProbabilityPercent = (prob) => {
+    const num = prob * 100
+    const str = num.toLocaleString('en-US', {
+        useGrouping: false,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 10
+    })
+    return str
 }
 
 
