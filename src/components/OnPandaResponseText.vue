@@ -84,7 +84,7 @@
     }" style="display: flex; position: fixed">
         <textarea type="text" :placeholder="t('placeholders.submitEnter')" style="height: 25px; width:auto;"
             class="floatInputPatchInput" @focus="$event.target.select()"
-            @keydown.enter="if (!$event.shiftKey) { operationCenter.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, -999); floatInputPatch.visible = false; $event.preventDefault() }" />
+            @keydown.enter="if (!$event.shiftKey) { operationCenter.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, null); floatInputPatch.visible = false; $event.preventDefault() }" />
     </div>
     <div v-show="!floatInputPatch.visible">
         <SelectedTextPannel :selectedTextState="selectedTextState" :operationCenter="operationCenter" />

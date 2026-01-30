@@ -688,7 +688,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         token.bifurcationPoint = true
         token.pruned = false
         if (token.logprobs?.content?.[0]) {
-            token.logprobs.content[0].logprob = isFinite(continuePrefixLogprob) ? continuePrefixLogprob : -9999
+            if (isFinite(continuePrefixLogprob) && continuePrefixLogprob !== null) {
+                token.logprobs.content[0].logprob = continuePrefixLogprob
+            } else {
+                delete token.logprobs.content[0].logprob
+            }
             token.logprobs.content[0].token = continuePrefix
         }
         tokens.value.splice(token.tokenIndex, 0, token);
