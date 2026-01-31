@@ -37,7 +37,7 @@
                 class="tokenPanel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
                 <div class="floatPatchPanelHead" style="border-bottom: 2px solid #ccc;">
                     <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))"
-                        @mouseover="activateLogprobItem = token?.logprobs?.content?.[0]" />
+                        @mouseover="activateLogprobItem = token?.logprobs?.content?.[0] ?? {}" />
                 </div>
                 <div class="tokenLogprobItems">
                     <div v-for="logprobItem in (token?.logprobs?.content?.[0]?.top_logprobs || []).concat([{ finish_reason: 'stop' }])"
