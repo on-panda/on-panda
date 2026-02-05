@@ -47,6 +47,10 @@ export async function* splitMultiTokensChunk(stream) {
     if (delta.content === null) {
       delete delta.content
     }
+    if (typeof delta.reasoning_content === 'string' || typeof delta.reasoning === 'string' && delta.content === "") {
+      // sometimes, reasoning_content or reasoning is string and content is empty string
+      delete delta.content
+    }
     const deltaField = delta && (('content' in delta && 'content') ||
       ('reasoning_content' in delta && 'reasoning_content') ||
       ('reasoning' in delta && 'reasoning'))
