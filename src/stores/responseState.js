@@ -104,8 +104,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 // body['chat_template_kwargs'] = { continue_final_message: continue_final_message }
                 body['continue_final_message'] = continue_final_message
                 body['echo'] = false
-                if (apiConfig.value.chat_config.model.toLowerCase().indexOf("kimi") != -1) {
-                    // for kimi-api
+                const modelName = apiConfig.value.chat_config.model.toLowerCase()
+                if (modelName.indexOf("kimi") != -1 || modelName.indexOf("qwen") != -1) {
+                    // for kimi-api and aliyun
                     messages[messages.length - 1]['partial'] = true
                 }
             } else {
