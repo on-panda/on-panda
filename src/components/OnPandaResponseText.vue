@@ -37,7 +37,7 @@
                 class="tokenPanel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
                 <div class="floatPatchPanelHead" style="border-bottom: 2px solid #ccc;">
                     <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))"
-                        @mouseover="activateLogprobItem = token?.logprobs?.content?.[0] ?? {}" />
+                        @mouseover="activateLogprobItem = token?.logprobs?.content?.[0] ?? {}; activateToken = token" />
                 </div>
                 <div class="tokenLogprobItems">
                     <div v-for="logprobItem in (token?.logprobs?.content?.[0]?.top_logprobs || []).concat([{ finish_reason: 'stop' }])"
@@ -69,8 +69,13 @@
                 <span v-if="activateLogprobItem.bytes" style="font-family: Monospace;"> bytes:
                     [{{ typeof activateLogprobItem.bytes === "object" ? activateLogprobItem.bytes.join(',') :
                         activateLogprobItem.bytes }}]
+                    <br>
                 </span>
-                <br>
+                <span v-if="getDisplayTokenIds(activateLogprobItem, activateToken)" style="font-family: Monospace;">
+                    tokens:
+                    [{{ formatTokenIds(getDisplayTokenIds(activateLogprobItem, activateToken)) }}]
+                    <br>
+                </span>
                 <span v-if="activateLogprobItem.token_piece" style="font-family: Monospace;"> token_piece:
                     "{{ activateLogprobItem.token_piece }}"
                 </span>
@@ -347,6 +352,23 @@ const formatProbabilityPercent = (prob) => {
         maximumFractionDigits: 10
     })
     return str
+}
+
+const formatTokenIds = (tokenIds) => {
+    if (Array.isArray(tokenIds)) {
+        return tokenIds.join(',')
+    }
+    return ""
+}
+
+const getDisplayTokenIds = (logprobItem, token) => {
+    if (Array.isArray(logprobItem?.token_ids)) {
+        return logprobItem.token_ids
+    }
+    if (Array.isArray(logprobItem?.top_logprobs) && Array.isArray(token?.token_ids)) {
+        return token.token_ids
+    }
+    return null
 }
 
 

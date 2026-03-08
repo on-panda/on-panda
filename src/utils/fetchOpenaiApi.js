@@ -2,7 +2,7 @@ import { useGlobalStore } from '../stores/globalStore'
 import { ElMessage } from 'element-plus'
 
 const promptLogprobsToTopLogprobs = (promptLogprob, chosenTokenId) => {
-  // list of {token_id: obj} => same as top_logprobs, TokenId are string
+  // list of {tokenId: obj} => same as top_logprobs, TokenId are string
   var sortPrompt = (a, b) => {
     if (a == chosenTokenId) {
       return -1;
@@ -14,10 +14,15 @@ const promptLogprobsToTopLogprobs = (promptLogprob, chosenTokenId) => {
   }
   var sortedTokenIds = Object.keys(promptLogprob).sort(sortPrompt);
 
+  const normalizeTokenId = (tokenId) => {
+    const tokenIdNumber = Number(tokenId)
+    return Number.isInteger(tokenIdNumber) ? tokenIdNumber : tokenId
+  }
   var top_logprobs = sortedTokenIds.map(tokenId => {
     let logprob = promptLogprob[tokenId]
+    const normalizedTokenId = normalizeTokenId(tokenId)
     logprob.token = logprob.decoded_token
-    logprob.token_id = tokenId
+    logprob.token_ids = [normalizedTokenId]
     return logprob
   });
   var logprobChosen = JSON.parse(JSON.stringify(top_logprobs[0]))
@@ -81,6 +86,9 @@ export async function* splitMultiTokensChunk(stream) {
         ...choice,
         delta: splitDelta,
         logprobs: { ...choice.logprobs, content: [logprobItem] },
+      }
+      if (Array.isArray(choice.token_ids)) {
+        splitChoice.token_ids = choice.token_ids.slice(i, i + 1)
       }
       if (!isLast && 'finish_reason' in splitChoice) {
         delete splitChoice.finish_reason
