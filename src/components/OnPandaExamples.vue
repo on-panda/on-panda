@@ -69,7 +69,7 @@ const messagesToolsExample = [
   { "role": "system", "content": "You are a weather inquiry agent." },
   {
     "role": "user",
-    "content": "Say hi and tell me the current temperatures(°C) in New York City and San Francisco?"
+    "content": "Say hi first, and then call the tool to tell me the current temperatures(°C) in New York City and San Francisco?"
   },
   {
     "role": "assistant",
