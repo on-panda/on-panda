@@ -73,6 +73,7 @@ const messagesToolsExample = [
   },
   {
     "role": "assistant",
+    "reasoning": "Okay, I see the only tool available is get_weather, I will say hi and call tools.",
     "content": "Hi! Let me get the current temperatures for you.",
     "tool_calls": [
       {

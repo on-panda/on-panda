@@ -171,12 +171,11 @@ onMounted(async () => {
         exampleToRun = operationCenter.generateNew
       }
       if (globalStore.debug) {
-        // modelName.value = defaultApiConfig.chat_config.model
         // Use the example via the operationCenter directly
         // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
         // exampleToRun = operationCenter.generateNew
-        // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
-        exampleToRun = () => {
+        exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
+        var _exampleToRun = () => {
           operationCenter.loadMessages([{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }])
           if (modelNameTags.value['test']) {
             modelName.value = modelNameTags.value['test']
