@@ -1,5 +1,14 @@
 import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils'
 
+export const MESSAGE_KEYS_IN_CONTEXT = ['name', 'reasoning', 'content', 'tool_calls', 'tool_call_id']
+export const MESSAGE_META_KEYS = ['name', 'tool_call_id']
+export const MESSAGE_CONTEXT_SECTION_MARKERS = {
+    message_meta: '<|ON_PANDA_MESSAGE_META|>',
+    reasoning: '<|ON_PANDA_REASONING|>',
+    content: '<|ON_PANDA_CONTENT|>',
+    tool_calls: '<|ON_PANDA_TOOL_CALLS|>',
+}
+
 export function verifyUrlIsLlmApiCall(url) {
     // check is LLM api call by /models or /completions
     return /\/models|\/completions/.test(url);
@@ -29,6 +38,8 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
     // if response is null, response is different
     var is_response_modified = true
     if (response1 && response2) {
+        var seq1 = messageToSeq(response1)
+        var seq2 = messageToSeq(response2)
         function findCommonPrefix(str1, str2) {
             let i = 0;
             while (i < str1.length && i < str2.length && str1[i] === str2[i]) {
@@ -36,13 +47,11 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
             }
             return str1.substring(0, i);
         }
-        var commonPrefix = findCommonPrefix(response1.content, response2.content)
+        var commonPrefix = findCommonPrefix(seq1, seq2)
         var common_prefix_length = getUnicodeLength(commonPrefix)
         if (response1.role !== response2.role) {
             var response_modified_type = 'change_role'
         } else {
-            var seq1 = messageToSeq(response1)
-            var seq2 = messageToSeq(response2)
             // console.log('response diff:', seq1, seq2, response1, response2)
             if (seq1 == seq2) {
                 var response_modified_type = 'same'
@@ -78,10 +87,84 @@ export function tokensToSeq(tokens) {
     return tokens.map(token => (token.delta.content || "") + ((token.finish_reason && token.finish_reason !== 'length') ? ('<|' + token.finish_reason + '|>') : '')).join('')
 }
 
-export function messageToSeq(message) {
-    var content = message.content
-    content = typeof content === 'string' ? content : JSON.stringify(content)
-    return content + ((message.finish_reason && message.finish_reason !== 'length') ? ('<|' + message.finish_reason + '|>') : '')
+function contentToContextText(content) {
+    if (typeof content === 'string') {
+        return content
+    }
+    if (Array.isArray(content)) {
+        return content.map(chunk => JSON.stringify(chunk)).join('\n')
+    }
+    return ''
+}
+
+function serializeMessageSection(marker, text, { isJson = false } = {}) {
+    if (!text) {
+        return ''
+    }
+    if (isJson) {
+        return `### ${marker}\n\`\`\`JavaScript\n${text}\n\`\`\``
+    }
+    return `### ${marker}\n${text}`
+}
+
+export function messageToSeq(message, { includeFinishReason = true } = {}) {
+    message = message || {}
+    const sections = []
+
+    const messageMeta = {}
+    for (const key of MESSAGE_META_KEYS) {
+        if (message[key]) {
+            messageMeta[key] = message[key]
+        }
+    }
+    if (Object.keys(messageMeta).length > 0) {
+        sections.push({
+            key: 'message_meta',
+            text: serializeMessageSection(
+                MESSAGE_CONTEXT_SECTION_MARKERS.message_meta,
+                JSON.stringify(messageMeta, null, 2),
+                { isJson: true },
+            )
+        })
+    }
+    if (message.reasoning) {
+        sections.push({
+            key: 'reasoning',
+            text: serializeMessageSection(MESSAGE_CONTEXT_SECTION_MARKERS.reasoning, message.reasoning),
+        })
+    }
+
+    const contentText = contentToContextText(message.content)
+    if (contentText) {
+        sections.push({
+            key: 'content',
+            text: serializeMessageSection(MESSAGE_CONTEXT_SECTION_MARKERS.content, contentText),
+            rawText: contentText,
+        })
+    }
+
+    if (message.tool_calls?.length) {
+        sections.push({
+            key: 'tool_calls',
+            text: serializeMessageSection(
+                MESSAGE_CONTEXT_SECTION_MARKERS.tool_calls,
+                JSON.stringify(message.tool_calls, null, 2),
+                { isJson: true },
+            )
+        })
+    }
+
+    var seq = ''
+    if (sections.length === 1 && sections[0].key === 'content') {
+        seq = sections[0].rawText
+    } else {
+        seq = sections.map(section => section.text).filter(Boolean).join('\n')
+    }
+
+    if (includeFinishReason && message.finish_reason && message.finish_reason !== 'length') {
+        seq += `<|${message.finish_reason}|>`
+    }
+    return seq
 }
 
 
@@ -262,5 +345,5 @@ export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
 }
 
 export function filterEmptyMessage(messages) {
-    return messages.filter(message => message.content || message.tool_calls?.length)
+    return messages.filter(message => messageToSeq(message, { includeFinishReason: false }))
 }

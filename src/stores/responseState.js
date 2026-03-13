@@ -1,7 +1,7 @@
 import { ref, computed, toValue, watch, isRef } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
-import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage } from '../utils/chatUtils.js'
+import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, messageToSeq } from '../utils/chatUtils.js'
 import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
 
 import { useGlobalStore } from './globalStore.js'
@@ -537,10 +537,14 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         clearOrDeleteMessage = (message, index) => {
             this.pandaState.beforeOperation()
-            if (message.content) {
+            if (messageToSeq(message, { includeFinishReason: false })) {
                 // after beforeOperation(), message has been recomputed
                 var messageRefresh = messages.value[index]
+                for (const key of MESSAGE_KEYS_IN_CONTEXT) {
+                    delete messageRefresh[key]
+                }
                 messageRefresh.content = ""
+                delete messageRefresh.finish_reason
                 this.pandaState.afterOperation({
                     operator: "edit_prompt_clear",
                     on_policy: false,
@@ -567,10 +571,22 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             }
         }
 
-        updatePromptContent = (content, index, message) => {
+        updatePromptMessage = (messageDelta, index) => {
             this.pandaState.beforeOperation()
-            var messageRefresh = messages.value[index]
-            messageRefresh.content = content
+            var messageRefresh = { ...messages.value[index] }
+            for (const key of MESSAGE_KEYS_IN_CONTEXT) {
+                const value = messageDelta[key]
+                if (
+                    value == null ||
+                    key !== "content" && value === "" ||
+                    Array.isArray(value) && value.length === 0
+                ) {
+                    delete messageRefresh[key]
+                } else {
+                    messageRefresh[key] = value
+                }
+            }
+            messages.value[index] = messageRefresh
             this.pandaState.afterOperation({
                 operator: "edit_prompt",
                 on_policy: false,

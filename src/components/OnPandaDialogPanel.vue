@@ -52,6 +52,15 @@ function setPromptLogprobsResponseState() {
 }
 const promptLogprobsResponseState = computed(setPromptLogprobsResponseState)
 
+const newRoundMessageHasContent = computed(() => {
+    return Boolean(messageToSeq(newRoundMessage.value, { includeFinishReason: false }))
+})
+
+function clearNewRoundMessage() {
+    const role = newRoundMessage.value.role
+    newRoundMessage.value = { role: role, content: '' }
+}
+
 </script>
 
 <template>
@@ -86,8 +95,8 @@ const promptLogprobsResponseState = computed(setPromptLogprobsResponseState)
         <slot name="beforeNewRoundMessageSlot"></slot>
 
         <el-divider content-position="left" style="margin-bottom: 5px;">{{ t('common.newMessage') }}:</el-divider>
-        <div :style="{ opacity: newRoundMessage.content ? 1 : 0.5 }">
-            <Message :message="newRoundMessage" :messageIndex="-2" @deleteMessage="newRoundMessage.content = ''"
+        <div :style="{ opacity: newRoundMessageHasContent ? 1 : 0.5 }">
+            <Message :message="newRoundMessage" :messageIndex="-2" @deleteMessage="clearNewRoundMessage"
                 @sendButton="operationCenter.startNewRound()" />
         </div>
     </div>
