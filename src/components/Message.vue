@@ -5,22 +5,16 @@
       <span class="stretch" style="margin-right: auto" />
       <div>
         <el-button ref="isRenderContentEditingButton" v-if="isRenderRole" :icon="Edit" size="small"
-          class="massageOperationButton" @click="isRenderContentEditing = !isRenderContentEditing"
+          class="massageOperationButton" @click="handleToggleRenderContentEditing"
           :type="isRenderContentEditing ? 'primary' : ''"></el-button>
-        <el-tooltip :content="hasContent ? t('chatMessage.clear') : t('chatMessage.delete')" placement="top">
-          <el-button :icon="hasContent ? Delete : Close" size="small" class="massageOperationButton"
-            style="margin-right: 5px;" @click="async () => {
-              if (usingOperators) {
-                taskQueue.addTask(async () => await sleep(1))
-                // if not sleep, will cause element-plus.js Uncaught (in promise) TypeError: Cannot read properties of null (reading 'offsetHeight')
-                taskQueue.addTask(async () => props.operationCenter.clearOrDeleteMessage(messageCache, props.messageIndex))
-              } else { $emit('deleteMessage') }
-            }
-            " />
+        <el-tooltip :content="messageActionTooltip" placement="top">
+          <el-button :icon="messageActionIcon" size="small" class="massageOperationButton" style="margin-right: 5px;"
+            @click="handleDeleteMessage" />
         </el-tooltip>
       </div>
-      <a v-if="props.messageIndex >= 0" :href="messageAnchorHref" style="color: #888; margin-top: 12px;font-size: 15px; text-decoration: none;">&nbsp;#{{
-        props.messageIndex + 1 }}</a>
+      <a v-if="props.messageIndex >= 0" :href="messageAnchorHref"
+        style="color: #888; margin-top: 12px;font-size: 15px; text-decoration: none;">&nbsp;#{{
+          props.messageIndex + 1 }}</a>
     </div>
     <div v-if="showMessageDraftWarning" class="messageDraftWarning">
       {{ messageDraftWarning }}
@@ -33,15 +27,10 @@
       <div style="display: flex; justify-content: space-between">
         <el-input class="message-content" v-model="messageDraft" type="textarea"
           :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: 50 }"
-          @keydown.ctrl.enter="handleSend" @paste="handlePaste" @focus="handleEditorFocus"
-          @blur="handleEditorBlur"
-          ref="editor" />
+          @keydown.ctrl.enter="handleSend" @paste="handlePaste" @focus="handleEditorFocus" @blur="handleEditorBlur" />
 
-        <button
-          @click="handleSend"
-          :disabled="!hasContent" :style="{
-            cursor: hasContent ? 'pointer' : 'not-allowed'
-          }" style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
+        <button @click="handleSend" :disabled="!hasContent" :style="sendButtonStyle"
+          style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
           <b>{{ t('chatMessage.send') }}</b><br>
           <small>{{ t('chatMessage.ctrlEnter') }}</small> </button>
       </div>
@@ -158,6 +147,11 @@ const setContent = (content) => {
 const hasContent = computed(() => {
   return messageDraft.value.length > 0
 })
+const messageActionIcon = computed(() => hasContent.value ? Delete : Close)
+const messageActionTooltip = computed(() => hasContent.value ? t('chatMessage.clear') : t('chatMessage.delete'))
+const sendButtonStyle = computed(() => ({
+  cursor: hasContent.value ? 'pointer' : 'not-allowed'
+}))
 
 const showMessageDraftWarning = computed(() => {
   return !isEditorFocused.value && messageDraft.value !== messageAsText.value
@@ -250,6 +244,24 @@ async function operationCenterUpdatePromptMessage({ delay = false } = {}) {
   return true
 }
 
+function handleToggleRenderContentEditing() {
+  isRenderContentEditing.value = !isRenderContentEditing.value
+}
+
+function queueDeleteMessageTask() {
+  taskQueue.addTask(async () => await sleep(1))
+  // if not sleep, will cause element-plus.js Uncaught (in promise) TypeError: Cannot read properties of null (reading 'offsetHeight')
+  taskQueue.addTask(async () => props.operationCenter.clearOrDeleteMessage(messageCache, props.messageIndex))
+}
+
+function handleDeleteMessage() {
+  if (usingOperators) {
+    queueDeleteMessageTask()
+  } else {
+    emit('deleteMessage')
+  }
+}
+
 function handleEditorFocus() {
   isEditorFocused.value = true
   emit('focus')
@@ -278,7 +290,6 @@ async function handleSend() {
 }
 
 
-const editor = ref(null)
 function handlePasteMultimodal(event) {
   const clipboardData = event.clipboardData || window.clipboardData;
   const items = clipboardData.items;
