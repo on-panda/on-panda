@@ -1,12 +1,13 @@
 import { ref, computed } from 'vue'
 
 import { closeFloatPanelMeta } from '../utils/commonUtils.js'
+import { tokenToDisplayString } from '../utils/chatUtils.js'
 import { useSelectedNodes } from '../utils/userInterfaceUtils.js'
 import { useGlobalStore } from './globalStore.js'
 
 export function SelectedTextStateClosure({
     onPandaResponseTextRef = null,
-    patchs = null,
+    patches = null,
     tokens = null,
 } = {}) {
     const selectedNodes = useSelectedNodes(onPandaResponseTextRef);
@@ -62,8 +63,8 @@ export function SelectedTextStateClosure({
         const startPatchIndex = Number(startNode.attributes['patch-index'].value)
         const endPatchIndex = Number(endNode.attributes['patch-index'].value)
 
-        const startTokenIndex = patchs.value[startPatchIndex].tokens[0].tokenIndex
-        const endPatch = patchs.value[endPatchIndex]
+        const startTokenIndex = patches.value[startPatchIndex].tokens[0].tokenIndex
+        const endPatch = patches.value[endPatchIndex]
         const endTokenIndex = endPatch.tokens[endPatch.tokens.length - 1].tokenIndex
         return tokens.value.slice(startTokenIndex, endTokenIndex + 1)
     });
@@ -72,7 +73,7 @@ export function SelectedTextStateClosure({
         if (!selectedTokens.value.length) {
             return ""
         }
-        return selectedTokens.value.map(token => token.delta?.content || "").join("")
+        return selectedTokens.value.map(token => tokenToDisplayString(token, tokens.value)).join("")
     })
 
     function improveSelectedText() {

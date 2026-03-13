@@ -416,10 +416,18 @@ export class PandaState {
 
 
         if (isMessages) {
+            const normalizedMessages = obj.map(message => {
+                const nextMessage = { ...message }
+                if (typeof nextMessage.reasoning_content === 'string' && !nextMessage.reasoning) {
+                    nextMessage.reasoning = nextMessage.reasoning_content
+                }
+                delete nextMessage.reasoning_content
+                return nextMessage
+            })
             return {
                 dialogs: {
                     "1": {
-                        messages: obj,
+                        messages: normalizedMessages,
                         annotate: { is_good: null }
                     }
                 }
@@ -586,4 +594,3 @@ export const uploadedJson = ref(null)
 
 // export const dialogIndex = ref(-1)
 // export const dialog = computed(() => panda.value.historys[(panda.value.historys.length * 20 + dialogIndex.value) % panda.value.historys.length])
-

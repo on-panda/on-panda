@@ -1,16 +1,16 @@
 <template>
     <p ref="onPandaResponseTextRef" class="OnPandaResponseText onPandaContainers"
         style="white-space: pre-wrap;cursor: default;">
-        <span class="PatchSpan" v-for="patch in patchs"
+        <span class="PatchSpan" v-for="patch in patches"
             :key="`t${pandaState.uuid.value}-d${pandaState.currentDialogKey.value}-p${patch.index}:${patch.patch}`"
             :style='{
                 "border-bottom": "3px solid " + probToColor(patch.prob),
                 ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
                 ...(patch.tokens.some(t => t.pruned) ? { "text-decoration": "line-through", "color": "#777" } : {}),
                 ...(patch.tokens.some(t => t.selected) ? { "background-color": "#3064ce", "color": "#fff" } : {}),
-                ...(patch.tokens.some(t => t.isReasoningContent) ? { "color": "#757575" } : {}),
-                // ...(patch.tokens.some(t => t.isReasoningContent) ? { "text-decoration": "underline dotted #999" } : {}),
-                // ...(patch.tokens.some(t => t.isReasoningContent) ? { "background": "linear-gradient(to bottom, transparent 85%, #09f5 85%)" } : {}),
+                ...(patch.tokens.some(t => t.delta?.reasoning !== undefined) ? { "color": "#757575" } : {}),
+                // ...(patch.tokens.some(t => t.delta?.reasoning !== undefined) ? { "text-decoration": "underline dotted #999" } : {}),
+                // ...(patch.tokens.some(t => t.delta?.reasoning !== undefined) ? { "background": "linear-gradient(to bottom, transparent 85%, #09f5 85%)" } : {}),
                 // ...(patch.tokens.some(t => t.modifiedByEditSelection) ? { "border-bottom": "3px solid #09f" } : {}),
                 ...(patch.tokens.some(t => t.modifiedByEditSelection) ? { "background-color": "skyblue" } : {}),  // avoid conflict with probToColor
             }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
@@ -33,10 +33,10 @@
         }" v-if="floatPatchPanel.visible">
         <!-- `padding-top: 4px` to avoid next line's token activate @mouseover  -->
         <div class="floatPatchPanel" style="position: relative;">
-            <div v-for="token in activatePatch?.tokens?.filter(token => (token?.delta?.content !== undefined))"
+            <div v-for="token in activatePatch?.tokens?.filter(shouldRenderTokenPanel)"
                 class="tokenPanel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
                 <div class="floatPatchPanelHead" style="border-bottom: 2px solid #ccc;">
-                    <span class="tokenSpan" v-html="escapeHTML(tokenToHtml(token?.delta?.content))"
+                    <span class="tokenSpan" v-html="escapeHTML(tokenTextToHtml(getTokenDisplayText(token)))"
                         @mouseover="activateLogprobItem = token?.logprobs?.content?.[0] ?? {}; activateToken = token" />
                 </div>
                 <div class="tokenLogprobItems">
@@ -47,7 +47,7 @@
                         @mouseenter="$event.target.style.backgroundColor = '#ddd'"
                         @mouseleave="$event.target.style.backgroundColor = ''">
                         <span class="tokenSpan" style="color: #444;">{{ (logprobItem.finish_reason &&
-                            `&lt;|${logprobItem.finish_reason}|&gt;`) || tokenToHtml(logprobItem.token) }}</span>
+                            `&lt;|${logprobItem.finish_reason}|&gt;`) || tokenTextToHtml(logprobItem.token) }}</span>
                         <span v-if="logprobItem.logprob !== undefined"
                             :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18) }'
                             style="float: right;white-space: pre-wrap;font-family: Monospace;">:{{
@@ -105,7 +105,7 @@ import { useI18n } from 'vue-i18n'
 
 import { useGlobalStore } from '../stores/globalStore.js'
 import { useEventListener, closeFloatPanelMeta, copyToClipboard, escapeHTML } from '../utils/commonUtils.js'
-import { probOfToken } from '../utils/chatUtils.js'
+import { probOfToken, tokenToDisplayString } from '../utils/chatUtils.js'
 import { probToColor } from '../utils/userInterfaceUtils.js'
 import { SelectedTextStateClosure } from '../stores/SelectedTextState.js'
 
@@ -164,11 +164,15 @@ function appendFinishReason(token) {
     return ""
 }
 
+const getTokenDisplayText = (token) => tokenToDisplayString(token, tokens.value)
+
+const shouldRenderTokenPanel = (token) => token?.delta?.content !== undefined || getTokenDisplayText(token)
+
 const tokenToSpanHTML = (token) => {
-    const content = token?.delta?.content
+    const displayText = getTokenDisplayText(token)
     html = ""
-    if (content) {
-        var html = escapeHTML(content)
+    if (displayText) {
+        var html = escapeHTML(displayText)
         html = replaceNewlinesWithSpans(html)
     }
     html = html + appendFinishReason(token)
@@ -179,67 +183,67 @@ const patchToSpanHTML = (patch) => {
     return patch.tokens.map(token => tokenToSpanHTML(token)).join("")
 }
 
-const patchs = computed(() => {
-    const assistantResponseContentAll = tokens.value.map((token) => token.delta.content).join("");
+const patches = computed(() => {
+    const responseDisplayTextAll = tokens.value.map(token => getTokenDisplayText(token)).join("");
     const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-    const visableSegments = Array.from(segmenter.segment(assistantResponseContentAll));
+    const visibleSegments = Array.from(segmenter.segment(responseDisplayTextAll));
     // add a empty segment at the end for EOT token
-    Array.from({ length: 4 }, () => visableSegments.push({ segment: "" }));
+    Array.from({ length: 4 }, () => visibleSegments.push({ segment: "" }));
 
-    const patchs = []
+    const patches = []
     let segmentIndex = 0
-    let currentSegmentString = visableSegments[segmentIndex]?.segment ?? ""
+    let currentSegmentString = visibleSegments[segmentIndex]?.segment ?? ""
     let tokenToSegmentString = ""
     let tokenStartIndex = 0
 
     tokens.value.forEach((token, tokenIndex) => {
-        const tokenContent = token.delta?.content || ""
-        tokenToSegmentString += tokenContent
+        const tokenDisplayText = getTokenDisplayText(token)
+        tokenToSegmentString += tokenDisplayText
 
         while (
-            segmentIndex < visableSegments.length - 1 &&
+            segmentIndex < visibleSegments.length - 1 &&
             tokenToSegmentString.length > currentSegmentString.length
         ) {
             segmentIndex += 1
-            currentSegmentString += visableSegments[segmentIndex].segment
+            currentSegmentString += visibleSegments[segmentIndex].segment
         }
 
         if (tokenToSegmentString === currentSegmentString) {
             const patchTokens = tokens.value.slice(tokenStartIndex, tokenIndex + 1)
-            patchs.push({
+            patches.push({
                 patch: currentSegmentString,
                 tokens: patchTokens,
                 prob: patchTokens.reduce((acc, currentToken) => acc * probOfToken(currentToken), 1),
-                index: patchs.length,
+                index: patches.length,
             })
             tokenStartIndex = tokenIndex + 1
             tokenToSegmentString = ""
             segmentIndex += 1
-            currentSegmentString = visableSegments[segmentIndex]?.segment ?? ""
+            currentSegmentString = visibleSegments[segmentIndex]?.segment ?? ""
         } else if (
             currentSegmentString &&
             !currentSegmentString.startsWith(tokenToSegmentString)
         ) {
             const patchTokens = tokens.value.slice(tokenStartIndex, tokenIndex + 1)
-            patchs.push({
+            patches.push({
                 patch: tokenToSegmentString,
                 tokens: patchTokens,
                 prob: patchTokens.reduce((acc, currentToken) => acc * probOfToken(currentToken), 1),
-                index: patchs.length,
+                index: patches.length,
             })
             tokenStartIndex = tokenIndex + 1
             tokenToSegmentString = ""
             segmentIndex += 1
-            currentSegmentString = visableSegments[segmentIndex]?.segment ?? ""
+            currentSegmentString = visibleSegments[segmentIndex]?.segment ?? ""
         }
     })
 
-    return patchs
+    return patches
 });
 
 const selectedTextState = SelectedTextStateClosure({
     onPandaResponseTextRef,
-    patchs,
+    patches,
     tokens,
     isMobile,
 })
@@ -251,7 +255,7 @@ const handleMouseEnterPatchSpan = (event) => {
     }
 
     const patchIndex = event.target.attributes["patch-index"].value
-    const patch = patchs.value[parseInt(patchIndex)]
+    const patch = patches.value[parseInt(patchIndex)]
 
     event.target.classList.add('ActivatePatchSpan')
     patch.target = event.target
@@ -286,9 +290,9 @@ function isEventForPatchReplacement(event) {
 
 function handleMouseDownPatchSpan(event, patch) {
     if (isEventForCopy(event)) {
-        var content = patch.patch
-        copyToClipboard(content).then(() => {
-            ElMessage.success(`Copied "${content}" to clipboard`)
+        var patchText = patch.patch
+        copyToClipboard(patchText).then(() => {
+            ElMessage.success(`Copied "${patchText}" to clipboard`)
         })
     }
 }
@@ -301,14 +305,14 @@ function closeFloatPatchPanel() {
 
 function usingLogprobItemReplacePatch(logprobItem) {
     const patchIndex = Number(activatePatch.value?.target?.attributes?.["patch-index"]?.value)
-    const patch = patchs.value?.[patchIndex]
+    const patch = patches.value?.[patchIndex]
     const patchTokens = patch?.tokens
     if (!patchTokens?.length) {
         return
     }
     operationCenter?.editSelection(patchTokens, logprobItem)
     setTimeout(() => {
-        const updatedPatch = patchs.value?.[patchIndex]
+        const updatedPatch = patches.value?.[patchIndex]
         updatedPatch.target = activatePatch.value?.target
         activatePatch.value = updatedPatch
         floatPatchPanel.value.waitingToHide = false
@@ -321,9 +325,9 @@ function handleLogprobItemClick(event, token, logprobItem) {
         event.preventDefault()
         usingLogprobItemReplacePatch(logprobItem)
     } else if (isEventForCopy(event)) {
-        var content = logprobItem.token
-        copyToClipboard(content).then(() => {
-            ElMessage.success(`Copied "${content}" to clipboard`)
+        var tokenText = logprobItem.token
+        copyToClipboard(tokenText).then(() => {
+            ElMessage.success(`Copied "${tokenText}" to clipboard`)
         })
     } else {
         operationCenter.continueWithChosen(token, logprobItem);
@@ -334,14 +338,14 @@ function handleLogprobItemClick(event, token, logprobItem) {
 const activatePatch = ref({})
 const activateLogprobItem = ref({})
 const activateToken = ref({})
-const tokenToHtml = (tokenContent) => {
-    if (tokenContent === undefined) {
+const tokenTextToHtml = (tokenText) => {
+    if (tokenText === undefined) {
         return "undefined"
     }
-    if (tokenContent === "") {
+    if (tokenText === "") {
         return "<|unsee|>"
     }
-    return JSON.stringify(tokenContent)
+    return JSON.stringify(tokenText)
 }
 
 const formatProbabilityPercent = (prob) => {

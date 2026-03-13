@@ -209,17 +209,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 if (!token?.delta) {
                     continue
                 }
-                for (var reasoning_key of ["reasoning", "reasoning_content"]) {
-                    if (reasoning_key in token.delta) {
-                        break
-                    }
+                if (typeof token.delta.reasoning_content === "string" && !("reasoning" in token.delta)) {
+                    token.delta.reasoning = token.delta.reasoning_content
                 }
-                if (!token.delta?.content && token.delta?.[reasoning_key]) {
-                    // handle reasoning_content item for DeepSeek R1
-                    token.delta.content = token.delta[reasoning_key]
-                    delete token.delta[reasoning_key]
-                    token.isReasoningContent = true
-                }
+                delete token.delta.reasoning_content
                 streamIndex++
                 if (streamIndex === 0) { // first token
                     clearTimeout(firstTokenTimeoutId)
@@ -501,7 +494,12 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         generateNew = ({ messageIndex = -1 } = {}) => {
-            const shouldContinueFinalMessage = messageIndex === -1 && !finalMessage.value.content && finalMessage.value.role && apiConfig.value.support_continue_final_message
+            const shouldContinueFinalMessage = (
+                messageIndex === -1 &&
+                !messageToSeq(finalMessage.value, { includeFinishReason: false }) &&
+                finalMessage.value.role &&
+                apiConfig.value.support_continue_final_message
+            )
             if (shouldContinueFinalMessage) {
                 // if only has role, try using continue generating
                 this.continueGenerating()
@@ -723,7 +721,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     const finalMessage = computed(() => {
         var role = null  // Compatible with Claude that each token has a role
         var finish_reason
-        var finalMessage = tokens.value.filter(
+        var mergedMessage = tokens.value.filter(
             token => !token.pruned
         ).map(
             token => {
@@ -760,25 +758,34 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             }
             return delta
         }, {})
-        if (role) {
-            finalMessage.role = role
-        } else if (tokens.value.length) {
-            finalMessage.role = "assistant" // when has token, the default role is assistant
+        if (mergedMessage.reasoning) {
+            mergedMessage.reasoning = mergedMessage.reasoning.replace(/\n+$/, "")
+            if (mergedMessage.content) {
+                mergedMessage.content = mergedMessage.content.replace(/^\n+/, "")
+            }
         }
-        if (role && !finalMessage.content) {  // only role but no content
-            finalMessage.content = ""
+        if (mergedMessage.tool_calls?.length && mergedMessage.content) {
+            mergedMessage.content = mergedMessage.content.replace(/\n+$/, "")
+        }
+        if (role) {
+            mergedMessage.role = role
+        } else if (tokens.value.length) {
+            mergedMessage.role = "assistant" // when has token, the default role is assistant
+        }
+        if (role && !mergedMessage.content) {  // only role but no content
+            mergedMessage.content = ""
         }
         // Compatible with different models for continue generating
         // For keys other than assistant and user, if v is the empty string, then delete
-        for (var key in finalMessage) {
-            if (key !== "role" && key !== "content" && finalMessage[key] === "") {
-                delete finalMessage[key]
+        for (var key in mergedMessage) {
+            if (key !== "role" && key !== "content" && mergedMessage[key] === "") {
+                delete mergedMessage[key]
             }
         }
         if (finish_reason) {
-            finalMessage.finish_reason = finish_reason
+            mergedMessage.finish_reason = finish_reason
         }
-        return finalMessage
+        return mergedMessage
     })
 
     const messagesComputed = computed(() => {

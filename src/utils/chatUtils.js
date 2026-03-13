@@ -82,7 +82,7 @@ export function messagesDifferent(messages1, messages2, modelRoles = ['assistant
 
 
 export function tokensToSeq(tokens) {
-    return tokens.map(token => (token.delta.content || "") + ((token.finish_reason && token.finish_reason !== 'length') ? ('<|' + token.finish_reason + '|>') : '')).join('')
+    return tokens.map(token => tokenToDisplayString(token) + ((token.finish_reason && token.finish_reason !== 'length') ? ('<|' + token.finish_reason + '|>') : '')).join('')
 }
 
 export function messageToSeq(message, { includeFinishReason = true } = {}) {
@@ -100,15 +100,32 @@ export function messageToSeq(message, { includeFinishReason = true } = {}) {
 
 export function convertMessageToTokens(message) {
     if (message.role == "assistant") {
+        var reasoning = message.reasoning ?? ""
         var content = message.content
         const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-        var tokens = Array.from(segmenter.segment(content)).map((token, tokenIndex) => {
-            return {
-                delta: { content: token.segment },
-                tokenIndex: tokenIndex,
-                logprobs: { content: [{ token: token.segment, top_logprobs: [] }] },
+        var tokens = []
+        const appendTextTokens = (text, key) => {
+            if (!text) {
+                return
             }
-        })
+            for (const segment of segmenter.segment(text)) {
+                tokens.push({
+                    delta: { [key]: segment.segment },
+                    tokenIndex: tokens.length,
+                    logprobs: { content: [{ token: segment.segment, top_logprobs: [] }] },
+                })
+            }
+        }
+
+        appendTextTokens(reasoning, 'reasoning')
+        appendTextTokens(content, 'content')
+        for (const toolCall of message.tool_calls || []) {
+            tokens.push({
+                delta: { tool_calls: [deepCopy(toolCall)] },
+                tokenIndex: tokens.length,
+                logprobs: { content: [{ token: tokenToDisplayString({ delta: { tool_calls: [toolCall] } }), top_logprobs: [] }] },
+            })
+        }
         if (tokens && tokens.length > 0) {
             tokens[0].delta.role = "assistant"
             if (message.finish_reason) {
@@ -126,6 +143,25 @@ export function convertMessageToTokens(message) {
         }
     }
     return tokens
+}
+
+export function tokenToDisplayString(token, tokens = undefined) {
+    const delta = token?.delta || {}
+    if (typeof delta.content === 'string' && delta.content !== '') {
+        return delta.content
+    }
+    const reasoning = delta.reasoning
+    if (typeof reasoning === 'string' && reasoning !== '') {
+        return reasoning
+    }
+    const toolCall = delta.tool_calls?.[0]
+    if (toolCall) {
+        if (toolCall.function?.arguments) {
+            return toolCall.function.arguments
+        }
+        return JSON.stringify(toolCall)
+    }
+    return ""
 }
 
 export function normalizeRequest(requestBody) {

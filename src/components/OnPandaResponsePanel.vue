@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus'
 
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../stores/globalStore.js'
-import { probOfToken } from '../utils/chatUtils.js'
+import { probOfToken, messageToSeq } from '../utils/chatUtils.js'
 import { duplicateWindow, copyToClipboard } from '../utils/commonUtils.js'
 import { useScrollSwitchSync } from '../utils/userInterfaceUtils.js'
 import MessageRole from '../components/widgets/MessageRole.vue'
@@ -30,6 +30,7 @@ const requestStatus = responseState.requestStatus
 const apiConfig = responseState.apiConfig
 const operationCenter = responseState.operationCenter
 const finalMessage = responseState.finalMessage
+const finalMessageAsText = computed(() => messageToSeq(finalMessage.value, { includeFinishReason: false }))
 
 const bitsTooltipHtml = 'bits = - &sum;<sub>i</sub> log<sub>2</sub>(p<sub>i</sub>)'
 
@@ -135,7 +136,7 @@ onBeforeUnmount(() => {
                             {{ t('tooltips.pasteAndRefresh') }}
                         </el-button>
                     </template>
-                    <el-button :icon="View" size="small" :disabled="!finalMessage.content || requestStatus.generating"
+                    <el-button :icon="View" size="small" :disabled="!finalMessageAsText || requestStatus.generating"
                         @click="operationCenter.refreshResponseProbability()"
                         @dblclick="pasteThenRequestPromptLogprobs" />
                 </el-tooltip>
@@ -195,12 +196,12 @@ onBeforeUnmount(() => {
                 </div>
                 <hr style="color:#eee">
                 <div class="final-message-half-panel">
-                    <MarkdownResponse :content="finalMessage.content" :WaitingInfo="WaitingInfo" />
+                    <MarkdownResponse :content="finalMessageAsText" :WaitingInfo="WaitingInfo" />
                 </div>
             </div>
         </div>
         <div v-if="globalStore.cleanMode">
-            <MarkdownResponse :content="finalMessage.content" :WaitingInfo="WaitingInfo" />
+            <MarkdownResponse :content="finalMessageAsText" :WaitingInfo="WaitingInfo" />
         </div>
         <DialogKeysFooter :pandaState="pandaState" style="padding-top: 10px; margin-bottom:2px;" />
     </div>
