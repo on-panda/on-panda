@@ -164,7 +164,7 @@ const messageDraftWarning = computed(() => {
   return 'The draft differs from the current message. The current message stays unchanged until the draft is parsed successfully.'
 })
 
-const isRenderRole = computed(() => ['assistant', 'context'].includes(getMessage()['role']))
+const isRenderRole = computed(() => ['assistant', 'context', 'tool'].includes(getMessage()['role']))
 
 const isRenderContentEditing = ref(false)
 

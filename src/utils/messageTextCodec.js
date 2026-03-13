@@ -122,13 +122,14 @@ function serializeMessageSection(marker, text, { isJson = false } = {}) {
         return ''
     }
     if (isJson) {
-        return `### ${marker}\n\`\`\`JavaScript\n${text}\n\`\`\``
+        return `###### ${marker}${"—".repeat(50-marker.length)}\n\`\`\`JavaScript\n${text}\n\`\`\``
     }
-    return `### ${marker}\n${text}`
+    return `###### ${marker}${"—".repeat(50-marker.length)}\n${text}`
 }
 
 function splitMessageSections(value) {
-    const sectionHeaderRegex = /^###\s+(<\|ON_PANDA_[A-Z_]+\|>)\s*$/gm
+    // Accept both legacy and current section headers in user-editable text.
+    const sectionHeaderRegex = /^######[ \t]+(<\|ON_PANDA_[A-Z_]+\|>)[ \t]*[-—]*[ \t]*$/gm
     const matches = Array.from(value.matchAll(sectionHeaderRegex))
     if (!matches.length) {
         return null
