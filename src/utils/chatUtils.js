@@ -1,13 +1,11 @@
 import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils'
+import { formatMessageAsText, formatSimpleContentAsText } from './messageTextCodec.js'
 
-export const MESSAGE_KEYS_IN_CONTEXT = ['name', 'reasoning', 'content', 'tool_calls', 'tool_call_id']
-export const MESSAGE_META_KEYS = ['name', 'tool_call_id']
-export const MESSAGE_CONTEXT_SECTION_MARKERS = {
-    message_meta: '<|ON_PANDA_MESSAGE_META|>',
-    reasoning: '<|ON_PANDA_REASONING|>',
-    content: '<|ON_PANDA_CONTENT|>',
-    tool_calls: '<|ON_PANDA_TOOL_CALLS|>',
-}
+export {
+    MESSAGE_KEYS_IN_CONTEXT,
+    MESSAGE_META_KEYS,
+    MESSAGE_CONTEXT_SECTION_MARKERS,
+} from './messageTextCodec.js'
 
 export function verifyUrlIsLlmApiCall(url) {
     // check is LLM api call by /models or /completions
@@ -87,79 +85,11 @@ export function tokensToSeq(tokens) {
     return tokens.map(token => (token.delta.content || "") + ((token.finish_reason && token.finish_reason !== 'length') ? ('<|' + token.finish_reason + '|>') : '')).join('')
 }
 
-function contentToContextText(content) {
-    if (typeof content === 'string') {
-        return content
-    }
-    if (Array.isArray(content)) {
-        return content.map(chunk => JSON.stringify(chunk)).join('\n')
-    }
-    return ''
-}
-
-function serializeMessageSection(marker, text, { isJson = false } = {}) {
-    if (!text) {
-        return ''
-    }
-    if (isJson) {
-        return `### ${marker}\n\`\`\`JavaScript\n${text}\n\`\`\``
-    }
-    return `### ${marker}\n${text}`
-}
-
 export function messageToSeq(message, { includeFinishReason = true } = {}) {
     message = message || {}
-    const sections = []
-
-    const messageMeta = {}
-    for (const key of MESSAGE_META_KEYS) {
-        if (message[key]) {
-            messageMeta[key] = message[key]
-        }
-    }
-    if (Object.keys(messageMeta).length > 0) {
-        sections.push({
-            key: 'message_meta',
-            text: serializeMessageSection(
-                MESSAGE_CONTEXT_SECTION_MARKERS.message_meta,
-                JSON.stringify(messageMeta, null, 2),
-                { isJson: true },
-            )
-        })
-    }
-    if (message.reasoning) {
-        sections.push({
-            key: 'reasoning',
-            text: serializeMessageSection(MESSAGE_CONTEXT_SECTION_MARKERS.reasoning, message.reasoning),
-        })
-    }
-
-    const contentText = contentToContextText(message.content)
-    if (contentText) {
-        sections.push({
-            key: 'content',
-            text: serializeMessageSection(MESSAGE_CONTEXT_SECTION_MARKERS.content, contentText),
-            rawText: contentText,
-        })
-    }
-
-    if (message.tool_calls?.length) {
-        sections.push({
-            key: 'tool_calls',
-            text: serializeMessageSection(
-                MESSAGE_CONTEXT_SECTION_MARKERS.tool_calls,
-                JSON.stringify(message.tool_calls, null, 2),
-                { isJson: true },
-            )
-        })
-    }
-
-    var seq = ''
-    if (sections.length === 1 && sections[0].key === 'content') {
-        seq = sections[0].rawText
-    } else {
-        seq = sections.map(section => section.text).filter(Boolean).join('\n')
-    }
+    var seq = formatMessageAsText(message, {
+        formatContentAsText: formatSimpleContentAsText,
+    })
 
     if (includeFinishReason && message.finish_reason && message.finish_reason !== 'length') {
         seq += `<|${message.finish_reason}|>`
