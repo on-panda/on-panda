@@ -71,7 +71,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         for (let message of body.messages) {
             if (typeof message.content === "object") {
                 for (let chunk of message.content) {
-
                     // set image_detail_level
                     if (chunk.type.indexOf('image') != -1) {
                         if (apiConfig.image_detail_level) {
@@ -79,6 +78,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                         }
                     }
                 }
+            }
+            if (message.reasoning) {
+                // TODO: workaround to be improved 
+                // if not set reasoning_key in chat_config, set reasoning_content for compatibility
+                message.reasoning_content = message.reasoning
             }
         }
         return body
