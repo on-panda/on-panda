@@ -172,7 +172,35 @@ const defaultExampleNameToFunc = {
   },
   "tools": () => {
     operationCenter.loadMessages(messagesToolsExample)
-    modelName.value = 'tools-tag'
+    operationCenter.pandaState.currentDialogData.value.tool_configs = [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_weather",
+          "description": "Get the current weather in a given location",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "string",
+                "description": "City and state, e.g., 'San Francisco, CA'"
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "celsius",
+                  "fahrenheit"
+                ]
+              }
+            },
+            "required": [
+              "location",
+              "unit"
+            ]
+          }
+        }
+      },
+    ]
     operationCenter.generateNew()
   },
   "annotate": async () => {

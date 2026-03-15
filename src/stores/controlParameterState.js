@@ -19,7 +19,6 @@ export const defaultChatConfig = {
     stream_options: {
         include_usage: true,
     },
-    tools: [],
 }
 
 export const defaultApiConfig = {
@@ -253,9 +252,6 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
                 // Using chatConfigControllableRaw to avoid adjusting parameters causes recomputed
                 if (key !== 'model' && JSON.stringify(apiConfigChosen.chat_config[key]) !== JSON.stringify(chatConfigControllableRaw[key])) {
                     changedChatConfig[key] = apiConfigChosen.chat_config[key]
-                    if (key === 'tools') {  // simplify the tools name for display
-                        changedChatConfig.tools = `${(apiConfigChosen.chat_config.tools).map(tool => tool[tool.type].name).join(', ')}`
-                    }
                 }
                 chatConfigControllable.value[key] = apiConfigChosen.chat_config[key]
             }

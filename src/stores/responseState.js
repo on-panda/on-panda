@@ -8,6 +8,7 @@ import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
 import { WarningState } from './warningState.js'
 import { defaultApiConfig, CONTINUE_PROMPT } from './controlParameterState.js'
+import { ToolStateClosure } from './toolState.js'
 
 export const defaultMessages = [{ role: "system", content: "" }, { role: "user", content: "" }]
 
@@ -44,6 +45,51 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         requestTimes: 0,
         generating: false,
     })
+
+    let toolState = null
+    let toolStateKey = null
+
+    function assertNoLegacyChatConfigTools() {
+        if ('tools' in (apiConfig.value.chat_config || {})) {
+            throw new Error('`chat_config.tools` is no longer supported. Move tool definitions to `dialog.tool_configs`, or store the final request tools in `dialog.tools`.')
+        }
+    }
+
+    function getCurrentDialogToolConfigs() {
+        return pandaState.currentDialogData.value?.tool_configs || pandaState.dialogCache.value?.tool_configs || []
+    }
+
+    async function getToolState() {
+        const toolConfigs = getCurrentDialogToolConfigs()
+        const nextToolStateKey = JSON.stringify(toolConfigs)
+        if (!toolState || toolStateKey !== nextToolStateKey) {
+            await toolState?.close?.()
+            toolState = ToolStateClosure({ toolConfigs: deepCopy(toolConfigs) })
+            toolStateKey = nextToolStateKey
+        }
+        await toolState.init()
+        return toolState
+    }
+
+    async function ensureDialogToolsMaterialized() {
+        assertNoLegacyChatConfigTools()
+        const dialogKey = pandaState.currentDialogKey.value
+        if (!dialogKey) {
+            return []
+        }
+        const dialog = pandaState.pandaTree.value.dialogs[dialogKey] || pandaState.pandaTree.value.deleted_dialogs?.[dialogKey]
+        const currentToolState = await getToolState()
+        const tools = deepCopy(currentToolState.tools)
+        if (!deepEqual(dialog.tools || [], tools)) {
+            dialog.tools = tools
+            pandaState.dialogCache.value.tools = deepCopy(tools)
+        }
+        return tools
+    }
+
+    function getCurrentDialogTools() {
+        return pandaState.currentDialogData.value?.tools || pandaState.dialogCache.value?.tools || []
+    }
 
     function loadMessagesToCurrentDialogUi(newMessages) {
         if (newMessages[newMessages.length - 1].role == "assistant") {
@@ -89,6 +135,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     }
 
     async function requestLlmServer(messages) {
+        assertNoLegacyChatConfigTools()
         messages = toValue(messages)
         const modelRoles = apiConfig.value?.model_roles || ["assistant"]
         const continue_final_message = modelRoles.includes(messages[messages.length - 1].role)
@@ -130,6 +177,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             }
         }
         body.messages = messages
+        body.tools = deepCopy(getCurrentDialogTools())
 
         requestStatus.value.generating = true
         requestStatus.value.requestTimes++
@@ -308,6 +356,15 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 delete newRoundMessage.value.name
             }
 
+            pandaState.beforeOperation()
+            if (finishReason == "tool_calls") {
+                const currentToolState = await getToolState()
+                const toolCalls = finalMessage.value.tool_calls || []
+                if (currentToolState.isCallReady(toolCalls).allReady) {
+                    await operationCenter.startNewRound(await currentToolState.call(toolCalls))
+                }
+            }
+
         } catch (error) {
             requestStatus.value.generating = false
             warning(error)
@@ -318,6 +375,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
 
     async function requestPromptLogprobs() {
+        assertNoLegacyChatConfigTools()
         // TODO auto run when chat_config is changed?
         // may delete the stop/<EOT> token
         // on_policy
@@ -339,6 +397,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         body.top_logprobs = apiConfig.value.chat_config.top_logprobs
         body.prompt_logprobs = apiConfig.value.chat_config.top_logprobs
         body.return_token_ids = true
+        body.tools = deepCopy(getCurrentDialogTools())
 
         requestStatus.value.requestTimes++
         var requestID = requestStatus.value.requestTimes
@@ -437,7 +496,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         // All operations are here to manipulate the pandaState and responseState
         // continue generating, stop, continue with chosen, continue with input, edit prompt(include role), new round, edit response, refresh, load example, load panda tree.
         pandaState = buildMockObject()
-        continueGenerating = () => {
+        continueGenerating = async () => {
+            await ensureDialogToolsMaterialized()
             this.pandaState.beforeOperation()
             // var isTryGeneratingOnEot = tokens.value.length && tokens.value[tokens.value.length - 1].finish_reason === "stop"
             // if (isTryGeneratingOnEot) {
@@ -446,7 +506,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 operator: "continue_generating",
                 on_policy: true,
             }
-            requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
+            requestLlmServer(messagesComputed.value)
         }
 
         stopGenerating = () => {
@@ -454,8 +514,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             requestStatus.value.generating = false
         }
 
-        continueWithChosen = (token, logprobItem) => {
+        continueWithChosen = async (token, logprobItem) => {
             // function clickOnLogprobItem() {
+            await ensureDialogToolsMaterialized()
             this.pandaState.beforeOperation()
             const rejected_token = recordAsRejectedToken(token, tokens)  // record rejected token before change tokens
             prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob, logprobItem.finish_reason)
@@ -473,7 +534,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                     tokens.value = []
                 }
             } else {
-                requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
+                requestLlmServer(messagesComputed.value)
             }
             if (globalStore.isMobile) {
                 setTimeout(closeFloatPatchPanel.value, 500)
@@ -492,12 +553,14 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             }, true)
         }
 
-        continueWithInput = (token, continuePrefix, continuePrefixLogprob) => {
+        continueWithInput = async (token, continuePrefix, continuePrefixLogprob) => {
+            await ensureDialogToolsMaterialized()
             this.applyInputChange(token, continuePrefix, continuePrefixLogprob)
-            requestLlmServer(messagesComputed.value).then(() => this.pandaState.beforeOperation())
+            requestLlmServer(messagesComputed.value)
         }
 
-        generateNew = ({ messageIndex = -1 } = {}) => {
+        generateNew = async ({ messageIndex = -1 } = {}) => {
+            await ensureDialogToolsMaterialized()
             const shouldContinueFinalMessage = (
                 messageIndex === -1 &&
                 !messageToSeq(finalMessage.value, { includeFinishReason: false }) &&
@@ -520,21 +583,23 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                     on_policy: true,
                     message_index: messageIndex,
                 })
-                requestLlmServer(messages.value).then(() => this.pandaState.beforeOperation())
+                requestLlmServer(messages.value)
             }
         }
 
-        startNewRound = () => {  // TODO remove auto write back's append operation
+        startNewRound = async (newRoundMessages = null) => {  // TODO remove auto write back's append operation
+            await ensureDialogToolsMaterialized()
             this.pandaState.beforeOperation()
-            var role = newRoundMessage.value.role
-            messages.value = (messagesComputed.value.concat([newRoundMessage.value]))
+            const messagesToAppend = newRoundMessages ? deepCopy(newRoundMessages) : [deepCopy(newRoundMessage.value)]
+            var role = newRoundMessages ? 'user' : newRoundMessage.value.role
+            messages.value = (messagesComputed.value.concat(messagesToAppend))
             tokens.value = [];
             newRoundMessage.value = { role: role, content: '' }
             this.pandaState.afterOperation({
                 operator: "start_new_round",
                 on_policy: true,
             })
-            requestLlmServer(messages).then(() => this.pandaState.beforeOperation())
+            requestLlmServer(messages)
         }
 
         clearOrDeleteMessage = (message, index) => {
@@ -595,7 +660,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             })
         }
 
-        refreshResponseProbability = () => {
+        refreshResponseProbability = async () => {
+            await ensureDialogToolsMaterialized()
             this.pandaState.beforeOperation()
             requestPromptLogprobs().then(() => {
                 this.pandaState.afterOperation({
@@ -816,6 +882,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         const dialog = { ...pandaState.dialogCache.value }
         dialog.messages = [...messagesComputed.value]
+        if ('tools' in pandaState.dialogCache.value) {
+            dialog.tools = deepCopy(pandaState.dialogCache.value.tools)
+        }
         // should add new newRoundMessage? No, becasue when load again, newRoundMessage become finalMessage
         // if (newRoundMessage.value.content) {
         //   dialog.messages.push(newRoundMessage.value)

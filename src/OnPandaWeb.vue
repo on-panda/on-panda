@@ -179,7 +179,7 @@ onMounted(async () => {
           var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
           var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the get_forecast tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
           operationCenter.loadMessages(debugMessages)
-          operationCenter.pandaState.pandaTree.value.tool_configs = [
+          operationCenter.pandaState.currentDialogData.value.tool_configs = [
             { type: "mcp", server_url: "http://127.0.0.1:9300/mcp" },
             {
               "type": "function",

@@ -27,10 +27,15 @@ export function splitToPromptResponse(messages, modelRoles = ['assistant',]) {
     return { prompt, response }
 }
 
-export function messagesDifferent(messages1, messages2, modelRoles = ['assistant',]) {
+export function dialogDifferent(dialog1, dialog2, modelRoles = ['assistant',]) {
+    const messages1 = dialog1.messages || []
+    const messages2 = dialog2.messages || []
+    const tools1 = dialog1.tools || []
+    const tools2 = dialog2.tools || []
+
     var { prompt: prompt1, response: response1 } = splitToPromptResponse(messages1, modelRoles)
     var { prompt: prompt2, response: response2 } = splitToPromptResponse(messages2, modelRoles)
-    var is_prompt_modified = !deepEqual(prompt1, prompt2)
+    var is_prompt_modified = !(deepEqual(prompt1, prompt2) && deepEqual(tools1, tools2))
 
     // console.log('is_prompt_modified:', is_prompt_modified, prompt1, prompt2)
     // if response is null, response is different

@@ -1,6 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import { deepCopy, hashObjectSHA256Base64, dateStringNow, safeArrayExtend } from '../utils/commonUtils'
-import { messagesDifferent, tokensToSeq, isFinalRoleModelRole, clearTokenObject } from '../utils/chatUtils'
+import { dialogDifferent, tokensToSeq, isFinalRoleModelRole, clearTokenObject } from '../utils/chatUtils'
 import { useGlobalStore } from './globalStore.js'
 import LZString from 'lz-string'
 
@@ -477,7 +477,7 @@ export class PandaState {
     }
 
     setDefaultToOperation = (operation) => {
-        const diff = messagesDifferent(this.currentDialogData.value.messages, this.dialogComputed.value.messages)
+        const diff = dialogDifferent(this.currentDialogData.value, this.dialogComputed.value)
         // console.log('diff:', diff)
 
         var defaultOperation = {
@@ -511,16 +511,19 @@ export class PandaState {
                 pandaTree[key] = defaultPandaTree[key]
             }
         }
+        delete pandaTree.tool_configs
 
-        for (var key in pandaTree.dialogs) {
-            var dialog = pandaTree.dialogs[key]
-            // set operations default value
-            if (!dialog.operations) {
-                dialog.operations = []
-            }
-            // set is_good default when has annotate
-            if (dialog.annotate && !('is_good' in dialog.annotate)) {
-                dialog.annotate.is_good = null
+        for (var dialogsKey of ['dialogs', 'deleted_dialogs']) {
+            for (var key in pandaTree[dialogsKey]) {
+                var dialog = pandaTree[dialogsKey][key]
+                // set operations default value
+                if (!dialog.operations) {
+                    dialog.operations = []
+                }
+                // set is_good default when has annotate
+                if (dialog.annotate && !('is_good' in dialog.annotate)) {
+                    dialog.annotate.is_good = null
+                }
             }
         }
         return pandaTree
