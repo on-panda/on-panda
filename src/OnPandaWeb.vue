@@ -156,7 +156,7 @@ onMounted(async () => {
       controlParameterState.watchApiConfigsResolver.value = resolve
     })
 
-    let exampleToRun = null;
+    var exampleToRun = null;
 
     if (tryLoadDuplicateWindow(responseState.pandaState)) { // duplicate window has higher priority
       if (localStorage.getItem('modelNameForDuplicateWindow')) {
@@ -174,14 +174,47 @@ onMounted(async () => {
         // Use the example via the operationCenter directly
         // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
         // exampleToRun = operationCenter.generateNew
-        exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
-        var _exampleToRun = () => {
-          operationCenter.loadMessages([{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }])
+        // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
+        exampleToRun = () => {
+          var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
+          var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the get_forecast tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
+          operationCenter.loadMessages(debugMessages)
+          operationCenter.pandaState.pandaTree.value.tool_configs = [
+            { type: "mcp", server_url: "http://127.0.0.1:9300/mcp" },
+            {
+              "type": "function",
+              "function": {
+                "name": "get_weather",
+                "description": "Get the current weather in a given location",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "location": {
+                      "type": "string",
+                      "description": "City and state, e.g., 'San Francisco, CA'"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "celsius",
+                        "fahrenheit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "location",
+                    "unit"
+                  ]
+                }
+              }
+            }
+          ]
           if (modelNameTags.value['test']) {
             modelName.value = modelNameTags.value['test']
           }
-          modelName.value = "tools-tag"
-          operationCenter.refreshResponseProbability()
+          operationCenter.generateNew()
+          // modelName.value = "tools-tag"
+          // operationCenter.refreshResponseProbability()
         }
       }
     }
