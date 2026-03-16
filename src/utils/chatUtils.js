@@ -194,6 +194,9 @@ export function normalizeRequest(requestBody) {
         delete body.logprobs
         delete body.top_logprobs
     }
+    if (body.top_logprobs){
+        body.logprobs = true
+    }
     if (body.max_tokens == 0) {  // turn off max_tokens
         delete body.max_tokens
     }
