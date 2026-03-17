@@ -177,10 +177,15 @@ onMounted(async () => {
         // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
         exampleToRun = () => {
           var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
-          var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the get_forecast tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
+          var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
+          var debugMessages = [{ "role": "system", "content": "Any response must start from `I think that`" }, { "role": "user", "content": "Screenshot after sleep(10) and reply what you see within one word" }]
           operationCenter.loadMessages(debugMessages)
           operationCenter.pandaState.currentDialogData.value.tool_configs = [
-            { type: "mcp", server_url: "http://127.0.0.1:9300/mcp" },
+            {
+              type: "mcp", server_url: "http://127.0.0.1:9300/mcp",
+              // "require_approval": "always"
+              // server_label: "mcp_demo"
+            },
             {
               "type": "function",
               "function": {
@@ -212,8 +217,8 @@ onMounted(async () => {
           if (modelNameTags.value['test']) {
             modelName.value = modelNameTags.value['test']
           }
+          modelName.value = "doubao-tag"
           operationCenter.generateNew()
-          // modelName.value = "tools-tag"
           // operationCenter.refreshResponseProbability()
         }
       }

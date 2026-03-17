@@ -1,3 +1,4 @@
+import { ref } from 'vue'
 import { deepCopy } from '../utils/commonUtils.js'
 
 function contentItemToText(item) {
@@ -48,9 +49,54 @@ function mcpToolResultToContent(result) {
     return ''
 }
 
+function getToolCallNames(toolCalls = []) {
+    return toolCalls.map(toolCall => toolCall.function?.name).filter(Boolean)
+}
+
+function getToolCallReadyFallback(toolCalls = []) {
+    const unreadyToolNames = [...new Set(getToolCallNames(toolCalls))]
+    return {
+        isReadys: toolCalls.map(() => false),
+        allReady: toolCalls.length === 0,
+        unreadyToolNames,
+    }
+}
+
+function buildRejectedToolResponses(toolCalls = [], content = 'The user rejected the tool_calls.') {
+    return toolCalls.map(toolCall => ({
+        role: 'tool',
+        content,
+        tool_call_id: toolCall.id,
+        name: toolCall.function?.name,
+    }))
+}
+
+function getToolCallDiscardReason({
+    toolCallStatus,
+    toolCallID,
+    toolCallDialogKey,
+    currentDialogKey,
+}) {
+    if (!toolCallStatus.calling) {
+        return 'calling stopped'
+    }
+    if (toolCallID !== toolCallStatus.callTimes) {
+        return `call ID mismatch ${toolCallID} !== ${toolCallStatus.callTimes}`
+    }
+    if (toolCallDialogKey !== currentDialogKey) {
+        return `dialog changed from ${toolCallDialogKey} to ${currentDialogKey}`
+    }
+    return ''
+}
+
+function logDiscardedToolCall(toolCallID, toolCalls = [], reason) {
+    console.log(`[tool call ${toolCallID}] discard ${getToolCallNames(toolCalls).join(', ') || 'unknown tools'}: ${reason}`)
+}
+
 export function ToolStateClosure({ toolConfigs = [] } = {}) {
     let tools = []
     const toolNameToCall = {}
+    const toolNameToRequireApproval = {}
     let closers = []
     let initPromise = null
 
@@ -60,20 +106,23 @@ export function ToolStateClosure({ toolConfigs = [] } = {}) {
                 const nextTools = []
                 const toolNameToSource = {}
                 const nextToolNameToCall = {}
+                const nextToolNameToRequireApproval = {}
                 const nextClosers = []
                 try {
-                    const registerTool = (tool, source) => {
+                    const registerTool = (tool, source, requireApproval = 'never') => {
                         const toolName = tool.function.name
                         if (toolName in toolNameToSource) {
                             throw new Error(`Duplicated tool name "${toolName}" from ${toolNameToSource[toolName]} and ${source}.`)
                         }
                         toolNameToSource[toolName] = source
+                        nextToolNameToRequireApproval[toolName] = requireApproval
                         nextTools.push(tool)
                     }
 
                     for (const toolConfig of toolConfigs) {
+                        const requireApproval = toolConfig.require_approval || 'never'
                         if (toolConfig.type === 'function') {
-                            registerTool(deepCopy(toolConfig), 'function tool config')
+                            registerTool(deepCopy(toolConfig), 'function tool config', requireApproval)
                             continue
                         }
                         if (toolConfig.type === 'mcp') {
@@ -100,7 +149,7 @@ export function ToolStateClosure({ toolConfigs = [] } = {}) {
                                         description: mcpTool.description,
                                         parameters: mcpTool.inputSchema,
                                     },
-                                }, toolConfig.server_url)
+                                }, toolConfig.server_url, requireApproval)
                                 nextToolNameToCall[mcpTool.name] = async (toolCall) => {
                                     const result = await client.callTool({
                                         name: mcpTool.name,
@@ -118,7 +167,11 @@ export function ToolStateClosure({ toolConfigs = [] } = {}) {
                     for (const toolName in toolNameToCall) {
                         delete toolNameToCall[toolName]
                     }
+                    for (const toolName in toolNameToRequireApproval) {
+                        delete toolNameToRequireApproval[toolName]
+                    }
                     Object.assign(toolNameToCall, nextToolNameToCall)
+                    Object.assign(toolNameToRequireApproval, nextToolNameToRequireApproval)
                     closers = nextClosers
                     return nextTools
                 } catch (error) {
@@ -134,11 +187,27 @@ export function ToolStateClosure({ toolConfigs = [] } = {}) {
         return initPromise
     }
 
-    function isCallReady(toolCalls = []) {
+    function checkCallReady(toolCalls = []) {
         const isReadys = toolCalls.map(toolCall => toolCall.function?.name in toolNameToCall)
+        const unreadyToolNames = [...new Set(toolCalls
+            .filter((toolCall, index) => !isReadys[index])
+            .map(toolCall => toolCall.function?.name)
+            .filter(Boolean))]
         return {
             isReadys,
             allReady: isReadys.every(Boolean),
+            unreadyToolNames,
+        }
+    }
+
+    function checkRequireApproval(toolCalls = []) {
+        const approvalToolNames = [...new Set(toolCalls
+            .filter(toolCall => toolNameToRequireApproval[toolCall.function?.name] === 'always')
+            .map(toolCall => toolCall.function?.name)
+            .filter(Boolean))]
+        return {
+            needApproval: approvalToolNames.length > 0,
+            approvalToolNames,
         }
     }
 
@@ -161,9 +230,130 @@ export function ToolStateClosure({ toolConfigs = [] } = {}) {
             return tools
         },
         init,
-        isCallReady,
+        checkCallReady,
+        checkRequireApproval,
         call,
         toolNameToCall,
         close,
+    }
+}
+
+export function ToolCallStateClosure({
+    ensureDialogToolsMaterialized,
+    getToolState,
+    peekToolState,
+    operationCenter,
+    finalMessage,
+    warning,
+} = {}) {
+    const toolCallStatus = ref({
+        callTimes: 0,
+        calling: false,
+    })
+    const pandaState = operationCenter.pandaState
+
+    pandaState.registerBeforeOperationHook(() => {
+        toolCallStatus.value.calling = false
+    })
+
+    function checkCallReady(toolCalls = []) {
+        const toolState = peekToolState()
+        if (!toolState) {
+            return getToolCallReadyFallback(toolCalls)
+        }
+        return toolState.checkCallReady(toolCalls)
+    }
+
+    function checkRequireApproval(toolCalls = []) {
+        const toolState = peekToolState()
+        if (!toolState) {
+            return {
+                needApproval: false,
+                approvalToolNames: [],
+            }
+        }
+        return toolState.checkRequireApproval(toolCalls)
+    }
+
+    async function callToolCalls(toolCalls = null) {
+        await ensureDialogToolsMaterialized()
+        const toolCallsToRun = toolCalls || finalMessage.value.tool_calls || []
+        const currentToolState = await getToolState()
+        const readyStatus = currentToolState.checkCallReady(toolCallsToRun)
+        if (!readyStatus.allReady) {
+            return readyStatus
+        }
+        toolCallStatus.value.calling = true
+        toolCallStatus.value.callTimes++
+        const toolCallID = toolCallStatus.value.callTimes
+        const toolCallDialogKey = pandaState.currentDialogKey.value
+        try {
+            const toolResponses = await currentToolState.call(toolCallsToRun)
+            const discardReason = getToolCallDiscardReason({
+                toolCallStatus: toolCallStatus.value,
+                toolCallID,
+                toolCallDialogKey,
+                currentDialogKey: pandaState.currentDialogKey.value,
+            })
+            if (discardReason) {
+                logDiscardedToolCall(toolCallID, toolCallsToRun, discardReason)
+                return readyStatus
+            }
+            toolCallStatus.value.calling = false
+            await operationCenter.startNewRound(toolResponses)
+            return readyStatus
+        } catch (error) {
+            const discardReason = getToolCallDiscardReason({
+                toolCallStatus: toolCallStatus.value,
+                toolCallID,
+                toolCallDialogKey,
+                currentDialogKey: pandaState.currentDialogKey.value,
+            })
+            if (discardReason) {
+                logDiscardedToolCall(toolCallID, toolCallsToRun, discardReason)
+                return readyStatus
+            }
+            toolCallStatus.value.calling = false
+            warning(error)
+            return readyStatus
+        }
+    }
+
+    async function rejectToolCalls(toolCalls = null) {
+        const toolCallsToReject = toolCalls || finalMessage.value.tool_calls || []
+        if (!toolCallsToReject.length) {
+            return
+        }
+        await ensureDialogToolsMaterialized()
+        await operationCenter.startNewRound(buildRejectedToolResponses(toolCallsToReject))
+    }
+
+    async function maybeAutoCallToolCalls(toolCalls = null) {
+        const toolCallsToRun = toolCalls || finalMessage.value.tool_calls || []
+        if (
+            checkCallReady(toolCallsToRun).allReady &&
+            !checkRequireApproval(toolCallsToRun).needApproval
+        ) {
+            await callToolCalls(toolCallsToRun)
+        }
+    }
+
+    async function retry() {
+        await operationCenter.generateNew()
+    }
+
+    function stopToolCalls() {
+        toolCallStatus.value.calling = false
+    }
+
+    return {
+        toolCallStatus,
+        checkCallReady,
+        checkRequireApproval,
+        callToolCalls,
+        rejectToolCalls,
+        maybeAutoCallToolCalls,
+        retry,
+        stopToolCalls,
     }
 }

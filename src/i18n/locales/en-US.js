@@ -101,6 +101,16 @@ export default {
     dblclickToPasteAndRefresh: 'double-click to',
     pasteAndRefresh: 'Paste & Refresh'
   },
+  toolCallControl: {
+    title: 'Tool Call Control',
+    pendingTools: 'Pending tools',
+    approvalRequired: 'Approval required',
+    run: 'Run',
+    reject: 'Reject',
+    retry: 'Retry',
+    calling: 'Calling tools',
+    unreadyTools: 'These tools cannot run right now'
+  },
   placeholders: {
     submitEnter: 'Submit: `↵`; newline: `shift+↵`',
   },

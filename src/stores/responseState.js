@@ -8,7 +8,7 @@ import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
 import { WarningState } from './warningState.js'
 import { defaultApiConfig, CONTINUE_PROMPT } from './controlParameterState.js'
-import { ToolStateClosure } from './toolState.js'
+import { ToolStateClosure, ToolCallStateClosure } from './toolState.js'
 
 export const defaultMessages = [{ role: "system", content: "" }, { role: "user", content: "" }]
 
@@ -358,11 +358,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
             pandaState.beforeOperation()
             if (finishReason == "tool_calls") {
-                const currentToolState = await getToolState()
                 const toolCalls = finalMessage.value.tool_calls || []
-                if (currentToolState.isCallReady(toolCalls).allReady) {
-                    await operationCenter.startNewRound(await currentToolState.call(toolCalls))
-                }
+                await toolCallState.maybeAutoCallToolCalls(toolCalls)
             }
 
         } catch (error) {
@@ -491,6 +488,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     }
 
 
+
+    let toolCallState = null
 
     class OperationCenter {
         // All operations are here to manipulate the pandaState and responseState
@@ -899,6 +898,15 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
     const warningState = new WarningState()
     const warning = warningState.warning
+    toolCallState = ToolCallStateClosure({
+        ensureDialogToolsMaterialized,
+        getToolState,
+        peekToolState: () => toolState,
+        operationCenter,
+        finalMessage,
+        warning,
+    })
+    operationCenter.toolCallState = toolCallState
 
     const closeFloatPatchPanel = ref(() => { })
     function registerInResponseText({ closeFloatPatchPanel: externalCloseFloatPatchPanel }) {

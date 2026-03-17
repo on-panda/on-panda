@@ -101,6 +101,16 @@ export default {
     dblclickToPasteAndRefresh: '或双击',
     pasteAndRefresh: '粘贴并更新'
   },
+  toolCallControl: {
+    title: '工具调用控制',
+    pendingTools: '待处理工具',
+    approvalRequired: '需要审批的工具',
+    run: '运行',
+    reject: '拒绝',
+    retry: '再来',
+    calling: '正在调用工具',
+    unreadyTools: '以下工具当前无法运行'
+  },
   placeholders: {
     submitEnter: '提交: `↵`; 换行: `shift+↵`',
   },

@@ -93,7 +93,7 @@
             @keydown.enter="if (!$event.shiftKey) { operationCenter.continueWithInput(floatInputPatch.attachedPatch.tokens[0], $event.target.value, null); floatInputPatch.visible = false; $event.preventDefault() }" />
     </div>
     <div v-show="!floatInputPatch.visible">
-        <SelectedTextPannel :selectedTextState="selectedTextState" :operationCenter="operationCenter" />
+        <SelectedTextPanel :selectedTextState="selectedTextState" :operationCenter="operationCenter" />
     </div>
 </template>
 
@@ -109,7 +109,7 @@ import { probOfToken, tokenToDisplayString } from '../utils/chatUtils.js'
 import { probToColor } from '../utils/userInterfaceUtils.js'
 import { SelectedTextStateClosure } from '../stores/SelectedTextState.js'
 
-import SelectedTextPannel from './SelectedTextPannel.vue'
+import SelectedTextPanel from './SelectedTextPanel.vue'
 import { DArrowRight, Close } from '@element-plus/icons-vue'
 
 const props = defineProps({

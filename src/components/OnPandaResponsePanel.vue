@@ -12,6 +12,7 @@ import MessageRole from '../components/widgets/MessageRole.vue'
 import MarkdownResponse from '../components/widgets/MarkdownResponse.vue'
 import OnPandaResponseText from '../components/OnPandaResponseText.vue'
 import DialogKeysFooter from './widgets/DialogKeysFooter.vue'
+import ToolCallControlPanel from './widgets/ToolCallControlPanel.vue'
 
 const props = defineProps({
     responseState: {
@@ -203,6 +204,7 @@ onBeforeUnmount(() => {
         <div v-if="globalStore.cleanMode">
             <MarkdownResponse :content="finalMessageAsText" :WaitingInfo="WaitingInfo" />
         </div>
+        <ToolCallControlPanel :responseState="responseState" />
         <DialogKeysFooter :pandaState="pandaState" style="padding-top: 10px; margin-bottom:2px;" />
     </div>
 </template>
