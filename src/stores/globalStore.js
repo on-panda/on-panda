@@ -4,7 +4,7 @@ import { useEventListener } from '../utils/commonUtils'
 import { useI18n } from 'vue-i18n'
 
 export const useGlobalStore = defineStore('onPandaGlobal', () => {
-    const debug = ref((window.location.href.includes('http://localhost') || window.location.href.includes('http://127.0.0.1')) && document.title.endsWith("onPanda"))
+    const debug = ref((window.location.href.includes('http://localhost') || window.location.href.includes('http://127.0.0.1') || window.location.origin.includes("debug")) && document.title.endsWith("onPanda"))
 
     const isOldUser = ref(localStorage.getItem('onPandaIsOldUser') == 'true')
 

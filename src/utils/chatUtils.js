@@ -12,6 +12,10 @@ export function verifyUrlIsLlmApiCall(url) {
     return /\/models|\/completions/.test(url);
 }
 
+export function verifyUrlIsMcp(url) {
+    return /(^|\/)mcp(\/|$)/.test(url.pathname)
+}
+
 export function isFinalRoleModelRole(messages, modelRoles = ['assistant',]) {
     return modelRoles.includes(messages[messages.length - 1].role)
 }

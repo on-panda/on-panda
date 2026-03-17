@@ -4,9 +4,9 @@ import { defineConfig, loadEnv } from 'vite'
 import { visualizer } from 'rollup-plugin-visualizer'
 import vue from '@vitejs/plugin-vue'
 
+import { createBypassCorsProxyPlugin } from './bypassCorsProxyPlugin.js'
 import { createRuntimeImportPlugin } from './runtimeImportPlugin.js'
 import { createUsingServerProxyPlugin } from './usingServerProxyPlugin.js'
-import { verifyUrlIsLlmApiCall } from '../../src/utils/chatUtils.js'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => {
     publicDir: fileURLToPath(new URL('../../public', import.meta.url)),
     plugins: [
       vue(),
+      createBypassCorsProxyPlugin(),
       createRuntimeImportPlugin(resolvedRuntimeImport),
       createUsingServerProxyPlugin(),
       mode === 'analyze' && visualizer({
@@ -50,24 +51,6 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        '/bypass-CORS': {
-          target: 'https://api.github.com/',
-          changeOrigin: true,
-          configure: (proxy, options) => {
-            proxy.on('proxyReq', (proxyReq, req, res) => {
-              try {
-                var url = new URL(req.url.replace(/^\/bypass-CORS\//, ''))
-                if (!verifyUrlIsLlmApiCall(url)) {
-                  throw new Error(`Not a valid LLM API call: ${url} that should match /models or /completions, not allowed using /bypass-CORS`);
-                }
-                proxy.options.target = url.origin;
-                proxyReq.path = url.pathname
-              } catch (e) {
-                console.error(e)
-              }
-            });
-          },
-        },
         '/cast': {
           target: 'http://127.0.0.1:9200',
           changeOrigin: true,

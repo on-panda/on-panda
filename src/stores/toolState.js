@@ -130,7 +130,8 @@ export function ToolStateClosure({ toolConfigs = [] } = {}) {
                                 import('@modelcontextprotocol/sdk/client/index.js'),
                                 import('@modelcontextprotocol/sdk/client/streamableHttp.js'),
                             ])
-                            const transport = new StreamableHTTPClientTransport(new URL(toolConfig.server_url))
+                            const serverUrl = new URL(toolConfig.server_url, window.location.origin)
+                            const transport = new StreamableHTTPClientTransport(serverUrl)
                             const client = new Client({
                                 name: 'frontend-agent',
                                 version: '0.1.0',
@@ -149,7 +150,7 @@ export function ToolStateClosure({ toolConfigs = [] } = {}) {
                                         description: mcpTool.description,
                                         parameters: mcpTool.inputSchema,
                                     },
-                                }, toolConfig.server_url, requireApproval)
+                                }, serverUrl.toString(), requireApproval)
                                 nextToolNameToCall[mcpTool.name] = async (toolCall) => {
                                     const result = await client.callTool({
                                         name: mcpTool.name,

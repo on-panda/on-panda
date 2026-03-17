@@ -182,7 +182,9 @@ onMounted(async () => {
           operationCenter.loadMessages(debugMessages)
           operationCenter.pandaState.currentDialogData.value.tool_configs = [
             {
-              type: "mcp", server_url: "http://127.0.0.1:9300/mcp",
+              type: "mcp", 
+              // server_url: "http://127.0.0.1:9300/mcp",
+              server_url: window.location.origin +  "/bypass-CORS/http://127.0.0.1:9300/mcp",
               // "require_approval": "always"
               // server_label: "mcp_demo"
             },
