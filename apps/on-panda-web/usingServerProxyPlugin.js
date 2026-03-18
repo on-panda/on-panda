@@ -65,7 +65,7 @@ function createServerProxyMiddleware() {
       res.statusCode = upstreamResponse.status
       res.setHeader('content-encoding', 'identity')
       upstreamResponse.headers.forEach((value, key) => {
-        if (key.toLowerCase() === 'content-encoding') {
+        if (['content-encoding', 'content-length'].includes(key.toLowerCase())) {
           return
         }
         res.setHeader(key, value)
