@@ -41,19 +41,29 @@ function createServerProxyMiddleware() {
       const method = req.method || 'GET'
       const hopByHopHeaders = new Set(['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'transfer-encoding', 'upgrade', 'host'])
       const headers = new Headers()
+      const abortController = new AbortController()
+      const abortUpstream = () => abortController.abort()
+      req.on('aborted', abortUpstream)
+      res.on('close', () => {
+        if (!res.writableEnded) {
+          abortUpstream()
+        }
+      })
       Object.entries(req.headers).forEach(([key, value]) => {
-        if (!value || hopByHopHeaders.has(key.toLowerCase())) {
+        if (!value || hopByHopHeaders.has(key.toLowerCase()) || key.toLowerCase() === 'accept-encoding') {
           return
         }
         const values = Array.isArray(value) ? value : [value]
         values.forEach(val => headers.append(key, val))
       })
+      headers.set('accept-encoding', 'identity')
 
       const fetchInit = {
         method,
         headers,
         dispatcher: new ProxyAgent(proxyUrl),
-        compress: false
+        compress: false,
+        signal: abortController.signal,
       }
       const hasBody = !['GET', 'HEAD'].includes(method.toUpperCase())
       if (hasBody) {
@@ -63,9 +73,17 @@ function createServerProxyMiddleware() {
 
       const upstreamResponse = await fetch(targetUrl.toString(), fetchInit)
       res.statusCode = upstreamResponse.status
-      res.setHeader('content-encoding', 'identity')
+      const upstreamContentEncoding = upstreamResponse.headers.get('content-encoding')
+      const shouldNormalizeContentEncoding = upstreamContentEncoding && upstreamContentEncoding.toLowerCase() !== 'identity'
+      if (shouldNormalizeContentEncoding) {
+        res.setHeader('content-encoding', 'identity')
+      }
       upstreamResponse.headers.forEach((value, key) => {
-        if (['content-encoding', 'content-length'].includes(key.toLowerCase())) {
+        const lowerKey = key.toLowerCase()
+        if (hopByHopHeaders.has(lowerKey)) {
+          return
+        }
+        if (shouldNormalizeContentEncoding && ['content-encoding', 'content-length'].includes(lowerKey)) {
           return
         }
         res.setHeader(key, value)
@@ -76,6 +94,9 @@ function createServerProxyMiddleware() {
       }
       const proxyStream = Readable.fromWeb(upstreamResponse.body)
       proxyStream.on('error', (err) => {
+        if (abortController.signal.aborted) {
+          return
+        }
         console.error('Server proxy stream failed', err)
         if (!res.headersSent) {
           res.statusCode = 502
@@ -87,6 +108,9 @@ function createServerProxyMiddleware() {
       })
       proxyStream.pipe(res)
     } catch (error) {
+      if (abortController.signal.aborted) {
+        return
+      }
       console.error('Server proxy failed', error)
       if (!res.headersSent) {
         res.statusCode = 500

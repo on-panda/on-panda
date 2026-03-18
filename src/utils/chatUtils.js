@@ -9,7 +9,7 @@ export {
 
 export function verifyUrlIsLlmApiCall(url) {
     // check is LLM api call by /models or /completions
-    return /\/models|\/completions/.test(url);
+    return /(^|\/)(models|completions)(\/|$)/.test(url.pathname);
 }
 
 export function verifyUrlIsMcp(url) {
