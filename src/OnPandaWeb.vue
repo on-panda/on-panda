@@ -178,14 +178,14 @@ onMounted(async () => {
         exampleToRun = () => {
           var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
           var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
-          var debugMessages = [{ "role": "system", "content": "Any response must start from `I think that`" }, { "role": "user", "content": "Screenshot after sleep(10) and reply what you see within one word" }]
+          var debugMessages = [{ "role": "system", "content": "Any response must start from `I think`" }, { "role": "user", "content": "Screenshot and reply what you see within one word" }]
           operationCenter.loadMessages(debugMessages)
           operationCenter.pandaState.currentDialogData.value.tool_configs = [
             {
               type: "mcp", 
               // server_url: "http://127.0.0.1:9300/mcp",
               server_url: window.location.origin +  "/bypass-CORS/http://127.0.0.1:9300/mcp",
-              // "require_approval": "always"
+              "require_approval": "always"
               // server_label: "mcp_demo"
             },
             {

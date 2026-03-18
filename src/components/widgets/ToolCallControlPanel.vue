@@ -58,7 +58,7 @@ async function handleRetryToolCalls() {
                         {{ t('toolCallControl.run') }}
                     </el-button>
                 </el-tooltip>
-                <el-button class="toolCallActionButton" type="danger" size="small" :icon="CloseBold"
+                <el-button class="toolCallActionButton" type="danger" size="small" :icon="Close"
                     :disabled="!toolCalls.length" @click="handleRejectToolCalls">
                     {{ t('toolCallControl.reject') }}
                 </el-button>
@@ -77,7 +77,7 @@ async function handleRetryToolCalls() {
                         {{ t('toolCallControl.calling') }}
                     </b>
                 </span>
-                <el-button class="toolCallActionButton" type="danger" size="small" :icon="Close"
+                <el-button class="toolCallActionButton" type="danger" size="small" :icon="CloseBold"
                     @click="toolCallState.stopToolCalls()">
                     {{ t('common.stop') }}
                 </el-button>
