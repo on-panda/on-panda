@@ -1,9 +1,10 @@
 import { Readable } from 'node:stream'
 
+import { withSafeProxyMiddleware } from './safeProxyMiddleware.js'
 import { verifyUrlIsLlmApiCall, verifyUrlIsMcp } from '../../src/utils/chatUtils.js'
 
 export function createBypassCorsProxyPlugin() {
-  const middleware = createBypassCorsProxyMiddleware()
+  const middleware = withSafeProxyMiddleware('Bypass CORS proxy', createBypassCorsProxyMiddleware())
 
   return {
     name: 'bypass-cors-proxy-middleware',
@@ -18,6 +19,7 @@ export function createBypassCorsProxyPlugin() {
 
 function createBypassCorsProxyMiddleware() {
   return async (req, res) => {
+    const abortController = new AbortController()
     try {
       const rawPath = req.url || ''
       const withoutPrefix = rawPath.startsWith('/bypass-CORS/')
@@ -33,7 +35,6 @@ function createBypassCorsProxyMiddleware() {
       const method = req.method || 'GET'
       const hopByHopHeaders = new Set(['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'transfer-encoding', 'upgrade', 'host'])
       const headers = new Headers()
-      const abortController = new AbortController()
       const abortUpstream = () => abortController.abort()
       req.on('aborted', abortUpstream)
       res.on('close', () => {

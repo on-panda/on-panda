@@ -2,10 +2,11 @@ import { Readable } from 'node:stream'
 
 import { ProxyAgent } from 'undici'
 
+import { withSafeProxyMiddleware } from './safeProxyMiddleware.js'
 import { verifyUrlIsLlmApiCall } from '../../src/utils/chatUtils.js'
 
 export function createUsingServerProxyPlugin() {
-  const middleware = createServerProxyMiddleware()
+  const middleware = withSafeProxyMiddleware('Server proxy', createServerProxyMiddleware())
 
   return {
     name: 'using-server-proxy-middleware',
@@ -20,6 +21,7 @@ export function createUsingServerProxyPlugin() {
 
 function createServerProxyMiddleware() {
   return async (req, res) => {
+    const abortController = new AbortController()
     try {
       const rawPath = req.url || ''
       const withoutPrefix = rawPath.startsWith('/using-server-proxy/')
@@ -41,7 +43,6 @@ function createServerProxyMiddleware() {
       const method = req.method || 'GET'
       const hopByHopHeaders = new Set(['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'transfer-encoding', 'upgrade', 'host'])
       const headers = new Headers()
-      const abortController = new AbortController()
       const abortUpstream = () => abortController.abort()
       req.on('aborted', abortUpstream)
       res.on('close', () => {
