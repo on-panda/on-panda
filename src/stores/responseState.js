@@ -1,7 +1,7 @@
 import { ref, computed, toValue, watch, isRef } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
-import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, messageToSeq } from '../utils/chatUtils.js'
+import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
 import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
 
 import { useGlobalStore } from './globalStore.js'
@@ -603,10 +603,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         clearOrDeleteMessage = (message, index) => {
             this.pandaState.beforeOperation()
-            if (messageToSeq(message, { includeFinishReason: false })) {
+            if (messageToSeq(getMessageOutput(message), { includeFinishReason: false })) {
                 // after beforeOperation(), message has been recomputed
                 var messageRefresh = messages.value[index]
-                for (const key of MESSAGE_KEYS_IN_CONTEXT) {
+                for (const key of MESSAGE_OUTPUT_KEYS) {
                     delete messageRefresh[key]
                 }
                 messageRefresh.content = ""

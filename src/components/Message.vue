@@ -61,10 +61,11 @@ import { useI18n } from 'vue-i18n'
 import { convertImageUrlToBase64, deepCopy, mockObject, sleep, TaskQueue } from '../utils/commonUtils.js'
 import { Close, Delete, Edit } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { getContentTypes } from '../utils/chatUtils'
+import { getContentTypes, messageToSeq } from '../utils/chatUtils'
 import {
   MESSAGE_KEYS_IN_CONTEXT,
   formatContentAsText,
+  getMessageOutput,
   parseContentAsText,
   formatMessageAsText,
   parseMessageAsText,
@@ -139,6 +140,10 @@ const getContent = () => {
   return getMessage()['content'] || ''
 }
 
+const hasClearableMessageContent = computed(() => {
+  return Boolean(messageToSeq(getMessageOutput(getMessage()), { includeFinishReason: false }))
+})
+
 const setContent = (content) => {
   var message = getMessage()
   message['content'] = content
@@ -147,8 +152,8 @@ const setContent = (content) => {
 const hasContent = computed(() => {
   return messageDraft.value.length > 0
 })
-const messageActionIcon = computed(() => hasContent.value ? Delete : Close)
-const messageActionTooltip = computed(() => hasContent.value ? t('chatMessage.clear') : t('chatMessage.delete'))
+const messageActionIcon = computed(() => hasClearableMessageContent.value ? Delete : Close)
+const messageActionTooltip = computed(() => hasClearableMessageContent.value ? t('chatMessage.clear') : t('chatMessage.delete'))
 const sendButtonStyle = computed(() => ({
   cursor: hasContent.value ? 'pointer' : 'not-allowed'
 }))
@@ -251,7 +256,7 @@ function handleToggleRenderContentEditing() {
 function queueDeleteMessageTask() {
   taskQueue.addTask(async () => await sleep(1))
   // if not sleep, will cause element-plus.js Uncaught (in promise) TypeError: Cannot read properties of null (reading 'offsetHeight')
-  taskQueue.addTask(async () => props.operationCenter.clearOrDeleteMessage(messageCache, props.messageIndex))
+  taskQueue.addTask(async () => props.operationCenter.clearOrDeleteMessage(getMessage(), props.messageIndex))
 }
 
 function handleDeleteMessage() {

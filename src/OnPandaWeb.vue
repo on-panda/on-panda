@@ -175,7 +175,8 @@ onMounted(async () => {
         // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
         // exampleToRun = operationCenter.generateNew
         // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
-        exampleToRun = () => {
+        exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
+        var exampleToRun = () => {
           var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
           var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
           var debugMessages = [{ "role": "system", "content": "Any response must start from `I think`" }, { "role": "user", "content": "Screenshot and reply what you see within one word" }]
@@ -229,7 +230,7 @@ onMounted(async () => {
     await watchApiConfigsLoaded
     await sleep(5)
     if (!requestStatus.value.generating && exampleToRun) {
-      await exampleToRun()
+      await exampleToRun(dialogWithControlState)
     }
     if (globalStore.debug) {
       p("tokens", tokens)

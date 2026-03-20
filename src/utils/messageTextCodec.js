@@ -4,12 +4,17 @@ import { base64ToBlob } from './commonUtils.js'
 import { multimodalChunkStringToObject, multimodalChunkObjectToBase64 } from './multimodalUtils.js'
 
 export const MESSAGE_KEYS_IN_CONTEXT = ['name', 'reasoning', 'content', 'tool_calls', 'tool_call_id']
+export const MESSAGE_OUTPUT_KEYS = ['reasoning', 'content', 'tool_calls']
 export const MESSAGE_META_KEYS = ['name', 'tool_call_id']
 export const MESSAGE_CONTEXT_SECTION_MARKERS = {
     message_meta: '<|ON_PANDA_MESSAGE_META|>',
     reasoning: '<|ON_PANDA_REASONING|>',
     content: '<|ON_PANDA_CONTENT|>',
     tool_calls: '<|ON_PANDA_TOOL_CALLS|>',
+}
+
+export function getMessageOutput(message) {
+    return Object.fromEntries(MESSAGE_OUTPUT_KEYS.map(key => [key, message?.[key]]))
 }
 
 export function multimodalChunkObjectToMarkdown(chunk, { blobUrlToBase64Cache = {} } = {}) {

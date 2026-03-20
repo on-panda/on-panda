@@ -3,8 +3,10 @@ import { formatMessageAsText, formatSimpleContentAsText } from './messageTextCod
 
 export {
     MESSAGE_KEYS_IN_CONTEXT,
+    MESSAGE_OUTPUT_KEYS,
     MESSAGE_META_KEYS,
     MESSAGE_CONTEXT_SECTION_MARKERS,
+    getMessageOutput,
 } from './messageTextCodec.js'
 
 export function verifyUrlIsLlmApiCall(url) {
