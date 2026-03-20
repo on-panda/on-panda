@@ -107,6 +107,8 @@ export default {
     approvalRequired: 'Approval required',
     run: 'Run',
     reject: 'Reject',
+    guide: 'Guide',
+    rejectGuidancePlaceholder: 'Optional message to guide the model to regenerate',
     retry: 'Retry',
     calling: 'Calling tools',
     unreadyTools: 'These tools cannot run right now'

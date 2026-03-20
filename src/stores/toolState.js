@@ -62,7 +62,23 @@ function getToolCallReadyFallback(toolCalls = []) {
     }
 }
 
-function buildRejectedToolResponses(toolCalls = [], content = 'The user rejected the tool_calls.') {
+function buildToolCallsRejectedNotice(toolCallsRejectedGuidance = '') {
+    const guidance = toolCallsRejectedGuidance.trim()
+    if (!guidance) {
+        return `<tool_calls_rejected_notice>
+The user rejected the tool_calls.
+</tool_calls_rejected_notice>`
+    }
+    return `<tool_calls_rejected_notice>
+The user rejected the tool_calls.
+<guidance_from_user>
+${guidance}
+</guidance_from_user>
+</tool_calls_rejected_notice>`
+}
+
+function buildRejectedToolResponses(toolCalls = [], toolCallsRejectedGuidance = '') {
+    const content = buildToolCallsRejectedNotice(toolCallsRejectedGuidance)
     return toolCalls.map(toolCall => ({
         role: 'tool',
         content,
@@ -320,13 +336,13 @@ export function ToolCallStateClosure({
         }
     }
 
-    async function rejectToolCalls(toolCalls = null) {
+    async function rejectToolCalls(toolCalls = null, toolCallsRejectedGuidance = '') {
         const toolCallsToReject = toolCalls || finalMessage.value.tool_calls || []
         if (!toolCallsToReject.length) {
             return
         }
         await ensureDialogToolsMaterialized()
-        await operationCenter.startNewRound(buildRejectedToolResponses(toolCallsToReject))
+        await operationCenter.startNewRound(buildRejectedToolResponses(toolCallsToReject, toolCallsRejectedGuidance))
     }
 
     async function maybeAutoCallToolCalls(toolCalls = null) {
