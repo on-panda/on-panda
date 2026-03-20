@@ -91,7 +91,7 @@ const props = defineProps({
     default: -1
   },
 })
-const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur',])
+const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur', 'draftTextChange'])
 
 // supoort both emit event (sample way using by newMessage) and using operationCenter (complex way)
 const usingOperators = 'generateNew' in props.operationCenter
@@ -157,6 +157,10 @@ const messageActionTooltip = computed(() => hasClearableMessageContent.value ? t
 const sendButtonStyle = computed(() => ({
   cursor: hasContent.value ? 'pointer' : 'not-allowed'
 }))
+
+function emitDraftTextChange() {
+  emit('draftTextChange', messageDraft.value)
+}
 
 const showMessageDraftWarning = computed(() => {
   return !isEditorFocused.value && messageDraft.value !== messageAsText.value
@@ -290,6 +294,7 @@ async function handleSend() {
       }
     })
   } else if (await operationCenterUpdatePromptMessage()) {
+    isEditorFocused.value = false
     emit('sendButton')
   }
 }
@@ -360,6 +365,7 @@ watch(messageAsText, (value) => {
 })
 
 watch(messageDraft, () => {
+  emitDraftTextChange()
   if (detailsRef.value?.open) {
     detailsContent.value = messageDraft.value
   }
@@ -403,6 +409,7 @@ onMounted(() => {
     }
   }
   messageDraft.value = messageAsText.value
+  emitDraftTextChange()
   syncDetailsContent()
 })
 

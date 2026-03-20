@@ -52,9 +52,14 @@ function setPromptLogprobsResponseState() {
 }
 const promptLogprobsResponseState = computed(setPromptLogprobsResponseState)
 
+const newRoundMessageDraftText = ref(messageToSeq(newRoundMessage.value, { includeFinishReason: false }))
 const newRoundMessageHasContent = computed(() => {
-    return Boolean(messageToSeq(newRoundMessage.value, { includeFinishReason: false }))
+    return Boolean(newRoundMessageDraftText.value)
 })
+
+function handleNewRoundMessageDraftTextChange(draftText) {
+    newRoundMessageDraftText.value = draftText
+}
 
 function clearNewRoundMessage() {
     const role = newRoundMessage.value.role
@@ -97,7 +102,7 @@ function clearNewRoundMessage() {
         <el-divider content-position="left" style="margin-bottom: 5px;">{{ t('common.newMessage') }}:</el-divider>
         <div :style="{ opacity: newRoundMessageHasContent ? 1 : 0.5 }">
             <Message :message="newRoundMessage" :messageIndex="-2" @deleteMessage="clearNewRoundMessage"
-                @sendButton="operationCenter.startNewRound()" />
+                @sendButton="operationCenter.startNewRound()" @draftTextChange="handleNewRoundMessageDraftTextChange" />
         </div>
     </div>
 </template>
