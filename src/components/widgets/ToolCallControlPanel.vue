@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { CaretRight, Close, CloseBold, Loading, RefreshRight } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../../stores/globalStore.js'
@@ -41,10 +41,6 @@ function useToolCallRejectTooltip() {
     const isGuideInputFocused = ref(false)
     const isRejectConfirming = ref(false)
 
-    function openRejectGuideTooltip() {
-        rejectGuideTooltipVisible.value = true
-    }
-
     function confirmRejectAndOpenTooltip() {
         isRejectConfirming.value = true
         rejectGuideTooltipVisible.value = true
@@ -82,11 +78,127 @@ function useToolCallRejectTooltip() {
         rejectGuideTooltipVisible,
         isGuideInputFocused,
         isRejectConfirming,
-        openRejectGuideTooltip,
         confirmRejectAndOpenTooltip,
         closeRejectGuideTooltip,
         handleGuideInputFocus,
         handleGuideInputBlur,
+    }
+}
+
+function useToolCallRunConfigTooltip({ canRun, isMobileByUserAgent }) {
+    const runTooltipWrapperRef = ref(null)
+    const runConfigTooltipVisible = ref(false)
+    const isRunConfigInputFocused = ref(false)
+    const openedByLongPress = ref(false)
+
+    let longPressTimer = 0
+
+    function clearLongPressTimer() {
+        if (!longPressTimer) {
+            return
+        }
+        window.clearTimeout(longPressTimer)
+        longPressTimer = 0
+    }
+
+    function openRunConfigTooltip() {
+        if (!canRun.value) {
+            return
+        }
+        runConfigTooltipVisible.value = true
+    }
+
+    function closeRunConfigTooltip() {
+        clearLongPressTimer()
+        runConfigTooltipVisible.value = false
+        isRunConfigInputFocused.value = false
+        openedByLongPress.value = false
+    }
+
+    function handleRunConfigInputFocus() {
+        isRunConfigInputFocused.value = true
+    }
+
+    function handleRunConfigInputBlur() {
+        isRunConfigInputFocused.value = false
+    }
+
+    function handleRunTriggerTouchStart() {
+        if (!isMobileByUserAgent.value || !canRun.value) {
+            return
+        }
+        clearLongPressTimer()
+        openedByLongPress.value = false
+        longPressTimer = window.setTimeout(() => {
+            openedByLongPress.value = true
+            openRunConfigTooltip()
+        }, 450)
+    }
+
+    function handleRunTriggerTouchEnd(event) {
+        if (!isMobileByUserAgent.value) {
+            return
+        }
+        clearLongPressTimer()
+        if (openedByLongPress.value) {
+            if (event.cancelable) {
+                event.preventDefault()
+            }
+            event.stopPropagation()
+        }
+    }
+
+    function handleRunTriggerTouchCancel() {
+        clearLongPressTimer()
+    }
+
+    function handleRunTriggerContextMenu(event) {
+        if (!isMobileByUserAgent.value || !canRun.value) {
+            return
+        }
+        event.preventDefault()
+        event.stopPropagation()
+        openedByLongPress.value = true
+        openRunConfigTooltip()
+    }
+
+    function shouldIgnoreRunClick() {
+        if (!openedByLongPress.value) {
+            return false
+        }
+        openedByLongPress.value = false
+        return true
+    }
+
+    watch(canRun, (nextCanRun) => {
+        if (!nextCanRun) {
+            closeRunConfigTooltip()
+        }
+    })
+
+    closeFloatPanelMeta(runTooltipWrapperRef, () => {
+        if (!runConfigTooltipVisible.value) {
+            return
+        }
+        closeRunConfigTooltip()
+    })
+
+    onBeforeUnmount(() => {
+        clearLongPressTimer()
+    })
+
+    return {
+        runTooltipWrapperRef,
+        runConfigTooltipVisible,
+        isRunConfigInputFocused,
+        closeRunConfigTooltip,
+        handleRunConfigInputFocus,
+        handleRunConfigInputBlur,
+        handleRunTriggerTouchStart,
+        handleRunTriggerTouchEnd,
+        handleRunTriggerTouchCancel,
+        handleRunTriggerContextMenu,
+        shouldIgnoreRunClick,
     }
 }
 
@@ -111,6 +223,11 @@ const toolCallNames = computed(() => toolCalls.value.map(toolCall => toolCall.fu
 const readyStatus = computed(() => toolCallState.checkCallReady(toolCalls.value))
 const approvalStatus = computed(() => toolCallState.checkRequireApproval(toolCalls.value))
 const canRun = computed(() => toolCalls.value.length > 0 && readyStatus.value.allReady)
+const isMobileByUserAgent = computed(() => globalStore.isMobileByUserAgent)
+const autoApproveRunNum = ref(1)
+const runConfigTooltipTrigger = computed(() => isMobileByUserAgent.value ? 'manual' : 'hover')
+const showAutoRunButton = computed(() => autoApproveRunNum.value > 1)
+const showCallingAutoApprove = computed(() => toolCallStatus.value.autoApproveRunNum > 1)
 const { toolCallsHash, toolCallsRejectedGuidance } = useToolCallsRejectedGuidance(toolCalls)
 const {
     rejectTooltipWrapperRef,
@@ -122,6 +239,19 @@ const {
     handleGuideInputFocus,
     handleGuideInputBlur,
 } = useToolCallRejectTooltip()
+const {
+    runTooltipWrapperRef,
+    runConfigTooltipVisible,
+    isRunConfigInputFocused,
+    closeRunConfigTooltip,
+    handleRunConfigInputFocus,
+    handleRunConfigInputBlur,
+    handleRunTriggerTouchStart,
+    handleRunTriggerTouchEnd,
+    handleRunTriggerTouchCancel,
+    handleRunTriggerContextMenu,
+    shouldIgnoreRunClick,
+} = useToolCallRunConfigTooltip({ canRun, isMobileByUserAgent })
 const runTooltip = computed(() => {
     if (readyStatus.value.allReady || !readyStatus.value.unreadyToolNames.length) {
         return ''
@@ -131,10 +261,23 @@ const runTooltip = computed(() => {
 
 watch(toolCallsHash, () => {
     closeRejectGuideTooltip()
+    closeRunConfigTooltip()
 })
 
 async function handleRunToolCalls() {
+    if (shouldIgnoreRunClick()) {
+        return
+    }
+    closeRunConfigTooltip()
     await toolCallState.callToolCalls(toolCalls.value)
+}
+
+async function handleAutoRunToolCalls() {
+    if (shouldIgnoreRunClick()) {
+        return
+    }
+    closeRunConfigTooltip()
+    await toolCallState.callAutoApprovedToolCalls(toolCalls.value, autoApproveRunNum.value)
 }
 
 async function handleRejectToolCalls() {
@@ -167,12 +310,62 @@ async function handleRejectTriggerClick() {
 
             <div v-if="!toolCallStatus.calling" class="toolCallControlButtons">
                 <b class="toolCallControlTitle">{{ t('toolCallControl.title') }}</b>
-                <el-tooltip :disabled="!runTooltip" :content="runTooltip" placement="top">
-                    <el-button class="toolCallActionButton" type="primary" size="small" :icon="CaretRight"
-                        :disabled="!canRun" @click="handleRunToolCalls">
-                        {{ t('toolCallControl.run') }}
-                    </el-button>
-                </el-tooltip>
+                <div ref="runTooltipWrapperRef">
+                    <ElTooltipWithKeepOpen v-if="canRun" v-model:visible="runConfigTooltipVisible"
+                        :keep-open="isRunConfigInputFocused" effect="light" :trigger="runConfigTooltipTrigger"
+                        placement="top" :teleported="false" persistent enterable>
+                        <template #content>
+                            <div class="toolCallRunTooltip">
+                                <div class="toolCallRunTooltipTitle">
+                                    {{ t('toolCallControl.autoApproveRunNumLabel') }}
+                                </div>
+                                <el-input-number v-model="autoApproveRunNum" :min="1" :max="999"
+                                    :size="globalStore.isMobile ? undefined : 'small'"
+                                    @focus="handleRunConfigInputFocus" @blur="handleRunConfigInputBlur" />
+                            </div>
+                        </template>
+                        <span class="toolCallRunTrigger" @touchstart="handleRunTriggerTouchStart"
+                            @touchend="handleRunTriggerTouchEnd" @touchcancel="handleRunTriggerTouchCancel"
+                            @touchmove="handleRunTriggerTouchCancel" @contextmenu="handleRunTriggerContextMenu">
+                            <el-button v-if="!showAutoRunButton" class="toolCallActionButton" type="primary"
+                                size="small" :icon="CaretRight" :disabled="!canRun" @click="handleRunToolCalls">
+                                {{ t('toolCallControl.run') }}
+                            </el-button>
+                            <el-button-group v-else class="toolCallActionButtonGroup">
+                                <el-button class="toolCallActionButton" type="primary" size="small" :icon="CaretRight"
+                                    :disabled="!canRun" @click="handleRunToolCalls">
+                                    {{ t('toolCallControl.run') }}
+                                </el-button>
+                                <el-button class="toolCallActionButton autoRunButton" type="primary" size="small"
+                                    :disabled="!canRun" @click="handleAutoRunToolCalls">
+                                    <b>
+                                        × <span class="autoRunButtonCount">{{ autoApproveRunNum }}</span>
+                                    </b>
+                                </el-button>
+                            </el-button-group>
+                        </span>
+                    </ElTooltipWithKeepOpen>
+                    <el-tooltip v-else :disabled="!runTooltip" :content="runTooltip" placement="top">
+                        <span class="toolCallRunTrigger">
+                            <el-button v-if="!showAutoRunButton" class="toolCallActionButton" type="primary"
+                                size="small" :icon="CaretRight" :disabled="!canRun" @click="handleRunToolCalls">
+                                {{ t('toolCallControl.run') }}
+                            </el-button>
+                            <el-button-group v-else class="toolCallActionButtonGroup">
+                                <el-button class="toolCallActionButton" type="primary" size="small" :icon="CaretRight"
+                                    :disabled="!canRun" @click="handleRunToolCalls">
+                                    {{ t('toolCallControl.run') }}
+                                </el-button>
+                                <el-button class="toolCallActionButton autoRunButton" type="primary" size="small"
+                                    :disabled="!canRun" @click="handleAutoRunToolCalls">
+                                    <b>
+                                        × <span class="autoRunButtonCount">{{ autoApproveRunNum }}</span>
+                                    </b>
+                                </el-button>
+                            </el-button-group>
+                        </span>
+                    </el-tooltip>
+                </div>
                 <div ref="rejectTooltipWrapperRef">
                     <ElTooltipWithKeepOpen v-model:visible="rejectGuideTooltipVisible" :keep-open="isGuideInputFocused"
                         effect="light" trigger="hover" placement="top" :teleported="false" persistent enterable>
@@ -216,6 +409,16 @@ async function handleRejectTriggerClick() {
                     <b class="toolCallControlTitle">
                         {{ t('toolCallControl.calling') }}
                     </b>
+                    <span v-if="showCallingAutoApprove" class="toolCallControlAutoApprove">
+                        (
+                        {{ t('toolCallControl.autoApproveStatus') }}
+                        <b>
+                            <span class="toolCallControlAutoApproveCount"
+                                :class="{ free: !toolCallStatus.currentCallConsumedApproval }">
+                                {{ toolCallStatus.approvedRunCount }}
+                            </span>/{{ toolCallStatus.autoApproveRunNum }}
+                        </b>)
+                    </span>
                 </span>
                 <el-button class="toolCallActionButton" type="danger" size="small" :icon="CloseBold"
                     @click="toolCallState.stopToolCalls()">
@@ -265,6 +468,20 @@ async function handleRejectTriggerClick() {
     gap: 8px;
 }
 
+.toolCallActionButtonGroup {
+    display: inline-flex;
+}
+
+.autoRunButtonCount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35em;
+    height: 1.35em;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.22);
+}
+
 .toolCallControlTitle {
     font-size: 13px;
     color: #888;
@@ -276,6 +493,14 @@ async function handleRejectTriggerClick() {
     gap: 4px;
     color: #606266;
     font-size: 12px;
+}
+
+.toolCallControlAutoApprove {
+    color: #909399;
+}
+
+.toolCallControlAutoApproveCount.free {
+    color: #67c23a;
 }
 
 .toolCallControlInfo {
@@ -296,7 +521,22 @@ async function handleRejectTriggerClick() {
     max-width: min(500px, calc(100vw - 48px));
 }
 
+.toolCallRunTooltip {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.toolCallRunTooltipTitle {
+    color: #606266;
+    font-size: 12px;
+}
+
 .toolCallControlPanel.mobile :deep(.toolCallGuideInput .el-textarea__inner) {
+    font-size: 16px;
+}
+
+.toolCallControlPanel.mobile :deep(.toolCallRunTooltip .el-input__inner) {
     font-size: 16px;
 }
 

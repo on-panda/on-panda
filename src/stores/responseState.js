@@ -354,10 +354,13 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             if (finishReason == "tool_calls") {
                 const toolCalls = finalMessage.value.tool_calls || []
                 await toolCallState.maybeAutoCallToolCalls(toolCalls)
+            } else {
+                toolCallState.stopToolCalls()
             }
 
         } catch (error) {
             requestStatus.value.generating = false
+            toolCallState?.stopToolCalls()
             warning(error)
             clearTimeout(firstTokenTimeoutId)
             throw error
@@ -503,6 +506,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         stopGenerating = () => {
+            toolCallState?.stopToolCalls()
             this.pandaState.beforeOperation()
             requestStatus.value.generating = false
         }

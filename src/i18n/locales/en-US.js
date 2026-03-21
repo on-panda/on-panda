@@ -112,7 +112,9 @@ export default {
     rejectGuidancePlaceholder: 'Optional message for model',
     retry: 'Retry',
     calling: 'Calling tools',
-    unreadyTools: 'These tools cannot run right now'
+    unreadyTools: 'These tools cannot run right now',
+    autoApproveRunNumLabel: 'Automatic approval run count',
+    autoApproveStatus: 'auto approve',
   },
   placeholders: {
     submitEnter: 'Submit: `↵`; newline: `shift+↵`',
