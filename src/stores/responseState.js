@@ -347,21 +347,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 }
             }
             requestStatus.value.generating = false
-            // operations according to finish_reason
-            var finishReason = finalMessage.value.finish_reason
-
-            if (["user", "tool"].includes(newRoundMessage.value.role)) {
-                newRoundMessage.value.role = finishReason == "tool_calls" ? "tool" : "user"
-            }
-            if (finishReason == "tool_calls") {
-                newRoundMessage.value.tool_call_id = finalMessage.value.tool_calls[0].id
-                newRoundMessage.value.name = finalMessage.value.tool_calls[0].function.name
-            } else {
-                delete newRoundMessage.value.tool_call_id
-                delete newRoundMessage.value.name
-            }
+            runDialogChangedHooks()
 
             pandaState.beforeOperation()
+            var finishReason = finalMessage.value.finish_reason
             if (finishReason == "tool_calls") {
                 const toolCalls = finalMessage.value.tool_calls || []
                 await toolCallState.maybeAutoCallToolCalls(toolCalls)
@@ -792,6 +781,29 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
     const newRoundMessage = ref({ role: 'user', content: '' })
 
+    function setDefaultNewRoundMessage() {
+        if (messageToSeq(getMessageOutput(newRoundMessage.value), { includeFinishReason: false })) {
+            return
+        }
+        var finishReason = finalMessage.value.finish_reason
+        if (["user", "tool"].includes(newRoundMessage.value.role)) {
+            newRoundMessage.value.role = finishReason == "tool_calls" ? "tool" : "user"
+        }
+        if (finishReason == "tool_calls") {
+            newRoundMessage.value.tool_call_id = finalMessage.value.tool_calls[0].id
+            newRoundMessage.value.name = finalMessage.value.tool_calls[0].function.name
+        } else {
+            delete newRoundMessage.value.tool_call_id
+            delete newRoundMessage.value.name
+        }
+    }
+
+    const dialogChangedHooks = [setDefaultNewRoundMessage]
+
+    function runDialogChangedHooks() {
+        dialogChangedHooks.forEach(hook => hook())
+    }
+
     const finalMessage = computed(() => {
         var role = null  // Compatible with Claude that each token has a role
         var finish_reason
@@ -877,6 +889,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 requestStatus.value.generating = false
                 loadMessagesToCurrentDialogUi(newValue.messages)
                 pandaState.tryRestoreTokens()
+                runDialogChangedHooks()
                 // p(tokensToSeq(tokens.value))
                 // console.trace()
             }
