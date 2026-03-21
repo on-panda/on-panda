@@ -107,6 +107,7 @@ export default {
     approvalRequired: 'Approval required',
     run: 'Run',
     reject: 'Reject',
+    rejectConfirm: 'Sure?',
     guide: 'Guide',
     rejectGuidancePlaceholder: 'Optional message for model',
     retry: 'Retry',

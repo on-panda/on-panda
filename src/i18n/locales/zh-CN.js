@@ -107,6 +107,7 @@ export default {
     approvalRequired: '需要审批的工具',
     run: '运行',
     reject: '拒绝',
+    rejectConfirm: '确定',
     guide: 'Guide',
     rejectGuidancePlaceholder: '用于指导模型的可选消息',
     retry: '再来',
