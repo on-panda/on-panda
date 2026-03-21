@@ -4,6 +4,7 @@ import { CaretRight, Close, CloseBold, Loading, RefreshRight } from '@element-pl
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../../stores/globalStore.js'
 import { hashObjectSHA256Base64 } from '../../utils/commonUtils.js'
+import ElTooltipWithKeepOpen from './ElTooltipWithKeepOpen.vue'
 
 const props = defineProps({
     responseState: {
@@ -29,7 +30,6 @@ const canRun = computed(() => toolCalls.value.length > 0 && readyStatus.value.al
 const toolCallsHash = ref('')
 const toolCallsRejectedGuidance = ref('')
 const isGuideInputFocused = ref(false)
-const guideTooltipVisibleState = ref(false)
 const toolCallsRejectedGuidanceCache = {}
 const runTooltip = computed(() => {
     if (readyStatus.value.allReady || !readyStatus.value.unreadyToolNames.length) {
@@ -37,18 +37,6 @@ const runTooltip = computed(() => {
     }
     return `${t('toolCallControl.unreadyTools')}: ${readyStatus.value.unreadyToolNames.join(', ')}`
 })
-const guideTooltipVisible = computed({
-    get() {
-        return guideTooltipVisibleState.value
-    },
-    set(value) {
-        if (!value && isGuideInputFocused.value) {
-            return
-        }
-        guideTooltipVisibleState.value = value
-    },
-})
-let guideTooltipBlurTimer = null
 
 let toolCallsHashSyncID = 0
 watch(toolCalls, async (nextToolCalls) => {
@@ -68,32 +56,12 @@ watch(toolCallsRejectedGuidance, (nextGuidance) => {
     toolCallsRejectedGuidanceCache[toolCallsHash.value] = nextGuidance
 })
 
-function clearGuideTooltipBlurTimer() {
-    if (guideTooltipBlurTimer) {
-        clearTimeout(guideTooltipBlurTimer)
-        guideTooltipBlurTimer = null
-    }
-}
-
-function hideGuideTooltip() {
-    clearGuideTooltipBlurTimer()
-    isGuideInputFocused.value = false
-    guideTooltipVisible.value = false
-}
-
 function handleGuideInputFocus() {
-    clearGuideTooltipBlurTimer()
     isGuideInputFocused.value = true
-    guideTooltipVisible.value = true
 }
 
 function handleGuideInputBlur() {
     isGuideInputFocused.value = false
-    clearGuideTooltipBlurTimer()
-    guideTooltipBlurTimer = setTimeout(() => {
-        guideTooltipVisible.value = false
-        guideTooltipBlurTimer = null
-    }, 120)
 }
 
 async function handleRunToolCalls() {
@@ -101,12 +69,12 @@ async function handleRunToolCalls() {
 }
 
 async function handleRejectToolCalls() {
-    hideGuideTooltip()
+    isGuideInputFocused.value = false
     await toolCallState.rejectToolCalls(toolCalls.value)
 }
 
 async function handleGuideToolCalls() {
-    hideGuideTooltip()
+    isGuideInputFocused.value = false
     await toolCallState.rejectToolCalls(toolCalls.value, toolCallsRejectedGuidance.value)
 }
 
@@ -128,13 +96,13 @@ async function handleRetryToolCalls() {
                         {{ t('toolCallControl.run') }}
                     </el-button>
                 </el-tooltip>
-                <el-tooltip v-model:visible="guideTooltipVisible" effect="light" trigger="hover" placement="top"
+                <ElTooltipWithKeepOpen :keep-open="isGuideInputFocused" effect="light" trigger="hover" placement="top"
                     :teleported="false" persistent enterable>
                     <template #content>
                         <div class="toolCallGuideTooltip">
                             <div class="toolCallGuideEditor">
-                                <el-input class="toolCallGuideInput" v-model="toolCallsRejectedGuidance"
-                                    type="textarea" resize="none" :autosize="{ minRows: 2, maxRows: 6 }"
+                                <el-input class="toolCallGuideInput" v-model="toolCallsRejectedGuidance" type="textarea"
+                                    resize="none" :autosize="{ minRows: 1, maxRows: 16 }"
                                     :placeholder="t('toolCallControl.rejectGuidancePlaceholder')"
                                     @keydown.ctrl.enter.prevent="handleGuideToolCalls" @focus="handleGuideInputFocus"
                                     @blur="handleGuideInputBlur" />
@@ -144,13 +112,13 @@ async function handleRetryToolCalls() {
                             </div>
                         </div>
                     </template>
-                    <span class="toolCallGuideTrigger">
+                    <span>
                         <el-button class="toolCallActionButton" type="danger" size="small" :icon="Close"
                             :disabled="!toolCalls.length" @click="handleRejectToolCalls">
                             {{ t('toolCallControl.reject') }}
                         </el-button>
                     </span>
-                </el-tooltip>
+                </ElTooltipWithKeepOpen>
                 <el-button class="toolCallActionButton" type="warning" size="small" :icon="RefreshRight"
                     @click="handleRetryToolCalls">
                     {{ t('toolCallControl.retry') }}
@@ -241,20 +209,12 @@ async function handleRetryToolCalls() {
 }
 
 .toolCallGuideTooltip {
-    width: min(300px, calc(100vw - 48px));
-}
-
-.toolCallGuideTrigger {
-    display: inline-flex;
+    max-width: min(500px, calc(100vw - 48px));
 }
 
 .toolCallGuideEditor {
     display: flex;
     align-items: stretch;
-}
-
-.toolCallGuideInput {
-    flex: 1 1 auto;
 }
 
 .toolCallGuideSubmitButton {
@@ -273,18 +233,5 @@ async function handleRetryToolCalls() {
 
 .toolCallGuideSubmitButton:hover {
     background-color: #f78989;
-}
-
-.toolCallGuideSubmitButton:active {
-    background-color: #dd6161;
-}
-
-.toolCallGuideSubmitButton:disabled {
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-.mobile .toolCallControlButtons {
-    justify-content: flex-start;
 }
 </style>

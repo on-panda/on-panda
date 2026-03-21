@@ -108,7 +108,7 @@ export default {
     run: 'Run',
     reject: 'Reject',
     guide: 'Guide',
-    rejectGuidancePlaceholder: 'Optional message to guide the model to regenerate',
+    rejectGuidancePlaceholder: 'Optional message for model',
     retry: 'Retry',
     calling: 'Calling tools',
     unreadyTools: 'These tools cannot run right now'

@@ -188,6 +188,7 @@ onMounted(async () => {
               server_url: window.location.origin +  "/bypass-CORS/http://127.0.0.1:9300/mcp",
               "require_approval": "always"
               // server_label: "mcp_demo"
+              // tool_name_format: "{type}_{server_label}__{name}"
             },
             {
               "type": "function",
