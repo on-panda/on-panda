@@ -1,113 +1,16 @@
 import { ref } from 'vue'
-import { deepCopy } from '../utils/commonUtils.js'
-
-function contentItemToText(item) {
-    if (item.type === 'text') {
-        return item.text
-    }
-    if (item.type === 'resource') {
-        return JSON.stringify(item.resource, null, 2)
-    }
-    return JSON.stringify(item, null, 2)
-}
-
-function contentItemToMessageContent(item) {
-    if (item.type === 'text') {
-        return [{ type: 'text', text: item.text }]
-    }
-    if (item.type === 'image') {
-        return [{
-            type: 'image_url',
-            image_url: {
-                url: `data:${item.mimeType};base64,${item.data}`,
-            },
-        }]
-    }
-    if (item.type === 'audio') {
-        return [{
-            type: 'audio_url',
-            audio_url: {
-                url: `data:${item.mimeType};base64,${item.data}`,
-            },
-        }]
-    }
-    return [{ type: 'text', text: contentItemToText(item) }]
-}
-
-function mcpToolResultToContent(result) {
-    if (result.content?.length) {
-        return result.content.flatMap((item, index) => (
-            (index === 0 ? [] : [{ type: 'text', text: '\n' }]).concat(contentItemToMessageContent(item))
-        ))
-    }
-    if (result.structuredContent !== undefined) {
-        return JSON.stringify(result.structuredContent, null, 2)
-    }
-    if (result.toolResult !== undefined) {
-        return JSON.stringify(result.toolResult, null, 2)
-    }
-    return ''
-}
-
-function getToolCallNames(toolCalls = []) {
-    return toolCalls.map(toolCall => toolCall.function?.name).filter(Boolean)
-}
-
-function getToolCallReadyFallback(toolCalls = []) {
-    const unreadyToolNames = [...new Set(getToolCallNames(toolCalls))]
-    return {
-        isReadys: toolCalls.map(() => false),
-        allReady: toolCalls.length === 0,
-        unreadyToolNames,
-    }
-}
-
-function buildToolCallsRejectedNotice(toolCallsRejectedGuidance = '') {
-    const guidance = toolCallsRejectedGuidance.trim()
-    if (!guidance) {
-        return `<tool_calls_rejected_notice>
-The user rejected the tool_calls.
-</tool_calls_rejected_notice>`
-    }
-    return `<tool_calls_rejected_notice>
-The user rejected the tool_calls.
-<guidance_from_user>
-${guidance}
-</guidance_from_user>
-</tool_calls_rejected_notice>`
-}
-
-function buildRejectedToolResponses(toolCalls = [], toolCallsRejectedGuidance = '') {
-    const content = buildToolCallsRejectedNotice(toolCallsRejectedGuidance)
-    return toolCalls.map(toolCall => ({
-        role: 'tool',
-        content,
-        tool_call_id: toolCall.id,
-        name: toolCall.function?.name,
-    }))
-}
-
-function getToolCallDiscardReason({
-    toolCallStatus,
-    toolCallID,
-    toolCallDialogKey,
-    currentDialogKey,
-}) {
-    if (!toolCallStatus.calling) {
-        return 'calling stopped'
-    }
-    if (toolCallID !== toolCallStatus.callTimes) {
-        return `call ID mismatch ${toolCallID} !== ${toolCallStatus.callTimes}`
-    }
-    if (toolCallDialogKey !== currentDialogKey) {
-        return `dialog changed from ${toolCallDialogKey} to ${currentDialogKey}`
-    }
-    return ''
-}
-
-function logDiscardedToolCall(toolCallID, toolCalls = [], reason) {
-    console.log(`[tool call ${toolCallID}] discard ${getToolCallNames(toolCalls).join(', ') || 'unknown tools'}: ${reason}`)
-}
+import {
+    buildDuplicatedToolNameError,
+    buildFunctionToolFromConfig,
+    buildFunctionToolSourceLabel,
+    buildRejectedToolResponses,
+    buildMcpToolSourceLabel,
+    checkToolCallReadyStatus,
+    formatToolName,
+    getToolCallDiscardReason,
+    logDiscardedToolCall,
+    mcpToolResultToContent,
+} from '../utils/toolUtils.js'
 
 export function ToolStateClosure({ toolConfigs = [] } = {}) {
     let tools = []
@@ -128,17 +31,21 @@ export function ToolStateClosure({ toolConfigs = [] } = {}) {
                     const registerTool = (tool, source, requireApproval = 'never') => {
                         const toolName = tool.function.name
                         if (toolName in toolNameToSource) {
-                            throw new Error(`Duplicated tool name "${toolName}" from ${toolNameToSource[toolName]} and ${source}.`)
+                            throw buildDuplicatedToolNameError(toolName, toolNameToSource[toolName], source)
                         }
                         toolNameToSource[toolName] = source
                         nextToolNameToRequireApproval[toolName] = requireApproval
                         nextTools.push(tool)
                     }
 
-                    for (const toolConfig of toolConfigs) {
+                    for (const [toolConfigIndex, toolConfig] of toolConfigs.entries()) {
                         const requireApproval = toolConfig.require_approval || 'never'
                         if (toolConfig.type === 'function') {
-                            registerTool(deepCopy(toolConfig), 'function tool config', requireApproval)
+                            registerTool(
+                                buildFunctionToolFromConfig(toolConfig),
+                                buildFunctionToolSourceLabel(toolConfig, toolConfigIndex),
+                                requireApproval,
+                            )
                             continue
                         }
                         if (toolConfig.type === 'mcp') {
@@ -159,15 +66,16 @@ export function ToolStateClosure({ toolConfigs = [] } = {}) {
                             nextClosers.push(() => transport.close())
                             const { tools: mcpTools } = await client.listTools()
                             for (const mcpTool of mcpTools) {
+                                const formattedToolName = formatToolName(mcpTool.name, toolConfig)
                                 registerTool({
                                     type: 'function',
                                     function: {
-                                        name: mcpTool.name,
+                                        name: formattedToolName,
                                         description: mcpTool.description,
                                         parameters: mcpTool.inputSchema,
                                     },
-                                }, serverUrl.toString(), requireApproval)
-                                nextToolNameToCall[mcpTool.name] = async (toolCall) => {
+                                }, buildMcpToolSourceLabel(toolConfig, toolConfigIndex, mcpTool.name), requireApproval)
+                                nextToolNameToCall[formattedToolName] = async (toolCall) => {
                                     const result = await client.callTool({
                                         name: mcpTool.name,
                                         arguments: JSON.parse(toolCall.function.arguments || '{}'),
@@ -205,16 +113,7 @@ export function ToolStateClosure({ toolConfigs = [] } = {}) {
     }
 
     function checkCallReady(toolCalls = []) {
-        const isReadys = toolCalls.map(toolCall => toolCall.function?.name in toolNameToCall)
-        const unreadyToolNames = [...new Set(toolCalls
-            .filter((toolCall, index) => !isReadys[index])
-            .map(toolCall => toolCall.function?.name)
-            .filter(Boolean))]
-        return {
-            isReadys,
-            allReady: isReadys.every(Boolean),
-            unreadyToolNames,
-        }
+        return checkToolCallReadyStatus(toolCalls, toolNameToCall)
     }
 
     function checkRequireApproval(toolCalls = []) {
@@ -276,7 +175,7 @@ export function ToolCallStateClosure({
     function checkCallReady(toolCalls = []) {
         const toolState = peekToolState()
         if (!toolState) {
-            return getToolCallReadyFallback(toolCalls)
+            return checkToolCallReadyStatus(toolCalls)
         }
         return toolState.checkCallReady(toolCalls)
     }

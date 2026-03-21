@@ -67,7 +67,12 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             toolState = ToolStateClosure({ toolConfigs: deepCopy(toolConfigs) })
             toolStateKey = nextToolStateKey
         }
-        await toolState.init()
+        try {
+            await toolState.init()
+        } catch (error) {
+            warning(error)
+            throw error
+        }
         return toolState
     }
 
