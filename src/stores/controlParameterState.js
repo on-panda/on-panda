@@ -13,6 +13,7 @@ export const defaultChatConfig = {
     logprobs: true,
     top_logprobs: 20,
     // top_k: 2,
+    // image_detail_level: 'auto',
     max_tokens: 8192,
     temperature: 0.5,
     top_p: 0.95,
@@ -23,7 +24,6 @@ export const defaultChatConfig = {
 
 export const defaultApiConfig = {
     "support_continue_final_message": true,
-    // "image_detail_level": "auto",
     "endpoint_name": "endpoint-name",
     "model_roles": ["assistant"],
     "client_config": {

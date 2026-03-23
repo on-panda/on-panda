@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
 import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
 import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
-import { dropStaleToolAsset } from '../utils/toolUtils.js'
+import { applyImageDetailLevel, dropStaleToolAsset } from '../utils/requestUtils.js'
 
 import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
@@ -114,24 +114,14 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     }
 
 
-    function modifyRequest(requestBody, apiConfig) {
-        apiConfig = toValue(apiConfig)
+    function modifyRequest(requestBody) {
         var body = normalizeRequest(requestBody)
         dropStaleToolAsset(body)
+        applyImageDetailLevel(body)
         if (isPromptLogprobsState.value) {
             delete body.tools
         }
         for (let message of body.messages) {
-            if (typeof message.content === "object") {
-                for (let chunk of message.content) {
-                    // set image_detail_level
-                    if (chunk.type.indexOf('image') != -1) {
-                        if (apiConfig.image_detail_level) {
-                            chunk[chunk.type].detail = apiConfig.image_detail_level
-                        }
-                    }
-                }
-            }
             if (message.reasoning) {
                 // TODO: workaround to be improved 
                 // if not set reasoning_key in chat_config, set reasoning_content for compatibility
@@ -205,7 +195,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         try {
             const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
-            var requestBody = modifyRequest(body, apiConfig.value)  // deepCopyed
+            var requestBody = modifyRequest(body)  // deepCopyed
             var stream = await openai.chat.completions.create(requestBody, { signal: fetchController.signal });
             stream = splitMultiTokensChunk(stream)
 
@@ -406,7 +396,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 return
             }
             const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
-            var requestBody = modifyRequest(body, apiConfig.value)
+            var requestBody = modifyRequest(body)
             var json = await openai.chat.completions.create(requestBody)
             if (requestID !== requestStatus.value.requestTimes) {
                 console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))

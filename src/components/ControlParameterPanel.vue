@@ -76,8 +76,8 @@ function handleModelTagMousedown(event, modelName_) {
     }
 }
 
-var requestImageDetial = computed(() => {
-    const image_detail_level = apiConfig.value.image_detail_level
+var requestImageDetail = computed(() => {
+    const image_detail_level = apiConfig.value.chat_config.image_detail_level
     return {
         "name": "image_detail",
         "type": "single_choice",
@@ -297,8 +297,9 @@ function maskApiKeyInApiConfig(apiConfig) {
                         </el-tooltip>
                     </small>
                 </el-form-item>
-                <CustomAnnotatorTool :tool="requestImageDetial"
-                    @updateSingleChoice="(v) => { apiConfigControllable.image_detail_level = v }" size="small" />
+                <CustomAnnotatorTool :tool="requestImageDetail"
+                    @updateSingleChoice="(v) => { updateApiConfigControlChatValue('image_detail_level', v) }"
+                    size="small" />
                 <el-form-item label="max tool assets">
                     <el-input-number v-model="maxToolMessageAssets" :min="0" :max="1048576" :step="1" size="small" />
                     <small>
