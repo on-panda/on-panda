@@ -3,6 +3,7 @@ import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
 import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
 import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
+import { dropStaleToolAsset } from '../utils/toolUtils.js'
 
 import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
@@ -116,6 +117,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     function modifyRequest(requestBody, apiConfig) {
         apiConfig = toValue(apiConfig)
         var body = normalizeRequest(requestBody)
+        dropStaleToolAsset(body)
         if (isPromptLogprobsState.value) {
             delete body.tools
         }

@@ -223,6 +223,8 @@ onMounted(async () => {
             modelName.value = modelNameTags.value['test']
           }
           modelName.value = "doubao-tag"
+          // controlParameterState.apiConfigControllable.value.chat_config.max_tool_message_assets = 1
+          controlParameterState.apiConfigControllable.value.chat_config.tool_message_asset_keep_rounds = 2
           operationCenter.generateNew()
           // operationCenter.refreshResponseProbability()
         }

@@ -36,6 +36,32 @@ const chatConfig = props.controlParameterState.apiConfigControllable.value.chat_
 const extraChatParametersString = props.controlParameterState.extraChatParametersString
 const apiConfig = props.controlParameterState.apiConfig
 
+function updateApiConfigControlChatValue(key, value) {
+    if (value == null || value === '') {
+        delete apiConfigControllable.value.chat_config[key]
+        return
+    }
+    apiConfigControllable.value.chat_config[key] = value
+}
+
+const maxToolMessageAssets = computed({
+    get() {
+        return apiConfig.value.chat_config.max_tool_message_assets
+    },
+    set(value) {
+        updateApiConfigControlChatValue('max_tool_message_assets', value)
+    }
+})
+
+const toolMessageAssetKeepRounds = computed({
+    get() {
+        return apiConfig.value.chat_config.tool_message_asset_keep_rounds
+    },
+    set(value) {
+        updateApiConfigControlChatValue('tool_message_asset_keep_rounds', value)
+    }
+})
+
 function handleModelTagClick(event, newModelName) {
     if (event.ctrlKey) {
         emit('duplicateWindowWithModelName', newModelName)
@@ -273,6 +299,36 @@ function maskApiKeyInApiConfig(apiConfig) {
                 </el-form-item>
                 <CustomAnnotatorTool :tool="requestImageDetial"
                     @updateSingleChoice="(v) => { apiConfigControllable.image_detail_level = v }" size="small" />
+                <el-form-item label="max tool assets">
+                    <el-input-number v-model="maxToolMessageAssets" :min="0" :max="1048576" :step="1" size="small" />
+                    <small>
+                        &nbsp; &nbsp;
+                        <el-tooltip class="" effect="light" placement="top" raw-content>
+                            <template #content>
+                                <MarkdownRender content="Keep only the latest N tool message assets in the request." />
+                            </template>
+                            <el-icon>
+                                <InfoFilled />
+                            </el-icon>
+                        </el-tooltip>
+                    </small>
+                </el-form-item>
+                <el-form-item label="tool assets round">
+                    <el-input-number v-model="toolMessageAssetKeepRounds" :min="0" :max="1048576" :step="1"
+                        size="small" />
+                    <small>
+                        &nbsp; &nbsp;
+                        <el-tooltip class="" effect="light" placement="top" raw-content>
+                            <template #content>
+                                <MarkdownRender
+                                    content="Keep tool message assets that belong to the latest N tool call rounds." />
+                            </template>
+                            <el-icon>
+                                <InfoFilled />
+                            </el-icon>
+                        </el-tooltip>
+                    </small>
+                </el-form-item>
                 <ObjectViewerInDetails :object="maskApiKeyInApiConfig(props.controlParameterState.apiConfig.value)"
                     summary="Current API config JSON" style="max-width: 800px; margin-left: 20px" />
             </div>
