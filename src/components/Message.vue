@@ -110,7 +110,7 @@ const props = defineProps({
     default: -1
   },
 })
-const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur', 'draftTextChange'])
+const emit = defineEmits(['sendButton', 'deleteMessage', 'focus', 'blur'])
 
 // supoort both emit event (sample way using by newMessage) and using operationCenter (complex way)
 const usingOperators = 'generateNew' in props.operationCenter
@@ -196,10 +196,6 @@ const primaryActionButtonStyle = computed(() => ({
   cursor: isPrimaryActionDisabled.value ? 'not-allowed' : 'pointer',
   'background-color': isPrimaryActionDisabled.value ? 'rgb(185, 228, 255)': "lightskyblue",
 }))
-
-function emitDraftTextChange() {
-  emit('draftTextChange', messageDraft.value)
-}
 
 const showMessageDraftWarning = computed(() => {
   return !isEditorFocused.value && messageDraft.value !== messageAsText.value
@@ -427,7 +423,6 @@ watch(messageAsText, (value) => {
 })
 
 watch(messageDraft, () => {
-  emitDraftTextChange()
   if (detailsRef.value?.open) {
     detailsContent.value = messageDraft.value
   }
@@ -471,7 +466,6 @@ onMounted(() => {
     }
   }
   messageDraft.value = messageAsText.value
-  emitDraftTextChange()
   syncDetailsContent()
 })
 

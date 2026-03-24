@@ -1,5 +1,5 @@
 <script setup>
-import { provide, computed, ref } from 'vue'
+import { provide, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { messageToSeq } from '../utils/chatUtils.js'
 
@@ -52,15 +52,6 @@ function setPromptLogprobsResponseState() {
 }
 const promptLogprobsResponseState = computed(setPromptLogprobsResponseState)
 
-const newRoundMessageDraftText = ref(messageToSeq(newRoundMessage.value, { includeFinishReason: false }))
-const newRoundMessageHasContent = computed(() => {
-    return Boolean(newRoundMessageDraftText.value)
-})
-
-function handleNewRoundMessageDraftTextChange(draftText) {
-    newRoundMessageDraftText.value = draftText
-}
-
 function clearNewRoundMessage() {
     const role = newRoundMessage.value.role
     newRoundMessage.value = { role: role, content: '' }
@@ -100,9 +91,9 @@ function clearNewRoundMessage() {
         <slot name="beforeNewRoundMessageSlot"></slot>
 
         <el-divider content-position="left" style="margin-bottom: 5px;">{{ t('common.newMessage') }}:</el-divider>
-        <div :style="{ opacity: newRoundMessageHasContent ? 1 : 0.5 }">
+        <div>
             <Message :message="newRoundMessage" :messageIndex="-2" @deleteMessage="clearNewRoundMessage"
-                @sendButton="operationCenter.startNewRound()" @draftTextChange="handleNewRoundMessageDraftTextChange" />
+                @sendButton="operationCenter.startNewRound()" />
         </div>
     </div>
 </template>
