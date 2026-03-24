@@ -144,7 +144,7 @@ export default {
     renderedMarkdown: '格式渲染:',
     clear: '清空',
     delete: '删除该对话',
-    send: '生成➡️',
+    send: '生成',
     ctrlEnter: 'ctrl+enter'
   },
   dialogPanel: {

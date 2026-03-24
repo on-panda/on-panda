@@ -144,7 +144,7 @@ export default {
     renderedMarkdown: 'rendered markdown:',
     clear: 'Clear',
     delete: 'Delete',
-    send: 'Send➡️',
+    send: 'Send',
     ctrlEnter: 'ctrl+enter'
   },
   dialogPanel: {

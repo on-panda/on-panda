@@ -184,7 +184,7 @@ const showPrimaryActionButton = computed(() => {
   return isRunPrimaryAction.value || getMessage()['role'] === 'tool' || !isRenderRole.value || isRenderContentEditing.value
 })
 const primaryActionLabel = computed(() => {
-  return isRunPrimaryAction.value ? t('toolCallControl.run') : t('chatMessage.send')
+  return isRunPrimaryAction.value ? t('toolCallControl.run') + "▶️" : t('chatMessage.send') + "➡️"
 })
 const showPrimaryActionShortcut = computed(() => isEditorFocused.value)
 const isPrimaryActionDisabled = computed(() => {
@@ -193,7 +193,8 @@ const isPrimaryActionDisabled = computed(() => {
 const messageActionIcon = computed(() => hasClearableMessageContent.value ? Delete : Close)
 const messageActionTooltip = computed(() => hasClearableMessageContent.value ? t('chatMessage.clear') : t('chatMessage.delete'))
 const primaryActionButtonStyle = computed(() => ({
-  cursor: isPrimaryActionDisabled.value ? 'not-allowed' : 'pointer'
+  cursor: isPrimaryActionDisabled.value ? 'not-allowed' : 'pointer',
+  'background-color': isPrimaryActionDisabled.value ? 'rgb(185, 228, 255)': "lightskyblue",
 }))
 
 function emitDraftTextChange() {
@@ -508,15 +509,17 @@ onBeforeUnmount(() => {
 }
 
 .messagePrimaryActionButton {
+  min-width: 59px;
   margin-left: 5px;
-  background-color: lightskyblue;
   color: #fff;
-  padding: 8px;
+  padding: 5px;
+  font-size: 0.75em;
   border-radius: 7px;
+  border: 1px solid var(--el-input-border-color, var(--el-border-color))
 }
 
 .messageRenderContent {
-  margin-top: 5px;
+  margin-top: 0px;
   margin-bottom: 0px;
   color: #555;
   border-radius: 5px;

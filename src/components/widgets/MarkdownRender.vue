@@ -92,6 +92,8 @@ function handleClickInMarkdown(event) {
 .on-panda-markdown-content .rawSizeImg {
   max-width: initial;
   max-height: initial;
+  position: relative;
+  z-index: 1;
 }
 
 .on-panda-markdown-content {
