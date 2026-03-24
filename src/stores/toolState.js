@@ -3,7 +3,6 @@ import {
     buildDuplicatedToolNameError,
     buildFunctionToolFromConfig,
     buildFunctionToolSourceLabel,
-    buildRejectedToolResponses,
     buildMcpToolSourceLabel,
     checkToolCallReadyStatus,
     formatToolName,
@@ -158,8 +157,6 @@ export function ToolCallStateClosure({
     ensureDialogToolsMaterialized,
     getToolState,
     peekToolState,
-    operationCenter,
-    finalMessage,
     warning,
 } = {}) {
     const toolCallStatus = ref({
@@ -169,20 +166,8 @@ export function ToolCallStateClosure({
         approvedRunCount: 0,
         currentCallConsumedApproval: false,
     })
-    const pandaState = operationCenter.pandaState
-    let autoApproveLoopResetSkips = 0
-
-    pandaState.registerBeforeOperationHook(() => {
-        toolCallStatus.value.calling = false
-        if (autoApproveLoopResetSkips > 0) {
-            autoApproveLoopResetSkips--
-            return
-        }
-        resetAutoApproveLoop()
-    })
 
     function resetAutoApproveLoop() {
-        autoApproveLoopResetSkips = 0
         toolCallStatus.value.autoApproveRunNum = 1
         toolCallStatus.value.approvedRunCount = 0
         toolCallStatus.value.currentCallConsumedApproval = false
@@ -194,9 +179,9 @@ export function ToolCallStateClosure({
         toolCallStatus.value.currentCallConsumedApproval = false
     }
 
-    async function prepareToolCallExecution(toolCalls = null) {
+    async function prepareToolCallExecution(toolCalls = []) {
         await ensureDialogToolsMaterialized()
-        const toolCallsToRun = toolCalls || finalMessage.value.tool_calls || []
+        const toolCallsToRun = toolCalls || []
         const currentToolState = await getToolState()
         const readyStatus = currentToolState.checkCallReady(toolCallsToRun)
         return {
@@ -229,10 +214,13 @@ export function ToolCallStateClosure({
         toolCallsToRun,
         currentToolState,
         readyStatus,
-    }, consumeApproval = false, { messageIndex = -1 } = {}) {
+    }, consumeApproval = false) {
         if (!readyStatus.allReady) {
             resetAutoApproveLoop()
-            return readyStatus
+            return {
+                readyStatus,
+                toolResponses: null,
+            }
         }
         toolCallStatus.value.currentCallConsumedApproval = consumeApproval
         if (consumeApproval) {
@@ -241,72 +229,74 @@ export function ToolCallStateClosure({
         toolCallStatus.value.calling = true
         toolCallStatus.value.callTimes++
         const toolCallID = toolCallStatus.value.callTimes
-        const toolCallDialogKey = pandaState.currentDialogKey.value
         try {
             const toolResponses = await currentToolState.call(toolCallsToRun)
             const discardReason = getToolCallDiscardReason({
                 toolCallStatus: toolCallStatus.value,
                 toolCallID,
-                toolCallDialogKey,
-                currentDialogKey: pandaState.currentDialogKey.value,
             })
             if (discardReason) {
                 logDiscardedToolCall(toolCallID, toolCallsToRun, discardReason)
                 resetAutoApproveLoop()
-                return readyStatus
+                return {
+                    readyStatus,
+                    toolResponses: null,
+                }
             }
             toolCallStatus.value.calling = false
-            autoApproveLoopResetSkips = toolCallStatus.value.autoApproveRunNum > 1 ? 2 : 0
-            await operationCenter.startNewRound(toolResponses, { messageIndex })
-            return readyStatus
+            return {
+                readyStatus,
+                toolResponses,
+            }
         } catch (error) {
             const discardReason = getToolCallDiscardReason({
                 toolCallStatus: toolCallStatus.value,
                 toolCallID,
-                toolCallDialogKey,
-                currentDialogKey: pandaState.currentDialogKey.value,
             })
             if (discardReason) {
                 logDiscardedToolCall(toolCallID, toolCallsToRun, discardReason)
                 resetAutoApproveLoop()
-                return readyStatus
+                return {
+                    readyStatus,
+                    toolResponses: null,
+                }
             }
             toolCallStatus.value.calling = false
             resetAutoApproveLoop()
             warning(error)
-            return readyStatus
+            return {
+                readyStatus,
+                toolResponses: null,
+            }
         }
     }
 
-    async function callToolCalls(toolCalls = null, { messageIndex = -1 } = {}) {
+    async function callToolCalls(toolCalls = []) {
         const prepared = await prepareToolCallExecution(toolCalls)
-        return await runPreparedToolCalls(prepared, false, { messageIndex })
+        return await runPreparedToolCalls(prepared)
     }
 
-    async function callAutoApprovedToolCalls(toolCalls = null, autoApproveRunNum = 1) {
+    async function callAutoApprovedToolCalls(toolCalls = [], autoApproveRunNum = 1) {
         const prepared = await prepareToolCallExecution(toolCalls)
         if (!prepared.readyStatus.allReady) {
-            return prepared.readyStatus
+            return {
+                readyStatus: prepared.readyStatus,
+                toolResponses: null,
+            }
         }
         setAutoApproveLoop(autoApproveRunNum)
         const needApproval = prepared.currentToolState.checkRequireApproval(prepared.toolCallsToRun).needApproval
         return await runPreparedToolCalls(prepared, needApproval)
     }
 
-    async function rejectToolCalls(toolCalls = null, toolCallsRejectedGuidance = '') {
-        const toolCallsToReject = toolCalls || finalMessage.value.tool_calls || []
-        if (!toolCallsToReject.length) {
-            return
-        }
-        await ensureDialogToolsMaterialized()
-        await operationCenter.startNewRound(buildRejectedToolResponses(toolCallsToReject, toolCallsRejectedGuidance))
-    }
-
-    async function maybeAutoCallToolCalls(toolCalls = null) {
+    async function maybeAutoCallToolCalls(toolCalls = []) {
         const prepared = await prepareToolCallExecution(toolCalls)
         if (!prepared.readyStatus.allReady) {
             resetAutoApproveLoop()
-            return false
+            return {
+                readyStatus: prepared.readyStatus,
+                toolResponses: null,
+            }
         }
         const needApproval = prepared.currentToolState.checkRequireApproval(prepared.toolCallsToRun).needApproval
         if (needApproval) {
@@ -316,15 +306,13 @@ export function ToolCallStateClosure({
             )
             if (!hasRemainingAutoApproveRuns) {
                 resetAutoApproveLoop()
-                return false
+                return {
+                    readyStatus: prepared.readyStatus,
+                    toolResponses: null,
+                }
             }
         }
-        await runPreparedToolCalls(prepared, needApproval)
-        return true
-    }
-
-    async function retry() {
-        await operationCenter.generateNew()
+        return await runPreparedToolCalls(prepared, needApproval)
     }
 
     function stopToolCalls() {
@@ -338,9 +326,7 @@ export function ToolCallStateClosure({
         checkRequireApproval,
         callToolCalls,
         callAutoApprovedToolCalls,
-        rejectToolCalls,
         maybeAutoCallToolCalls,
-        retry,
         stopToolCalls,
     }
 }

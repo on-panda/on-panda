@@ -344,7 +344,8 @@ async function handleRunToolCalls() {
   taskQueue.addTask(async () => {
     const updated = await operationCenterUpdatePromptMessage({ delay: false })
     if (updated) {
-      await props.operationCenter.toolCallState.callToolCalls(getMessage()['tool_calls'] || [], {
+      await props.operationCenter.runToolCalls({
+        toolCalls: messageToolCalls.value,
         messageIndex: props.messageIndex,
       })
     }

@@ -124,17 +124,12 @@ The user rejected the tool_calls.
 export function getToolCallDiscardReason({
     toolCallStatus,
     toolCallID,
-    toolCallDialogKey,
-    currentDialogKey,
 }) {
     if (!toolCallStatus.calling) {
         return 'calling stopped'
     }
     if (toolCallID !== toolCallStatus.callTimes) {
         return `call ID mismatch ${toolCallID} !== ${toolCallStatus.callTimes}`
-    }
-    if (toolCallDialogKey !== currentDialogKey) {
-        return `dialog changed from ${toolCallDialogKey} to ${currentDialogKey}`
     }
     return ''
 }

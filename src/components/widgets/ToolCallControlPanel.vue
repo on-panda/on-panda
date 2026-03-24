@@ -269,7 +269,7 @@ async function handleRunToolCalls() {
         return
     }
     closeRunConfigTooltip()
-    await toolCallState.callToolCalls(toolCalls.value)
+    await operationCenter.runToolCalls({ toolCalls: toolCalls.value })
 }
 
 async function handleAutoRunToolCalls() {
@@ -277,21 +277,27 @@ async function handleAutoRunToolCalls() {
         return
     }
     closeRunConfigTooltip()
-    await toolCallState.callAutoApprovedToolCalls(toolCalls.value, autoApproveRunNum.value)
+    await operationCenter.runAutoApprovedToolCalls({
+        toolCalls: toolCalls.value,
+        autoApproveRunNum: autoApproveRunNum.value,
+    })
 }
 
 async function handleRejectToolCalls() {
     closeRejectGuideTooltip()
-    await toolCallState.rejectToolCalls(toolCalls.value)
+    await operationCenter.rejectToolCalls({ toolCalls: toolCalls.value })
 }
 
 async function handleGuideToolCalls() {
     closeRejectGuideTooltip()
-    await toolCallState.rejectToolCalls(toolCalls.value, toolCallsRejectedGuidance.value)
+    await operationCenter.rejectToolCalls({
+        toolCalls: toolCalls.value,
+        toolCallsRejectedGuidance: toolCallsRejectedGuidance.value,
+    })
 }
 
 async function handleRetryToolCalls() {
-    await toolCallState.retry()
+    await operationCenter.generateNew()
 }
 
 async function handleRejectTriggerClick() {

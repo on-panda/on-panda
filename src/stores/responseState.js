@@ -4,6 +4,7 @@ import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, saf
 import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
 import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
 import { applyImageDetailLevel, dropStaleToolAsset } from '../utils/requestUtils.js'
+import { buildRejectedToolResponses } from '../utils/toolUtils.js'
 
 import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
@@ -341,11 +342,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             requestStatus.value.generating = false
             runDialogChangedHooks()
 
-            pandaState.beforeOperation()
             var finishReason = finalMessage.value.finish_reason
             if (finishReason == "tool_calls") {
                 const toolCalls = finalMessage.value.tool_calls || []
-                await toolCallState.maybeAutoCallToolCalls(toolCalls)
+                await operationCenter.maybeAutoRunToolCalls({ toolCalls })
             } else {
                 toolCallState.stopToolCalls()
             }
@@ -479,14 +479,102 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
 
     let toolCallState = null
+    let skipToolCallStopOnDialogCacheSync = 0
 
     class OperationCenter {
         // All operations are here to manipulate the pandaState and responseState
         // continue generating, stop, continue with chosen, continue with input, edit prompt(include role), new round, edit response, refresh, load example, load panda tree.
         pandaState = buildMockObject()
+        beforeOperation = ({ stopToolCalls = true } = {}) => {
+            if (stopToolCalls) {
+                toolCallState?.stopToolCalls()
+            }
+            this.pandaState.beforeOperation()
+        }
+
+        getNextMessagesForRound = (messagesToAppend, { messageIndex = null } = {}) => {
+            const baseMessages = (
+                typeof messageIndex === "number" && messageIndex >= 0 && messages.value.length
+                    ? messages.value.slice(0, Math.min(messageIndex, messages.value.length - 1) + 1)
+                    : messagesComputed.value
+            )
+            return baseMessages.concat(deepCopy(messagesToAppend))
+        }
+
+        appendMessagesAndGenerate = async ({
+            messagesToAppend,
+            role = 'user',
+            messageIndex = null,
+            stopToolCalls = true,
+        } = {}) => {
+            await ensureDialogToolsMaterialized()
+            this.beforeOperation({ stopToolCalls })
+            if (!stopToolCalls) {
+                skipToolCallStopOnDialogCacheSync++
+            }
+            const nextMessages = this.getNextMessagesForRound(messagesToAppend, { messageIndex })
+            messages.value = nextMessages
+            tokens.value = []
+            newRoundMessage.value = { role: role, content: '' }
+            const operation = {
+                operator: "start_new_round",
+                on_policy: true,
+            }
+            if (typeof messageIndex === "number" && messageIndex >= 0) {
+                operation.message_index = messageIndex
+            }
+            this.pandaState.afterOperation(operation)
+            requestLlmServer(nextMessages)
+        }
+
+        runToolCalls = async ({ toolCalls = [], messageIndex = null } = {}) => {
+            const result = await toolCallState.callToolCalls(toolCalls)
+            if (result.toolResponses?.length) {
+                await this.appendMessagesAndGenerate({
+                    messagesToAppend: result.toolResponses,
+                    messageIndex,
+                })
+            }
+            return result
+        }
+
+        runAutoApprovedToolCalls = async ({ toolCalls = [], autoApproveRunNum = 1, messageIndex = null } = {}) => {
+            const result = await toolCallState.callAutoApprovedToolCalls(toolCalls, autoApproveRunNum)
+            if (result.toolResponses?.length) {
+                await this.appendMessagesAndGenerate({
+                    messagesToAppend: result.toolResponses,
+                    messageIndex,
+                    stopToolCalls: false,
+                })
+            }
+            return result
+        }
+
+        maybeAutoRunToolCalls = async ({ toolCalls = [], messageIndex = null } = {}) => {
+            const result = await toolCallState.maybeAutoCallToolCalls(toolCalls)
+            if (result.toolResponses?.length) {
+                await this.appendMessagesAndGenerate({
+                    messagesToAppend: result.toolResponses,
+                    messageIndex,
+                    stopToolCalls: false,
+                })
+            }
+            return result
+        }
+
+        rejectToolCalls = async ({ toolCalls = [], toolCallsRejectedGuidance = '', messageIndex = null } = {}) => {
+            if (!toolCalls.length) {
+                return
+            }
+            await this.appendMessagesAndGenerate({
+                messagesToAppend: buildRejectedToolResponses(toolCalls, toolCallsRejectedGuidance),
+                messageIndex,
+            })
+        }
+
         continueGenerating = async () => {
             await ensureDialogToolsMaterialized()
-            this.pandaState.beforeOperation()
+            this.beforeOperation()
             // var isTryGeneratingOnEot = tokens.value.length && tokens.value[tokens.value.length - 1].finish_reason === "stop"
             // if (isTryGeneratingOnEot) {
             // }
@@ -498,15 +586,14 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         stopGenerating = () => {
-            toolCallState?.stopToolCalls()
-            this.pandaState.beforeOperation()
+            this.beforeOperation()
             requestStatus.value.generating = false
         }
 
         continueWithChosen = async (token, logprobItem) => {
             // function clickOnLogprobItem() {
             await ensureDialogToolsMaterialized()
-            this.pandaState.beforeOperation()
+            this.beforeOperation()
             const rejected_token = recordAsRejectedToken(token, tokens)  // record rejected token before change tokens
             prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob, logprobItem.finish_reason)
             this.pandaState.afterOperation({
@@ -531,7 +618,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         applyInputChange = (token, continuePrefix, continuePrefixLogprob) => {
-            this.pandaState.beforeOperation()
+            this.beforeOperation()
             const rejected_token = recordAsRejectedToken(token, tokens)  // record rejected token before change tokens
             prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob)
             this.pandaState.afterOperation({
@@ -560,7 +647,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 // if only has role, try using continue generating
                 this.continueGenerating()
             } else {
-                this.pandaState.beforeOperation()
+                this.beforeOperation()
                 if (messageIndex >= 0 && messages.value.length) {
                     const clampedIndex = Math.min(messageIndex, messages.value.length - 1)
                     messages.value = messages.value.slice(0, clampedIndex + 1)
@@ -576,29 +663,17 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             }
         }
 
-        startNewRound = async (newRoundMessages = null, { messageIndex = -1 } = {}) => {  // TODO remove auto write back's append operation
-            await ensureDialogToolsMaterialized()
-            this.pandaState.beforeOperation()
-            const messagesToAppend = newRoundMessages ? deepCopy(newRoundMessages) : [deepCopy(newRoundMessage.value)]
+        startNewRound = async (newRoundMessages = null) => {  // TODO remove auto write back's append operation
+            const messagesToAppend = newRoundMessages ? newRoundMessages : [newRoundMessage.value]
             var role = newRoundMessages ? 'user' : newRoundMessage.value.role
-            const nextMessages = (
-                messageIndex >= 0
-                    ? messages.value.slice(0, Math.min(messageIndex, messages.value.length - 1) + 1)
-                    : messagesComputed.value
-            ).concat(messagesToAppend)
-            messages.value = nextMessages
-            tokens.value = [];
-            newRoundMessage.value = { role: role, content: '' }
-            this.pandaState.afterOperation({
-                operator: "start_new_round",
-                on_policy: true,
-                message_index: messageIndex,
+            await this.appendMessagesAndGenerate({
+                messagesToAppend,
+                role,
             })
-            requestLlmServer(nextMessages)
         }
 
         clearOrDeleteMessage = (message, index) => {
-            this.pandaState.beforeOperation()
+            this.beforeOperation()
             if (messageToSeq(getMessageOutput(message), { includeFinishReason: false })) {
                 // after beforeOperation(), message has been recomputed
                 var messageRefresh = messages.value[index]
@@ -623,7 +698,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         editPrompt = {
             // long user editing time between `before` and `after`. which will stop generating. abondon!
             before: () => {
-                this.pandaState.beforeOperation()
+                this.beforeOperation()
             },
             after: (operation) => {
                 this.pandaState.afterOperation(Object.assign({
@@ -634,7 +709,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         updatePromptMessage = (messageDelta, index) => {
-            this.pandaState.beforeOperation()
+            this.beforeOperation()
             var messageRefresh = { ...messages.value[index] }
             for (const key of MESSAGE_KEYS_IN_CONTEXT) {
                 const value = messageDelta[key]
@@ -657,7 +732,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         refreshResponseProbability = async () => {
             await ensureDialogToolsMaterialized()
-            this.pandaState.beforeOperation()
+            this.beforeOperation()
             requestPromptLogprobs().then(() => {
                 this.pandaState.afterOperation({
                     operator: "refresh_probability",
@@ -668,7 +743,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         editRole = {
             before: () => {
-                this.pandaState.beforeOperation()
+                this.beforeOperation()
             },
             after: () => {
                 this.pandaState.afterOperation({
@@ -691,7 +766,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 return
             }
             const rejected_token = recordAsRejectedToken(selectedTokens[0], tokens)  // record rejected token before change tokens
-            this.pandaState.beforeOperation()
+            this.beforeOperation()
             const baseToken = deepCopy(selectedTokens[0])
             delete baseToken.selected
             baseToken.bifurcationPoint = true
@@ -732,7 +807,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         loadMessages = (newMessages) => {
-            this.pandaState.beforeOperation()
+            this.beforeOperation()
             this.pandaState = pandaState  // TODO 挪出去这行， beforeOperation() 会报错
             const dialogNew = { messages: deepCopy(newMessages) }
             const pandaTreeNew = { dialogs: { 1: dialogNew } }
@@ -740,7 +815,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         loadPandaJson = (pandaJson) => {
-            this.pandaState.beforeOperation()
+            this.beforeOperation()
             this.pandaState = pandaState
             this.pandaState.load(pandaJson)
         }
@@ -888,6 +963,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         function watchPandaStateDialogCache(newValue, oldValue) {
             if (newValue.messages) {
                 // this will stop generating when edit
+                if (skipToolCallStopOnDialogCacheSync > 0) {
+                    skipToolCallStopOnDialogCacheSync--
+                } else {
+                    toolCallState?.stopToolCalls()
+                }
                 requestStatus.value.generating = false
                 loadMessagesToCurrentDialogUi(newValue.messages)
                 pandaState.tryRestoreTokens()
@@ -922,8 +1002,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         ensureDialogToolsMaterialized,
         getToolState,
         peekToolState: () => toolState,
-        operationCenter,
-        finalMessage,
         warning,
     })
     operationCenter.toolCallState = toolCallState
