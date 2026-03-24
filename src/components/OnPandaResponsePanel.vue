@@ -12,7 +12,7 @@ import MessageRole from '../components/widgets/MessageRole.vue'
 import MarkdownResponse from '../components/widgets/MarkdownResponse.vue'
 import OnPandaResponseText from '../components/OnPandaResponseText.vue'
 import DialogKeysFooter from './widgets/DialogKeysFooter.vue'
-import ToolCallControlPanel from './widgets/ToolCallControlPanel.vue'
+import ToolCallControlPanel from './ToolCallControlPanel.vue'
 import WaitingInfo from './widgets/WaitingInfo.vue'
 
 const props = defineProps({

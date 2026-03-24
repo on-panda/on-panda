@@ -72,21 +72,12 @@ function handleClickInMarkdown(event) {
 <style>
 /* global CSS */
 .on-panda-markdown-content img {
-  max-width: 100%;
-  max-height: 100%;
-  max-width: 322px;
-  max-height: 386px;
+  max-width: min(100% - 5px, 512px);
+  max-height: 512px;
   box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 8px;
-  margin-left: 10px;
-  margin-right: 10px;
+  margin-left: 5px;
+  margin-right: 5px;
   cursor: zoom-in;
-}
-
-@media (min-width: 600px) {
-  .on-panda-markdown-content img {
-    max-width: 512px;
-    max-height: 512px;
-  }
 }
 
 .on-panda-markdown-content .rawSizeImg {
@@ -121,6 +112,7 @@ function handleClickInMarkdown(event) {
     display: block;
     padding: 1em;
   }
+
   /* for fancy copy button */
   pre {
     margin: 0;

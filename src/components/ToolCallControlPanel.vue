@@ -2,9 +2,9 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { CaretRight, Close, CloseBold, Loading, RefreshRight } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
-import { useGlobalStore } from '../../stores/globalStore.js'
-import { closeFloatPanelMeta, hashObjectSHA256Base64 } from '../../utils/commonUtils.js'
-import ElTooltipWithKeepOpen from './ElTooltipWithKeepOpen.vue'
+import { useGlobalStore } from '../stores/globalStore.js'
+import { closeFloatPanelMeta, hashObjectSHA256Base64 } from '../utils/commonUtils.js'
+import ElTooltipWithKeepOpen from './widgets/ElTooltipWithKeepOpen.vue'
 
 function useToolCallsRejectedGuidance(toolCalls) {
     const toolCallsHash = ref('')
@@ -321,12 +321,11 @@ async function handleRejectTriggerClick() {
                         :keep-open="isRunConfigInputFocused" effect="light" :trigger="runConfigTooltipTrigger"
                         placement="top" :teleported="false" persistent enterable>
                         <template #content>
-                            <div class="toolCallRunTooltip">
+                            <div style="text-align:center">
                                 <div class="toolCallRunTooltipTitle">
                                     {{ t('toolCallControl.autoApproveRunNumLabel') }}
                                 </div>
-                                <el-input-number v-model="autoApproveRunNum" :min="1" :max="999"
-                                    :size="globalStore.isMobile ? undefined : 'small'"
+                                <el-input-number v-model="autoApproveRunNum" :min="1" :max="999" size="small"
                                     @focus="handleRunConfigInputFocus" @blur="handleRunConfigInputBlur" />
                             </div>
                         </template>
@@ -525,12 +524,6 @@ async function handleRejectTriggerClick() {
 .toolCallGuideTooltip {
     min-width: 280px;
     max-width: min(500px, calc(100vw - 48px));
-}
-
-.toolCallRunTooltip {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
 }
 
 .toolCallRunTooltipTitle {
