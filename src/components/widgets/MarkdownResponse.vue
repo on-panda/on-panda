@@ -1,9 +1,7 @@
 <template>
     <div class="markdown-response">
         <div v-if="!props.content">
-            <p style="background-color: #eee;color: #444">
-                <span v-html="WaitingInfo"></span>
-            </p>
+            <WaitingInfo v-bind="props.waitingInfoProps" />
         </div>
         <p> <!-- Removing the p tag will cause unstable rendering in stream mode -->
             <MarkdownRender :content="props.content || ''" style="background-color: #eee;" />
@@ -14,14 +12,15 @@
 <script setup>
 
 import MarkdownRender from './MarkdownRender.vue'
+import WaitingInfo from './WaitingInfo.vue'
 
 const props = defineProps({
     content: {
         type: String,
     },
-    WaitingInfo: {
-        type: String,
-        default: 'Waiting for response...'
+    waitingInfoProps: {
+        type: Object,
+        default: () => ({}),
     }
 })
 

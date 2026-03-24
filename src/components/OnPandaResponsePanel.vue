@@ -13,6 +13,7 @@ import MarkdownResponse from '../components/widgets/MarkdownResponse.vue'
 import OnPandaResponseText from '../components/OnPandaResponseText.vue'
 import DialogKeysFooter from './widgets/DialogKeysFooter.vue'
 import ToolCallControlPanel from './widgets/ToolCallControlPanel.vue'
+import WaitingInfo from './widgets/WaitingInfo.vue'
 
 const props = defineProps({
     responseState: {
@@ -35,13 +36,11 @@ const finalMessageAsText = computed(() => messageToSeq(finalMessage.value, { inc
 
 const bitsTooltipHtml = 'bits = - &sum;<sub>i</sub> log<sub>2</sub>(p<sub>i</sub>)'
 
-const WaitingInfo = computed(() => {
-    if (requestStatus.value.generating) {
-        return `⏳ <b>No.${requestStatus.value.requestTimes}</b> ${t('userMessages.waitingForModel')} <br>  <code style='margin-left:30px'> ${apiConfig.value.chat_config.model} </code>`
-    } else {
-        return t('userMessages.clickSendButton')
-    }
-})
+const waitingInfoProps = computed(() => ({
+    generating: requestStatus.value.generating,
+    requestTimes: requestStatus.value.requestTimes,
+    model: requestStatus.value.requestModel || apiConfig.value?.chat_config?.model || '',
+}))
 
 
 var bitTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content?.[0]?.logprob === "number"))
@@ -189,20 +188,18 @@ onBeforeUnmount(() => {
                 :style="{ 'width': isMobile ? '195%' : '100%' }">
                 <div class="final-message-half-panel">
                     <div style="background-color: #eee;">
-                        <p style="color: #444" v-if="!tokens.length">
-                            <span v-html="WaitingInfo"></span>
-                        </p>
+                        <WaitingInfo v-if="!tokens.length" v-bind="waitingInfoProps" />
                         <OnPandaResponseText :responseState="responseState" />
                     </div>
                 </div>
                 <hr style="color:#eee">
                 <div class="final-message-half-panel">
-                    <MarkdownResponse :content="finalMessageAsText" :WaitingInfo="WaitingInfo" />
+                    <MarkdownResponse :content="finalMessageAsText" :waiting-info-props="waitingInfoProps" />
                 </div>
             </div>
         </div>
         <div v-if="globalStore.cleanMode">
-            <MarkdownResponse :content="finalMessageAsText" :WaitingInfo="WaitingInfo" />
+            <MarkdownResponse :content="finalMessageAsText" :waiting-info-props="waitingInfoProps" />
         </div>
         <ToolCallControlPanel :responseState="responseState" />
         <DialogKeysFooter :pandaState="pandaState" style="padding-top: 10px; margin-bottom:2px;" />

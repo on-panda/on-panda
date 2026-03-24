@@ -46,6 +46,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     const requestStatus = ref({
         requestTimes: 0,
         generating: false,
+        requestModel: "",
     })
 
     let toolState = null
@@ -179,6 +180,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         requestStatus.value.generating = true
         requestStatus.value.requestTimes++
+        requestStatus.value.requestModel = apiConfig.value.chat_config.model
         var requestID = requestStatus.value.requestTimes
         var requestModel = apiConfig.value.chat_config.model
 
