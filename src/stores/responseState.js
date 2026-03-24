@@ -576,19 +576,25 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             }
         }
 
-        startNewRound = async (newRoundMessages = null) => {  // TODO remove auto write back's append operation
+        startNewRound = async (newRoundMessages = null, { messageIndex = -1 } = {}) => {  // TODO remove auto write back's append operation
             await ensureDialogToolsMaterialized()
             this.pandaState.beforeOperation()
             const messagesToAppend = newRoundMessages ? deepCopy(newRoundMessages) : [deepCopy(newRoundMessage.value)]
             var role = newRoundMessages ? 'user' : newRoundMessage.value.role
-            messages.value = (messagesComputed.value.concat(messagesToAppend))
+            const nextMessages = (
+                messageIndex >= 0
+                    ? messages.value.slice(0, Math.min(messageIndex, messages.value.length - 1) + 1)
+                    : messagesComputed.value
+            ).concat(messagesToAppend)
+            messages.value = nextMessages
             tokens.value = [];
             newRoundMessage.value = { role: role, content: '' }
             this.pandaState.afterOperation({
                 operator: "start_new_round",
                 on_policy: true,
+                message_index: messageIndex,
             })
-            requestLlmServer(messages)
+            requestLlmServer(nextMessages)
         }
 
         clearOrDeleteMessage = (message, index) => {

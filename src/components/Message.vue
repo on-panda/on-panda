@@ -19,20 +19,39 @@
     <div v-if="showMessageDraftWarning" class="messageDraftWarning">
       {{ messageDraftWarning }}
     </div>
-    <p v-if="(isRenderRole && !isRenderContentEditing)"
-      style="margin-top: 5px;margin-bottom: 0px;color: #555; border-radius: 5px; box-shadow: 0 0 0 1px var(--el-input-border-color,var(--el-border-color)) inset; padding:5px 11px">
-      <MultimodalRender :content="messageAsText" @dblclick="handleRenderContent" />
-    </p>
+    <div v-if="(isRenderRole && !isRenderContentEditing)">
+      <div v-if="showPrimaryActionButton" class="messagePrimaryActionRow">
+        <p class="messageRenderContent messagePrimaryActionContent">
+          <MultimodalRender :content="messageAsText" @dblclick="handleRenderContent" />
+        </p>
+        <button @click="handlePrimaryAction" :disabled="isPrimaryActionDisabled" :style="primaryActionButtonStyle"
+          class="messagePrimaryActionButton">
+          <b>{{ primaryActionLabel }}</b>
+          <template v-if="showPrimaryActionShortcut">
+            <br>
+            <small>{{ t('chatMessage.ctrlEnter') }}</small>
+          </template>
+        </button>
+      </div>
+      <p v-else class="messageRenderContent">
+        <MultimodalRender :content="messageAsText" @dblclick="handleRenderContent" />
+      </p>
+    </div>
     <div v-else class="editorAndDetails">
-      <div style="display: flex; justify-content: space-between">
-        <el-input class="message-content" v-model="messageDraft" type="textarea"
+      <div class="messagePrimaryActionRow">
+        <el-input class="message-content messagePrimaryActionContent" v-model="messageDraft" type="textarea"
           :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: 50 }"
-          @keydown.ctrl.enter="handleSend" @paste="handlePaste" @focus="handleEditorFocus" @blur="handleEditorBlur" />
+          @keydown.ctrl.enter="handlePrimaryAction" @paste="handlePaste" @focus="handleEditorFocus"
+          @blur="handleEditorBlur" />
 
-        <button @click="handleSend" :disabled="!hasContent" :style="sendButtonStyle"
-          style="margin-left: 5px; background-color: lightskyblue; color:#fff; padding: 8px; border-radius: 7px;">
-          <b>{{ t('chatMessage.send') }}</b><br>
-          <small>{{ t('chatMessage.ctrlEnter') }}</small> </button>
+        <button v-if="showPrimaryActionButton" @click="handlePrimaryAction" :disabled="isPrimaryActionDisabled"
+          :style="primaryActionButtonStyle" class="messagePrimaryActionButton">
+          <b>{{ primaryActionLabel }}</b>
+          <template v-if="showPrimaryActionShortcut">
+            <br>
+            <small>{{ t('chatMessage.ctrlEnter') }}</small>
+          </template>
+        </button>
       </div>
       <details ref="detailsRef" @toggle="handleDetailsToggle">
         <summary>
@@ -140,6 +159,8 @@ const getContent = () => {
   return getMessage()['content'] || ''
 }
 
+const messageToolCalls = computed(() => getMessage()['tool_calls'] || [])
+const hasToolCalls = computed(() => usingOperators && messageToolCalls.value.length > 0)
 const hasClearableMessageContent = computed(() => {
   return Boolean(messageToSeq(getMessageOutput(getMessage()), { includeFinishReason: false }))
 })
@@ -152,10 +173,27 @@ const setContent = (content) => {
 const hasContent = computed(() => {
   return messageDraft.value.length > 0
 })
+const canRunToolCalls = computed(() => {
+  if (!hasToolCalls.value) {
+    return false
+  }
+  return props.operationCenter.toolCallState.checkCallReady(messageToolCalls.value).allReady
+})
+const isRunPrimaryAction = computed(() => hasToolCalls.value)
+const showPrimaryActionButton = computed(() => {
+  return isRunPrimaryAction.value || getMessage()['role'] === 'tool' || !isRenderRole.value || isRenderContentEditing.value
+})
+const primaryActionLabel = computed(() => {
+  return isRunPrimaryAction.value ? t('toolCallControl.run') : t('chatMessage.send')
+})
+const showPrimaryActionShortcut = computed(() => isEditorFocused.value)
+const isPrimaryActionDisabled = computed(() => {
+  return isRunPrimaryAction.value ? !canRunToolCalls.value : !hasContent.value
+})
 const messageActionIcon = computed(() => hasClearableMessageContent.value ? Delete : Close)
 const messageActionTooltip = computed(() => hasClearableMessageContent.value ? t('chatMessage.clear') : t('chatMessage.delete'))
-const sendButtonStyle = computed(() => ({
-  cursor: hasContent.value ? 'pointer' : 'not-allowed'
+const primaryActionButtonStyle = computed(() => ({
+  cursor: isPrimaryActionDisabled.value ? 'not-allowed' : 'pointer'
 }))
 
 function emitDraftTextChange() {
@@ -299,6 +337,28 @@ async function handleSend() {
   }
 }
 
+async function handleRunToolCalls() {
+  if (!usingOperators) {
+    return
+  }
+  taskQueue.addTask(async () => {
+    const updated = await operationCenterUpdatePromptMessage({ delay: false })
+    if (updated) {
+      await props.operationCenter.toolCallState.callToolCalls(getMessage()['tool_calls'] || [], {
+        messageIndex: props.messageIndex,
+      })
+    }
+  })
+}
+
+async function handlePrimaryAction() {
+  if (isRunPrimaryAction.value) {
+    await handleRunToolCalls()
+    return
+  }
+  await handleSend()
+}
+
 
 function handlePasteMultimodal(event) {
   const clipboardData = event.clipboardData || window.clipboardData;
@@ -434,6 +494,33 @@ onBeforeUnmount(() => {
   width: 24px;
   height: 15px;
   margin-top: 13px;
+}
+
+.messagePrimaryActionRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.messagePrimaryActionContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.messagePrimaryActionButton {
+  margin-left: 5px;
+  background-color: lightskyblue;
+  color: #fff;
+  padding: 8px;
+  border-radius: 7px;
+}
+
+.messageRenderContent {
+  margin-top: 5px;
+  margin-bottom: 0px;
+  color: #555;
+  border-radius: 5px;
+  box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color)) inset;
+  padding: 5px 11px;
 }
 
 .messageDraftWarning {

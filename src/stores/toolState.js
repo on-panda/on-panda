@@ -229,7 +229,7 @@ export function ToolCallStateClosure({
         toolCallsToRun,
         currentToolState,
         readyStatus,
-    }, consumeApproval = false) {
+    }, consumeApproval = false, { messageIndex = -1 } = {}) {
         if (!readyStatus.allReady) {
             resetAutoApproveLoop()
             return readyStatus
@@ -257,7 +257,7 @@ export function ToolCallStateClosure({
             }
             toolCallStatus.value.calling = false
             autoApproveLoopResetSkips = toolCallStatus.value.autoApproveRunNum > 1 ? 2 : 0
-            await operationCenter.startNewRound(toolResponses)
+            await operationCenter.startNewRound(toolResponses, { messageIndex })
             return readyStatus
         } catch (error) {
             const discardReason = getToolCallDiscardReason({
@@ -278,9 +278,9 @@ export function ToolCallStateClosure({
         }
     }
 
-    async function callToolCalls(toolCalls = null) {
+    async function callToolCalls(toolCalls = null, { messageIndex = -1 } = {}) {
         const prepared = await prepareToolCallExecution(toolCalls)
-        return await runPreparedToolCalls(prepared)
+        return await runPreparedToolCalls(prepared, false, { messageIndex })
     }
 
     async function callAutoApprovedToolCalls(toolCalls = null, autoApproveRunNum = 1) {
