@@ -173,18 +173,8 @@ var pandaTreeExample = {
 export class PandaState {
     /* Data and data manipulation */
     cacheTree = {}
-    beforeOperationHooks = []
     uuid = computed(() => (this.pandaTree.uuid || dateStringNow(true)))
     constructor() {
-    }
-    registerBeforeOperationHook = (hook) => {
-        this.beforeOperationHooks.push(hook)
-        return () => {
-            const hookIndex = this.beforeOperationHooks.indexOf(hook)
-            if (hookIndex !== -1) {
-                this.beforeOperationHooks.splice(hookIndex, 1)
-            }
-        }
     }
     registerDialogComputed = (dialogComputed) => {
         this.dialogComputed = dialogComputed
@@ -483,7 +473,6 @@ export class PandaState {
     })
     beforeOperation = (operation = null) => {
         // Usually shouldn't set opration, if have to, using this.nextNotSameOperationCache
-        this.beforeOperationHooks.forEach(hook => hook(operation))
         this.autoFork(operation) // Usually response_modified_type === 'same', and do nothing
     }
 

@@ -162,18 +162,12 @@ export function ToolCallStateClosure({
     const toolCallStatus = ref({
         callTimes: 0,
         calling: false,
-        autoApproveRunNum: 1,
+        autoApproveRunNum: 0,
         approvedRunCount: 0,
         currentCallConsumedApproval: false,
     })
 
-    function resetAutoApproveLoop() {
-        toolCallStatus.value.autoApproveRunNum = 1
-        toolCallStatus.value.approvedRunCount = 0
-        toolCallStatus.value.currentCallConsumedApproval = false
-    }
-
-    function setAutoApproveLoop(autoApproveRunNum = 1) {
+    function setAutoApproveLoop(autoApproveRunNum = 0) {
         toolCallStatus.value.autoApproveRunNum = autoApproveRunNum
         toolCallStatus.value.approvedRunCount = 0
         toolCallStatus.value.currentCallConsumedApproval = false
@@ -216,10 +210,9 @@ export function ToolCallStateClosure({
         readyStatus,
     }, consumeApproval = false) {
         if (!readyStatus.allReady) {
-            resetAutoApproveLoop()
             return {
                 readyStatus,
-                toolResponses: null,
+                toolMessages: null,
             }
         }
         toolCallStatus.value.currentCallConsumedApproval = consumeApproval
@@ -230,23 +223,22 @@ export function ToolCallStateClosure({
         toolCallStatus.value.callTimes++
         const toolCallID = toolCallStatus.value.callTimes
         try {
-            const toolResponses = await currentToolState.call(toolCallsToRun)
+            const toolMessages = await currentToolState.call(toolCallsToRun)
             const discardReason = getToolCallDiscardReason({
                 toolCallStatus: toolCallStatus.value,
                 toolCallID,
             })
             if (discardReason) {
                 logDiscardedToolCall(toolCallID, toolCallsToRun, discardReason)
-                resetAutoApproveLoop()
                 return {
                     readyStatus,
-                    toolResponses: null,
+                    toolMessages: null,
                 }
             }
             toolCallStatus.value.calling = false
             return {
                 readyStatus,
-                toolResponses,
+                toolMessages,
             }
         } catch (error) {
             const discardReason = getToolCallDiscardReason({
@@ -255,77 +247,49 @@ export function ToolCallStateClosure({
             })
             if (discardReason) {
                 logDiscardedToolCall(toolCallID, toolCallsToRun, discardReason)
-                resetAutoApproveLoop()
                 return {
                     readyStatus,
-                    toolResponses: null,
+                    toolMessages: null,
                 }
             }
             toolCallStatus.value.calling = false
-            resetAutoApproveLoop()
             warning(error)
             return {
                 readyStatus,
-                toolResponses: null,
+                toolMessages: null,
             }
         }
-    }
-
-    async function callToolCalls(toolCalls = []) {
-        const prepared = await prepareToolCallExecution(toolCalls)
-        return await runPreparedToolCalls(prepared)
-    }
-
-    async function callAutoApprovedToolCalls(toolCalls = [], autoApproveRunNum = 1) {
-        const prepared = await prepareToolCallExecution(toolCalls)
-        if (!prepared.readyStatus.allReady) {
-            return {
-                readyStatus: prepared.readyStatus,
-                toolResponses: null,
-            }
-        }
-        setAutoApproveLoop(autoApproveRunNum)
-        const needApproval = prepared.currentToolState.checkRequireApproval(prepared.toolCallsToRun).needApproval
-        return await runPreparedToolCalls(prepared, needApproval)
     }
 
     async function maybeAutoCallToolCalls(toolCalls = []) {
         const prepared = await prepareToolCallExecution(toolCalls)
         if (!prepared.readyStatus.allReady) {
-            resetAutoApproveLoop()
             return {
                 readyStatus: prepared.readyStatus,
-                toolResponses: null,
+                toolMessages: null,
             }
         }
-        const needApproval = prepared.currentToolState.checkRequireApproval(prepared.toolCallsToRun).needApproval
-        if (needApproval) {
-            const hasRemainingAutoApproveRuns = (
-                toolCallStatus.value.autoApproveRunNum > 1 &&
-                toolCallStatus.value.approvedRunCount < toolCallStatus.value.autoApproveRunNum
-            )
-            if (!hasRemainingAutoApproveRuns) {
-                resetAutoApproveLoop()
-                return {
-                    readyStatus: prepared.readyStatus,
-                    toolResponses: null,
-                }
+        const hasRemainingAutoApproveRuns = (
+            toolCallStatus.value.approvedRunCount < toolCallStatus.value.autoApproveRunNum
+        )
+        if (!hasRemainingAutoApproveRuns) {
+            return {
+                readyStatus: prepared.readyStatus,
+                toolMessages: null,
             }
         }
-        return await runPreparedToolCalls(prepared, needApproval)
+        return await runPreparedToolCalls(prepared, true)
     }
 
     function stopToolCalls() {
         toolCallStatus.value.calling = false
-        resetAutoApproveLoop()
     }
 
     return {
         toolCallStatus,
+        setAutoApproveLoop,
         checkCallReady,
         checkRequireApproval,
-        callToolCalls,
-        callAutoApprovedToolCalls,
         maybeAutoCallToolCalls,
         stopToolCalls,
     }

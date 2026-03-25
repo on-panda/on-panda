@@ -103,7 +103,7 @@ export function checkToolCallReadyStatus(toolCalls = [], toolNameToCall = {}) {
     }
 }
 
-export function buildRejectedToolResponses(toolCalls = [], toolCallsRejectedGuidance = '') {
+export function buildRejectedToolMessages(toolCalls = [], toolCallsRejectedGuidance = '') {
     const guidance = toolCallsRejectedGuidance.trim()
     const content = guidance ? `<tool_calls_rejected_notice>
 The user rejected the tool_calls.

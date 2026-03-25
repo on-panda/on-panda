@@ -342,7 +342,6 @@ async function handleRunToolCalls() {
     const updated = await operationCenterUpdatePromptMessage({ delay: false })
     if (updated) {
       await props.operationCenter.runToolCalls({
-        toolCalls: messageToolCalls.value,
         messageIndex: props.messageIndex,
       })
     }
