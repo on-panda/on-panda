@@ -482,15 +482,13 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             return baseMessages.concat(deepCopy(messagesToAppend))
         }
 
-        getToolLoopMessage = (messageIndex = -1) => {
-            if (messageIndex === -1) {
-                return messagesComputed.value[messagesComputed.value.length - 1] || {}
-            }
-            if (!messages.value.length) {
-                return {}
-            }
-            const clampedIndex = Math.min(messageIndex, messages.value.length - 1)
-            return messages.value[clampedIndex] || {}
+        getMessageByIndex = (messageIndex = -1) => {
+            const clampedIndex = (
+                messageIndex === -1
+                    ? messagesComputed.value.length - 1
+                    : Math.min(messageIndex, messagesComputed.value.length - 1)
+            )
+            return messagesComputed.value[clampedIndex]
         }
 
         getToolLoopFinishReason = (message, defaultFinishReason = null) => {
@@ -513,7 +511,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                     }
                     messages.value = messagesComputed.value.concat(deepCopy(result.toolMessages))
                     tokens.value = []
-                    newRoundMessage.value = { role: 'user', content: '' }
                     this.pandaState.afterOperation({
                         operator: "run_tool_calls",
                         on_policy: true,
@@ -531,40 +528,30 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         runToolCalls = async ({ autoApproveRunNum = 1, messageIndex = -1 } = {}) => {
             await ensureDialogToolsMaterialized()
-            const toolCallMessage = this.getToolLoopMessage(messageIndex)
-            console.assert(toolCallMessage.tool_calls?.length, "runToolCalls requires tool_calls", toolCallMessage)
-            if (!toolCallMessage.tool_calls?.length) {
-                return
-            }
+            const toolCallMessage = this.getMessageByIndex(messageIndex)
+            console.assert(toolCallMessage?.tool_calls?.length, "runToolCalls requires tool_calls", toolCallMessage)
             if (messageIndex !== -1 && messages.value.length) {
-                toolCallState.stopToolCalls()
                 this.pandaState.beforeOperation()
                 const clampedIndex = Math.min(messageIndex, messages.value.length - 1)
                 messages.value = messages.value.slice(0, clampedIndex + 1)
                 tokens.value = []
-                newRoundMessage.value = { role: 'user', content: '' }
             }
             return await this.startAgenticLoop(autoApproveRunNum, "tool_calls")
         }
 
         rejectToolCalls = async ({ toolCallsRejectedGuidance = '', messageIndex = -1, autoApproveRunNum = 0 } = {}) => {
             await ensureDialogToolsMaterialized()
-            const toolCallMessage = this.getToolLoopMessage(messageIndex)
-            console.assert(toolCallMessage.tool_calls?.length, "rejectToolCalls requires tool_calls", toolCallMessage)
-            if (!toolCallMessage.tool_calls?.length) {
-                return
-            }
+            const toolCallMessage = this.getMessageByIndex(messageIndex)
+            console.assert(toolCallMessage?.tool_calls?.length, "rejectToolCalls requires tool_calls", toolCallMessage)
             const rejectedToolMessages = buildRejectedToolMessages(
                 toolCallMessage.tool_calls,
                 toolCallsRejectedGuidance,
             )
             if (messageIndex !== -1 && messages.value.length) {
-                toolCallState.stopToolCalls()
                 this.pandaState.beforeOperation()
             }
             messages.value = this.getNextMessagesForRound(rejectedToolMessages, { messageIndex })
             tokens.value = []
-            newRoundMessage.value = { role: 'user', content: '' }
             this.pandaState.afterOperation({
                 operator: "reject_tool_calls",
                 on_policy: true,
@@ -574,8 +561,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         continueGenerating = async () => {
             await ensureDialogToolsMaterialized()
-            toolCallState.stopToolCalls()
-            this.pandaState.beforeOperation()
             // var isTryGeneratingOnEot = tokens.value.length && tokens.value[tokens.value.length - 1].finish_reason === "stop"
             // if (isTryGeneratingOnEot) {
             // }
@@ -587,7 +572,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         stopGenerating = () => {
-            toolCallState.stopToolCalls()
             this.pandaState.beforeOperation()
             requestStatus.value.generating = false
         }
@@ -595,7 +579,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         continueWithChosen = async (token, logprobItem) => {
             // function clickOnLogprobItem() {
             await ensureDialogToolsMaterialized()
-            toolCallState.stopToolCalls()
             this.pandaState.beforeOperation()
             const rejected_token = recordAsRejectedToken(token, tokens)  // record rejected token before change tokens
             prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob, logprobItem.finish_reason)
@@ -621,7 +604,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         applyInputChange = (token, continuePrefix, continuePrefixLogprob) => {
-            toolCallState.stopToolCalls()
             this.pandaState.beforeOperation()
             const rejected_token = recordAsRejectedToken(token, tokens)  // record rejected token before change tokens
             prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob)
@@ -651,7 +633,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 // if only has role, try using continue generating
                 await this.continueGenerating()
             } else {
-                toolCallState.stopToolCalls()
                 this.pandaState.beforeOperation()
                 if (messageIndex >= 0 && messages.value.length) {
                     const clampedIndex = Math.min(messageIndex, messages.value.length - 1)
@@ -672,7 +653,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             const messagesToAppend = newRoundMessages ? newRoundMessages : [newRoundMessage.value]
             var role = newRoundMessages ? 'user' : newRoundMessage.value.role
             await ensureDialogToolsMaterialized()
-            toolCallState.stopToolCalls()
             this.pandaState.beforeOperation()
             messages.value = this.getNextMessagesForRound(messagesToAppend)
             tokens.value = []
@@ -685,7 +665,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         clearOrDeleteMessage = (message, index) => {
-            toolCallState.stopToolCalls()
             this.pandaState.beforeOperation()
             if (messageToSeq(getMessageOutput(message), { includeFinishReason: false })) {
                 // after beforeOperation(), message has been recomputed
@@ -711,7 +690,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         editPrompt = {
             // long user editing time between `before` and `after`. which will stop generating. abondon!
             before: () => {
-                toolCallState.stopToolCalls()
                 this.pandaState.beforeOperation()
             },
             after: (operation) => {
@@ -723,7 +701,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         updatePromptMessage = (messageDelta, index) => {
-            toolCallState.stopToolCalls()
             this.pandaState.beforeOperation()
             var messageRefresh = { ...messages.value[index] }
             for (const key of MESSAGE_KEYS_IN_CONTEXT) {
@@ -759,7 +736,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
         editRole = {
             before: () => {
-                toolCallState.stopToolCalls()
                 this.pandaState.beforeOperation()
             },
             after: () => {
@@ -783,7 +759,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 return
             }
             const rejected_token = recordAsRejectedToken(selectedTokens[0], tokens)  // record rejected token before change tokens
-            toolCallState.stopToolCalls()
             this.pandaState.beforeOperation()
             const baseToken = deepCopy(selectedTokens[0])
             delete baseToken.selected
@@ -825,7 +800,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         loadMessages = (newMessages) => {
-            toolCallState.stopToolCalls()
             this.pandaState.beforeOperation()
             this.pandaState = pandaState  // TODO 挪出去这行， beforeOperation() 会报错
             const dialogNew = { messages: deepCopy(newMessages) }
@@ -834,7 +808,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         }
 
         loadPandaJson = (pandaJson) => {
-            toolCallState.stopToolCalls()
             this.pandaState.beforeOperation()
             this.pandaState = pandaState
             this.pandaState.load(pandaJson)
