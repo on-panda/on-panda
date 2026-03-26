@@ -495,7 +495,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             return message?.finish_reason || defaultFinishReason || (message?.tool_calls?.length ? "tool_calls" : "")
         }
 
-        startAgenticLoop = async (autoApproveRunNum = 0, defaultFinishReason = null) => {
+        // Run tool-call and generation rounds until the assistant stops or needs manual approval.
+        startAgenticLoop = async ({ autoApproveRunNum = 0, defaultFinishReason = null } = {}) => {
             await ensureDialogToolsMaterialized()
             toolCallState.setAutoApproveLoop(autoApproveRunNum)
             if (messagesComputed.value.length > messages.value.length) {
@@ -507,6 +508,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 if (finishReason === "tool_calls") {
                     const result = await toolCallState.maybeAutoCallToolCalls(lastMessage.tool_calls || [])
                     if (!result.toolMessages?.length) {
+                        // AgenticLoop stoped
+                        // console.log("[info of try tool calls]:", result.info)
                         break
                     }
                     messages.value = messagesComputed.value.concat(deepCopy(result.toolMessages))
@@ -536,7 +539,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 messages.value = messages.value.slice(0, clampedIndex + 1)
                 tokens.value = []
             }
-            return await this.startAgenticLoop(autoApproveRunNum, "tool_calls")
+            return await this.startAgenticLoop({ autoApproveRunNum, defaultFinishReason: "tool_calls" })
         }
 
         rejectToolCalls = async ({ toolCallsRejectedGuidance = '', messageIndex = -1, autoApproveRunNum = 0 } = {}) => {
@@ -556,7 +559,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
                 operator: "reject_tool_calls",
                 on_policy: true,
             })
-            await this.startAgenticLoop(autoApproveRunNum)
+            await this.startAgenticLoop({ autoApproveRunNum })
         }
 
         continueGenerating = async () => {
@@ -564,6 +567,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             // var isTryGeneratingOnEot = tokens.value.length && tokens.value[tokens.value.length - 1].finish_reason === "stop"
             // if (isTryGeneratingOnEot) {
             // }
+            // Record the next implicit flush as `continue_generating` instead of a generic `auto` operation.
             this.pandaState.nextNotSameOperationCache = {
                 operator: "continue_generating",
                 on_policy: true,

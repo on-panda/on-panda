@@ -213,6 +213,7 @@ export function ToolCallStateClosure({
             return {
                 readyStatus,
                 toolMessages: null,
+                info: "!readyStatus.allReady"
             }
         }
         toolCallStatus.value.currentCallConsumedApproval = consumeApproval
@@ -233,6 +234,7 @@ export function ToolCallStateClosure({
                 return {
                     readyStatus,
                     toolMessages: null,
+                    info: discardReason
                 }
             }
             toolCallStatus.value.calling = false
@@ -250,6 +252,7 @@ export function ToolCallStateClosure({
                 return {
                     readyStatus,
                     toolMessages: null,
+                    info: discardReason
                 }
             }
             toolCallStatus.value.calling = false
@@ -257,6 +260,7 @@ export function ToolCallStateClosure({
             return {
                 readyStatus,
                 toolMessages: null,
+                info: error
             }
         }
     }
@@ -267,6 +271,7 @@ export function ToolCallStateClosure({
             return {
                 readyStatus: prepared.readyStatus,
                 toolMessages: null,
+                info: "!prepared.readyStatus.allReady"
             }
         }
         const hasRemainingAutoApproveRuns = (
@@ -276,6 +281,7 @@ export function ToolCallStateClosure({
             return {
                 readyStatus: prepared.readyStatus,
                 toolMessages: null,
+                info: "!hasRemainingAutoApproveRuns"
             }
         }
         return await runPreparedToolCalls(prepared, true)

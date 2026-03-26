@@ -459,7 +459,10 @@ export class PandaState {
         this.currentDialogIndex.value = this.dialogMaxIndexRemain.value
     }
     previousOperation = computed(() => this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1])
-    // default on_policy:true
+    // `on_policy` means the dialog still follows the original prompt -> model generation path.
+    // Typical `on_policy: true` operations are generate/continue/tool-call/new-round flows.
+    // Typical `on_policy: false` operations are manual prompt/response edits or manual branching.
+    // For an init dialog without operations, a final model-role message is treated as on-policy.
     isPreviousOperationOnPolicy = computed(() => {
         // if belong init dialog and no operations, default on_policy:true
         if (!this.currentDialogData.value?.operations?.length) {
@@ -471,6 +474,10 @@ export class PandaState {
         }
         return this.previousOperation.value?.on_policy
     })
+    // Sync the current UI state before a new action starts.
+    // Usually call this right before mutating messages/tokens, switching dialogs, dumping, or stopping generation.
+    // This may write back or fork immediately when the current UI already differs from the stored dialog.
+    // Normally do not pass `operation`; use `nextNotSameOperationCache` when the next auto flush needs a real operator.
     beforeOperation = (operation = null) => {
         // Usually shouldn't set opration, if have to, using this.nextNotSameOperationCache
         this.autoFork(operation) // Usually response_modified_type === 'same', and do nothing
@@ -485,6 +492,7 @@ export class PandaState {
             parent: String(this.currentDialogKey.value),
         }
         if (operation.on_policy) {
+            // Snapshot the generation config for on-policy operations so the branch is reproducible.
             defaultOperation.chat_config = deepCopy(this.apiConfig.value.chat_config)
             var NONE_USEFUL_CHAT_CONFIG_ITEMS = ['stream', 'logprobs', 'top_logprobs', 'stream_options', 'messages']
             for (var key of NONE_USEFUL_CHAT_CONFIG_ITEMS) {
@@ -529,6 +537,13 @@ export class PandaState {
         return pandaTree
     }
 
+    // Persist the current diff using the branching policy.
+    // Common result:
+    // - on-policy prompt change => fork
+    // - on-policy continued/add_response => write back to the same dialog
+    // - off-policy edit => write back to the same dialog
+    // - no actual diff => do nothing
+    // Note that tool changes are part of the prompt diff, so changing tools can also trigger a fork.
     autoFork = (operation) => {
         // if operation is not set, use nextNotSameOperationCache
         // if response_modified_type === 'same', do nothing and not append operation
@@ -568,6 +583,10 @@ export class PandaState {
         }
     }
 
+    // Finalize a just-applied action after messages/tokens have already been changed.
+    // Usually pair it with `beforeOperation()` around one user action: `before` flushes the old UI state,
+    // then `after` records the current action and decides whether to write back or fork.
+    // `forceFork` is only for actions that must keep an explicit child branch even if autoFork could write back.
     afterOperation = (operation, forceFork = false) => {
         operation = this.setDefaultToOperation(operation)
 
