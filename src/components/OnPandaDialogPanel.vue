@@ -61,7 +61,7 @@ function clearNewRoundMessage() {
 
 <template>
     <div class="onPandaContainers">
-        <div class="dialogFixedPosition"
+        <div class="promptMessagesPanel"
             :style="Object.assign(pandaState?.isDeleted.value ? { backgroundColor: '#ffe8e8' } : {})"
             style="border-radius: 5px;">
             <div class="promptMessages">
