@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { CaretRight, Close, CloseBold, Loading, RefreshRight } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../stores/globalStore.js'
-import { closeFloatPanelMeta, hashObjectSHA256Base64 } from '../utils/commonUtils.js'
+import { closeFloatPanelMeta, hashObjectSHA256Base64, sleep } from '../utils/commonUtils.js'
 import ElTooltipWithKeepOpen from './widgets/ElTooltipWithKeepOpen.vue'
 
 function useToolCallsRejectedGuidance(toolCalls) {
@@ -312,7 +312,7 @@ async function handleRejectTriggerClick() {
         :class="{ mobile: globalStore.isMobile }">
         <div class="toolCallControlRow">
 
-            <div v-if="!toolCallStatus.calling" class="toolCallControlButtons">
+            <div v-show="!toolCallStatus.calling" class="toolCallControlButtons">
                 <b class="toolCallControlTitle">{{ t('toolCallControl.title') }}</b>
                 <div ref="runTooltipWrapperRef">
                     <ElTooltipWithKeepOpen v-if="canRun" v-model:visible="runConfigTooltipVisible"
@@ -404,7 +404,7 @@ async function handleRejectTriggerClick() {
                 </el-button>
             </div>
 
-            <div v-else class="toolCallControlButtons">
+            <div v-show="toolCallStatus.calling" class="toolCallControlButtons">
                 <span class="toolCallControlCalling">
                     <el-icon class="is-loading">
                         <Loading />
