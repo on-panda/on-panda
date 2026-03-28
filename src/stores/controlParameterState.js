@@ -167,10 +167,13 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         return keyToApiConfigs
     }, { flush: 'sync' })
 
-    const watchApiConfigsResolver = ref(() => { })  // promise hook that will be resolved when watchApiConfigs is finished
+    var resolveApiUpdateCompleted = null
+    const apiUpdateCompletedPromise = ref(new Promise(resolve => {
+        resolveApiUpdateCompleted = resolve
+    }))
     const isWatchApiConfigsTriggered = ref(false)
     // delay seconds to trigger default watchApiConfigs update
-    // to ensure apiConfigs is updated only once if apiConfigs is changed
+    // to ensure apiConfigs/apiConfigsInput is updated only once if apiConfigs is changed in startup phase
     onMounted(() => {
         setTimeout(() => {
             if (!isWatchApiConfigsTriggered.value) {
@@ -178,60 +181,70 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
             }
         }, 2000)
     })
-    async function watchApiConfigs(newValue) {
+    function watchApiConfigs(newValue) {
         // Asynchronous concurrent request without changing the order
         // and not block by slow response
-        isWatchApiConfigsTriggered.value = true
-
-        const configPromises = [];
-        if (apiConfigReceived.value.length !== newValue.length) {
-            apiConfigReceived.value = new Array(newValue.length).fill(null);
+        if (isWatchApiConfigsTriggered.value) {
+            apiUpdateCompletedPromise.value = new Promise(resolve => {
+                resolveApiUpdateCompleted = resolve
+            })
+        } else {
+            isWatchApiConfigsTriggered.value = true
         }
+        let localResolveApiUpdateCompleted = resolveApiUpdateCompleted
 
-        for (let i = 0; i < newValue.length; i++) {
-            const apiConfig = deepCopy(newValue[i]);
-            if (!apiConfig.chat_config) {
-                apiConfig.chat_config = {}
+        async function updateApiConfigs() {
+            const configPromises = [];
+            if (apiConfigReceived.value.length !== newValue.length) {
+                apiConfigReceived.value = new Array(newValue.length).fill(null);
             }
-            // If model is specified, return a promise that resolves to a single config
-            if (apiConfig.chat_config.model) {
-                apiConfigReceived.value[i] = [apiConfig]
-            } else {
-                // For configs without a model, fetch the model list concurrently
-                const fetchPromise = (async (i) => {
-                    try {
-                        const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.client_config));
-                        const list = await openai.models.list();
-                        apiConfigReceived.value[i] = list.map(model => {
-                            const apiConfigWithModel = deepCopy(apiConfig);
-                            apiConfigWithModel.chat_config.model = model.id;
-                            return apiConfigWithModel;
-                        });
-                    } catch (error) {
-                        // warning(error)
-                        setTimeout(() => {
-                            if (isMounted.value) {
-                                ElMessage({
-                                    showClose: true,
-                                    message: `Error in fetching models list of "${apiConfig.endpoint_name}":\n ${error.message}`,
-                                    type: 'error',
-                                    duration: 10000,
-                                })
-                            }
-                        }, isMounted.value ? 0 : 2000)
-                        console.log("Error in fetching models list");
-                        console.log(error);
-                        // keep resolver chain alive even when list fetch fails
-                        apiConfigReceived.value[i] = []
-                    }
-                })(i);
-                configPromises.push(fetchPromise);
+
+            for (let i = 0; i < newValue.length; i++) {
+                const apiConfig = deepCopy(newValue[i]);
+                if (!apiConfig.chat_config) {
+                    apiConfig.chat_config = {}
+                }
+                // If model is specified, return a promise that resolves to a single config
+                if (apiConfig.chat_config.model) {
+                    apiConfigReceived.value[i] = [apiConfig]
+                } else {
+                    // For configs without a model, fetch the model list concurrently
+                    const fetchPromise = (async (i) => {
+                        try {
+                            const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.client_config));
+                            const list = await openai.models.list();
+                            apiConfigReceived.value[i] = list.map(model => {
+                                const apiConfigWithModel = deepCopy(apiConfig);
+                                apiConfigWithModel.chat_config.model = model.id;
+                                return apiConfigWithModel;
+                            });
+                        } catch (error) {
+                            // warning(error)
+                            setTimeout(() => {
+                                if (isMounted.value) {
+                                    ElMessage({
+                                        showClose: true,
+                                        message: `Error in fetching models list of "${apiConfig.endpoint_name}":\n ${error.message}`,
+                                        type: 'error',
+                                        duration: 10000,
+                                    })
+                                }
+                            }, isMounted.value ? 0 : 2000)
+                            console.log("Error in fetching models list");
+                            console.log(error);
+                            // keep promise chain alive even when list fetch fails
+                            apiConfigReceived.value[i] = []
+                        }
+                    })(i);
+                    configPromises.push(fetchPromise);
+                }
             }
+            await Promise.all(configPromises);
+            localResolveApiUpdateCompleted()
         }
-        await Promise.all(configPromises);
-        watchApiConfigsResolver.value()
+        updateApiConfigs()
     }
-    watch(apiConfigsComputed, watchApiConfigs)
+    watch(apiConfigsComputed, watchApiConfigs, { flush: 'sync' })
 
     const apiConfigChosen = computed(() => {
         var apiConfigChosen = defaultApiConfig
@@ -292,7 +305,7 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         apiConfig,
         extraChatParametersString,
         extraChatParameters,
-        watchApiConfigsResolver,
+        apiUpdateCompletedPromise,
         apiConfigsComputed,
         apiConfigsInput,
         refreshApiConfigs

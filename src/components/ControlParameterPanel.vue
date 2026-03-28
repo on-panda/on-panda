@@ -30,7 +30,7 @@ const { t } = useI18n()
 const modelName = props.controlParameterState.modelName
 const modelNameTags = props.controlParameterState.modelNameTagsComputed
 const keyToApiConfigs = props.controlParameterState.keyToApiConfigs
-const watchApiConfigsResolver = props.controlParameterState.watchApiConfigsResolver
+const apiUpdateCompletedPromise = props.controlParameterState.apiUpdateCompletedPromise
 const apiConfigControllable = props.controlParameterState.apiConfigControllable
 const chatConfig = props.controlParameterState.apiConfigControllable.value.chat_config
 const extraChatParametersString = props.controlParameterState.extraChatParametersString
@@ -126,13 +126,10 @@ function modelNameToMobileModelName(modelName) {
 }
 
 function refreshModelList() {
-    const previousResolver = watchApiConfigsResolver.value
-    watchApiConfigsResolver.value = () => {
-        previousResolver?.()
-        ElMessage.success(t('userMessages.modelsRefreshed'))
-        watchApiConfigsResolver.value = previousResolver
-    }
     props.controlParameterState.refreshApiConfigs()
+    apiUpdateCompletedPromise.value.then(() => {
+        ElMessage.success(t('userMessages.modelsRefreshed'))
+    })
 }
 
 function editLocalStorageApiConfigs() {

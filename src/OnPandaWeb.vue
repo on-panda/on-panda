@@ -151,96 +151,89 @@ onMounted(async () => {
     console.error('Failed to load custom.js:', error);
   }
 
-  async function afterApiConfigsReady() {
-    var watchApiConfigsLoaded = new Promise(resolve => {
-      controlParameterState.watchApiConfigsResolver.value = resolve
-    })
+  var exampleToRun = null;
 
-    var exampleToRun = null;
-
-    if (tryLoadDuplicateWindow(responseState.pandaState)) { // duplicate window has higher priority
-      if (localStorage.getItem('modelNameForDuplicateWindow')) {
-        modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
-        localStorage.removeItem('modelNameForDuplicateWindow')
-        exampleToRun = operationCenter.generateNew
-      }
-    } else {
-      if (!globalStore.isOldUser) {
-        // Set default model for new users
-        modelName.value = modelNameTags.value['on-panda'] || 'on-panda'
-        exampleToRun = operationCenter.generateNew
-      }
-      if (globalStore.debug) {
-        // Use the example via the operationCenter directly
-        // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
-        // exampleToRun = operationCenter.generateNew
-        // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
-        exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
-        var exampleToRun = () => {
-          var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
-          var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
-          var debugMessages = [{ "role": "system", "content": "Any response must start from `I think`" }, { "role": "user", "content": "Screenshot and reply what you see within one word" }]
-          operationCenter.loadMessages(debugMessages)
-          operationCenter.pandaState.currentDialogData.value.tool_configs = [
-            {
-              type: "mcp",
-              // server_url: "http://127.0.0.1:9300/mcp",
-              server_url: window.location.origin + "/bypass-CORS/http://127.0.0.1:9300/mcp",
-              "require_approval": "always",
-              // server_label: "demo_p9300",
-              // tool_name_format: "{type}_{server_label}__{name}",
-            },
-            {
-              "type": "function",
-              "function": {
-                "name": "get_weather",
-                "description": "Get the current weather in a given location",
-                "parameters": {
-                  "type": "object",
-                  "properties": {
-                    "location": {
-                      "type": "string",
-                      "description": "City and state, e.g., 'San Francisco, CA'"
-                    },
-                    "unit": {
-                      "type": "string",
-                      "enum": [
-                        "celsius",
-                        "fahrenheit"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "location",
-                    "unit"
-                  ]
-                }
-              },
-              // tool_name_format: "{type}__{name}",
-            }
-          ]
-          if (modelNameTags.value['test']) {
-            modelName.value = modelNameTags.value['test']
-          }
-          modelName.value = "doubao-tag"
-          // controlParameterState.apiConfigControllable.value.chat_config.max_tool_message_assets = 1
-          controlParameterState.apiConfigControllable.value.chat_config.tool_message_asset_keep_rounds = 2
-          operationCenter.generateNew()
-          // operationCenter.refreshResponseProbability()
-        }
-      }
+  if (tryLoadDuplicateWindow(responseState.pandaState)) { // duplicate window has higher priority
+    if (localStorage.getItem('modelNameForDuplicateWindow')) {
+      modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
+      localStorage.removeItem('modelNameForDuplicateWindow')
+      exampleToRun = operationCenter.generateNew
     }
-
-    await watchApiConfigsLoaded
-    await sleep(5)
-    if (!requestStatus.value.generating && exampleToRun) {
-      await exampleToRun(dialogWithControlState)
+  } else {
+    if (!globalStore.isOldUser) {
+      // Set default model for new users
+      modelName.value = modelNameTags.value['on-panda'] || 'on-panda'
+      exampleToRun = operationCenter.generateNew
     }
     if (globalStore.debug) {
-      p("tokens", tokens)
+      // Use the example via the operationCenter directly
+      // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
+      // exampleToRun = operationCenter.generateNew
+      // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
+      exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
+      var exampleToRun = () => {
+        var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
+        var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
+        var debugMessages = [{ "role": "system", "content": "Any response must start from `I think`" }, { "role": "user", "content": "Screenshot and reply what you see within one word" }]
+        operationCenter.loadMessages(debugMessages)
+        operationCenter.pandaState.currentDialogData.value.tool_configs = [
+          {
+            type: "mcp",
+            // server_url: "http://127.0.0.1:9300/mcp",
+            server_url: window.location.origin + "/bypass-CORS/http://127.0.0.1:9300/mcp",
+            "require_approval": "always",
+            // server_label: "demo_p9300",
+            // tool_name_format: "{type}_{server_label}__{name}",
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "description": "Get the current weather in a given location",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "location": {
+                    "type": "string",
+                    "description": "City and state, e.g., 'San Francisco, CA'"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "celsius",
+                      "fahrenheit"
+                    ]
+                  }
+                },
+                "required": [
+                  "location",
+                  "unit"
+                ]
+              }
+            },
+            // tool_name_format: "{type}__{name}",
+          }
+        ]
+        if (modelNameTags.value['test']) {
+          modelName.value = modelNameTags.value['test']
+        }
+        modelName.value = "doubao-tag"
+        // controlParameterState.apiConfigControllable.value.chat_config.max_tool_message_assets = 1
+        controlParameterState.apiConfigControllable.value.chat_config.tool_message_asset_keep_rounds = 2
+        operationCenter.generateNew()
+        // operationCenter.refreshResponseProbability()
+      }
     }
   }
-  afterApiConfigsReady()
+
+  await controlParameterState.apiUpdateCompletedPromise.value
+  await sleep(5)
+  if (!requestStatus.value.generating && exampleToRun) {
+    await exampleToRun(dialogWithControlState)
+  }
+  if (globalStore.debug) {
+    p("tokens", tokens)
+  }
 })
 
 onBeforeUnmount(async () => {
