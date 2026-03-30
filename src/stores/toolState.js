@@ -2,10 +2,8 @@ import { computed, isRef, ref, watch } from 'vue'
 import { deepCopy } from '../utils/commonUtils.js'
 import {
     buildDuplicatedToolNameError,
-    buildFunctionToolFromConfig,
     buildMcpPlaceholderFromConfig,
     buildMcpToolSourceLabel,
-    buildToolConfigTagName,
     checkToolCallReadyStatus,
     formatToolName,
     getToolRuntime,
@@ -17,11 +15,11 @@ import {
     stripRuntime,
 } from '../utils/toolUtils.js'
 
-export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
+export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     const presetToolConfigsInput = isRef(presetToolConfigs) ? presetToolConfigs : ref(deepCopy(presetToolConfigs || []))
     const registeredDialogCache = ref(null)
     const runtimeVersion = ref(0)
-    const runtimeRecordByHash = new Map()
+    const runtimeEntryByHash = new Map()
     const presetConfigHashToIndex = ref({})
     const allTools = ref([])
     const matchedAllToSelectedIndex = ref({})
@@ -34,16 +32,11 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
     }))
 
     const dataToolConfigs = computed(() => registeredDialogCache.value?.value?.tool_configs || [])
-    const toolConfigsComputed = computed(() => [...dataToolConfigs.value, ...presetToolConfigsInput.value])
     const toolConfigItemsComputed = computed(() => [
         ...dataToolConfigs.value.map((toolConfig, index) => ({ toolConfig, index, source: 'data' })),
         ...presetToolConfigsInput.value.map((toolConfig, index) => ({ toolConfig, index, source: 'preset' })),
     ])
     const currentDialogTools = computed(() => registeredDialogCache.value?.value?.tools || [])
-
-    function touchRuntimeVersion() {
-        runtimeVersion.value++
-    }
 
     function getDialogCacheValue() {
         return registeredDialogCache.value?.value || null
@@ -57,39 +50,41 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
         dialogCache.tools = tools
     }
 
-    function applyRequireApprovalToRecord(record, toolConfig = {}) {
+    function applyRequireApprovalToEntry(entry, toolConfig = {}) {
         const requireApproval = toolConfig.require_approval || 'never'
-        record.requireApproval = requireApproval
-        for (const tool of record.tools || []) {
-            const toolName = tool.function?.name
-            if (toolName) {
-                record.toolNameToRequireApproval[toolName] = requireApproval
-            }
+        entry.requireApproval = requireApproval
+        for (const tool of entry.tools) {
+            entry.toolNameToRequireApproval[tool.function.name] = requireApproval
         }
     }
 
-    async function ensureFunctionRecord(record, toolConfig = {}, toolConfigIndex = 0, source = 'data') {
-        if (record.tools.length) {
-            applyRequireApprovalToRecord(record, toolConfig)
-            return record
+    async function ensureFunctionEntry({ entry, toolConfig = {}, toolConfigIndex = 0, source = 'data' } = {}) {
+        if (entry.tools.length) {
+            applyRequireApprovalToEntry(entry, toolConfig)
+            return entry
         }
-        const tool = buildFunctionToolFromConfig(toolConfig)
+        const tool = deepCopy(toolConfig)
+        delete tool.require_approval
+        delete tool.tool_name_format
+        delete tool.server_label
+        tool.function = deepCopy(toolConfig.function)
+        tool.function.name = formatToolName(toolConfig.function.name, toolConfig)
         const runtime = getToolRuntime(tool)
         runtime.tool_name_format = toolConfig.tool_name_format
-        runtime.displayName = tool.function?.name || buildToolConfigTagName(toolConfig, toolConfigIndex, source)
-        runtime.hash = await hashToolSchema(toolConfig)
-        record.tools = [tool]
-        applyRequireApprovalToRecord(record, toolConfig)
-        touchRuntimeVersion()
-        return record
+        runtime.displayName = tool.function.name
+        runtime.hash = entry.configHash
+        entry.tools = [tool]
+        applyRequireApprovalToEntry(entry, toolConfig)
+        runtimeVersion.value++
+        return entry
     }
 
-    async function ensureMcpRecord(record, toolConfig = {}, toolConfigIndex = 0) {
-        if (record.tools.length) {
-            return record
+    async function ensureMcpToolsLoaded({ entry, toolConfig = {}, toolConfigIndex = 0 } = {}) {
+        if (entry.tools.length) {
+            return entry
         }
-        if (!record.initPromise) {
-            record.initPromise = (async () => {
+        if (!entry.initPromise) {
+            entry.initPromise = (async () => {
                 const nextTools = []
                 const toolNameToSource = {}
                 const nextToolNameToCall = {}
@@ -103,7 +98,7 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
                     const serverUrl = new URL(toolConfig.server_url, window.location.origin)
                     const transport = new StreamableHTTPClientTransport(serverUrl)
                     const client = new Client({
-                        name: 'frontend-agent',
+                        name: 'on-panda',
                         version: '0.1.0',
                     })
                     client.onerror = (error) => {
@@ -138,7 +133,7 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
                                 parameters: mcpTool.inputSchema,
                             },
                         }
-                        await registerTool(tool, mcpTool.name, record.requireApproval)
+                        await registerTool(tool, mcpTool.name, entry.requireApproval)
                         nextToolNameToCall[formattedToolName] = async (toolCall) => {
                             const result = await client.callTool({
                                 name: mcpTool.name,
@@ -148,30 +143,30 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
                         }
                     }
 
-                    record.tools = nextTools
-                    record.toolNameToCall = nextToolNameToCall
-                    record.toolNameToRequireApproval = nextToolNameToRequireApproval
-                    record.closers = nextClosers
-                    touchRuntimeVersion()
-                    return record
+                    entry.tools = nextTools
+                    entry.toolNameToCall = nextToolNameToCall
+                    entry.toolNameToRequireApproval = nextToolNameToRequireApproval
+                    entry.closers = nextClosers
+                    runtimeVersion.value++
+                    return entry
                 } catch (error) {
                     await Promise.allSettled(nextClosers.map(closeClient => closeClient()))
                     throw error
                 }
             })()
-            record.initPromise = record.initPromise.catch((error) => {
-                record.initPromise = null
+            entry.initPromise = entry.initPromise.catch((error) => {
+                entry.initPromise = null
                 throw error
             })
         }
-        return await record.initPromise
+        return await entry.initPromise
     }
 
-    async function ensureRuntimeRecord(toolConfig = {}, { source = 'data', toolConfigIndex = 0, eager = false } = {}) {
+    async function prepareRuntimeEntry({ toolConfig = {}, source = 'data', toolConfigIndex = 0, eager = false } = {}) {
         const configHash = await hashToolSchema(toolConfig)
-        let record = runtimeRecordByHash.get(configHash)
-        if (!record) {
-            record = {
+        let entry = runtimeEntryByHash.get(configHash)
+        if (!entry) {
+            entry = {
                 configHash,
                 source,
                 type: toolConfig.type,
@@ -182,22 +177,22 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
                 closers: [],
                 initPromise: null,
             }
-            runtimeRecordByHash.set(configHash, record)
+            runtimeEntryByHash.set(configHash, entry)
         }
         if (source === 'preset') {
-            record.source = 'preset'
+            entry.source = 'preset'
         }
         if (toolConfig.type === 'function') {
-            await ensureFunctionRecord(record, toolConfig, toolConfigIndex, source)
+            await ensureFunctionEntry({ entry, toolConfig, toolConfigIndex, source })
         } else if (toolConfig.type === 'mcp') {
-            applyRequireApprovalToRecord(record, toolConfig)
+            applyRequireApprovalToEntry(entry, toolConfig)
             if (eager) {
-                await ensureMcpRecord(record, toolConfig, toolConfigIndex)
+                await ensureMcpToolsLoaded({ entry, toolConfig, toolConfigIndex })
             }
         } else {
             throw new Error(`Unsupported tool config type: ${toolConfig.type}`)
         }
-        return record
+        return entry
     }
 
     async function buildToolsFromToolConfigs(toolConfigs = []) {
@@ -206,21 +201,27 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
         for (const [toolConfigIndex, toolConfig] of toolConfigs.entries()) {
             if (matchedDataToPresetIndex[toolConfigIndex] != null) {
                 const matchedPresetIndex = matchedDataToPresetIndex[toolConfigIndex]
-                const presetRecord = await ensureRuntimeRecord(presetToolConfigsInput.value[matchedPresetIndex], {
+                const presetEntry = await prepareRuntimeEntry({
+                    toolConfig: presetToolConfigsInput.value[matchedPresetIndex],
                     source: 'preset',
                     toolConfigIndex: matchedPresetIndex,
                     eager: true,
                 })
-                nextTools.push(...deepCopy(presetRecord.tools))
+                nextTools.push(...deepCopy(presetEntry.tools))
                 continue
             }
-            const record = await ensureRuntimeRecord(toolConfig, { source: 'data', toolConfigIndex, eager: toolConfig.type === 'function' })
+            const entry = await prepareRuntimeEntry({
+                toolConfig,
+                source: 'data',
+                toolConfigIndex,
+                eager: toolConfig.type === 'function',
+            })
             if (toolConfig.type === 'function') {
-                nextTools.push(...deepCopy(record.tools))
+                nextTools.push(...deepCopy(entry.tools))
                 continue
             }
             const placeholder = buildMcpPlaceholderFromConfig(toolConfig, toolConfigIndex, 'data')
-            getToolRuntime(placeholder).hash = record.configHash
+            getToolRuntime(placeholder).hash = entry.configHash
             nextTools.push(placeholder)
         }
         return nextTools
@@ -231,10 +232,8 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
         if (!dialogCache) {
             return []
         }
-        if (!('tools' in dialogCache) && dialogCache.tool_configs?.length) {
-            setDialogTools(await buildToolsFromToolConfigs(dialogCache.tool_configs))
-        }
-        const currentToolsValue = getDialogCacheValue()?.tools || []
+        await syncDialogToolsFromConfigsIfNeeded()
+        const currentToolsValue = dialogCache.tools ?? []
         const nextTools = []
         let replacedPlaceholder = false
 
@@ -247,21 +246,23 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
             const configHash = await hashToolSchema(tool)
             const matchedPresetIndex = presetConfigHashToIndex.value[configHash]
             if (matchedPresetIndex != null) {
-                const presetRecord = await ensureRuntimeRecord(presetToolConfigsInput.value[matchedPresetIndex], {
+                const presetEntry = await prepareRuntimeEntry({
+                    toolConfig: presetToolConfigsInput.value[matchedPresetIndex],
                     source: 'preset',
                     toolConfigIndex: matchedPresetIndex,
                     eager: true,
                 })
-                nextTools.push(...deepCopy(presetRecord.tools))
+                nextTools.push(...deepCopy(presetEntry.tools))
             } else {
-                const toolConfigIndex = runtime.toolConfigIndex ?? -1
-                const toolConfig = dialogCache.tool_configs?.[toolConfigIndex] || tool
-                const record = await ensureRuntimeRecord(toolConfig, {
-                    source: runtime.source || 'data',
+                const toolConfigIndex = runtime.toolConfigIndex
+                const toolConfig = dialogCache.tool_configs[toolConfigIndex]
+                const entry = await prepareRuntimeEntry({
+                    toolConfig,
+                    source: runtime.source,
                     toolConfigIndex,
                     eager: true,
                 })
-                nextTools.push(...deepCopy(record.tools))
+                nextTools.push(...deepCopy(entry.tools))
             }
             replacedPlaceholder = true
         }
@@ -269,21 +270,21 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
         if (!('tools' in dialogCache) || replacedPlaceholder) {
             setDialogTools(nextTools)
         }
-        return stripRuntime(deepCopy(getDialogCacheValue()?.tools || []))
+        return stripRuntime(deepCopy(dialogCache.tools ?? []))
     }
 
     function getToolNameToCall() {
         const toolNameToCall = {}
-        for (const record of runtimeRecordByHash.values()) {
-            Object.assign(toolNameToCall, record.toolNameToCall)
+        for (const entry of runtimeEntryByHash.values()) {
+            Object.assign(toolNameToCall, entry.toolNameToCall)
         }
         return toolNameToCall
     }
 
     function getToolNameToRequireApproval() {
         const toolNameToRequireApproval = {}
-        for (const record of runtimeRecordByHash.values()) {
-            Object.assign(toolNameToRequireApproval, record.toolNameToRequireApproval)
+        for (const entry of runtimeEntryByHash.values()) {
+            Object.assign(toolNameToRequireApproval, entry.toolNameToRequireApproval)
         }
         return toolNameToRequireApproval
     }
@@ -291,18 +292,19 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
     async function refreshAllTools() {
         const nextAllTools = []
         for (const { toolConfig, index, source } of toolConfigItemsComputed.value) {
-            const record = await ensureRuntimeRecord(toolConfig, {
+            const entry = await prepareRuntimeEntry({
+                toolConfig,
                 source,
                 toolConfigIndex: index,
                 eager: source === 'preset' && toolConfig.type === 'mcp',
             })
-            if (toolConfig.type === 'mcp' && !record.tools.length) {
+            if (toolConfig.type === 'mcp' && !entry.tools.length) {
                 const placeholder = buildMcpPlaceholderFromConfig(toolConfig, index, source)
-                getToolRuntime(placeholder).hash = record.configHash
+                getToolRuntime(placeholder).hash = entry.configHash
                 nextAllTools.push(placeholder)
                 continue
             }
-            nextAllTools.push(...deepCopy(record.tools))
+            nextAllTools.push(...deepCopy(entry.tools))
         }
         allTools.value = nextAllTools
     }
@@ -334,7 +336,7 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
         if (!('tools' in dialogCache)) {
             await syncDialogToolsFromConfigsIfNeeded()
         }
-        const nextTools = deepCopy(getDialogCacheValue()?.tools || [])
+        const nextTools = deepCopy(dialogCache.tools ?? [])
         nextTools.push(deepCopy(allTools.value[allToolIndex]))
         setDialogTools(nextTools)
     }
@@ -360,12 +362,13 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
         ; (async () => {
             const nextPresetConfigHashToIndex = {}
             await Promise.all(nextPresetToolConfigs.map(async (toolConfig, toolConfigIndex) => {
-                const record = await ensureRuntimeRecord(toolConfig, {
+                const entry = await prepareRuntimeEntry({
+                    toolConfig,
                     source: 'preset',
                     toolConfigIndex,
                     eager: true,
                 })
-                nextPresetConfigHashToIndex[record.configHash] = toolConfigIndex
+                nextPresetConfigHashToIndex[entry.configHash] = toolConfigIndex
             }))
             presetConfigHashToIndex.value = nextPresetConfigHashToIndex
             await syncDialogToolsFromConfigsIfNeeded()
@@ -413,9 +416,8 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
     function checkRequireApproval(toolCalls = []) {
         const toolNameToRequireApproval = getToolNameToRequireApproval()
         const approvalToolNames = [...new Set(toolCalls
-            .filter(toolCall => toolNameToRequireApproval[toolCall.function?.name] === 'always')
-            .map(toolCall => toolCall.function?.name)
-            .filter(Boolean))]
+            .filter(toolCall => toolNameToRequireApproval[toolCall.function.name] === 'always')
+            .map(toolCall => toolCall.function.name))]
         return {
             needApproval: approvalToolNames.length > 0,
             approvalToolNames,
@@ -434,14 +436,13 @@ export function ToolManagerStateClosure({ presetToolConfigs = [] } = {}) {
     }
 
     async function close() {
-        await Promise.allSettled(Array.from(runtimeRecordByHash.values()).flatMap(record => record.closers.map(closeClient => closeClient())))
+        await Promise.allSettled(Array.from(runtimeEntryByHash.values()).flatMap(entry => entry.closers.map(closeClient => closeClient())))
     }
 
     return {
         presetToolConfigsInput,
         presetToolReadyPromise,
         dataToolConfigs,
-        toolConfigsComputed,
         allTools,
         matchedAllToSelectedIndex,
         currentDialogTools,
@@ -478,7 +479,7 @@ export function ToolCallStateClosure({
 
     async function prepareToolCallExecution(toolCalls = []) {
         await ensureDialogToolsMaterialized()
-        const toolCallsToRun = toolCalls || []
+        const toolCallsToRun = toolCalls
         const currentToolState = await getToolState()
         const readyStatus = currentToolState.checkCallReady(toolCallsToRun)
         return {

@@ -19,7 +19,7 @@ function useToolCallsRejectedGuidance(toolCalls) {
             return
         }
         toolCallsHash.value = nextToolCallsHash
-        toolCallsRejectedGuidance.value = nextToolCallsHash ? (toolCallsRejectedGuidanceCache[nextToolCallsHash] || '') : ''
+        toolCallsRejectedGuidance.value = nextToolCallsHash ? toolCallsRejectedGuidanceCache[nextToolCallsHash] || '' : ''
     }, { deep: true, immediate: true })
 
     watch(toolCallsRejectedGuidance, (nextGuidance) => {
@@ -219,7 +219,7 @@ const toolCallState = operationCenter.toolCallState
 const toolCallStatus = toolCallState.toolCallStatus
 
 const toolCalls = computed(() => finalMessage.value.tool_calls || [])
-const toolCallNames = computed(() => toolCalls.value.map(toolCall => toolCall.function?.name).filter(Boolean))
+const toolCallNames = computed(() => toolCalls.value.map(toolCall => toolCall.function.name))
 const readyStatus = computed(() => toolCallState.checkCallReady(toolCalls.value))
 const approvalStatus = computed(() => toolCallState.checkRequireApproval(toolCalls.value))
 const canRun = computed(() => toolCalls.value.length > 0 && readyStatus.value.allReady)

@@ -26,11 +26,8 @@ function duplicateWindowWithModelName(modelName) {
 
 const onPandaDialogPanelRef = ref(null)
 onMounted(() => {
-    if (onPandaDialogPanelRef.value) {
-        responseState.onPandaContainerRef.value = onPandaDialogPanelRef.value
-    }
+    responseState.onPandaContainerRef.value = onPandaDialogPanelRef.value
 })
-
 </script>
 
 <template>
@@ -46,7 +43,7 @@ onMounted(() => {
             <b>{{ t('common.controlParameter') }}:</b>
         </el-divider>
         <ControlParameterPanel :controlParameterState="controlParameterState"
-            @dblclickModelTag="responseState?.operationCenter.generateNew()"
+            @dblclickModelTag="responseState.operationCenter.generateNew()"
             @duplicateWindowWithModelName="duplicateWindowWithModelName" />
     </div>
 </template>

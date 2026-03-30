@@ -1,6 +1,6 @@
 import { ControlParameterStateClosure } from './controlParameterState.js'
 import { ResponseStateClosure } from './responseState.js'
-import { ToolManagerStateClosure } from './toolState.js'
+import { ToolManageStateClosure } from './toolState.js'
 
 export function DialogWithControlStateClosure({
     messages = null,
@@ -9,7 +9,7 @@ export function DialogWithControlStateClosure({
     modelNameTags = null,
     modelName = null } = {}) {
     const controlParameterState = ControlParameterStateClosure({ apiConfigs, modelNameTags, modelName })
-    const toolManageState = ToolManagerStateClosure({ presetToolConfigs })
+    const toolManageState = ToolManageStateClosure({ presetToolConfigs })
     const responseState = ResponseStateClosure({
         messages,
         apiConfig: controlParameterState.apiConfig,

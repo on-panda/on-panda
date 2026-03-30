@@ -78,16 +78,6 @@ export function formatToolName(rawName, toolConfig = {}) {
     })
 }
 
-export function buildFunctionToolFromConfig(toolConfig = {}) {
-    const tool = deepCopy(toolConfig)
-    delete tool.require_approval
-    delete tool.tool_name_format
-    delete tool.server_label
-    tool.function = deepCopy(toolConfig.function || {})
-    tool.function.name = formatToolName(toolConfig.function?.name || '', toolConfig)
-    return tool
-}
-
 export function getToolRuntime(target = {}) {
     if (!target.runtime || typeof target.runtime !== 'object') {
         target.runtime = {}
@@ -99,7 +89,7 @@ export function buildToolConfigTagName(toolConfig = {}, toolConfigIndex = 0, sou
     if (toolConfig.type === 'mcp') {
         return `mcp:${toolConfig.server_label || `${source}${toolConfigIndex + 1}`}`
     }
-    return toolConfig.function?.name || 'function'
+    return toolConfig.function.name
 }
 
 export function buildMcpPlaceholderFromConfig(toolConfig = {}, toolConfigIndex = 0, source = 'data') {
@@ -136,7 +126,7 @@ export async function hashToolSchema(toolOrConfig = {}) {
         if (toolNameFormat !== undefined) {
             hashInput.tool_name_format = toolNameFormat
         }
-        hashInput.function = pickHashFields(toolOrConfig.function || {}, ['name', 'description', 'parameters'])
+        hashInput.function = pickHashFields(toolOrConfig.function, ['name', 'description', 'parameters'])
     }
 
     runtime.hash = await hashObjectSHA256Base64(hashInput)
@@ -187,11 +177,6 @@ export function buildMcpToolSourceLabel(toolConfig = {}, toolConfigIndex, rawNam
     return `tool_configs[${toolConfigIndex}] (${serverLabel}${rawName ? ` -> ${rawName}` : ''})`
 }
 
-export function buildFunctionToolSourceLabel(toolConfig = {}, toolConfigIndex) {
-    const rawName = toolConfig.function?.name || 'function'
-    return `tool_configs[${toolConfigIndex}] (${rawName})`
-}
-
 export function buildDuplicatedToolNameError(toolName, previousSource, source) {
     const error = new Error(`Duplicated tool name "${toolName}" from ${previousSource} and ${source}. Add or adjust \`tool_name_format\` so the final tool names stay unique.`)
     error.name = 'ToolConfigError'
@@ -214,11 +199,10 @@ export function mcpToolResultToContent(result) {
 }
 
 export function checkToolCallReadyStatus(toolCalls = [], toolNameToCall = {}) {
-    const isReadys = toolCalls.map(toolCall => toolCall.function?.name in toolNameToCall)
+    const isReadys = toolCalls.map(toolCall => toolCall.function.name in toolNameToCall)
     const unreadyToolNames = [...new Set(toolCalls
         .filter((toolCall, index) => !isReadys[index])
-        .map(toolCall => toolCall.function?.name)
-        .filter(Boolean))]
+        .map(toolCall => toolCall.function.name))]
     return {
         isReadys,
         allReady: isReadys.every(Boolean),
@@ -240,7 +224,7 @@ The user rejected the tool_calls.
         role: 'tool',
         content,
         tool_call_id: toolCall.id,
-        name: toolCall.function?.name,
+        name: toolCall.function.name,
     }))
 }
 
@@ -258,6 +242,6 @@ export function getToolCallDiscardReason({
 }
 
 export function logDiscardedToolCall(toolCallID, toolCalls = [], reason) {
-    const toolNames = toolCalls.map(toolCall => toolCall.function?.name).filter(Boolean)
+    const toolNames = toolCalls.map(toolCall => toolCall.function.name)
     console.log(`[tool call ${toolCallID}] discard ${toolNames.join(', ') || 'unknown tools'}: ${reason}`)
 }

@@ -35,20 +35,20 @@ const candidateTools = computed(() => toolManageState.allTools.value
     }))
     .filter(item => item.selectedIndex == null))
 
-const selectedTools = computed(() => (toolManageState.currentDialogTools.value || []).map((tool, index) => ({
+const selectedTools = computed(() => toolManageState.currentDialogTools.value.map((tool, index) => ({
     index,
     tool,
 })))
 
-function getToolTagName(tool = {}) {
+function getToolTagName(tool) {
     const runtime = getToolRuntime(tool)
     if (runtime.displayName) {
         return runtime.displayName
     }
     if (tool.type === 'mcp') {
-        return buildToolConfigTagName(tool, runtime.toolConfigIndex || 0, runtime.source || 'data')
+        return buildToolConfigTagName(tool, runtime.toolConfigIndex, runtime.source)
     }
-    return tool.function?.name || 'function'
+    return tool.function.name
 }
 
 async function appendTool(allToolIndex = -1) {

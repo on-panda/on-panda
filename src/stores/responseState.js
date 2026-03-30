@@ -10,7 +10,7 @@ import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
 import { WarningState } from './warningState.js'
 import { defaultApiConfig, CONTINUE_PROMPT } from './controlParameterState.js'
-import { ToolManagerStateClosure, ToolCallStateClosure } from './toolState.js'
+import { ToolManageStateClosure, ToolCallStateClosure } from './toolState.js'
 
 export const defaultMessages = [{ role: "system", content: "" }, { role: "user", content: "" }]
 
@@ -29,7 +29,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
     var messages = isRef(messages) ? messages : ref(messages || deepCopy(defaultMessages))
     var apiConfig = isRef(apiConfig) ? apiConfig : ref(apiConfig || deepCopy(defaultApiConfig))
-    toolManageState = toolManageState || ToolManagerStateClosure({ presetToolConfigs: [] })
+    toolManageState = toolManageState || ToolManageStateClosure({ presetToolConfigs: [] })
 
     const pandaState = new PandaState()
     toolManageState.registerDialogCache(pandaState.dialogCache)
@@ -474,7 +474,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             let finishReason = this.getToolLoopFinishReason(lastMessage, defaultFinishReason)
             while (true) {
                 if (finishReason === "tool_calls") {
-                    const result = await toolCallState.maybeAutoCallToolCalls(lastMessage.tool_calls || [])
+                    const result = await toolCallState.maybeAutoCallToolCalls(lastMessage.tool_calls)
                     if (!result.toolMessages?.length) {
                         // AgenticLoop stoped
                         // console.log("[info of try tool calls]:", result.info)
@@ -500,7 +500,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         runToolCalls = async ({ autoApproveRunNum = 1, messageIndex = -1 } = {}) => {
             await ensureDialogToolsMaterialized()
             const toolCallMessage = this.getMessageByIndex(messageIndex)
-            console.assert(toolCallMessage?.tool_calls?.length, "runToolCalls requires tool_calls", toolCallMessage)
+            console.assert(toolCallMessage.tool_calls.length, "runToolCalls requires tool_calls", toolCallMessage)
             if (messageIndex !== -1 && messages.value.length) {
                 this.pandaState.beforeOperation()
                 const clampedIndex = Math.min(messageIndex, messages.value.length - 1)
@@ -513,7 +513,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         rejectToolCalls = async ({ toolCallsRejectedGuidance = '', messageIndex = -1, autoApproveRunNum = 0 } = {}) => {
             await ensureDialogToolsMaterialized()
             const toolCallMessage = this.getMessageByIndex(messageIndex)
-            console.assert(toolCallMessage?.tool_calls?.length, "rejectToolCalls requires tool_calls", toolCallMessage)
+            console.assert(toolCallMessage.tool_calls.length, "rejectToolCalls requires tool_calls", toolCallMessage)
             const rejectedToolMessages = buildRejectedToolMessages(
                 toolCallMessage.tool_calls,
                 toolCallsRejectedGuidance,
