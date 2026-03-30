@@ -38,11 +38,12 @@ import { ref, computed, watch } from 'vue'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { p, tryLoadDuplicateWindow, deepCopy, deepEqual, sleep } from './utils/commonUtils.js'
+import { deepCopy, p, tryLoadDuplicateWindow, sleep } from './utils/commonUtils.js'
 import { useGlobalStore } from './stores/globalStore.js'
 import { defaultMessages } from './stores/responseState.js'
 import { defaultApiConfig } from './stores/controlParameterState.js'
 import { DialogWithControlStateClosure } from './stores/dialogWithControlState.js'
+import { TEST_TOOL_CONFIGS } from './utils/toolUtils.js'
 
 import MarkdownRender from './components/widgets/MarkdownRender.vue'
 import OnPandaHeader from './components/OnPandaHeader.vue'
@@ -56,6 +57,11 @@ const props = defineProps({
     description: `API configurations, if not set 'chat_config.model', will get model list by endpoint/models.
 e.g.:
 [{'support_continue_final_message': true, 'endpoint_name': 'on-panda', 'client_config': {'base_url': 'http://127.0.0.1:8000/v1'}, 'chat_config': {'model': 'meta-llama/Meta-Llama-3-8B-Instruct'}},]`,
+  },
+  presetToolConfigs: {
+    type: Object,
+    default: [],
+    description: `Preset tool configurations shared across dialogs`,
   },
   modelNameTags: {
     type: Object,
@@ -97,8 +103,12 @@ const modelNameTags = computed(() => {
 })
 
 const apiConfigs = computed(() => [defaultApiConfig, ...props.apiConfigs, ...globalStore.customApiConfigs])
-const dialogWithControlState = DialogWithControlStateClosure({ apiConfigs: apiConfigs, modelNameTags: modelNameTags })
-const { responseState, controlParameterState } = dialogWithControlState
+const dialogWithControlState = DialogWithControlStateClosure({
+  apiConfigs: apiConfigs,
+  presetToolConfigs: props.presetToolConfigs,
+  modelNameTags: modelNameTags,
+})
+const { responseState, controlParameterState, toolManageState } = dialogWithControlState
 
 
 const tokens = responseState.tokens
@@ -168,6 +178,7 @@ onMounted(async () => {
     if (globalStore.debug) {
       // Use the example via the operationCenter directly
       // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
+      toolManageState.presetToolConfigsInput.value = toolManageState.presetToolConfigsInput.value.concat(deepCopy(TEST_TOOL_CONFIGS))
       // exampleToRun = operationCenter.generateNew
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
       exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
@@ -176,44 +187,6 @@ onMounted(async () => {
         var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
         var debugMessages = [{ "role": "system", "content": "Any response must start from `I think`" }, { "role": "user", "content": "Screenshot and reply what you see within one word" }]
         operationCenter.loadMessages(debugMessages)
-        operationCenter.pandaState.currentDialogData.value.tool_configs = [
-          {
-            type: "mcp",
-            // server_url: "http://127.0.0.1:9300/mcp",
-            server_url: window.location.origin + "/bypass-CORS/http://127.0.0.1:9300/mcp",
-            "require_approval": "always",
-            // server_label: "demo_p9300",
-            // tool_name_format: "{type}_{server_label}__{name}",
-          },
-          {
-            "type": "function",
-            "function": {
-              "name": "get_weather",
-              "description": "Get the current weather in a given location",
-              "parameters": {
-                "type": "object",
-                "properties": {
-                  "location": {
-                    "type": "string",
-                    "description": "City and state, e.g., 'San Francisco, CA'"
-                  },
-                  "unit": {
-                    "type": "string",
-                    "enum": [
-                      "celsius",
-                      "fahrenheit"
-                    ]
-                  }
-                },
-                "required": [
-                  "location",
-                  "unit"
-                ]
-              }
-            },
-            // tool_name_format: "{type}__{name}",
-          }
-        ]
         if (modelNameTags.value['test']) {
           modelName.value = modelNameTags.value['test']
         }
@@ -227,6 +200,7 @@ onMounted(async () => {
   }
 
   await controlParameterState.apiUpdateCompletedPromise.value
+  await toolManageState.presetToolReadyPromise.value.catch(responseState.warning)
   await sleep(5)
   if (!requestStatus.value.generating && exampleToRun) {
     await exampleToRun(dialogWithControlState)
@@ -237,6 +211,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(async () => {
+  await toolManageState.close()
 })
 </script>
 

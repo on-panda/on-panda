@@ -1,5 +1,6 @@
 import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils'
 import { formatMessageAsText, formatSimpleContentAsText } from './messageTextCodec.js'
+import { stripRuntime } from './toolUtils.js'
 
 export {
     MESSAGE_KEYS_IN_CONTEXT,
@@ -36,8 +37,8 @@ export function splitToPromptResponse(messages, modelRoles = ['assistant',]) {
 export function dialogDifferent(dialog1, dialog2, modelRoles = ['assistant',]) {
     const messages1 = dialog1.messages || []
     const messages2 = dialog2.messages || []
-    const tools1 = dialog1.tools || []
-    const tools2 = dialog2.tools || []
+    const tools1 = stripRuntime(dialog1.tools || [])
+    const tools2 = stripRuntime(dialog2.tools || [])
 
     var { prompt: prompt1, response: response1 } = splitToPromptResponse(messages1, modelRoles)
     var { prompt: prompt2, response: response2 } = splitToPromptResponse(messages2, modelRoles)

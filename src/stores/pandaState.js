@@ -1,6 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { deepCopy, hashObjectSHA256Base64, dateStringNow, safeArrayExtend } from '../utils/commonUtils'
 import { dialogDifferent, tokensToSeq, isFinalRoleModelRole, clearTokenObject } from '../utils/chatUtils'
+import { stripRuntime } from '../utils/toolUtils.js'
 import { useGlobalStore } from './globalStore.js'
 import LZString from 'lz-string'
 
@@ -395,6 +396,7 @@ export class PandaState {
         }
         this.pandaTree.value.update_time = (new Date()).getTime()
         var dumped = deepCopy(this.pandaTree.value)
+        dumped = stripRuntime(dumped)
         dumped = await usingHashMapRemoveRedundancy(dumped)
         if (includeCache) {
             dumped.cache_tree = dumpCacheTree(this.cacheTree)

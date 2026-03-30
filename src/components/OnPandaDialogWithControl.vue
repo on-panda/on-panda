@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import DataControlPanel from './DataControlPanel.vue'
 import ControlParameterPanel from './ControlParameterPanel.vue'
 import OnPandaDialogPanel from './OnPandaDialogPanel.vue'
+import ToolManagePanel from './ToolManagePanel.vue'
 const { t } = useI18n()
 
 const props = defineProps({
@@ -15,7 +16,7 @@ const props = defineProps({
     }
 })
 
-const { responseState, controlParameterState } = props.dialogWithControlState
+const { responseState, controlParameterState, toolManageState } = props.dialogWithControlState
 
 
 function duplicateWindowWithModelName(modelName) {
@@ -34,6 +35,7 @@ onMounted(() => {
 
 <template>
     <div class="onPandaContainers" ref="onPandaDialogPanelRef">
+        <ToolManagePanel :responseState="responseState" :toolManageState="toolManageState" />
         <OnPandaDialogPanel :responseState="responseState">
             <template #beforeNewRoundMessageSlot>
                 <DataControlPanel :responseState="responseState" />
