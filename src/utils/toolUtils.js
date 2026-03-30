@@ -1,4 +1,33 @@
-import { deepCopy } from './commonUtils.js'
+import { deepCopy, hashObjectSHA256Base64 } from './commonUtils.js'
+
+export const TEST_TOOL_CONFIGS = [
+    {
+        type: 'mcp',
+        server_url: `${typeof window === 'undefined' ? '' : window.location.origin}/bypass-CORS/http://127.0.0.1:9300/mcp`,
+        require_approval: 'always',
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'get_weather',
+            description: 'Get the current weather in a given location',
+            parameters: {
+                type: 'object',
+                properties: {
+                    location: {
+                        type: 'string',
+                        description: "City and state, e.g., 'San Francisco, CA'",
+                    },
+                    unit: {
+                        type: 'string',
+                        enum: ['celsius', 'fahrenheit'],
+                    },
+                },
+                required: ['location', 'unit'],
+            },
+        },
+    },
+]
 
 function mcpContentItemToText(item) {
     if (item.type === 'text') {
@@ -57,6 +86,100 @@ export function buildFunctionToolFromConfig(toolConfig = {}) {
     tool.function = deepCopy(toolConfig.function || {})
     tool.function.name = formatToolName(toolConfig.function?.name || '', toolConfig)
     return tool
+}
+
+export function getToolRuntime(target = {}) {
+    if (!target.runtime || typeof target.runtime !== 'object') {
+        target.runtime = {}
+    }
+    return target.runtime
+}
+
+export function buildToolConfigTagName(toolConfig = {}, toolConfigIndex = 0, source = 'data') {
+    if (toolConfig.type === 'mcp') {
+        return `mcp:${toolConfig.server_label || `${source}${toolConfigIndex + 1}`}`
+    }
+    return toolConfig.function?.name || 'function'
+}
+
+export function buildMcpPlaceholderFromConfig(toolConfig = {}, toolConfigIndex = 0, source = 'data') {
+    const placeholder = deepCopy(toolConfig)
+    const runtime = getToolRuntime(placeholder)
+    runtime.isPlaceholder = true
+    runtime.source = source
+    runtime.toolConfigIndex = toolConfigIndex
+    runtime.displayName = `mcp:${source}${toolConfigIndex + 1}`
+    return placeholder
+}
+
+function pickHashFields(obj = {}, keys = []) {
+    const nextObject = {}
+    for (const key of keys) {
+        if (obj[key] !== undefined) {
+            nextObject[key] = obj[key]
+        }
+    }
+    return nextObject
+}
+
+export async function hashToolSchema(toolOrConfig = {}) {
+    const runtime = getToolRuntime(toolOrConfig)
+    if (runtime.hash) {
+        return runtime.hash
+    }
+
+    const hashInput = { type: toolOrConfig.type }
+    if (toolOrConfig.type === 'mcp') {
+        Object.assign(hashInput, pickHashFields(toolOrConfig, ['server_url', 'tool_name_format']))
+    } else if (toolOrConfig.type === 'function') {
+        const toolNameFormat = toolOrConfig.tool_name_format ?? runtime.tool_name_format
+        if (toolNameFormat !== undefined) {
+            hashInput.tool_name_format = toolNameFormat
+        }
+        hashInput.function = pickHashFields(toolOrConfig.function || {}, ['name', 'description', 'parameters'])
+    }
+
+    runtime.hash = await hashObjectSHA256Base64(hashInput)
+    return runtime.hash
+}
+
+export async function matchTwoToolLists(tools1 = [], tools2 = []) {
+    const [hashes1, hashes2] = await Promise.all([
+        Promise.all(tools1.map(tool => hashToolSchema(tool))),
+        Promise.all(tools2.map(tool => hashToolSchema(tool))),
+    ])
+    const usedIndexes2 = new Set()
+    const matchedIndex1ToIndex2 = {}
+
+    for (const [index1, hash1] of hashes1.entries()) {
+        for (const [index2, hash2] of hashes2.entries()) {
+            if (usedIndexes2.has(index2) || hash1 !== hash2) {
+                continue
+            }
+            matchedIndex1ToIndex2[index1] = index2
+            usedIndexes2.add(index2)
+            break
+        }
+    }
+
+    return matchedIndex1ToIndex2
+}
+
+export function stripRuntime(value) {
+    if (Array.isArray(value)) {
+        return value.map(stripRuntime)
+    }
+    if (!value || typeof value !== 'object') {
+        return value
+    }
+    const nextValue = {}
+    for (const [key, childValue] of Object.entries(value)) {
+        if (key === 'runtime') {
+            continue
+        }
+        nextValue[key] = stripRuntime(childValue)
+    }
+    return nextValue
 }
 
 export function buildMcpToolSourceLabel(toolConfig = {}, toolConfigIndex, rawName = '') {

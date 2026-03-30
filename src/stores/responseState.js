@@ -10,11 +10,11 @@ import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
 import { WarningState } from './warningState.js'
 import { defaultApiConfig, CONTINUE_PROMPT } from './controlParameterState.js'
-import { ToolStateClosure, ToolCallStateClosure } from './toolState.js'
+import { ToolManagerStateClosure, ToolCallStateClosure } from './toolState.js'
 
 export const defaultMessages = [{ role: "system", content: "" }, { role: "user", content: "" }]
 
-export function ResponseStateClosure({ messages = null, apiConfig = null } = {}) {
+export function ResponseStateClosure({ messages = null, apiConfig = null, toolManageState = null } = {}) {
     /*
     A large core class:
     - Operation-related items should be placed in the operationCenter
@@ -29,8 +29,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
 
     var messages = isRef(messages) ? messages : ref(messages || deepCopy(defaultMessages))
     var apiConfig = isRef(apiConfig) ? apiConfig : ref(apiConfig || deepCopy(defaultApiConfig))
+    toolManageState = toolManageState || ToolManagerStateClosure({ presetToolConfigs: [] })
 
     const pandaState = new PandaState()
+    toolManageState.registerDialogCache(pandaState.dialogCache)
     const uploadedJson = ref(null)
     const onPandaContainerRef = ref(document)
 
@@ -49,54 +51,20 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         requestModel: "",
     })
 
-    let toolState = null
-    let toolStateKey = null
-
     function assertNoLegacyChatConfigTools() {
         if ('tools' in (apiConfig.value.chat_config || {})) {
             throw new Error('`chat_config.tools` is no longer supported. Move tool definitions to `dialog.tool_configs`, or store the final request tools in `dialog.tools`.')
         }
     }
 
-    function getCurrentDialogToolConfigs() {
-        return pandaState.currentDialogData.value?.tool_configs || pandaState.dialogCache.value?.tool_configs || []
-    }
-
-    async function getToolState() {
-        const toolConfigs = getCurrentDialogToolConfigs()
-        const nextToolStateKey = JSON.stringify(toolConfigs)
-        if (!toolState || toolStateKey !== nextToolStateKey) {
-            await toolState?.close?.()
-            toolState = ToolStateClosure({ toolConfigs: deepCopy(toolConfigs) })
-            toolStateKey = nextToolStateKey
-        }
+    async function ensureDialogToolsMaterialized() {
+        assertNoLegacyChatConfigTools()
         try {
-            await toolState.init()
+            return await toolManageState.buildRequestTools()
         } catch (error) {
             warning(error)
             throw error
         }
-        return toolState
-    }
-
-    async function ensureDialogToolsMaterialized() {
-        assertNoLegacyChatConfigTools()
-        const dialogKey = pandaState.currentDialogKey.value
-        if (!dialogKey) {
-            return []
-        }
-        const dialog = pandaState.pandaTree.value.dialogs[dialogKey] || pandaState.pandaTree.value.deleted_dialogs?.[dialogKey]
-        const currentToolState = await getToolState()
-        const tools = deepCopy(currentToolState.tools)
-        if (!deepEqual(dialog.tools || [], tools)) {
-            dialog.tools = tools
-            pandaState.dialogCache.value.tools = deepCopy(tools)
-        }
-        return tools
-    }
-
-    function getCurrentDialogTools() {
-        return pandaState.currentDialogData.value?.tools || pandaState.dialogCache.value?.tools || []
     }
 
     function loadMessagesToCurrentDialogUi(newMessages) {
@@ -176,7 +144,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
             }
         }
         body.messages = messages
-        body.tools = deepCopy(getCurrentDialogTools())
+        body.tools = await ensureDialogToolsMaterialized()
 
         requestStatus.value.generating = true
         requestStatus.value.requestTimes++
@@ -376,7 +344,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         body.top_logprobs = apiConfig.value.chat_config.top_logprobs
         body.prompt_logprobs = apiConfig.value.chat_config.top_logprobs
         body.return_token_ids = true
-        body.tools = deepCopy(getCurrentDialogTools())
+        body.tools = await ensureDialogToolsMaterialized()
 
         requestStatus.value.requestTimes++
         var requestID = requestStatus.value.requestTimes
@@ -854,8 +822,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
     const warning = warningState.warning
     const toolCallState = ToolCallStateClosure({
         ensureDialogToolsMaterialized,
-        getToolState,
-        peekToolState: () => toolState,
+        getToolState: async () => toolManageState,
+        peekToolState: () => toolManageState,
         warning,
     })
 
@@ -1022,6 +990,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null } = {})
         rawPromptLogprobsTokens,
         isPromptLogprobsState,
         requestStatus,
+        toolManageState,
         operationCenter,
         newRoundMessage,
         finalMessage,
