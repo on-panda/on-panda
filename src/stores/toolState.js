@@ -24,12 +24,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     const allTools = ref([])
     const matchedAllToSelectedIndex = ref({})
 
-    let resolvePresetToolReady = () => { }
-    let rejectPresetToolReady = () => { }
-    const presetToolReadyPromise = ref(new Promise((resolve, reject) => {
-        resolvePresetToolReady = resolve
-        rejectPresetToolReady = reject
-    }))
+    const presetToolReadyPromise = ref(Promise.resolve())
 
     const dataToolConfigs = computed(() => registeredDialogCache.value?.value?.tool_configs || [])
     const toolConfigItemsComputed = computed(() => [
@@ -352,14 +347,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     }
 
     watch(presetToolConfigsInput, (nextPresetToolConfigs) => {
-        presetToolReadyPromise.value = new Promise((resolve, reject) => {
-            resolvePresetToolReady = resolve
-            rejectPresetToolReady = reject
-        })
-        presetToolReadyPromise.value.catch(() => { })
-        const localResolvePresetToolReady = resolvePresetToolReady
-        const localRejectPresetToolReady = rejectPresetToolReady
-        ; (async () => {
+        presetToolReadyPromise.value = (async () => {
             const nextPresetConfigHashToIndex = {}
             await Promise.all(nextPresetToolConfigs.map(async (toolConfig, toolConfigIndex) => {
                 const entry = await prepareRuntimeEntry({
@@ -374,10 +362,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
             await syncDialogToolsFromConfigsIfNeeded()
             await refreshAllTools()
             await updateMatchedTools()
-            localResolvePresetToolReady()
-        })().catch((error) => {
-            localRejectPresetToolReady(error)
-        })
+        })()
     }, { deep: true, immediate: true, flush: 'sync' })
 
     let refreshAllToolsID = 0
