@@ -186,7 +186,7 @@ onMounted(async () => {
         var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
         var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
         var debugMessages = [{ "role": "system", "content": "Any response must start from `I think`" }, { "role": "user", "content": "Screenshot and reply what you see within one word" }]
-        operationCenter.loadMessages(debugMessages, toolManageState.presetToolConfigsInput)
+        operationCenter.loadMessages(debugMessages, TEST_TOOL_CONFIGS)
         if (modelNameTags.value['test']) {
           modelName.value = modelNameTags.value['test']
         }

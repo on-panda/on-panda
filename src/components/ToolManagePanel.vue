@@ -16,16 +16,10 @@ const props = defineProps({
 const { responseState, toolManageState } = props
 const pandaState = responseState.pandaState
 
-const configTags = computed(() => [
-    ...toolManageState.dataToolConfigs.value.map((toolConfig, index) => ({
-        name: buildToolConfigTagName(toolConfig, index, 'data'),
-        key: `data-${index}`,
-    })),
-    ...toolManageState.presetToolConfigsInput.value.map((toolConfig, index) => ({
-        name: buildToolConfigTagName(toolConfig, index, 'preset'),
-        key: `preset-${index}`,
-    })),
-])
+const configTags = computed(() => toolManageState.visibleToolConfigItems.value.map(({ toolConfig, index, source }) => ({
+    name: buildToolConfigTagName(toolConfig, index, source),
+    key: `${source}-${index}`,
+})))
 
 const candidateTools = computed(() => toolManageState.allTools.value
     .map((tool, index) => ({

@@ -21,14 +21,17 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     const runtimeVersion = ref(0)
     const runtimeEntryByHash = new Map()
     const presetConfigHashToIndex = ref({})
+    const matchedDataToPresetIndex = ref({})
     const allTools = ref([])
     const matchedAllToSelectedIndex = ref({})
 
     const presetToolReadyPromise = ref(Promise.resolve())
 
     const dataToolConfigs = computed(() => registeredDialogCache.value?.value?.tool_configs || [])
-    const toolConfigItems = computed(() => [
-        ...dataToolConfigs.value.map((toolConfig, index) => ({ toolConfig, index, source: 'data' })),
+    const visibleToolConfigItems = computed(() => [
+        ...dataToolConfigs.value
+            .map((toolConfig, index) => ({ toolConfig, index, source: 'data' }))
+            .filter(({ index }) => matchedDataToPresetIndex.value[index] == null),
         ...presetToolConfigsInput.value.map((toolConfig, index) => ({ toolConfig, index, source: 'preset' })),
     ])
     const currentDialogTools = computed(() => registeredDialogCache.value?.value?.tools || [])
@@ -286,7 +289,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
 
     async function refreshAllTools() {
         const nextAllTools = []
-        for (const { toolConfig, index, source } of toolConfigItems.value) {
+        for (const { toolConfig, index, source } of visibleToolConfigItems.value) {
             const entry = await prepareRuntimeEntry({
                 toolConfig,
                 source,
@@ -362,13 +365,26 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                     nextPresetConfigHashToIndex[entry.configHash] = toolConfigIndex
                 }
                 presetConfigHashToIndex.value = nextPresetConfigHashToIndex
-                await syncDialogToolsFromConfigsIfNeeded()
-                await refreshAllTools()
             }
         })()
     }, { deep: true, immediate: true, flush: 'sync' })
 
-    watch([toolConfigItems, runtimeVersion], function watchAllTools(_values, _oldValues, onCleanup) {
+    watch([dataToolConfigs, presetToolConfigsInput], function watchMatchedDataConfigs(_values, _oldValues, onCleanup) {
+        let expired = false
+        onCleanup(() => {
+            expired = true
+        })
+            ; (async () => {
+                const matchedIndex = await matchTwoToolLists(dataToolConfigs.value, presetToolConfigsInput.value)
+                if (!expired) {
+                    matchedDataToPresetIndex.value = matchedIndex
+                }
+            })().catch(error => {
+                console.error(error)
+            })
+    }, { deep: true, immediate: true, flush: 'sync' })
+
+    watch([visibleToolConfigItems, runtimeVersion], function watchAllTools(_values, _oldValues, onCleanup) {
         let expired = false
         onCleanup(() => {
             expired = true
@@ -432,6 +448,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         presetToolConfigsInput,
         presetToolReadyPromise,
         dataToolConfigs,
+        visibleToolConfigItems,
         allTools,
         matchedAllToSelectedIndex,
         currentDialogTools,
