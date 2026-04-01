@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
 import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
 import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
-import { applyImageDetailLevel, dropStaleToolAsset } from '../utils/requestUtils.js'
+import { applyImageDetailLevel, assertNoLegacyChatConfigTools, dropStaleToolAsset } from '../utils/requestUtils.js'
 import { buildRejectedToolMessages } from '../utils/toolUtils.js'
 
 import { useGlobalStore } from './globalStore.js'
@@ -51,22 +51,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         requestModel: "",
     })
 
-    function assertNoLegacyChatConfigTools() {
-        if ('tools' in (apiConfig.value.chat_config || {})) {
-            throw new Error('`chat_config.tools` is no longer supported. Move tool definitions to `dialog.tool_configs`, or store the final request tools in `dialog.tools`.')
-        }
-    }
-
-    async function ensureDialogToolsMaterialized() {
-        assertNoLegacyChatConfigTools()
-        try {
-            return await toolManageState.buildRequestTools()
-        } catch (error) {
-            warning(error)
-            throw error
-        }
-    }
-
     function loadMessagesToCurrentDialogUi(newMessages) {
         if (newMessages[newMessages.length - 1].role == "assistant") {
             var lastMessage = newMessages[newMessages.length - 1]
@@ -102,7 +86,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     }
 
     async function requestLlmServer(messages) {
-        assertNoLegacyChatConfigTools()
+        assertNoLegacyChatConfigTools(apiConfig.value.chat_config)
         messages = toValue(messages)
         const modelRoles = apiConfig.value?.model_roles || ["assistant"]
         const continue_final_message = modelRoles.includes(messages[messages.length - 1].role)
@@ -144,7 +128,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             }
         }
         body.messages = messages
-        body.tools = await ensureDialogToolsMaterialized()
+        body.tools = await toolManageState.buildRequestTools()
 
         requestStatus.value.generating = true
         requestStatus.value.requestTimes++
@@ -322,7 +306,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
 
     async function requestPromptLogprobs() {
-        assertNoLegacyChatConfigTools()
+        assertNoLegacyChatConfigTools(apiConfig.value.chat_config)
         // TODO auto run when chat_config is changed?
         // may delete the stop/<EOT> token
         // on_policy
@@ -344,7 +328,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         body.top_logprobs = apiConfig.value.chat_config.top_logprobs
         body.prompt_logprobs = apiConfig.value.chat_config.top_logprobs
         body.return_token_ids = true
-        body.tools = await ensureDialogToolsMaterialized()
+        body.tools = await toolManageState.buildRequestTools()
 
         requestStatus.value.requestTimes++
         var requestID = requestStatus.value.requestTimes
@@ -465,7 +449,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
         // Run tool-call and generation rounds until the assistant stops or needs manual approval.
         startAgenticLoop = async ({ autoApproveRunNum = 0, defaultFinishReason = null } = {}) => {
-            await ensureDialogToolsMaterialized()
+            await toolManageState.buildRequestTools()
             toolCallState.setAutoApproveLoop(autoApproveRunNum)
             if (messagesComputed.value.length > messages.value.length) {
                 this.pandaState.beforeOperation()
@@ -498,7 +482,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
 
         runToolCalls = async ({ autoApproveRunNum = 1, messageIndex = -1 } = {}) => {
-            await ensureDialogToolsMaterialized()
+            await toolManageState.buildRequestTools()
             const toolCallMessage = this.getMessageByIndex(messageIndex)
             console.assert(toolCallMessage.tool_calls.length, "runToolCalls requires tool_calls", toolCallMessage)
             if (messageIndex !== -1 && messages.value.length) {
@@ -511,7 +495,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
 
         rejectToolCalls = async ({ toolCallsRejectedGuidance = '', messageIndex = -1, autoApproveRunNum = 0 } = {}) => {
-            await ensureDialogToolsMaterialized()
+            await toolManageState.buildRequestTools()
             const toolCallMessage = this.getMessageByIndex(messageIndex)
             console.assert(toolCallMessage.tool_calls.length, "rejectToolCalls requires tool_calls", toolCallMessage)
             const rejectedToolMessages = buildRejectedToolMessages(
@@ -531,7 +515,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
 
         continueGenerating = async () => {
-            await ensureDialogToolsMaterialized()
+            await toolManageState.buildRequestTools()
             // var isTryGeneratingOnEot = tokens.value.length && tokens.value[tokens.value.length - 1].finish_reason === "stop"
             // if (isTryGeneratingOnEot) {
             // }
@@ -550,7 +534,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
         continueWithChosen = async (token, logprobItem) => {
             // function clickOnLogprobItem() {
-            await ensureDialogToolsMaterialized()
+            await toolManageState.buildRequestTools()
             this.pandaState.beforeOperation()
             const rejected_token = recordAsRejectedToken(token, tokens)  // record rejected token before change tokens
             prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob, logprobItem.finish_reason)
@@ -588,13 +572,13 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
 
         continueWithInput = async (token, continuePrefix, continuePrefixLogprob) => {
-            await ensureDialogToolsMaterialized()
+            await toolManageState.buildRequestTools()
             this.applyInputChange(token, continuePrefix, continuePrefixLogprob)
             await this.startAgenticLoop()
         }
 
         generateNew = async ({ messageIndex = -1 } = {}) => {
-            await ensureDialogToolsMaterialized()
+            await toolManageState.buildRequestTools()
             const shouldContinueFinalMessage = (
                 messageIndex === -1 &&
                 !messageToSeq(finalMessage.value, { includeFinishReason: false }) &&
@@ -624,7 +608,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         startNewRound = async (newRoundMessages = null) => {  // TODO remove auto write back's append operation
             const messagesToAppend = newRoundMessages ? newRoundMessages : [newRoundMessage.value]
             var role = newRoundMessages ? 'user' : newRoundMessage.value.role
-            await ensureDialogToolsMaterialized()
+            await toolManageState.buildRequestTools()
             this.pandaState.beforeOperation()
             messages.value = this.getNextMessagesForRound(messagesToAppend)
             tokens.value = []
@@ -695,7 +679,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
 
         refreshResponseProbability = async () => {
-            await ensureDialogToolsMaterialized()
+            await toolManageState.buildRequestTools()
             toolCallState.stopToolCalls()
             this.pandaState.beforeOperation()
             requestPromptLogprobs().then(() => {

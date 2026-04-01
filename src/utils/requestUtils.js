@@ -20,6 +20,12 @@ export function applyImageDetailLevel(body = {}) {
     return body
 }
 
+export function assertNoLegacyChatConfigTools(chatConfig = {}) {
+    if ('tools' in (chatConfig || {})) {
+        throw new Error('`chat_config.tools` is no longer supported. Move tool definitions to `dialog.tool_configs`, or store the final request tools in `dialog.tools`.')
+    }
+}
+
 export function dropStaleToolAsset(body = {}) {
     const maxToolMessageAssets = Math.max(0, Number(body.max_tool_message_assets) || 0)
     const toolMessageAssetKeepRounds = Math.max(0, Number(body.tool_message_asset_keep_rounds) || 0)
