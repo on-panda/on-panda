@@ -117,14 +117,14 @@ const operationCenter = responseState.operationCenter
 
 // Initialize with welcome messages
 const onPandaExamplesRef = ref(null)
-const welcomeMessages = [{ role: "system", content: "" }, { role: "user", content: '🍓草莓的英文单词有几个 "R" ?' }]
-let initialMessages = welcomeMessages;
 
 if (globalStore.isOldUser) {
-  initialMessages = defaultMessages;
+  operationCenter.loadMessages(defaultMessages, toolManageState.presetToolConfigsInput)
+} else {
+  const welcomeMessages = [{ role: "system", content: "" }, { role: "user", content: '🍓草莓的英文单词有几个 "R" ?' }]
+  operationCenter.loadMessages(welcomeMessages)
 }
 
-operationCenter.loadMessages(initialMessages)
 
 
 const modelName = controlParameterState.modelName
@@ -155,13 +155,13 @@ onMounted(async () => {
   await loadRuntimeImport()
   responseState.onPandaContainerRef.value = onPandaContainerRef.value
   try {
-    await import('./utils/defaultCustom.js');  // important: './utils/defaultCustom.js' will be resolve by different vite.config.js according different env var, do not change it.
+    await import('./utils/defaultCustom.js')  // important: './utils/defaultCustom.js' will be resolve by different vite.config.js according different env var, do not change it.
     // Custom configurations that are included in build, but not in git
   } catch (error) {
-    console.error('Failed to load custom.js:', error);
+    console.error('Failed to load custom.js:', error)
   }
 
-  var exampleToRun = null;
+  var exampleToRun = () => { }
 
   if (tryLoadDuplicateWindow(responseState.pandaState)) { // duplicate window has higher priority
     if (localStorage.getItem('modelNameForDuplicateWindow')) {
@@ -186,7 +186,7 @@ onMounted(async () => {
         var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
         var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
         var debugMessages = [{ "role": "system", "content": "Any response must start from `I think`" }, { "role": "user", "content": "Screenshot and reply what you see within one word" }]
-        operationCenter.loadMessages(debugMessages)
+        operationCenter.loadMessages(debugMessages, toolManageState.presetToolConfigsInput)
         if (modelNameTags.value['test']) {
           modelName.value = modelNameTags.value['test']
         }
@@ -198,16 +198,18 @@ onMounted(async () => {
       }
     }
   }
-
-  await controlParameterState.apiUpdateCompletedPromise.value
-  await toolManageState.presetToolReadyPromise.value.catch(responseState.warning)
-  await sleep(5)
-  if (!requestStatus.value.generating && exampleToRun) {
-    await exampleToRun(dialogWithControlState)
+  async function afterApiAndToolReady() {
+    await controlParameterState.apiUpdateCompletedPromise.value
+    await toolManageState.presetToolReadyPromise.value.catch(responseState.warning)
+    await sleep(5)
+    if (!requestStatus.value.generating && exampleToRun) {
+      await exampleToRun(dialogWithControlState)
+    }
+    if (globalStore.debug) {
+      p("tokens", tokens)
+    }
   }
-  if (globalStore.debug) {
-    p("tokens", tokens)
-  }
+  afterApiAndToolReady()
 })
 
 onBeforeUnmount(async () => {

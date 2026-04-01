@@ -1,4 +1,4 @@
-import { ref, computed, toValue, watch, isRef } from 'vue'
+import { ref, computed, toValue, watch, isRef, unref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
 import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
@@ -771,10 +771,14 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             this.pandaState.afterOperation(operation)
         }
 
-        loadMessages = (newMessages) => {
+        loadMessages = (newMessages, toolConfigs) => {
             this.pandaState.beforeOperation()
             this.pandaState = pandaState  // TODO 挪出去这行， beforeOperation() 会报错
             const dialogNew = { messages: deepCopy(newMessages) }
+            const toolConfigsValue = unref(toolConfigs)
+            if (toolConfigsValue) {
+                dialogNew.tool_configs = deepCopy(toolConfigsValue)
+            }
             const pandaTreeNew = { dialogs: { 1: dialogNew } }
             this.pandaState.load(pandaTreeNew)
         }
