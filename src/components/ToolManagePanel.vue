@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { buildToolConfigTagName, getToolRuntime } from '../utils/toolUtils.js'
 
 const props = defineProps({
@@ -15,9 +16,14 @@ const props = defineProps({
 
 const { responseState, toolManageState } = props
 const pandaState = responseState.pandaState
+const { t } = useI18n()
+const detailsRef = ref(null)
+const panelOpen = ref(false)
+const hasPanelToggled = ref(false)
 
 const configTags = computed(() => toolManageState.visibleToolConfigItems.value.map(({ toolConfig, index, source }) => ({
     name: buildToolConfigTagName(toolConfig, index, source),
+    toolConfig: toolConfig,
     key: `${source}-${index}`,
 })))
 
@@ -33,6 +39,16 @@ const selectedTools = computed(() => toolManageState.currentDialogTools.value.ma
     index,
     tool,
 })))
+const selectedToolCount = computed(() => selectedTools.value.length)
+const allToolCount = computed(() => toolManageState.allTools.value.length)
+const summaryLabel = computed(() => `Tools` + (allToolCount.value ? ` (${selectedToolCount.value}/${allToolCount.value})` : ''))
+
+watch(selectedToolCount, function watchSelectedToolCount(nextSelectedToolCount) {
+    if (hasPanelToggled.value || panelOpen.value || !nextSelectedToolCount) {
+        return
+    }
+    panelOpen.value = true
+}, { immediate: true })
 
 function getToolTagName(tool) {
     const runtime = getToolRuntime(tool)
@@ -70,51 +86,84 @@ async function removeTool(selectedToolIndex = -1) {
         responseState.warning(error)
     }
 }
+
+function handlePanelToggle() {
+    panelOpen.value = detailsRef.value.open
+    hasPanelToggled.value = true
+}
 </script>
 
 <template>
-    <div class="tool-manage-panel">
-        <div class="tool-manage-section">
-            <div class="tool-manage-title">configs</div>
-            <div class="tool-manage-tags">
-                <el-tag v-for="configTag in configTags" :key="configTag.key" size="small" effect="plain">
-                    {{ configTag.name }}
-                </el-tag>
-                <span v-if="!configTags.length" class="tool-manage-empty">empty</span>
+    <details ref="detailsRef" class="tool-manage-panel" :open="panelOpen" @toggle="handlePanelToggle">
+        <summary class="tool-manage-summary"> {{ summaryLabel }} </summary>
+        <div class="tool-manage-body">
+            <div class="tool-manage-section">
+                <div class="tool-manage-title">{{ t('toolManagePanel.configs') }}</div>
+                <div class="tool-manage-tags">
+                    <el-tag v-for="configTag in configTags" :key="configTag.key" size="small" effect="plain">
+                        {{ configTag.name }}
+                    </el-tag>
+                    <span v-if="!configTags.length" class="tool-manage-empty">{{ t('toolManagePanel.empty') }}</span>
+                </div>
             </div>
-        </div>
 
-        <div class="tool-manage-section">
-            <div class="tool-manage-title">candidate</div>
-            <div class="tool-manage-tags">
-                <el-tag v-for="candidate in candidateTools" :key="`candidate-${candidate.index}-${getToolTagName(candidate.tool)}`"
-                    size="small" effect="plain" class="tool-manage-tag-clickable" @click="appendTool(candidate.index)">
-                    {{ getToolTagName(candidate.tool) }}
-                </el-tag>
-                <span v-if="!candidateTools.length" class="tool-manage-empty">empty</span>
+            <div class="tool-manage-section">
+                <div class="tool-manage-title">{{ t('toolManagePanel.candidate') }}</div>
+                <div class="tool-manage-tags">
+                    <el-tag v-for="candidate in candidateTools"
+                        :key="`candidate-${candidate.index}-${getToolTagName(candidate.tool)}`" size="small"
+                        effect="plain" type="info" class="tool-manage-tag-clickable"
+                        @click="appendTool(candidate.index)">
+                        {{ getToolTagName(candidate.tool) }}
+                    </el-tag>
+                    <span v-if="!candidateTools.length" class="tool-manage-empty">{{ t('toolManagePanel.empty')
+                    }}</span>
+                </div>
             </div>
-        </div>
 
-        <div class="tool-manage-section">
-            <div class="tool-manage-title">selected</div>
-            <div class="tool-manage-tags">
-                <el-tag v-for="selected in selectedTools" :key="`selected-${selected.index}-${getToolTagName(selected.tool)}`"
-                    size="small" type="success" class="tool-manage-tag-clickable" @click="removeTool(selected.index)">
-                    {{ getToolTagName(selected.tool) }}
-                </el-tag>
-                <span v-if="!selectedTools.length" class="tool-manage-empty">empty</span>
+            <div class="tool-manage-section">
+                <div class="tool-manage-title">{{ t('toolManagePanel.selected') }}</div>
+                <div class="tool-manage-tags">
+                    <el-tag v-for="selected in selectedTools"
+                        :key="`selected-${selected.index}-${getToolTagName(selected.tool)}`" size="small" type="success"
+                        class="tool-manage-tag-clickable" @click="removeTool(selected.index)">
+                        {{ getToolTagName(selected.tool) }}
+                    </el-tag>
+                    <span v-if="!selectedTools.length" class="tool-manage-empty">{{ t('toolManagePanel.empty') }}</span>
+                </div>
             </div>
         </div>
-    </div>
+    </details>
 </template>
 
 <style scoped>
 .tool-manage-panel {
-    margin-bottom: 12px;
-    padding: 10px 12px;
+    max-width: 1024px;
+    margin-top: 20px;
+    margin-bottom: -5px;
     border: 1px solid #e4e7ed;
     border-radius: 6px;
-    background: #fafafa;
+    background: #f8f8f8;
+    overflow: hidden;
+}
+
+.tool-manage-summary {
+    padding: 6px 12px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #999;
+    background: #f8f8f8;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.tool-manage-panel[open] .tool-manage-summary {
+    border-bottom: 1px solid #e4e7ed;
+}
+
+.tool-manage-body {
+    padding: 10px 12px;
 }
 
 .tool-manage-section+.tool-manage-section {

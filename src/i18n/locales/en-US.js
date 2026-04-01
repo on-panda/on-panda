@@ -151,6 +151,12 @@ export default {
     promptLogprobsTooltip: 'After refreshing token probabilities, you can inspect the entire prompt logprobs visualization (chat templates).',
     promptVisualizationLabel: 'Full prompt visualization 🪄'
   },
+  toolManagePanel: {
+    configs: 'configs',
+    candidate: 'candidate',
+    selected: 'selected',
+    empty: 'empty'
+  },
   header: {
     usage: 'Usage',
     basicFeatures: 'Basic Features',

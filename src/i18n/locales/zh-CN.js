@@ -151,6 +151,12 @@ export default {
     promptLogprobsTooltip: '更新词组概率后，可查看整条 prompt 的 logprobs 可视化（chat templates）',
     promptVisualizationLabel: '整条 prompt 可视化 🪄'
   },
+  toolManagePanel: {
+    configs: '配置',
+    candidate: '候选',
+    selected: '已选',
+    empty: '空'
+  },
   header: {
     usage: '使用说明',
     basicFeatures: '基本功能',
