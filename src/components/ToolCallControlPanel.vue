@@ -215,13 +215,14 @@ const { t } = useI18n()
 const responseState = props.responseState
 const finalMessage = responseState.finalMessage
 const operationCenter = responseState.operationCenter
+const toolManageState = responseState.toolManageState
 const toolCallState = operationCenter.toolCallState
 const toolCallStatus = toolCallState.toolCallStatus
 
 const toolCalls = computed(() => finalMessage.value.tool_calls || [])
 const toolCallNames = computed(() => toolCalls.value.map(toolCall => toolCall.function.name))
-const readyStatus = computed(() => toolCallState.checkCallReady(toolCalls.value))
-const approvalStatus = computed(() => toolCallState.checkRequireApproval(toolCalls.value))
+const readyStatus = computed(() => toolManageState.checkCallReady(toolCalls.value))
+const approvalStatus = computed(() => toolManageState.checkRequireApproval(toolCalls.value))
 const canRun = computed(() => toolCalls.value.length > 0 && readyStatus.value.allReady)
 const isMobileByUserAgent = computed(() => globalStore.isMobileByUserAgent)
 const autoApproveRunNum = ref(1)

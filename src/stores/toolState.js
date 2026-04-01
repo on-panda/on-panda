@@ -27,7 +27,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     const presetToolReadyPromise = ref(Promise.resolve())
 
     const dataToolConfigs = computed(() => registeredDialogCache.value?.value?.tool_configs || [])
-    const toolConfigItemsComputed = computed(() => [
+    const toolConfigItems = computed(() => [
         ...dataToolConfigs.value.map((toolConfig, index) => ({ toolConfig, index, source: 'data' })),
         ...presetToolConfigsInput.value.map((toolConfig, index) => ({ toolConfig, index, source: 'preset' })),
     ])
@@ -286,7 +286,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
 
     async function refreshAllTools() {
         const nextAllTools = []
-        for (const { toolConfig, index, source } of toolConfigItemsComputed.value) {
+        for (const { toolConfig, index, source } of toolConfigItems.value) {
             const entry = await prepareRuntimeEntry({
                 toolConfig,
                 source,
@@ -310,10 +310,6 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
             return
         }
         setDialogTools(await buildToolsFromToolConfigs(dialogCache.tool_configs))
-    }
-
-    async function updateMatchedTools() {
-        matchedAllToSelectedIndex.value = await matchTwoToolLists(allTools.value, currentDialogTools.value)
     }
 
     function registerDialogCache(dialogCache) {
@@ -346,52 +342,60 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         setDialogTools(nextTools)
     }
 
-    watch(presetToolConfigsInput, (nextPresetToolConfigs) => {
+    watch(presetToolConfigsInput, function watchPresetToolConfigs(nextPresetToolConfigs, _oldValue, onCleanup) {
+        let expired = false
+        onCleanup(() => {
+            expired = true
+        })
         presetToolReadyPromise.value = (async () => {
-            const nextPresetConfigHashToIndex = {}
-            await Promise.all(nextPresetToolConfigs.map(async (toolConfig, toolConfigIndex) => {
-                const entry = await prepareRuntimeEntry({
+            const presetEntries = await Promise.all(nextPresetToolConfigs.map((toolConfig, toolConfigIndex) => (
+                prepareRuntimeEntry({
                     toolConfig,
                     source: 'preset',
                     toolConfigIndex,
                     eager: true,
                 })
-                nextPresetConfigHashToIndex[entry.configHash] = toolConfigIndex
-            }))
-            presetConfigHashToIndex.value = nextPresetConfigHashToIndex
-            await syncDialogToolsFromConfigsIfNeeded()
-            await refreshAllTools()
-            await updateMatchedTools()
+            )))
+            if (!expired) {
+                const nextPresetConfigHashToIndex = {}
+                for (const [toolConfigIndex, entry] of presetEntries.entries()) {
+                    nextPresetConfigHashToIndex[entry.configHash] = toolConfigIndex
+                }
+                presetConfigHashToIndex.value = nextPresetConfigHashToIndex
+                await syncDialogToolsFromConfigsIfNeeded()
+                await refreshAllTools()
+            }
         })()
     }, { deep: true, immediate: true, flush: 'sync' })
 
-    let refreshAllToolsID = 0
-    watch([toolConfigItemsComputed, runtimeVersion], () => {
-        const currentRefreshID = ++refreshAllToolsID
-        ; (async () => {
-            await refreshAllTools()
-            if (currentRefreshID !== refreshAllToolsID) {
-                return
-            }
-            await syncDialogToolsFromConfigsIfNeeded()
-            await updateMatchedTools()
-        })().catch(error => {
-            console.error(error)
+    watch([toolConfigItems, runtimeVersion], function watchAllTools(_values, _oldValues, onCleanup) {
+        let expired = false
+        onCleanup(() => {
+            expired = true
         })
+            ; (async () => {
+                await refreshAllTools()
+                if (!expired) {
+                    await syncDialogToolsFromConfigsIfNeeded()
+                }
+            })().catch(error => {
+                console.error(error)
+            })
     }, { deep: true, immediate: true, flush: 'sync' })
 
-    let updateMatchedToolsID = 0
-    watch([allTools, currentDialogTools], () => {
-        const currentUpdateID = ++updateMatchedToolsID
-        ; (async () => {
-            const matchedIndex = await matchTwoToolLists(allTools.value, currentDialogTools.value)
-            if (currentUpdateID !== updateMatchedToolsID) {
-                return
-            }
-            matchedAllToSelectedIndex.value = matchedIndex
-        })().catch(error => {
-            console.error(error)
+    watch([allTools, currentDialogTools], function watchMatchedTools(_values, _oldValues, onCleanup) {
+        let expired = false
+        onCleanup(() => {
+            expired = true
         })
+            ; (async () => {
+                const matchedIndex = await matchTwoToolLists(allTools.value, currentDialogTools.value)
+                if (!expired) {
+                    matchedAllToSelectedIndex.value = matchedIndex
+                }
+            })().catch(error => {
+                console.error(error)
+            })
     }, { deep: true, immediate: true, flush: 'sync' })
 
     function checkCallReady(toolCalls = []) {
@@ -443,10 +447,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
 }
 
 export function ToolCallStateClosure({
-    ensureDialogToolsMaterialized,
-    getToolState,
-    peekToolState,
-    warning,
+    toolManageState,
 } = {}) {
     const toolCallStatus = ref({
         callTimes: 0,
@@ -463,39 +464,17 @@ export function ToolCallStateClosure({
     }
 
     async function prepareToolCallExecution(toolCalls = []) {
-        await ensureDialogToolsMaterialized()
+        await toolManageState.buildRequestTools()
         const toolCallsToRun = toolCalls
-        const currentToolState = await getToolState()
-        const readyStatus = currentToolState.checkCallReady(toolCallsToRun)
+        const readyStatus = toolManageState.checkCallReady(toolCallsToRun)
         return {
             toolCallsToRun,
-            currentToolState,
             readyStatus,
         }
     }
 
-    function checkCallReady(toolCalls = []) {
-        const toolState = peekToolState()
-        if (!toolState) {
-            return checkToolCallReadyStatus(toolCalls)
-        }
-        return toolState.checkCallReady(toolCalls)
-    }
-
-    function checkRequireApproval(toolCalls = []) {
-        const toolState = peekToolState()
-        if (!toolState) {
-            return {
-                needApproval: false,
-                approvalToolNames: [],
-            }
-        }
-        return toolState.checkRequireApproval(toolCalls)
-    }
-
     async function runPreparedToolCalls({
         toolCallsToRun,
-        currentToolState,
         readyStatus,
     }, consumeApproval = false) {
         if (!readyStatus.allReady) {
@@ -513,7 +492,7 @@ export function ToolCallStateClosure({
         toolCallStatus.value.callTimes++
         const toolCallID = toolCallStatus.value.callTimes
         try {
-            const toolMessages = await currentToolState.call(toolCallsToRun)
+            const toolMessages = await toolManageState.call(toolCallsToRun)
             const discardReason = getToolCallDiscardReason({
                 toolCallStatus: toolCallStatus.value,
                 toolCallID,
@@ -545,7 +524,6 @@ export function ToolCallStateClosure({
                 }
             }
             toolCallStatus.value.calling = false
-            warning(error)
             return {
                 readyStatus,
                 toolMessages: null,
@@ -583,8 +561,6 @@ export function ToolCallStateClosure({
     return {
         toolCallStatus,
         setAutoApproveLoop,
-        checkCallReady,
-        checkRequireApproval,
         maybeAutoCallToolCalls,
         stopToolCalls,
     }

@@ -177,7 +177,7 @@ const canRunToolCalls = computed(() => {
   if (!hasToolCalls.value) {
     return false
   }
-  return props.operationCenter.toolCallState.checkCallReady(messageToolCalls.value).allReady
+  return props.operationCenter.toolManageState.checkCallReady(messageToolCalls.value).allReady
 })
 const isRunPrimaryAction = computed(() => hasToolCalls.value)
 const showPrimaryActionButton = computed(() => {

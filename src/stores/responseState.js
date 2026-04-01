@@ -821,14 +821,12 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     const warningState = new WarningState()
     const warning = warningState.warning
     const toolCallState = ToolCallStateClosure({
-        ensureDialogToolsMaterialized,
-        getToolState: async () => toolManageState,
-        peekToolState: () => toolManageState,
-        warning,
+        toolManageState,
     })
 
     const operationCenter = new OperationCenter()
     operationCenter.toolCallState = toolCallState
+    operationCenter.toolManageState = toolManageState
     operationCenter.loadMessages(messages.value)
 
     const newRoundMessage = ref({ role: 'user', content: '' })
