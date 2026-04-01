@@ -41,7 +41,6 @@ const selectedTools = computed(() => toolManageState.currentDialogTools.value.ma
 })))
 const selectedToolCount = computed(() => selectedTools.value.length)
 const allToolCount = computed(() => toolManageState.allTools.value.length)
-const summaryLabel = computed(() => `Tools` + (allToolCount.value ? ` (${selectedToolCount.value}/${allToolCount.value})` : ''))
 
 watch(selectedToolCount, function watchSelectedToolCount(nextSelectedToolCount) {
     if (hasPanelToggled.value || panelOpen.value || !nextSelectedToolCount) {
@@ -95,7 +94,12 @@ function handlePanelToggle() {
 
 <template>
     <details ref="detailsRef" class="tool-manage-panel" :open="panelOpen" @toggle="handlePanelToggle">
-        <summary class="tool-manage-summary"> {{ summaryLabel }} </summary>
+        <summary class="tool-manage-summary">
+            Tools
+            <template v-if="allToolCount">
+                <code>{{ selectedToolCount }}/{{ allToolCount }}</code>
+            </template>
+        </summary>
         <div class="tool-manage-body">
             <div class="tool-manage-section">
                 <div class="tool-manage-title">{{ t('toolManagePanel.configs') }}</div>
@@ -117,7 +121,7 @@ function handlePanelToggle() {
                         {{ getToolTagName(candidate.tool) }}
                     </el-tag>
                     <span v-if="!candidateTools.length" class="tool-manage-empty">{{ t('toolManagePanel.empty')
-                    }}</span>
+                        }}</span>
                 </div>
             </div>
 
@@ -149,13 +153,22 @@ function handlePanelToggle() {
 
 .tool-manage-summary {
     padding: 6px 12px;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     color: #999;
     background: #f8f8f8;
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
+}
+
+.tool-manage-summary code {
+    margin-left: 4px;
+    padding: 1px 4px;
+    color: #888;
+    font-size: 11px;
+    border: 1px solid #dadada;
+    border-radius: 4px;
 }
 
 .tool-manage-panel[open] .tool-manage-summary {
