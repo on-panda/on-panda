@@ -1,4 +1,5 @@
-import { computed, isRef, ref, watch } from 'vue'
+import { computed, isRef, onMounted, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import { deepCopy } from '../utils/commonUtils.js'
 import {
     buildDuplicatedToolNameError,
@@ -16,6 +17,24 @@ import {
 } from '../utils/toolUtils.js'
 
 export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
+    const isMounted = ref(false)
+    onMounted(() => {
+        isMounted.value = true
+    })
+
+    function showErrorMessage(message) {
+        setTimeout(() => {
+            if (isMounted.value) {
+                ElMessage({
+                    showClose: true,
+                    message,
+                    type: 'error',
+                    duration: 10000,
+                })
+            }
+        }, isMounted.value ? 0 : 2000)
+    }
+
     const presetToolConfigsInput = isRef(presetToolConfigs) ? presetToolConfigs : ref(deepCopy(presetToolConfigs || []))
     const registeredDialogCache = ref(null)
     const runtimeVersion = ref(0)
@@ -83,6 +102,15 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         }
         if (!entry.initPromise) {
             entry.initPromise = (async () => {
+                const source = buildMcpToolSourceLabel(toolConfig, toolConfigIndex)
+                let hasShownErrorMessage = false
+                function showMcpErrorMessage(message) {
+                    if (hasShownErrorMessage) {
+                        return
+                    }
+                    hasShownErrorMessage = true
+                    showErrorMessage(message)
+                }
                 const nextTools = []
                 const toolNameToSource = {}
                 const nextToolNameToCall = {}
@@ -101,6 +129,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                     })
                     client.onerror = (error) => {
                         console.error('[OnPandaWeb MCP] Client error.', error)
+                        showMcpErrorMessage(`Error in MCP connection of "${source}":\n ${error.message}`)
                     }
                     await client.connect(transport)
                     nextClosers.push(() => transport.close())
@@ -148,6 +177,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                     runtimeVersion.value++
                     return entry
                 } catch (error) {
+                    showMcpErrorMessage(`Error in loading MCP tools of "${source}":\n ${error.message}`)
                     await Promise.allSettled(nextClosers.map(closeClient => closeClient()))
                     throw error
                 }
