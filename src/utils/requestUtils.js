@@ -90,9 +90,14 @@ export function dropStaleToolAsset(body = {}) {
         if (keepAssetIndexes.has(record.assetIndex)) {
             continue
         }
+        const info = `To save context tokens, this ${record.type} was dropped in the request.`
         record.message.content.splice(record.chunkIndex, 1, {
             type: 'text',
-            text: `<drop_stale_tool_asset tool_asset_index=${record.assetIndex}>To save context tokens, this ${record.type} was dropped in the request.</drop_stale_tool_asset>`,
+            text: `<|drop_stale_tool_asset_start|>${JSON.stringify({
+                tool_asset_index: record.assetIndex,
+                type: record.type,
+                info,
+            })}<|drop_stale_tool_asset_end|>`,
         })
     }
 

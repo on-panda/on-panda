@@ -212,14 +212,10 @@ export function checkToolCallReadyStatus(toolCalls = [], toolNameToCall = {}) {
 
 export function buildRejectedToolMessages(toolCalls = [], toolCallsRejectedGuidance = '') {
     const guidance = toolCallsRejectedGuidance.trim()
-    const content = guidance ? `<tool_calls_rejected_notice>
-The user rejected the tool_calls.
-<guidance_from_user>
-${guidance}
-</guidance_from_user>
-</tool_calls_rejected_notice>` : `<tool_calls_rejected_notice>
-The user rejected the tool_calls.
-</tool_calls_rejected_notice>`
+    // Why not using XML for model input tag? XML is worried that some Markdown renderers might mistake it for HTML and swallow it
+    const guidanceContent = guidance
+        ? `<|guidance_from_user_start|>\n${guidance}\n<|guidance_from_user_end|>\n` : ""
+    const content = `<|tool_calls_rejected_notice_start|>\nThe user rejected the tool_calls.\n${guidanceContent}<|tool_calls_rejected_notice_end|>`
     return toolCalls.map(toolCall => ({
         role: 'tool',
         content,
