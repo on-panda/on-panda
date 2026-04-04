@@ -513,6 +513,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             }
             messages.value = this.getNextMessages({ messagesToAppend: rejectedToolMessages, messageIndex })
             tokens.value = []
+            this.pandaState.setCurrentIsGood(false, true)
             this.pandaState.afterOperation({
                 operator: "reject_tool_calls",
                 on_policy: true,
