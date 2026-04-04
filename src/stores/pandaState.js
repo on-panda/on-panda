@@ -484,10 +484,10 @@ export class PandaState {
 
         if (!operation.is_prompt_modified && !operation.is_response_modified) {
             this.doNothing(operation)
-        } else if (this.isPreviousOperationOnPolicy.value || operation.on_policy) {
-            forceFork ? this.fork(operation) : this.autoFork(operation)
+        } else if (forceFork) {
+            this.fork(operation)
         } else {
-            this.writeBack(operation)
+            this.autoFork(operation)
         }
     }
 
@@ -551,7 +551,12 @@ export class PandaState {
             }
         } else {
             if (operation.is_prompt_modified || operation.is_response_modified) {
-                this.writeBack(operation)
+                const _op = this.previousOperation.value
+                if (_op && Object.keys(_op).includes('is_prompt_modified') && (operation.is_prompt_modified !== _op?.is_prompt_modified || operation.is_response_modified !== _op?.is_response_modified)) {
+                    this.fork(operation)
+                } else {
+                    this.writeBack(operation)
+                }
             } else {
                 this.doNothing()
             }
