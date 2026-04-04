@@ -425,11 +425,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         // continue generating, stop, continue with chosen, continue with input, edit prompt(include role), new round, edit response, refresh, load example, load panda tree.
         pandaState = buildMockObject()
 
-        getNextMessagesForRound = (messagesToAppend, { messageIndex = -1 } = {}) => {
-            const baseMessages = (
-                typeof messageIndex === "number" && messageIndex >= 0 && messages.value.length
-                    ? messages.value.slice(0, Math.min(messageIndex, messages.value.length - 1) + 1)
-                    : messagesComputed.value
+        getNextMessages = ({ messagesToAppend = [], messageIndex = -1 } = {}) => {
+            const baseMessages = (messageIndex >= 0 && messages.value.length
+                ? messages.value.slice(0, Math.min(messageIndex, messages.value.length - 1) + 1)
+                : messagesComputed.value
             )
             return baseMessages.concat(deepCopy(messagesToAppend))
         }
@@ -488,10 +487,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             await toolManageState.buildRequestTools()
             const toolCallMessage = this.getMessageByIndex(messageIndex)
             console.assert(toolCallMessage.tool_calls.length, "runToolCalls requires tool_calls", toolCallMessage)
-            if (messageIndex !== -1 && messages.value.length) {
+            if (messageIndex !== -1) {
                 this.pandaState.beforeOperation()
-                const clampedIndex = Math.min(messageIndex, messages.value.length - 1)
-                messages.value = messages.value.slice(0, clampedIndex + 1)
+                messages.value = this.getNextMessages({ messageIndex })
                 tokens.value = []
                 // if messageIndex != -1 , set nextNotSameOperationCache `on_policy: false` to prevent tool calls failures and end with tool call response
                 this.pandaState.nextNotSameOperationCache = {
@@ -513,7 +511,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             if (messageIndex !== -1 && messages.value.length) {
                 this.pandaState.beforeOperation()
             }
-            messages.value = this.getNextMessagesForRound(rejectedToolMessages, { messageIndex })
+            messages.value = this.getNextMessages({ messagesToAppend: rejectedToolMessages, messageIndex })
             tokens.value = []
             this.pandaState.afterOperation({
                 operator: "reject_tool_calls",
@@ -618,7 +616,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             var role = newRoundMessages ? 'user' : newRoundMessage.value.role
             await toolManageState.buildRequestTools()
             this.pandaState.beforeOperation()
-            messages.value = this.getNextMessagesForRound(messagesToAppend)
+            messages.value = this.getNextMessages({ messagesToAppend })
             tokens.value = []
             newRoundMessage.value = { role: role, content: '' }
             this.pandaState.afterOperation({
