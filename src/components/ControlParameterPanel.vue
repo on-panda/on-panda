@@ -162,14 +162,15 @@ comfirm && string: set localStorageApiConfigsBuffer and try to verfiy JSON5 form
 
 const localStorageApiConfigsBuffer = ref(localStorage.getItem('onPandaApiConfigsJson5') || '')
 
-function maskApiKeyInApiConfig(apiConfig) {
-    if (apiConfig?.client_config?.api_key) {
-        apiConfig = deepCopy(apiConfig)
-        const apiKey = apiConfig.client_config.api_key
-        apiConfig.client_config.api_key = apiKey.slice(0, 6) + '*'.repeat(apiKey.length - 6 - 3) + apiKey.slice(-3)
+const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
+    var maskedApiConfig = apiConfig.value
+    if (maskedApiConfig?.client_config?.api_key) {
+        maskedApiConfig = deepCopy(maskedApiConfig)
+        const apiKey = maskedApiConfig.client_config.api_key
+        maskedApiConfig.client_config.api_key = apiKey.slice(0, 6) + '*'.repeat(apiKey.length - 6 - 3) + apiKey.slice(-3)
     }
-    return apiConfig
-}
+    return maskedApiConfig
+})
 
 </script>
 
@@ -327,8 +328,8 @@ function maskApiKeyInApiConfig(apiConfig) {
                         </el-tooltip>
                     </small>
                 </el-form-item>
-                <ObjectViewerInDetails :object="maskApiKeyInApiConfig(props.controlParameterState.apiConfig.value)"
-                    summary="Current API config JSON" style="max-width: 800px; margin-left: 20px" />
+                <ObjectViewerInDetails :object="maskedKeyInApiConfig" summary="Current API config JSON"
+                    style="max-width: 800px; margin-left: 20px" />
             </div>
         </details>
     </el-form>

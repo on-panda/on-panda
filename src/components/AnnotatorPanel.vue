@@ -33,9 +33,9 @@
                 <CustomAnnotatorTool v-for="tool in pandaState.dialogCache.value.annotate?.customs" :tool="tool">
                 </CustomAnnotatorTool>
 
-                <ObjectViewerInDetails :object="pandaState.dialogCache.value"
-                    :summary="t('annotator.currentDialogJson')" :tips="t('annotator.dialogCacheTips')" />
-                <ObjectViewerInDetails :object="pandaState.tokens.value" :summary="t('annotator.tokens')" v-if="0" />
+                <ObjectViewerInDetails :object="pandaState.dialogCache"
+                    :summary="t('annotator.currentDialogJson')" />
+                <ObjectViewerInDetails :object="pandaState.tokens" :summary="t('annotator.tokens')" v-if="0" />
 
                 <el-divider class="el-divider-ignore-background-color" content-position="left">
                     <small style="color: #606266; background-color: antiquewhite; padding:10px ">
@@ -71,7 +71,7 @@
                 <CustomAnnotatorTool :tool='editableCommentAsTool'>
                 </CustomAnnotatorTool>
             </el-form>
-            <ObjectViewerInDetails :object="pandaState.pandaTree.value" :summary="t('annotator.pandaTreeJson')" />
+            <ObjectViewerInDetails :object="pandaState.pandaTree" :summary="t('annotator.pandaTreeJson')" />
         </div>
     </div>
 </template>

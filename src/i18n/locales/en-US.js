@@ -128,7 +128,6 @@ export default {
     latestDialogDefault: 'as it is the latest dialog, so \'Y\' is the default.',
     notLatestDialogDefault: 'as it is NOT the latest dialog, so \'N\' is the default.',
     currentDialogJson: 'current dialog JSON',
-    dialogCacheTips: 'This dialogCache may not be updated in time. Try switching the dialog to refresh it.',
     tokens: 'tokens',
     dialogLevel: 'dialog level / data level',
     notSavedYet: 'Not saved yet',

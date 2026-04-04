@@ -128,7 +128,6 @@ export default {
     latestDialogDefault: '由于这是最新的对话，所以默认为"Y"',
     notLatestDialogDefault: '由于这不是最新的对话，所以默认为"N"',
     currentDialogJson: '当前对话 JSON',
-    dialogCacheTips: '这个对话缓存可能没有及时更新。可以尝试切换对话来刷新它',
     tokens: '令牌',
     dialogLevel: '当前对话 / 当前标注',
     notSavedYet: '尚未保存',

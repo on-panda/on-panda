@@ -11,11 +11,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, unref, computed } from 'vue'
 
 const props = defineProps({
     object: {
-        type: Object,
+        type: Object,  // support ref and computed
     },
     summary: {
         type: String,
@@ -29,11 +29,14 @@ const props = defineProps({
 
 const detailsRef = ref(null)
 // lazy load the content for better performance and avoid repeated key word find in the content
-const content = ref('<|PLACEHOLDER|>')
-
+const detailsRefIsOpen = ref(null)
 const handleToggle = () => {
-    content.value = detailsRef.value?.open ? JSON.stringify(props.object, null, 2) : '<|PLACEHOLDER|>'
+    detailsRefIsOpen.value = detailsRef.value.open
 }
+const content = computed(() => {
+    var nextContent = detailsRefIsOpen.value ? JSON.stringify(unref(props.object), null, 2) : '<|PLACEHOLDER|>'
+    return nextContent
+})
 
 </script>
 <style scoped>
