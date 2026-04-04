@@ -518,19 +518,29 @@ export function ToolCallStateClosure({
         toolCallStatus.value.currentCallConsumedApproval = false
     }
 
-    async function runPreparedToolCalls({
-        toolCalls,
-        readyStatus,
-    }, consumeApproval = false) {
+    async function maybeAutoCallToolCalls(toolCalls = []) {
+        await toolManageState.buildRequestTools()
+        const readyStatus = toolManageState.checkCallReady(toolCalls)
         if (!readyStatus.allReady) {
             return {
-                readyStatus,
+                readyStatus: readyStatus,
                 toolMessages: null,
                 info: "!readyStatus.allReady"
             }
         }
-        toolCallStatus.value.currentCallConsumedApproval = consumeApproval
-        if (consumeApproval) {
+        const approvalStatus = toolManageState.checkRequireApproval(toolCalls)
+        const needMoreApproval = approvalStatus.needApproval && (
+            toolCallStatus.value.approvedRunCount >= toolCallStatus.value.autoApproveRunNum
+        )
+        if (needMoreApproval) {
+            return {
+                readyStatus: readyStatus,
+                toolMessages: null,
+                info: "needMoreApproval"
+            }
+        }
+        toolCallStatus.value.currentCallConsumedApproval = approvalStatus.needApproval
+        if (approvalStatus.needApproval) {
             toolCallStatus.value.approvedRunCount++
         }
         toolCallStatus.value.calling = true
@@ -575,34 +585,6 @@ export function ToolCallStateClosure({
                 info: error
             }
         }
-    }
-
-    async function maybeAutoCallToolCalls(toolCalls = []) {
-
-        await toolManageState.buildRequestTools()
-        const readyStatus = toolManageState.checkCallReady(toolCalls)
-
-        if (!readyStatus.allReady) {
-            return {
-                readyStatus: readyStatus,
-                toolMessages: null,
-                info: "!readyStatus.allReady"
-            }
-        }
-        const hasRemainingAutoApproveRuns = (
-            toolCallStatus.value.approvedRunCount < toolCallStatus.value.autoApproveRunNum
-        )
-        if (!hasRemainingAutoApproveRuns) {
-            return {
-                readyStatus: readyStatus,
-                toolMessages: null,
-                info: "!hasRemainingAutoApproveRuns"
-            }
-        }
-        return await runPreparedToolCalls({
-            toolCalls,
-            readyStatus,
-        }, true)
     }
 
     function stopToolCalls() {

@@ -461,7 +461,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                     const result = await toolCallState.maybeAutoCallToolCalls(lastMessage.tool_calls)
                     if (!result.toolMessages?.length) {
                         // AgenticLoop stoped
-                        // console.log("[info of try tool calls]:", result.info)
+                        // console.log("[stop tool calls info]:", result.info)
                         break
                     }
                     messages.value = messagesComputed.value.concat(deepCopy(result.toolMessages))
