@@ -198,18 +198,6 @@ export function mcpToolResultToContent(result) {
     return ''
 }
 
-export function checkToolCallReadyStatus(toolCalls = [], toolNameToCall = {}) {
-    const isReadys = toolCalls.map(toolCall => toolCall.function.name in toolNameToCall)
-    const unreadyToolNames = [...new Set(toolCalls
-        .filter((toolCall, index) => !isReadys[index])
-        .map(toolCall => toolCall.function.name))]
-    return {
-        isReadys,
-        allReady: isReadys.every(Boolean),
-        unreadyToolNames,
-    }
-}
-
 export function buildRejectedToolMessages(toolCalls = [], toolCallsRejectedGuidance = '') {
     const guidance = toolCallsRejectedGuidance.trim()
     // Why not using XML for model input tag? XML is worried that some Markdown renderers might mistake it for HTML and swallow it

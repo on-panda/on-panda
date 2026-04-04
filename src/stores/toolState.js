@@ -5,7 +5,6 @@ import {
     buildDuplicatedToolNameError,
     buildMcpPlaceholderFromConfig,
     buildMcpToolSourceLabel,
-    checkToolCallReadyStatus,
     formatToolName,
     getToolRuntime,
     getToolCallDiscardReason,
@@ -445,7 +444,16 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     }, { deep: true, immediate: true, flush: 'sync' })
 
     function checkCallReady(toolCalls = []) {
-        return checkToolCallReadyStatus(toolCalls, getToolNameToCall())
+        const toolNameToCall = getToolNameToCall()
+        const isReadys = toolCalls.map(toolCall => toolCall.function.name in toolNameToCall)
+        const unreadyToolNames = [...new Set(toolCalls
+            .filter((toolCall, index) => !isReadys[index])
+            .map(toolCall => toolCall.function.name))]
+        return {
+            isReadys,
+            allReady: isReadys.every(Boolean),
+            unreadyToolNames,
+        }
     }
 
     function checkRequireApproval(toolCalls = []) {
@@ -510,18 +518,8 @@ export function ToolCallStateClosure({
         toolCallStatus.value.currentCallConsumedApproval = false
     }
 
-    async function prepareToolCallExecution(toolCalls = []) {
-        await toolManageState.buildRequestTools()
-        const toolCallsToRun = toolCalls
-        const readyStatus = toolManageState.checkCallReady(toolCallsToRun)
-        return {
-            toolCallsToRun,
-            readyStatus,
-        }
-    }
-
     async function runPreparedToolCalls({
-        toolCallsToRun,
+        toolCalls,
         readyStatus,
     }, consumeApproval = false) {
         if (!readyStatus.allReady) {
@@ -539,13 +537,13 @@ export function ToolCallStateClosure({
         toolCallStatus.value.callTimes++
         const toolCallID = toolCallStatus.value.callTimes
         try {
-            const toolMessages = await toolManageState.call(toolCallsToRun)
+            const toolMessages = await toolManageState.call(toolCalls)
             const discardReason = getToolCallDiscardReason({
                 toolCallStatus: toolCallStatus.value,
                 toolCallID,
             })
             if (discardReason) {
-                logDiscardedToolCall(toolCallID, toolCallsToRun, discardReason)
+                logDiscardedToolCall(toolCallID, toolCalls, discardReason)
                 return {
                     readyStatus,
                     toolMessages: null,
@@ -563,7 +561,7 @@ export function ToolCallStateClosure({
                 toolCallID,
             })
             if (discardReason) {
-                logDiscardedToolCall(toolCallID, toolCallsToRun, discardReason)
+                logDiscardedToolCall(toolCallID, toolCalls, discardReason)
                 return {
                     readyStatus,
                     toolMessages: null,
@@ -580,12 +578,15 @@ export function ToolCallStateClosure({
     }
 
     async function maybeAutoCallToolCalls(toolCalls = []) {
-        const prepared = await prepareToolCallExecution(toolCalls)
-        if (!prepared.readyStatus.allReady) {
+
+        await toolManageState.buildRequestTools()
+        const readyStatus = toolManageState.checkCallReady(toolCalls)
+
+        if (!readyStatus.allReady) {
             return {
-                readyStatus: prepared.readyStatus,
+                readyStatus: readyStatus,
                 toolMessages: null,
-                info: "!prepared.readyStatus.allReady"
+                info: "!readyStatus.allReady"
             }
         }
         const hasRemainingAutoApproveRuns = (
@@ -593,12 +594,15 @@ export function ToolCallStateClosure({
         )
         if (!hasRemainingAutoApproveRuns) {
             return {
-                readyStatus: prepared.readyStatus,
+                readyStatus: readyStatus,
                 toolMessages: null,
                 info: "!hasRemainingAutoApproveRuns"
             }
         }
-        return await runPreparedToolCalls(prepared, true)
+        return await runPreparedToolCalls({
+            toolCalls,
+            readyStatus,
+        }, true)
     }
 
     function stopToolCalls() {
