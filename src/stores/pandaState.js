@@ -309,38 +309,6 @@ export class PandaState {
             }
         })
     }
-    doNothing = (operation) => {
-        const MUST_RECORD_OPERATOR_LIST = ['generate_new']
-        if (MUST_RECORD_OPERATOR_LIST.includes(operation?.operator)) {
-            this.currentDialogData.value.operations.push(operation)
-        }
-        this.cacheTokens()
-    }
-    writeBack = (operation) => {
-        var newDialog = deepCopy(this.dialogComputed.value)
-        if (operation) {
-            newDialog.operations.push(operation)
-        }
-        this.cacheTokens()
-        this.pandaTree.value.dialogs[this.currentDialogKey.value] = newDialog
-        // console.trace('write back:', this.currentDialogKey.value, operation)
-    }
-    fork = (operation) => {
-        var newDialog = deepCopy(this.dialogComputed.value)
-        newDialog.operations = operation ? [operation] : []
-        if ('is_good' in (newDialog.annotate || {})) {
-            // when fork, if has is_good key, reset it to default
-            newDialog.annotate.is_good = null
-        }
-        // console.trace('fork:', this.currentDialogKey.value, '->', this.dialogMaxKeyAll.value + 1, operation)
-        this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = newDialog
-
-        this.currentDialogIndex.value = this.dialogKeys.value.indexOf(this.dialogMaxKeyAll.value)
-        this.cacheTokens()
-
-        // will throw recursion error
-        // this.switchDialogByIndex(this.dialogKeys.value.length-1)
-    }
     eraseCurrentDialog = () => {
         this.beforeOperation()
         // if current dialog will erase, default to next dialog or previous dialog
@@ -377,7 +345,6 @@ export class PandaState {
     }
     restoreDeletedDialog = (key) => {
         this.beforeOperation()
-
         key = key || this.currentDialogKey.value
         if (key in this.pandaTree.value.deleted_dialogs) {
             this.pandaTree.value.dialogs[key] = this.pandaTree.value.deleted_dialogs[key]
@@ -460,52 +427,6 @@ export class PandaState {
         // this.switchDialogByIndex(this.dialogMaxIndexRemain)  // Will fork by is_prompt_modified=true, may by dialogComputed update not in time?
         this.currentDialogIndex.value = this.dialogMaxIndexRemain.value
     }
-    previousOperation = computed(() => this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1])
-    // `on_policy` means the dialog still follows the original prompt -> model generation path.
-    // Typical `on_policy: true` operations are generate/continue/tool-call/new-round flows.
-    // Typical `on_policy: false` operations are manual prompt/response edits or manual branching.
-    // For an init dialog without operations, a final model-role message is treated as on-policy.
-    isPreviousOperationOnPolicy = computed(() => {
-        // if belong init dialog and no operations, default on_policy:true
-        if (!this.currentDialogData.value?.operations?.length) {
-            if (isFinalRoleModelRole(this.currentDialogData.value?.messages, this.modelRoles.value)) {
-                return true
-            } else {
-                return false
-            }
-        }
-        return this.previousOperation.value?.on_policy
-    })
-    // Sync the current UI state before a new action starts.
-    // Usually call this right before mutating messages/tokens, switching dialogs, dumping, or stopping generation.
-    // This may write back or fork immediately when the current UI already differs from the stored dialog.
-    // Normally do not pass `operation`; use `nextNotSameOperationCache` when the next auto flush needs a real operator.
-    beforeOperation = (operation = null) => {
-        // Usually shouldn't set opration, if have to, using this.nextNotSameOperationCache
-        this.autoFork(operation) // Usually response_modified_type === 'same', and do nothing
-    }
-
-    setDefaultToOperation = (operation) => {
-        const diff = dialogDifferent(this.currentDialogData.value, this.dialogComputed.value)
-        // console.log('diff:', diff)
-
-        var defaultOperation = {
-            time: Date.now(),
-            parent: String(this.currentDialogKey.value),
-        }
-        if (operation.on_policy) {
-            // Snapshot the generation config for on-policy operations so the branch is reproducible.
-            defaultOperation.chat_config = deepCopy(this.apiConfig.value.chat_config)
-            var NONE_USEFUL_CHAT_CONFIG_ITEMS = ['stream', 'logprobs', 'top_logprobs', 'stream_options', 'messages']
-            for (var key of NONE_USEFUL_CHAT_CONFIG_ITEMS) {
-                if (key in defaultOperation.chat_config) {
-                    delete defaultOperation.chat_config[key]
-                }
-            }
-        }
-        return Object.assign(defaultOperation, diff, operation)
-    }
-
     setDefaultToPandaTree = (pandaTree) => {
         pandaTree = pandaTree || this.pandaTree.value
         const defaultPandaTree = {
@@ -537,6 +458,58 @@ export class PandaState {
             }
         }
         return pandaTree
+    }
+
+    // Sync the current UI state before a new action starts.
+    // Usually call this right before mutating messages/tokens, switching dialogs, dumping, or stopping generation.
+    // This may write back or fork immediately when the current UI already differs from the stored dialog.
+    // Normally do not pass `operation`; use `nextNotSameOperationCache` when the next auto flush needs a real operator.
+    beforeOperation = (operation = null) => {
+        // Usually shouldn't set opration, if have to, using this.nextNotSameOperationCache
+        this.autoFork(operation) // Usually response_modified_type === 'same', and do nothing
+    }
+
+    // Finalize a just-applied action after messages/tokens have already been changed.
+    // Usually pair it with `beforeOperation()` around one user action: `before` flushes the old UI state,
+    // then `after` records the current action and decides whether to write back or fork.
+    // `forceFork` is only for actions that must keep an explicit child branch even if autoFork could write back.
+    afterOperation = (operation, forceFork = false) => {
+        operation = this.setDefaultToOperation(operation)
+
+        if (operation.operator == 'edit_prompt' && !operation.is_prompt_modified && ["continued", "same"].includes(operation.response_modified_type)) {
+            // special case, because edit_prompt could happend during generating
+            // TODO rm this condition
+            return this.doNothing(operation)
+        }
+
+        if (!operation.is_prompt_modified && !operation.is_response_modified) {
+            this.doNothing(operation)
+        } else if (this.isPreviousOperationOnPolicy.value || operation.on_policy) {
+            forceFork ? this.fork(operation) : this.autoFork(operation)
+        } else {
+            this.writeBack(operation)
+        }
+    }
+
+    setDefaultToOperation = (operation) => {
+        const diff = dialogDifferent(this.currentDialogData.value, this.dialogComputed.value)
+        // console.log('diff:', diff)
+
+        var defaultOperation = {
+            time: Date.now(),
+            parent: String(this.currentDialogKey.value),
+        }
+        if (operation.on_policy) {
+            // Snapshot the generation config for on-policy operations so the branch is reproducible.
+            defaultOperation.chat_config = deepCopy(this.apiConfig.value.chat_config)
+            var NONE_USEFUL_CHAT_CONFIG_ITEMS = ['stream', 'logprobs', 'top_logprobs', 'stream_options', 'messages']
+            for (var key of NONE_USEFUL_CHAT_CONFIG_ITEMS) {
+                if (key in defaultOperation.chat_config) {
+                    delete defaultOperation.chat_config[key]
+                }
+            }
+        }
+        return Object.assign(defaultOperation, diff, operation)
     }
 
     // Persist the current diff using the branching policy.
@@ -584,28 +557,54 @@ export class PandaState {
             }
         }
     }
-
-    // Finalize a just-applied action after messages/tokens have already been changed.
-    // Usually pair it with `beforeOperation()` around one user action: `before` flushes the old UI state,
-    // then `after` records the current action and decides whether to write back or fork.
-    // `forceFork` is only for actions that must keep an explicit child branch even if autoFork could write back.
-    afterOperation = (operation, forceFork = false) => {
-        operation = this.setDefaultToOperation(operation)
-
-        if (operation.operator == 'edit_prompt' && !operation.is_prompt_modified && ["continued", "same"].includes(operation.response_modified_type)) {
-            // special case, because edit_prompt could happend during generating
-            // TODO rm this condition
-            return this.doNothing(operation)
+    doNothing = (operation) => {
+        const MUST_RECORD_OPERATOR_LIST = ['generate_new']
+        if (MUST_RECORD_OPERATOR_LIST.includes(operation?.operator)) {
+            this.currentDialogData.value.operations.push(operation)
         }
-
-        if (!operation.is_prompt_modified && !operation.is_response_modified) {
-            this.doNothing(operation)
-        } else if (this.isPreviousOperationOnPolicy.value || operation.on_policy) {
-            forceFork ? this.fork(operation) : this.autoFork(operation)
-        } else {
-            this.writeBack(operation)
-        }
+        this.cacheTokens()
     }
+    writeBack = (operation) => {
+        var newDialog = deepCopy(this.dialogComputed.value)
+        if (operation) {
+            newDialog.operations.push(operation)
+        }
+        this.cacheTokens()
+        this.pandaTree.value.dialogs[this.currentDialogKey.value] = newDialog
+        // console.trace('write back:', this.currentDialogKey.value, operation)
+    }
+    fork = (operation) => {
+        var newDialog = deepCopy(this.dialogComputed.value)
+        newDialog.operations = operation ? [operation] : []
+        if ('is_good' in (newDialog.annotate || {})) {
+            // when fork, if has is_good key, reset it to default
+            newDialog.annotate.is_good = null
+        }
+        // console.trace('fork:', this.currentDialogKey.value, '->', this.dialogMaxKeyAll.value + 1, operation)
+        this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = newDialog
+
+        this.currentDialogIndex.value = this.dialogKeys.value.indexOf(this.dialogMaxKeyAll.value)
+        this.cacheTokens()
+
+        // will throw recursion error
+        // this.switchDialogByIndex(this.dialogKeys.value.length-1)
+    }
+    previousOperation = computed(() => this.currentDialogData.value.operations[this.currentDialogData.value.operations.length - 1])
+    // `on_policy` means the dialog still follows the original prompt -> model generation path.
+    // Typical `on_policy: true` operations are generate/continue/tool-call/new-round flows.
+    // Typical `on_policy: false` operations are manual prompt/response edits or manual branching.
+    // For an init dialog without operations, a final model-role message is treated as on-policy.
+    isPreviousOperationOnPolicy = computed(() => {
+        // if belong init dialog and no operations, default on_policy:true
+        if (!this.currentDialogData.value?.operations?.length) {
+            if (isFinalRoleModelRole(this.currentDialogData.value?.messages, this.modelRoles.value)) {
+                return true
+            } else {
+                return false
+            }
+        }
+        return this.previousOperation.value?.on_policy
+    })
 }
 
 export const pandaState = new PandaState()
