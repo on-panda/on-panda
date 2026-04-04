@@ -4,6 +4,7 @@ import { CaretRight, Close, CloseBold, Loading, RefreshRight } from '@element-pl
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../stores/globalStore.js'
 import { closeFloatPanelMeta, hashObjectSHA256Base64, sleep } from '../utils/commonUtils.js'
+import { messageToSeq, getFinishReason } from '../utils/chatUtils'
 import ElTooltipWithKeepOpen from './widgets/ElTooltipWithKeepOpen.vue'
 
 function useToolCallsRejectedGuidance(toolCalls) {
@@ -306,11 +307,21 @@ async function handleRejectTriggerClick() {
     }
     await handleRejectToolCalls()
 }
+
+
+const showToolCallControlPanel = computed(() => {
+    const msgs = responseState.messages.value
+    if (msgs?.length && msgs[msgs.length - 1].tool_calls && !messageToSeq(finalMessage.value)) {
+        return true
+    }
+    return getFinishReason(finalMessage) === "tool_calls"
+})
+
+
 </script>
 
 <template>
-    <div v-if="finalMessage.finish_reason === 'tool_calls'" class="toolCallControlPanel"
-        :class="{ mobile: globalStore.isMobile }">
+    <div v-if="showToolCallControlPanel" class="toolCallControlPanel" :class="{ mobile: globalStore.isMobile }">
         <div class="toolCallControlRow">
 
             <div v-show="!toolCallStatus.calling" class="toolCallControlButtons">

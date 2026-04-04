@@ -1,3 +1,4 @@
+import { unref } from 'vue'
 import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils'
 import { formatMessageAsText, formatSimpleContentAsText } from './messageTextCodec.js'
 import { stripRuntime } from './toolUtils.js'
@@ -21,6 +22,19 @@ export function verifyUrlIsMcp(url) {
 
 export function isFinalRoleModelRole(messages, modelRoles = ['assistant',]) {
     return modelRoles.includes(messages[messages.length - 1].role)
+}
+
+export function getFinishReason(message, defaultFinishReason = null) {
+    const msg = unref(message)
+    if (msg.finish_reason) {
+        return msg.finish_reason
+    }
+    if (defaultFinishReason) {
+        return defaultFinishReason
+    }
+    if (msg?.tool_calls?.length) {
+        return "tool_calls"
+    }
 }
 
 export function splitToPromptResponse(messages, modelRoles = ['assistant',]) {
@@ -201,7 +215,7 @@ export function normalizeRequest(requestBody) {
         delete body.logprobs
         delete body.top_logprobs
     }
-    if (body.top_logprobs){
+    if (body.top_logprobs) {
         body.logprobs = true
     }
     if (body.max_tokens == 0) {  // turn off max_tokens

@@ -1,7 +1,7 @@
 import { ref, computed, toValue, watch, isRef, unref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
-import { tokensToSeq, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
+import { tokensToSeq, getFinishReason, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
 import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
 import { applyImageDetailLevel, assertNoLegacyChatConfigTools, dropStaleToolAsset } from '../utils/requestUtils.js'
 import { buildRejectedToolMessages } from '../utils/toolUtils.js'
@@ -443,10 +443,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             return messagesComputed.value[clampedIndex]
         }
 
-        getToolLoopFinishReason = (message, defaultFinishReason = null) => {
-            return message?.finish_reason || defaultFinishReason || (message?.tool_calls?.length ? "tool_calls" : "")
-        }
-
         // Run tool-call and generation rounds until the assistant stops or needs manual approval.
         startAgenticLoop = async ({ autoApproveRunNum = 0, defaultFinishReason = null } = {}) => {
             await toolManageState.buildRequestTools()
@@ -455,7 +451,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 this.pandaState.beforeOperation()
             }
             let lastMessage = messagesComputed.value[messagesComputed.value.length - 1] || {}
-            let finishReason = this.getToolLoopFinishReason(lastMessage, defaultFinishReason)
+            let finishReason = getFinishReason(lastMessage, defaultFinishReason)
             while (true) {
                 if (finishReason === "tool_calls") {
                     const result = await toolCallState.maybeAutoCallToolCalls(lastMessage.tool_calls)
@@ -474,7 +470,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 await requestLlmServer(messagesComputed.value)
                 this.pandaState.beforeOperation()
                 lastMessage = messagesComputed.value[messagesComputed.value.length - 1] || {}
-                finishReason = this.getToolLoopFinishReason(lastMessage)
+                finishReason = getFinishReason(lastMessage)
                 if (finishReason !== "tool_calls") {
                     break
                 }
