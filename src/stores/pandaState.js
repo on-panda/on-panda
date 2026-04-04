@@ -610,6 +610,19 @@ export class PandaState {
         }
         return this.previousOperation.value?.on_policy
     })
+
+    setCurrentIsGood = (value, onlyReplaceNull, skipEmptyAnnotate) => {
+        if (onlyReplaceNull && this.dialogCache.value?.annotate?.is_good !== null) {
+            return
+        }
+        if (typeof this.dialogCache.value.annotate !== "object") {
+            if (skipEmptyAnnotate) {
+                return
+            }
+            this.dialogCache.value.annotate = {}
+        }
+        this.dialogCache.value.annotate.is_good = value
+    }
 }
 
 export const pandaState = new PandaState()

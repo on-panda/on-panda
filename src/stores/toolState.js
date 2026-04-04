@@ -564,6 +564,7 @@ export function ToolCallStateClosure({
             return {
                 readyStatus,
                 toolMessages,
+                consumedApproval: approvalStatus.needApproval
             }
         } catch (error) {
             const discardReason = getToolCallDiscardReason({

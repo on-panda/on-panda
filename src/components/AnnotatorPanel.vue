@@ -18,7 +18,7 @@
                     </template>
                     <CheckboxWidgetSupportNull
                         :checkboxValue="pandaState.dialogCache.value?.annotate?.is_good === null ? pandaState.dialogMaxIndexRemain.value === pandaState.currentDialogIndex.value : pandaState.dialogCache.value?.annotate?.is_good"
-                        @updateCheckboxValue="updateIsGoodValue">
+                        @updateCheckboxValue="(x) => pandaState.setCurrentIsGood(x)">
                     </CheckboxWidgetSupportNull>
                     <small style="color: #606266" v-if="pandaState.dialogCache.value?.annotate?.is_good === null">
                         &nbsp; ({{ t('annotator.noChoiceMade') }},
@@ -33,8 +33,7 @@
                 <CustomAnnotatorTool v-for="tool in pandaState.dialogCache.value.annotate?.customs" :tool="tool">
                 </CustomAnnotatorTool>
 
-                <ObjectViewerInDetails :object="pandaState.dialogCache"
-                    :summary="t('annotator.currentDialogJson')" />
+                <ObjectViewerInDetails :object="pandaState.dialogCache" :summary="t('annotator.currentDialogJson')" />
                 <ObjectViewerInDetails :object="pandaState.tokens" :summary="t('annotator.tokens')" v-if="0" />
 
                 <el-divider class="el-divider-ignore-background-color" content-position="left">
@@ -115,14 +114,6 @@ watch(() => editableCommentAsTool.value, (newVal) => {
         pandaState.pandaTree.value.comment = newVal.text
     }
 }, { deep: true })
-
-
-function updateIsGoodValue(v) {
-    if (typeof pandaState.dialogCache.value.annotate !== "object") {
-        pandaState.dialogCache.value.annotate = {}
-    }
-    pandaState.dialogCache.value.annotate.is_good = v
-}
 
 
 </script>
