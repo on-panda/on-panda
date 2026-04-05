@@ -22,7 +22,7 @@
     <div v-if="(isRenderRole && !isRenderContentEditing)">
       <div v-if="showPrimaryActionButton" class="messagePrimaryActionRow">
         <p class="messageRenderContent messagePrimaryActionContent">
-          <MultimodalRender :content="messageAsText" @dblclick="handleRenderContent" />
+          <MessageAsTextRender :messageAsText="messageAsText" @dblclick="handleRenderContent" />
         </p>
         <button @click="handlePrimaryAction" :disabled="isPrimaryActionDisabled" :style="primaryActionButtonStyle"
           class="messagePrimaryActionButton">
@@ -34,7 +34,7 @@
         </button>
       </div>
       <p v-else class="messageRenderContent">
-        <MultimodalRender :content="messageAsText" @dblclick="handleRenderContent" />
+        <MessageAsTextRender :messageAsText="messageAsText" @dblclick="handleRenderContent" />
       </p>
     </div>
     <div v-else class="editorAndDetails">
@@ -57,7 +57,7 @@
         <summary>
           <small style="color: #888;">{{ t('chatMessage.renderedMarkdown') }}</small>
         </summary>
-        <MultimodalRender :content="detailsContent" />
+        <MessageAsTextRender :messageAsText="detailsContent" />
         <hr style="margin-top:0px;color:#ccc">
       </details>
     </div>
@@ -73,7 +73,7 @@
 <script setup>
 import MessageRole from './widgets/MessageRole.vue'
 import EditableStringAttribute from './widgets/EditableStringAttribute.vue'
-import MultimodalRender from './widgets/MultimodalRender.vue'
+import MessageAsTextRender from './widgets/MessageAsTextRender.vue'
 
 import { computed, ref, onMounted, onBeforeUnmount, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
