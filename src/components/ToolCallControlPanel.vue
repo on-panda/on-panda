@@ -220,7 +220,23 @@ const toolManageState = responseState.toolManageState
 const toolCallState = operationCenter.toolCallState
 const toolCallStatus = toolCallState.toolCallStatus
 
-const toolCalls = computed(() => finalMessage.value.tool_calls || [])
+const isToolCallsNotInFinalMessage = computed(() => {
+    const msgs = responseState.messages.value
+    return msgs?.length && msgs[msgs.length - 1].tool_calls && responseState.tokens.value.length === 0
+})
+
+const showToolCallControlPanel = computed(() => {
+    if (getFinishReason(finalMessage) === "tool_calls" || isToolCallsNotInFinalMessage.value) {
+        return true
+    }
+    return false
+})
+
+const toolCalls = computed(() => {
+    const msgs = responseState.messages.value
+    const toolCalls = isToolCallsNotInFinalMessage.value ? msgs[msgs.length - 1].tool_calls : finalMessage.value.tool_calls
+    return toolCalls || []
+})
 const toolCallNames = computed(() => toolCalls.value.map(toolCall => toolCall.function.name))
 const readyStatus = computed(() => toolManageState.checkCallReady(toolCalls.value))
 const approvalStatus = computed(() => toolManageState.checkRequireApproval(toolCalls.value))
@@ -308,14 +324,6 @@ async function handleRejectTriggerClick() {
     await handleRejectToolCalls()
 }
 
-
-const showToolCallControlPanel = computed(() => {
-    const msgs = responseState.messages.value
-    if (msgs?.length && msgs[msgs.length - 1].tool_calls && !messageToSeq(finalMessage.value)) {
-        return true
-    }
-    return getFinishReason(finalMessage) === "tool_calls"
-})
 
 
 </script>
@@ -444,7 +452,10 @@ const showToolCallControlPanel = computed(() => {
 
         <div class="toolCallControlInfo">
             <small>
-                <template v-if="approvalStatus.needApproval">
+                <template v-if="toolCallStatus.calling">
+                    {{ t('toolCallControl.callingLabel') }}:
+                </template>
+                <template v-else-if="approvalStatus.needApproval">
                     {{ t('toolCallControl.approvalRequired') }}:
                 </template>
                 <template v-else>

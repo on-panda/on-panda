@@ -112,6 +112,7 @@ export default {
     rejectGuidancePlaceholder: '用于指导模型的可选消息',
     retry: '再来',
     calling: '正在调用工具',
+    callingLabel: '调用',
     unreadyTools: '以下工具当前无法运行',
     autoApproveRunNumLabel: '自动批准运行次数',
     autoApproveStatus: '自动批准',
