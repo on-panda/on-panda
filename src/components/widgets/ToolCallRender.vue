@@ -57,7 +57,8 @@ const parsedArgumentsObject = computed(() => {
     return parsedArgumentsObject
   } catch {
     try {
-      const parsedArgumentsObject = JSON.parse(argumentsText + '"}')
+      const tryCompletePart = (argumentsText?.endsWith('\\') ? 'r' : '') + '"}'
+      const parsedArgumentsObject = JSON.parse(argumentsText + tryCompletePart)
       if (!parsedArgumentsObject || typeof parsedArgumentsObject !== 'object' || Array.isArray(parsedArgumentsObject)) {
         return null
       }
