@@ -4,9 +4,23 @@
       <el-icon class="tool-call-render-icon">
         <PhoneFilled />
       </el-icon>
-      <code>{{ props.toolCall.function?.name }}</code>
+      <code>{{ props.toolCall.function.name }}</code>
     </summary>
-    <div class="tool-call-render-body">{{ props.toolCall.function?.arguments }}</div>
+    <div v-if="parsedArgumentsObject" class="tool-call-render-body">
+      <template v-if="parsedArgumentsEntries.length">
+        <div v-for="[key, value] in parsedArgumentsEntries" :key="key" class="tool-call-render-json-row">
+          <span class="tool-call-render-json-key">{{ key }}</span>
+          <span class="tool-call-render-json-separator">: </span>
+          <div v-if="typeof value === 'string'" class="tool-call-render-json-string"
+            :class="{ 'tool-call-render-json-string-block': value.includes('\n') }">{{ value === '' ? '""' : value }}</div>
+          <span v-else-if="typeof value === 'number' || typeof value === 'boolean'" class="tool-call-render-json-number">{{ value }}</span>
+          <span v-else-if="value === null" class="tool-call-render-json-null">null</span>
+          <span v-else class="tool-call-render-json-object">{{ JSON.stringify(value) }}</span>
+        </div>
+      </template>
+      <span v-else class="tool-call-render-json-object">{}</span>
+    </div>
+    <div v-else class="tool-call-render-body">{{ props.toolCall.function.arguments }}</div>
     <footer v-if="props.toolCall.index != null || props.toolCall.id" class="tool-call-render-footer">
       <small>
         <template v-if="props.toolCall.index != null">index: {{ props.toolCall.index }}</template>
@@ -18,6 +32,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { PhoneFilled } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -25,6 +40,37 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+})
+
+const parsedArgumentsObject = computed(() => {
+  const argumentsText = props.toolCall.function.arguments
+  if (!/^\s*\{/.test(argumentsText)) {
+    return null
+  }
+  try {
+    const parsedArgumentsObject = JSON.parse(argumentsText)
+    if (!parsedArgumentsObject || typeof parsedArgumentsObject !== 'object' || Array.isArray(parsedArgumentsObject)) {
+      return null
+    }
+    return parsedArgumentsObject
+  } catch {
+    try {
+      const parsedArgumentsObject = JSON.parse(argumentsText + '"}')
+      if (!parsedArgumentsObject || typeof parsedArgumentsObject !== 'object' || Array.isArray(parsedArgumentsObject)) {
+        return null
+      }
+      return parsedArgumentsObject
+    } catch {
+      return null
+    }
+  }
+})
+
+const parsedArgumentsEntries = computed(() => {
+  if (!parsedArgumentsObject.value) {
+    return []
+  }
+  return Object.entries(parsedArgumentsObject.value)
 })
 </script>
 
@@ -79,11 +125,54 @@ const props = defineProps({
 
 .tool-call-render-body {
   white-space: pre-wrap;
-  font-family: monospace;
+  font-family: consolas, menlo, monaco, "Ubuntu Mono", source-code-pro, monospace;
   background: #fafafa;
-  margin: 10px 12px 6px;
   padding: 10px;
   overflow-x: auto;
+}
+
+.tool-call-render-json-row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.tool-call-render-json-row + .tool-call-render-json-row {
+  margin-top: 6px;
+}
+
+.tool-call-render-json-key {
+  color: #000;
+}
+
+.tool-call-render-json-separator {
+  color: rgba(0, 0, 0, 0.38);
+  flex: none;
+}
+
+.tool-call-render-json-string {
+  flex: 1;
+  min-width: 0;
+  color: rgb(0, 128, 0);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tool-call-render-json-string-block {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(0, 128, 0, 0.07);
+}
+
+.tool-call-render-json-object {
+  color: rgb(0, 64, 0);
+}
+
+.tool-call-render-json-number {
+  color: #1d8ce0;
+}
+
+.tool-call-render-json-null {
+  color: #d55fde;
 }
 
 .tool-call-render-footer {
