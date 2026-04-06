@@ -29,7 +29,7 @@ const requestLabel = computed(() => {
 </script>
 
 <template>
-    <div class="waitingInfo">
+    <p class="waitingInfo">
         <template v-if="props.generating">
             <span class="waitingInfoRow">
                 <el-icon class="is-loading waitingInfoIcon">
@@ -42,7 +42,7 @@ const requestLabel = computed(() => {
             <code v-if="props.model" class="waitingInfoModel">{{ props.model }}</code>
         </template>
         <span v-else>{{ t('userMessages.clickSendButton') }}</span>
-    </div>
+    </p>
 </template>
 
 <style scoped>

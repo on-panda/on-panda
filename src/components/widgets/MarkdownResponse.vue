@@ -1,10 +1,12 @@
 <template>
     <div class="markdown-response">
+        <p>
         <div v-if="!props.content">
             <WaitingInfo v-bind="props.waitingInfoProps" />
         </div>
         <MessageAsTextRender :messageAsText="props.content" initReasoningDisplayMode="full"
             style="background-color: #eee;" />
+        </p>
     </div>
 </template>
 

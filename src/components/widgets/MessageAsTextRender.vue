@@ -102,13 +102,12 @@ function handleReasoningBodyClick() {
 
 .message-as-text-reasoning-body {
   padding: 10px 12px;
-  line-height: 1.5;
   color: #757575;
 }
 
 .message-as-text-reasoning-body-restrict {
   position: relative;
-  max-height: calc(1.5em * 6.125);
+  max-height: 130px;
   overflow: hidden;
   cursor: pointer;
 }
