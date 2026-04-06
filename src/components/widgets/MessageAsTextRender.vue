@@ -1,6 +1,8 @@
 <template>
   <div class="message-as-text-render">
-    <details v-if="message.reasoning" class="message-as-text-reasoning-panel" :open="reasoningUiDisplayMode !== 'close'">
+    <ObjectViewerInDetails v-if="Object.keys(messageMeta).length" :object="messageMeta" summary="meta" />
+    <details v-if="message.reasoning" class="message-as-text-reasoning-panel"
+      :open="reasoningUiDisplayMode !== 'close'">
       <summary class="message-as-text-reasoning-summary" @click.prevent="handleReasoningSummaryClick">
         reasoning
       </summary>
@@ -12,8 +14,8 @@
     <div v-if="message.content" class="message-as-text-content">
       <MultimodalRender :content="message.content" />
     </div>
-    <ObjectViewerInDetails v-if="Object.keys(messageMeta).length" :object="messageMeta" summary="meta" />
-    <ObjectViewerInDetails v-if="message.tool_calls && message.tool_calls.length" :object="message.tool_calls" summary="tool_calls" />
+    <ObjectViewerInDetails v-if="message.tool_calls && message.tool_calls.length" :object="message.tool_calls"
+      summary="tool_calls" />
   </div>
 </template>
 
@@ -43,9 +45,8 @@ const messageMeta = computed(() => Object.fromEntries(
     .map(key => [key, message.value[key]])
 ))
 
-const reasoningLineBreakCount = computed(() => ((message.value.reasoning || '').match(/\n/g) || []).length)
 const isRestrictFullSameHight = computed(() => {
-  return reasoningLineBreakCount.value < 6 && (message.value.reasoning || '').length < 360
+  return (message.value.reasoning || '').length < 360 && ((message.value.reasoning || '').match(/\n/g) || []).length < 6
 })
 const reasoningUiDisplayMode = computed(() => {
   if (reasoningDisplayMode.value === 'restrict' && isRestrictFullSameHight.value) {
@@ -106,8 +107,20 @@ function handleReasoningBodyClick() {
 }
 
 .message-as-text-reasoning-body-restrict {
-  max-height: calc(1.5em * 6.5);
+  position: relative;
+  max-height: calc(1.5em * 6.125);
   overflow: hidden;
   cursor: pointer;
+}
+
+.message-as-text-reasoning-body-restrict::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 55px;
+  background: linear-gradient(180deg, rgb(248 248 248 / 0%), #f8f8f8);
+  pointer-events: none;
 }
 </style>
