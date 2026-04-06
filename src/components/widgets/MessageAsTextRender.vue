@@ -14,8 +14,9 @@
     <div v-if="message.content" class="message-as-text-content">
       <MultimodalRender :content="message.content" />
     </div>
-    <ObjectViewerInDetails v-if="message.tool_calls && message.tool_calls.length" :object="message.tool_calls"
-      summary="tool_calls" />
+    <div v-if="message.tool_calls && message.tool_calls.length" class="message-as-text-tool-calls">
+      <ToolCallRender v-for="toolCall in message.tool_calls" :key="toolCall.id || toolCall.index" :toolCall="toolCall" />
+    </div>
   </div>
 </template>
 
@@ -23,6 +24,7 @@
 import { computed, ref } from 'vue'
 import MultimodalRender from './MultimodalRender.vue'
 import ObjectViewerInDetails from './ObjectViewerInDetails.vue'
+import ToolCallRender from './ToolCallRender.vue'
 import { MESSAGE_META_KEYS, parseMessageAsText } from '../../utils/messageTextCodec.js'
 
 const props = defineProps({
@@ -121,5 +123,12 @@ function handleReasoningBodyClick() {
   height: 55px;
   background: linear-gradient(180deg, rgb(248 248 248 / 0%), #f8f8f8);
   pointer-events: none;
+}
+
+.message-as-text-tool-calls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
 }
 </style>
