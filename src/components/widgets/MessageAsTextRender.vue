@@ -1,10 +1,10 @@
 <template>
   <div class="message-as-text-render">
-    <details v-if="message.reasoning" class="message-as-text-reasoning-panel" :open="reasoningDisplayMode !== 'close'">
+    <details v-if="message.reasoning" class="message-as-text-reasoning-panel" :open="reasoningUiDisplayMode !== 'close'">
       <summary class="message-as-text-reasoning-summary" @click.prevent="handleReasoningSummaryClick">
         reasoning
       </summary>
-      <div class="message-as-text-reasoning-body" :class="`message-as-text-reasoning-body-${reasoningDisplayMode}`"
+      <div class="message-as-text-reasoning-body" :class="`message-as-text-reasoning-body-${reasoningUiDisplayMode}`"
         @click="handleReasoningBodyClick">
         <MultimodalRender :content="message.reasoning" />
       </div>
@@ -43,7 +43,22 @@ const messageMeta = computed(() => Object.fromEntries(
     .map(key => [key, message.value[key]])
 ))
 
+const reasoningLineBreakCount = computed(() => ((message.value.reasoning || '').match(/\n/g) || []).length)
+const isRestrictFullSameHight = computed(() => {
+  return reasoningLineBreakCount.value < 6 && (message.value.reasoning || '').length < 360
+})
+const reasoningUiDisplayMode = computed(() => {
+  if (reasoningDisplayMode.value === 'restrict' && isRestrictFullSameHight.value) {
+    return 'full'
+  }
+  return reasoningDisplayMode.value
+})
+
 function handleReasoningSummaryClick() {
+  if (isRestrictFullSameHight.value) {
+    reasoningDisplayMode.value = reasoningDisplayMode.value === 'close' ? 'full' : 'close'
+    return
+  }
   if (reasoningDisplayMode.value === 'close') {
     reasoningDisplayMode.value = 'restrict'
   } else if (reasoningDisplayMode.value === 'restrict') {
@@ -54,7 +69,7 @@ function handleReasoningSummaryClick() {
 }
 
 function handleReasoningBodyClick() {
-  if (reasoningDisplayMode.value === 'restrict') {
+  if (reasoningUiDisplayMode.value === 'restrict') {
     reasoningDisplayMode.value = 'full'
   }
 }
@@ -86,6 +101,7 @@ function handleReasoningBodyClick() {
 
 .message-as-text-reasoning-body {
   padding: 10px 12px;
+  line-height: 1.5;
   color: #757575;
 }
 
