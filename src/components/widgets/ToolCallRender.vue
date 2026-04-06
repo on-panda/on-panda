@@ -109,7 +109,7 @@ const parsedArgumentsEntries = computed(() => {
 
 .tool-call-render-summary code {
   padding: 1px 4px;
-  color: #888;
+  color: #aaa;
   font-size: 11px;
   border: 1px solid #dadada;
   border-radius: 4px;

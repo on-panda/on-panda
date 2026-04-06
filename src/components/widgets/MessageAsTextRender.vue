@@ -1,6 +1,5 @@
 <template>
   <div class="message-as-text-render">
-    <ObjectViewerInDetails v-if="Object.keys(messageMeta).length" :object="messageMeta" summary="meta" />
     <details v-if="message.reasoning" class="message-as-text-reasoning-panel"
       :open="reasoningUiDisplayMode !== 'close'">
       <summary class="message-as-text-reasoning-summary" @click.prevent="handleReasoningSummaryClick">
@@ -23,9 +22,8 @@
 <script setup>
 import { computed, ref } from 'vue'
 import MultimodalRender from './MultimodalRender.vue'
-import ObjectViewerInDetails from './ObjectViewerInDetails.vue'
 import ToolCallRender from './ToolCallRender.vue'
-import { MESSAGE_META_KEYS, parseMessageAsText } from '../../utils/messageTextCodec.js'
+import { parseMessageAsText } from '../../utils/messageTextCodec.js'
 
 const props = defineProps({
   messageAsText: {
@@ -40,12 +38,6 @@ const props = defineProps({
 
 const message = computed(() => parseMessageAsText(props.messageAsText))
 const reasoningDisplayMode = ref(props.initReasoningDisplayMode)
-
-const messageMeta = computed(() => Object.fromEntries(
-  MESSAGE_META_KEYS
-    .filter(key => message.value[key])
-    .map(key => [key, message.value[key]])
-))
 
 const isRestrictFullSameHight = computed(() => {
   return (message.value.reasoning || '').length < 360 && ((message.value.reasoning || '').match(/\n/g) || []).length < 6
@@ -129,6 +121,6 @@ function handleReasoningBodyClick() {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px;
+  padding: 6px 0px;
 }
 </style>

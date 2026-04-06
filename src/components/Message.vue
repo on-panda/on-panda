@@ -517,7 +517,7 @@ onBeforeUnmount(() => {
   color: #555;
   border-radius: 5px;
   box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color)) inset;
-  padding: 5px 11px;
+  padding: 8px;
 }
 
 .messageDraftWarning {
