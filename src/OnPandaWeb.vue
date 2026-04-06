@@ -180,9 +180,9 @@ onMounted(async () => {
       // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
       toolManageState.presetToolConfigsInput.value = toolManageState.presetToolConfigsInput.value.concat(deepCopy(TEST_TOOL_CONFIGS))
       // exampleToRun = operationCenter.generateNew
-      // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
-      exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
-      var exampleToRun = () => {
+      exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
+      // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
+      var _exampleToRun = () => {
         var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
         var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
         var debugMessages = [{ "role": "system", "content": "Any response must start from `I think`" }, { "role": "user", "content": "Screenshot and reply what you see within one word" }]

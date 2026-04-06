@@ -1,8 +1,14 @@
 <template>
   <div class="message-as-text-render">
-    <div v-if="message.reasoning" class="message-as-text-reasoning">
-      <MultimodalRender :content="message.reasoning" />
-    </div>
+    <details v-if="message.reasoning" class="message-as-text-reasoning-panel" :open="reasoningDisplayMode !== 'close'">
+      <summary class="message-as-text-reasoning-summary" @click.prevent="handleReasoningSummaryClick">
+        reasoning
+      </summary>
+      <div class="message-as-text-reasoning-body" :class="`message-as-text-reasoning-body-${reasoningDisplayMode}`"
+        @click="handleReasoningBodyClick">
+        <MultimodalRender :content="message.reasoning" />
+      </div>
+    </details>
     <div v-if="message.content" class="message-as-text-content">
       <MultimodalRender :content="message.content" />
     </div>
@@ -12,7 +18,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import MultimodalRender from './MultimodalRender.vue'
 import ObjectViewerInDetails from './ObjectViewerInDetails.vue'
 import { MESSAGE_META_KEYS, parseMessageAsText } from '../../utils/messageTextCodec.js'
@@ -22,19 +28,70 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  initReasoningDisplayMode: {
+    type: String,
+    default: 'restrict',
+  },
 })
 
 const message = computed(() => parseMessageAsText(props.messageAsText))
+const reasoningDisplayMode = ref(props.initReasoningDisplayMode)
 
 const messageMeta = computed(() => Object.fromEntries(
   MESSAGE_META_KEYS
     .filter(key => message.value[key])
     .map(key => [key, message.value[key]])
 ))
+
+function handleReasoningSummaryClick() {
+  if (reasoningDisplayMode.value === 'close') {
+    reasoningDisplayMode.value = 'restrict'
+  } else if (reasoningDisplayMode.value === 'restrict') {
+    reasoningDisplayMode.value = 'full'
+  } else {
+    reasoningDisplayMode.value = 'close'
+  }
+}
+
+function handleReasoningBodyClick() {
+  if (reasoningDisplayMode.value === 'restrict') {
+    reasoningDisplayMode.value = 'full'
+  }
+}
 </script>
 
 <style scoped>
-.message-as-text-reasoning {
+.message-as-text-reasoning-panel {
+  margin-bottom: 8px;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  background: #f8f8f8;
+  overflow: hidden;
+}
+
+.message-as-text-reasoning-summary {
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #999;
+  background: #f8f8f8;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.message-as-text-reasoning-panel[open] .message-as-text-reasoning-summary {
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.message-as-text-reasoning-body {
+  padding: 10px 12px;
   color: #757575;
+}
+
+.message-as-text-reasoning-body-restrict {
+  max-height: calc(1.5em * 6.5);
+  overflow: hidden;
+  cursor: pointer;
 }
 </style>
