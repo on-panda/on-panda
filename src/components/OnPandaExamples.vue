@@ -136,10 +136,10 @@ const defaultExampleNameToFunc = {
     operationCenter.loadMessages(messagesTokenizerExample)
     operationCenter.generateNew()
   },
-  "random": () => {
-    operationCenter.loadMessages([{ role: "user", content: "just output a random float128 number without any words, no code" }])
-    operationCenter.generateNew()
-  },
+  // "random": () => {
+  //   operationCenter.loadMessages([{ role: "user", content: "just output a random float128 number without any words, no code" }])
+  //   operationCenter.generateNew()
+  // },
   "笑话": () => {
     operationCenter.loadMessages([{ role: "user", content: "讲一个关于西游记的笑话, 100字左右" }])
     operationCenter.generateNew()
@@ -148,10 +148,10 @@ const defaultExampleNameToFunc = {
     operationCenter.loadMessages([{ role: "user", content: "写藏头诗：\n人工智能，大有可为" }])
     operationCenter.generateNew()
   },
-  "计算": () => {
-    operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }])
-    operationCenter.generateNew()
-  },
+  // "计算": () => {
+  //   operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }])
+  //   operationCenter.generateNew()
+  // },
   "count": () => {
     operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "How many 1 in 01011010101111011011?", description: "Answer is 13" }])
     operationCenter.generateNew()
@@ -201,6 +201,12 @@ const defaultExampleNameToFunc = {
         }
       },
     ]
+    operationCenter.generateNew()
+  },
+  "js": () => {
+    operationCenter.loadMessages([{ role: "user", content: "Using JavaScript to solve 10086**4" }])
+
+    operationCenter.pandaState.currentDialogData.value.tool_configs
     operationCenter.generateNew()
   },
   "annotate": async () => {

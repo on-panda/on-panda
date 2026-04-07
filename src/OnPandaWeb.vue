@@ -178,9 +178,10 @@ onMounted(async () => {
     if (globalStore.debug) {
       // Use the example via the operationCenter directly
       // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
-      toolManageState.presetToolConfigsInput.value = toolManageState.presetToolConfigsInput.value.concat(deepCopy(TEST_TOOL_CONFIGS))
+      // toolManageState.presetToolConfigsInput.value = toolManageState.presetToolConfigsInput.value.concat(deepCopy(TEST_TOOL_CONFIGS))
       // exampleToRun = operationCenter.generateNew
       exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
+      exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["js"]
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
       var _exampleToRun = () => {
         var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
