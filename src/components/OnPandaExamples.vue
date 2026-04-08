@@ -176,6 +176,15 @@ const defaultExampleNameToFunc = {
     }]
     operationCenter.generateNew()
   },
+  "svg": () => {
+    var SvgExampleMessages = [{ role: "user", content: "Generate svg image and iterate 3 times, draw content: A panda is riding on a llama" }]
+    operationCenter.loadMessages(SvgExampleMessages)
+    operationCenter.pandaState.currentDialogData.value.tool_configs = [{
+      type: 'mcp',
+      server_url: 'local-fetch://browser-js-mcp',
+    }]
+    operationCenter.generateNew()
+  },
   "tokenizer": () => {
     operationCenter.loadMessages(messagesTokenizerExample)
     operationCenter.generateNew()
