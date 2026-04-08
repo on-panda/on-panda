@@ -183,6 +183,7 @@ export function dateStringNow(includeMilliseconds = false, timestamp = null) {
 }
 
 import { onMounted, onUnmounted } from 'vue'
+import { sha256Uint8Array } from './hashUtils.js'
 
 export function useEventListener(target, event, callback, options) {
   onMounted(() => target.addEventListener(event, callback, options))
@@ -330,23 +331,21 @@ export async function hashObjectSHA256Base64(obj, sortKeys = true) {
   // Fixed key order => SHA-256 => Base64
   function canonicalize(obj) {
     if (Array.isArray(obj)) {
-      return '[' + obj.map(canonicalize).join(',') + ']';
+      return '[' + obj.map(canonicalize).join(',') + ']'
     } else if (obj && typeof obj === 'object') {
-      const keys = Object.keys(obj).sort();
-      return '{' + keys.map(k => JSON.stringify(k) + ':' + canonicalize(obj[k])).join(',') + '}';
+      const keys = Object.keys(obj).sort()
+      return '{' + keys.map(k => JSON.stringify(k) + ':' + canonicalize(obj[k])).join(',') + '}'
     } else {
-      return JSON.stringify(obj);
+      return JSON.stringify(obj)
     }
   }
-  if (sortKeys) {
-    var canonicalString = canonicalize(obj);
-  } else {
-    var canonicalString = JSON.stringify(obj);
-  }
-  const encoder = new TextEncoder();
-  const data = encoder.encode(canonicalString);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return btoa(String.fromCharCode(...new Uint8Array(hashBuffer)));
+
+  const canonicalString = sortKeys ? canonicalize(obj) : JSON.stringify(obj)
+  const encoder = new TextEncoder()
+  const data = encoder.encode(canonicalString)
+  const subtle = globalThis.crypto?.subtle
+  const hashBytes = subtle ? new Uint8Array(await subtle.digest('SHA-256', data)) : sha256Uint8Array(data)
+  return btoa(String.fromCharCode(...hashBytes))
 }
 
 export function downloadJsonFile(obj, filename) {
