@@ -155,10 +155,11 @@ export function convertMessageToTokens(message) {
         if (tokens && tokens.length > 0) {
             tokens[0].delta.role = "assistant"
             if (message.finish_reason) {
-                tokens[tokens.length - 1].finish_reason = message.finish_reason
-            }
-            if (!message.finish_reason || message.finish_reason == "length") {
-                tokens[tokens.length - 1].bifurcationPoint = true
+                tokens.push({
+                    delta: { content: "" },
+                    tokenIndex: tokens.length,
+                    finish_reason: message.finish_reason,
+                })
             }
         } else {  // final message is empty content but with role name
             tokens = [{

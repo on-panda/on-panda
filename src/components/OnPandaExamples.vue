@@ -166,7 +166,9 @@ const defaultExampleNameToFunc = {
     operationCenter.generateNew()
   },
   "js": async () => {
-    operationCenter.loadMessages([{ role: "user", content: "Using JavaScript to solve 10086**4" }])
+    // var JsExampleMessages = [{ role: "user", content: "Using JavaScript to solve 10086**4" }]
+    var JsExampleMessages = [{ role: "user", content: "Using JavaScript to create HTML canvas above `.OnPandaResponsePanel`, draw content: A panda is riding on a llama" }]
+    operationCenter.loadMessages(JsExampleMessages)
     const { localFetchConfig } = await import('./plugins/JavaScriptEnvironmentMcp.js')
     operationCenter.toolManageState.localFetchs[localFetchConfig.server_url] = localFetchConfig.fetch
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{

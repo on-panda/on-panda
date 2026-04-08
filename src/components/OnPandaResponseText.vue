@@ -166,7 +166,7 @@ function appendFinishReason(token) {
 
 const getTokenDisplayText = (token) => tokenToDisplayString(token, tokens.value)
 
-const shouldRenderTokenPanel = (token) => token?.delta?.content !== undefined || getTokenDisplayText(token)
+const shouldRenderTokenPanel = (token) => token?.delta?.content !== undefined || token.finish_reason || getTokenDisplayText(token)
 
 const tokenToSpanHTML = (token) => {
     const displayText = getTokenDisplayText(token)
