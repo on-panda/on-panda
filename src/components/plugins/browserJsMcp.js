@@ -1,10 +1,10 @@
 const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor
 
-const runJsDescription = 'Run JavaScript in the current browser runtime. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. console.log and console.error arguments are converted with String(...), so objects become [object Object].'
+const runBrowserJsDescription = 'Run JavaScript in the current browser runtime. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. console.log and console.error arguments are converted with String(...), so objects become [object Object].'
 
-const runJsTool = {
-    name: 'run_js',
-    description: runJsDescription,
+const runBrowserJsTool = {
+    name: 'run_browser_js',
+    description: runBrowserJsDescription,
     inputSchema: {
         type: 'object',
         properties: {
@@ -24,7 +24,7 @@ function buildJsErrorText(message = '') {
     return `<|js_error_start|>\n${message}\n<|js_error_end|>`
 }
 
-async function runJs(code = '') {
+async function runBrowserJs(code = '') {
     const logs = []
     const errors = []
     const customConsole = {
@@ -95,15 +95,15 @@ async function handleJsonRpcMessage(message = {}) {
 
     if (message.method === 'tools/list') {
         return buildJsonResultResponse(message.id, {
-            tools: [runJsTool],
+            tools: [runBrowserJsTool],
         })
     }
 
     if (message.method === 'tools/call') {
-        if (message.params.name !== 'run_js') {
+        if (message.params.name !== 'run_browser_js') {
             return buildJsonErrorResponse(message.id, -32601, `Tool not found: ${message.params.name}`)
         }
-        const output = await runJs(message.params.arguments?.code || '')
+        const output = await runBrowserJs(message.params.arguments?.code || '')
         return buildJsonResultResponse(message.id, {
             content: output ? [{ type: 'text', text: output }] : [],
         })
@@ -116,15 +116,9 @@ async function handleJsonRpcMessage(message = {}) {
     return buildJsonErrorResponse(message.id, -32601, `Method not found: ${message.method}`)
 }
 
-async function localFetch(_input, init = {}) {
+export async function localFetch(_input, init = {}) {
     if ((init.method || 'GET') !== 'POST') {
         return new Response(null, { status: 405 })
     }
     return await handleJsonRpcMessage(JSON.parse(init.body || '{}'))
-}
-
-export const localFetchConfig = {
-    type: 'mcp',
-    server_url: 'local-fetch://javascript-environment-mcp',
-    fetch: localFetch,
 }

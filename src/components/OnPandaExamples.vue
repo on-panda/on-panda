@@ -1,5 +1,5 @@
 <template>
-  <div style="line-height: 2">
+  <div style="line-height: 2" class="onPandaExamples">
     <template v-for="(func, name) in exampleNameToFunc">
       <el-tag type="info" @click="func(props.dialogWithControlState)" style="cursor: pointer; margin-left: 5px;">
         {{ name }}
@@ -165,15 +165,14 @@ const defaultExampleNameToFunc = {
     ]
     operationCenter.generateNew()
   },
-  "js": async () => {
+  "js": () => {
     // var JsExampleMessages = [{ role: "user", content: "Using JavaScript to solve 10086**4" }]
     var JsExampleMessages = [{ role: "user", content: "Using JavaScript to create HTML canvas above `.OnPandaResponsePanel`, draw content: A panda is riding on a llama" }]
+    JsExampleMessages[0].comment = "The `run_browser_js` tool executes code in the current page’s JavaScript runtime, so the agent can read and modify the page’s content. To restore the original layout, please refresh."
     operationCenter.loadMessages(JsExampleMessages)
-    const { localFetchConfig } = await import('./plugins/JavaScriptEnvironmentMcp.js')
-    operationCenter.toolManageState.localFetchs[localFetchConfig.server_url] = localFetchConfig.fetch
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{
       type: 'mcp',
-      server_url: localFetchConfig.server_url,
+      server_url: 'local-fetch://browser-js-mcp',
     }]
     operationCenter.generateNew()
   },

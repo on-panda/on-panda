@@ -31,7 +31,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="onPandaContainers" ref="onPandaDialogPanelRef">
+    <div class="onPandaDialogWithControl onPandaContainers" ref="onPandaDialogPanelRef">
         <ToolManagePanel :responseState="responseState" :toolManageState="toolManageState" />
         <OnPandaDialogPanel :responseState="responseState">
             <template #beforeNewRoundMessageSlot>

@@ -42,7 +42,12 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     const matchedDataToPresetIndex = ref({})
     const allTools = ref([])
     const matchedAllToSelectedIndex = ref({})
-    const localFetchs = {}
+    const localFetches = {
+        'local-fetch://browser-js-mcp': async (resource, init) => {
+            const { localFetch } = await import('../components/plugins/browserJsMcp.js')
+            return await localFetch(resource, init)
+        },
+    }
 
     const presetToolReadyPromise = ref(Promise.resolve())
 
@@ -124,7 +129,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                     const serverUrl = new URL(toolConfig.server_url, window.location.origin)
                     function tryLocalFetch(resource, init) {
                         const requestUrl = String(resource)
-                        const localFetch = localFetchs[requestUrl] || localFetchs[requestUrl.replace(/^localfetch:/, 'localFetch:')]
+                        const localFetch = Object.entries(localFetches).find(([prefix]) => requestUrl.startsWith(prefix))?.[1]
                         if (localFetch) {
                             return localFetch(resource, init)
                         }
@@ -499,7 +504,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         allTools,
         matchedAllToSelectedIndex,
         currentDialogTools,
-        localFetchs,
+        localFetches,
         registerDialogCache,
         appendToolToDialog,
         removeSelectedTool,
