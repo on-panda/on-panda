@@ -132,6 +132,49 @@ const defaultExampleNameToFunc = {
     operationCenter.loadMessages(messagesImageExample)
     operationCenter.generateNew()
   },
+  "tools": () => {
+    operationCenter.loadMessages(messagesToolsExample)
+    operationCenter.pandaState.currentDialogData.value.tool_configs = [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_weather",
+          "description": "Get the current weather in a given location",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "string",
+                "description": "City and state, e.g., 'San Francisco, CA'"
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "celsius",
+                  "fahrenheit"
+                ]
+              }
+            },
+            "required": [
+              "location",
+              "unit"
+            ]
+          }
+        }
+      },
+    ]
+    operationCenter.generateNew()
+  },
+  "js": async () => {
+    operationCenter.loadMessages([{ role: "user", content: "Using JavaScript to solve 10086**4" }])
+    const { localFetchConfig } = await import('./plugins/JavaScriptEnvironmentMcp.js')
+    operationCenter.toolManageState.localFetchs[localFetchConfig.server_url] = localFetchConfig.fetch
+    operationCenter.pandaState.currentDialogData.value.tool_configs = [{
+      type: 'mcp',
+      server_url: localFetchConfig.server_url,
+    }]
+    operationCenter.generateNew()
+  },
   "tokenizer": () => {
     operationCenter.loadMessages(messagesTokenizerExample)
     operationCenter.generateNew()
@@ -168,45 +211,6 @@ const defaultExampleNameToFunc = {
     // operationCenter.loadMessages([{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "How many letter “r”s are there in the English word for 🍓?" }, { role: "assistant", content: "The English word for “strawberry” contains two letter “r”s." }, { role: "user", content: "You're wrong, you should break the word into letters and count them one by one." }])
     // { role: "user", content: "“p”s in 🍍?" }
     operationCenter.loadMessages([{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "List three types of fruits." }, { role: "assistant", content: "Apple, potato, banana." }, { role: "user", content: "Potato is not fruit." }])
-    operationCenter.generateNew()
-  },
-  "tools": () => {
-    operationCenter.loadMessages(messagesToolsExample)
-    operationCenter.pandaState.currentDialogData.value.tool_configs = [
-      {
-        "type": "function",
-        "function": {
-          "name": "get_weather",
-          "description": "Get the current weather in a given location",
-          "parameters": {
-            "type": "object",
-            "properties": {
-              "location": {
-                "type": "string",
-                "description": "City and state, e.g., 'San Francisco, CA'"
-              },
-              "unit": {
-                "type": "string",
-                "enum": [
-                  "celsius",
-                  "fahrenheit"
-                ]
-              }
-            },
-            "required": [
-              "location",
-              "unit"
-            ]
-          }
-        }
-      },
-    ]
-    operationCenter.generateNew()
-  },
-  "js": () => {
-    operationCenter.loadMessages([{ role: "user", content: "Using JavaScript to solve 10086**4" }])
-
-    operationCenter.pandaState.currentDialogData.value.tool_configs
     operationCenter.generateNew()
   },
   "annotate": async () => {

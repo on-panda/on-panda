@@ -42,6 +42,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     const matchedDataToPresetIndex = ref({})
     const allTools = ref([])
     const matchedAllToSelectedIndex = ref({})
+    const localFetchs = {}
 
     const presetToolReadyPromise = ref(Promise.resolve())
 
@@ -121,7 +122,15 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                         import('@modelcontextprotocol/sdk/client/streamableHttp.js'),
                     ])
                     const serverUrl = new URL(toolConfig.server_url, window.location.origin)
-                    const transport = new StreamableHTTPClientTransport(serverUrl)
+                    function tryLocalFetch(resource, init) {
+                        const requestUrl = String(resource)
+                        const localFetch = localFetchs[requestUrl] || localFetchs[requestUrl.replace(/^localfetch:/, 'localFetch:')]
+                        if (localFetch) {
+                            return localFetch(resource, init)
+                        }
+                        return fetch(resource, init)
+                    }
+                    const transport = new StreamableHTTPClientTransport(serverUrl, { fetch: tryLocalFetch })
                     const client = new Client({
                         name: 'on-panda',
                         version: '0.1.0',
@@ -490,6 +499,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         allTools,
         matchedAllToSelectedIndex,
         currentDialogTools,
+        localFetchs,
         registerDialogCache,
         appendToolToDialog,
         removeSelectedTool,
