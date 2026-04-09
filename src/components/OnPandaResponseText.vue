@@ -34,7 +34,7 @@
         <!-- `padding-top: 4px` to avoid next line's token activate @mouseover  -->
         <div class="floatPatchPanel" style="position: relative;">
             <div v-for="token in activatePatch?.tokens?.filter(shouldRenderTokenPanel)"
-                class="tokenPanel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px; max-width: 85%;">
+                class="tokenPanel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
                 <div class="floatPatchPanelHead" style="border-bottom: 2px solid #ccc;">
                     <span class="tokenSpan" v-html="escapeHTML(truncateTokenSpanText(tokenTextToHtml(getTokenDisplayText(token))))"
                         @mouseover="activateLogprobItem = token?.logprobs?.content?.[0] ?? {}; activateToken = token" />
