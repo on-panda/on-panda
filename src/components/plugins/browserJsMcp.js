@@ -3,13 +3,13 @@ const MAX_TEXT_LENGTH = 256 * 1024
 
 const runBrowserJsTool = {
     name: 'run_browser_js',
-    description: 'Run JavaScript in the current browser runtime. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. console.log and console.error arguments are converted with String(...), so objects become [object Object].',
+    description: 'Run JavaScript in the current browser runtime and returns strings within `console.log`. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. You can access the internet under CORS restrictions. The current web page is where users interact with you, so do not replace the entire document.body.',
     inputSchema: {
         type: 'object',
         properties: {
             code: {
                 type: 'string',
-                description: 'JavaScript code to run in the current browser runtime.',
+                description: 'JavaScript code to run in the current browser runtime. If your code starts async work, await it, otherwise the tool may return before later logs run. Do not use IIFE at the outer level.',
             },
         },
     },
@@ -57,6 +57,7 @@ ${text.slice(text.length - suffixLength)}`
 async function runBrowserJs(code = '') {
     const logs = []
     const errors = []
+    const startTime = performance.now()
     const customConsole = {
         ...console,
         log(...args) {
@@ -73,7 +74,15 @@ async function runBrowserJs(code = '') {
         errors.push(buildJsErrorText(String(error)))
     }
 
-    return truncateLongText((logs.length ? logs : ['<|no_js_log|>']).concat(errors).join('\n'))
+    const executionTimeMs = Math.round(performance.now() - startTime)
+
+    return truncateLongText([
+        `<|execution_info_start|>
+Code execution time: ${executionTimeMs} ms
+<|execution_info_end|>`,
+        ...(logs.length ? logs : ['<|no_js_log|>']),
+        ...errors,
+    ].join('\n'))
 }
 
 async function renderSvg(svg = '') {
