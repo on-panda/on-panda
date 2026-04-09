@@ -226,7 +226,7 @@ const isToolCallsNotInFinalMessage = computed(() => {
 })
 
 const showToolCallControlPanel = computed(() => {
-    if (getFinishReason(finalMessage) === "tool_calls" || isToolCallsNotInFinalMessage.value) {
+    if (!responseState.requestStatus.value.generating && (getFinishReason(finalMessage) === "tool_calls" || isToolCallsNotInFinalMessage.value)) {
         return true
     }
     return false

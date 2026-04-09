@@ -15,7 +15,8 @@
     </summary>
     <div v-if="parsedArgumentsObject" class="tool-call-render-body">
       <template v-if="parsedArgumentsEntries.length">
-        <div v-for="[key, value] in parsedArgumentsEntries" :key="key" class="tool-call-render-json-row">
+        <div v-for="[key, value] in parsedArgumentsEntries" :key="key" class="tool-call-render-json-row"
+          :class="{ 'tool-call-render-json-row-break': shouldBreakLineAfterSeparator(value) }">
           <span class="tool-call-render-json-key">{{ key }}</span>
           <span class="tool-call-render-json-separator">: </span>
           <div v-if="typeof value === 'string'" class="tool-call-render-json-string"
@@ -36,6 +37,7 @@
 <script setup>
 import { computed } from 'vue'
 import { PhoneFilled } from '@element-plus/icons-vue'
+import { useGlobalStore } from '../../stores/globalStore.js'
 
 const props = defineProps({
   toolCall: {
@@ -43,6 +45,15 @@ const props = defineProps({
     required: true,
   },
 })
+const globalStore = useGlobalStore()
+
+function shouldBreakLineAfterSeparator(value) {
+  if (!globalStore.isMobile || value === null || typeof value !== 'string' && typeof value !== 'object') {
+    return false
+  }
+  const renderedValue = typeof value === 'string' ? value : JSON.stringify(value)
+  return renderedValue.includes('\n') || renderedValue.length > 100
+}
 
 const parsedArgumentsObject = computed(() => {
   const argumentsText = props.toolCall.function.arguments
@@ -153,6 +164,7 @@ const parsedArgumentsEntries = computed(() => {
 .tool-call-render-json-row {
   display: flex;
   align-items: flex-start;
+  flex-wrap: wrap;
 }
 
 .tool-call-render-json-row+.tool-call-render-json-row {
@@ -179,6 +191,7 @@ const parsedArgumentsEntries = computed(() => {
 .tool-call-render-json-string-block {
   padding: 0 4px;
   border-radius: 4px;
+  font-size: 14px;
   background: rgba(0, 128, 0, 0.07);
 }
 
@@ -192,5 +205,12 @@ const parsedArgumentsEntries = computed(() => {
 
 .tool-call-render-json-null {
   color: #d55fde;
+}
+
+.tool-call-render-json-row-break .tool-call-render-json-string,
+.tool-call-render-json-row-break .tool-call-render-json-number,
+.tool-call-render-json-row-break .tool-call-render-json-null,
+.tool-call-render-json-row-break .tool-call-render-json-object {
+  flex-basis: 100%;
 }
 </style>

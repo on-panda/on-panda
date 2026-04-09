@@ -27,7 +27,7 @@
 
     <div @mouseover="floatPatchPanel.waitingToHide = false" @mouseleave="floatPatchPanel.waitingToHide = true"
         ref="floatPatchPanelRef"
-        style="position: fixed; padding-top: 4px;background-color: rgba(200, 200, 200, 0.3); z-index: 10;" :style="{
+        style="position: fixed; padding-top: 4px;background-color: rgba(200, 200, 200, 0.3); z-index: 10; max-width: 85%;" :style="{
             left: `${floatPatchPanel.x}px`,
             top: `${floatPatchPanel.y}px`,
         }" v-if="floatPatchPanel.visible">
