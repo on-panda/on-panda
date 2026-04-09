@@ -27,16 +27,16 @@
 
     <div @mouseover="floatPatchPanel.waitingToHide = false" @mouseleave="floatPatchPanel.waitingToHide = true"
         ref="floatPatchPanelRef"
-        style="position: fixed; padding-top: 4px;background-color: rgba(200, 200, 200, 0.3); z-index: 10; max-width: 85%;" :style="{
+        style="position: fixed; padding-top: 4px;background-color: rgba(200, 200, 200, 0.3); z-index: 10; max-width: 90%;" :style="{
             left: `${floatPatchPanel.x}px`,
             top: `${floatPatchPanel.y}px`,
         }" v-if="floatPatchPanel.visible">
         <!-- `padding-top: 4px` to avoid next line's token activate @mouseover  -->
         <div class="floatPatchPanel" style="position: relative;">
             <div v-for="token in activatePatch?.tokens?.filter(shouldRenderTokenPanel)"
-                class="tokenPanel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px;">
+                class="tokenPanel" style="vertical-align:top; display: inline-block; padding: 5px;padding-left: 0px; max-width: 85%;">
                 <div class="floatPatchPanelHead" style="border-bottom: 2px solid #ccc;">
-                    <span class="tokenSpan" v-html="escapeHTML(tokenTextToHtml(getTokenDisplayText(token)))"
+                    <span class="tokenSpan" v-html="escapeHTML(truncateTokenSpanText(tokenTextToHtml(getTokenDisplayText(token))))"
                         @mouseover="activateLogprobItem = token?.logprobs?.content?.[0] ?? {}; activateToken = token" />
                 </div>
                 <div class="tokenLogprobItems">
@@ -47,7 +47,7 @@
                         @mouseenter="$event.target.style.backgroundColor = '#ddd'"
                         @mouseleave="$event.target.style.backgroundColor = ''">
                         <span class="tokenSpan" style="color: #444;">{{ (logprobItem.finish_reason &&
-                            `&lt;|${logprobItem.finish_reason}|&gt;`) || tokenTextToHtml(logprobItem.token) }}</span>
+                            `&lt;|${logprobItem.finish_reason}|&gt;`) || truncateTokenSpanText(tokenTextToHtml(logprobItem.token)) }}</span>
                         <span v-if="logprobItem.logprob !== undefined"
                             :style='{ "background-color": probToColor(Math.exp(logprobItem.logprob), 0.18) }'
                             style="float: right;white-space: pre-wrap;font-family: Monospace;">:{{
@@ -346,6 +346,13 @@ const tokenTextToHtml = (tokenText) => {
         return "<|unsee|>"
     }
     return JSON.stringify(tokenText)
+}
+
+function truncateTokenSpanText(text) {
+    if (text.length <= 50) {
+        return text
+    }
+    return `${text.slice(0, 15)}...<|omitted|>...${text.slice(-15)}`
 }
 
 const formatProbabilityPercent = (prob) => {
