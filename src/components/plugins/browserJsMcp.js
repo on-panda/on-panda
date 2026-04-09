@@ -9,7 +9,7 @@ const runBrowserJsTool = {
         properties: {
             code: {
                 type: 'string',
-                description: 'JavaScript code to run in the current browser runtime. If your code starts async work, await it, otherwise the tool may return before later logs run. Do not use IIFE at the outer level.',
+                description: 'JavaScript code to run in the current browser runtime. If your code starts async function, await it, otherwise the tool may return before later logs run. Do not use IIFE at the outer level.',
             },
         },
     },

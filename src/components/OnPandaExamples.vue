@@ -168,6 +168,7 @@ const defaultExampleNameToFunc = {
   "js": () => {
     // var JsExampleMessages = [{ role: "user", content: "Using JavaScript to solve 10086**4" }]
     var JsExampleMessages = [{ role: "user", content: "Using JavaScript to create HTML canvas above `.OnPandaResponsePanel`, draw content: A panda is riding on a llama" }]
+    var JsExampleMessages = [{ role: "user", content: "Using `run_browser_js` tool to create an interactive desktop pet placed in the bottom-right corner of the current page." }]
     JsExampleMessages[0].comment = "The `run_browser_js` tool executes code in the current page’s JavaScript runtime, so the agent can read and modify the page’s content. To restore the original layout, please refresh."
     operationCenter.loadMessages(JsExampleMessages)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{
