@@ -175,9 +175,15 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                         }
                         await registerTool(tool, mcpTool.name, entry.requireApproval)
                         nextToolNameToCall[formattedToolName] = async (toolCall) => {
+                            let argumentsValue
+                            try {
+                                argumentsValue = JSON.parse(toolCall.function.arguments || '{}')
+                            } catch (error) {
+                                return `<|tool_call_error_start|>\nFunction arguments parse error:\n${error}\n<|tool_call_error_end|>`
+                            }
                             const result = await client.callTool({
                                 name: mcpTool.name,
-                                arguments: JSON.parse(toolCall.function.arguments || '{}'),
+                                arguments: argumentsValue,
                             })
                             return mcpToolResultToContent(result)
                         }

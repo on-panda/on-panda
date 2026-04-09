@@ -462,7 +462,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 await requestLlmServer(messagesComputed.value)
                 this.pandaState.beforeOperation()
                 lastMessage = messagesComputed.value[messagesComputed.value.length - 1] || {}
-                finishReason = getFinishReason(lastMessage)
+                finishReason = lastMessage.finish_reason
                 loopIdx += 1
                 if (finishReason !== "tool_calls") {
                     break
