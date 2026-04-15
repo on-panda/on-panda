@@ -149,7 +149,7 @@ async function handleJsonRpcMessage(message = {}) {
                 tools: {},
             },
             serverInfo: {
-                name: 'javascript-environment-mcp',
+                name: 'browser-js-mcp',
                 version: '0.1.0',
             },
         })

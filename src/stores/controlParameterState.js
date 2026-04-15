@@ -14,7 +14,7 @@ export const defaultChatConfig = {
     top_logprobs: 20,
     // top_k: 2,
     // image_detail_level: 'auto',
-    max_tokens: 8192,
+    max_tokens: null,
     temperature: 0.5,
     top_p: 0.95,
     stream_options: {

@@ -219,10 +219,10 @@ export function normalizeRequest(requestBody) {
     if (body.top_logprobs) {
         body.logprobs = true
     }
-    if (body.max_tokens == 0) {  // turn off max_tokens
+    if (!body.max_tokens) {  // turn off max_tokens when its 0 or null
         delete body.max_tokens
     }
-    if (body.model.indexOf('gpt-') >= 0) {
+    if (body.model.indexOf('gpt-') >= 0 && body.max_tokens) {
         // convert max_tokens to max_completion_tokens for GPT model
         body.max_completion_tokens = body.max_tokens
         delete body.max_tokens
