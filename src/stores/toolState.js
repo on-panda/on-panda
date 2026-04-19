@@ -64,9 +64,17 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         return registeredDialogCache.value?.value || null
     }
 
-    function setDialogTools(tools = []) {
+    function setDialogTools(tools = [], mcpSystemMessages) {
         const dialogCache = getDialogCacheValue()
         if (!dialogCache) {
+            return
+        }
+        if (mcpSystemMessages?.length) {
+            registeredDialogCache.value.value = {
+                ...dialogCache,
+                tools,
+                messages: mcpSystemMessages.concat(dialogCache.messages || []),
+            }
             return
         }
         dialogCache.tools = tools
@@ -146,6 +154,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                     }
                     await client.connect(transport)
                     nextClosers.push(() => transport.close())
+                    entry.instructions = client.getInstructions()
                     const { tools: mcpTools } = await client.listTools()
 
                     const registerTool = async (tool, rawName, requireApproval = 'never') => {
@@ -218,6 +227,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                 source,
                 type: toolConfig.type,
                 requireApproval: toolConfig.require_approval || 'never',
+                instructions: '',
                 tools: [],
                 toolNameToCall: {},
                 toolNameToRequireApproval: {},
@@ -245,41 +255,41 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     async function buildToolsFromToolConfigs(toolConfigs = []) {
         const matchedDataToPresetIndex = await matchTwoToolLists(toolConfigs, presetToolConfigsInput.value)
         const nextTools = []
+        const nextMcpSystemMessages = []
         for (const [toolConfigIndex, toolConfig] of toolConfigs.entries()) {
-            if (matchedDataToPresetIndex[toolConfigIndex] != null) {
-                const matchedPresetIndex = matchedDataToPresetIndex[toolConfigIndex]
-                const presetEntry = await prepareRuntimeEntry({
-                    toolConfig: presetToolConfigsInput.value[matchedPresetIndex],
-                    source: 'preset',
-                    toolConfigIndex: matchedPresetIndex,
-                    eager: true,
-                })
-                nextTools.push(...deepCopy(presetEntry.tools))
-                continue
-            }
+            const matchedPresetIndex = matchedDataToPresetIndex[toolConfigIndex]
+            const sourceToolConfig = matchedPresetIndex != null
+                ? presetToolConfigsInput.value[matchedPresetIndex]
+                : toolConfig
             const entry = await prepareRuntimeEntry({
-                toolConfig,
-                source: 'data',
-                toolConfigIndex,
-                eager: toolConfig.type === 'function',
+                toolConfig: sourceToolConfig,
+                source: matchedPresetIndex != null ? 'preset' : 'data',
+                toolConfigIndex: matchedPresetIndex != null
+                    ? matchedPresetIndex
+                    : toolConfigIndex,
+                eager: true,
             })
-            if (toolConfig.type === 'function') {
-                nextTools.push(...deepCopy(entry.tools))
-                continue
+            if (toolConfig.type === 'mcp' && entry.instructions) {
+                nextMcpSystemMessages.push({
+                    role: 'system',
+                    content: entry.instructions,
+                    description: `Loaded from MCP instructions of ${sourceToolConfig.server_label || sourceToolConfig.server_url}`,
+                })
             }
-            const placeholder = buildMcpPlaceholderFromConfig(toolConfig, toolConfigIndex, 'data')
-            getToolRuntime(placeholder).hash = entry.configHash
-            nextTools.push(placeholder)
+            nextTools.push(...deepCopy(entry.tools))
         }
-        return nextTools
+        return {
+            tools: nextTools,
+            mcpSystemMessages: nextMcpSystemMessages,
+        }
     }
 
     async function buildRequestTools() {
-        const dialogCache = getDialogCacheValue()
-        if (!dialogCache) {
+        if (!getDialogCacheValue()) {
             return []
         }
         await syncDialogToolsFromConfigsIfNeeded()
+        const dialogCache = getDialogCacheValue()
         const currentToolsValue = dialogCache.tools ?? []
         const nextTools = []
         let replacedPlaceholder = false
@@ -361,7 +371,11 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         if (!dialogCache?.tool_configs?.length || 'tools' in dialogCache) {
             return
         }
-        setDialogTools(await buildToolsFromToolConfigs(dialogCache.tool_configs))
+        const { tools, mcpSystemMessages } = await buildToolsFromToolConfigs(dialogCache.tool_configs)
+        if ('tools' in (getDialogCacheValue() || {})) {
+            return
+        }
+        setDialogTools(tools, mcpSystemMessages)
     }
 
     function registerDialogCache(dialogCache) {
