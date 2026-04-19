@@ -21,9 +21,9 @@
     </div>
     <div v-if="(isRenderRole && !isRenderContentEditing)">
       <div v-if="showPrimaryActionButton" class="messagePrimaryActionRow">
-        <p class="messageRenderContent messagePrimaryActionContent">
+        <div class="messageRenderContent messagePrimaryActionContent">
           <MessageAsTextRender :messageAsText="messageAsText" @dblclick="handleRenderContent" />
-        </p>
+        </div>
         <button @click="handlePrimaryAction" :disabled="isPrimaryActionDisabled" :style="primaryActionButtonStyle"
           class="messagePrimaryActionButton">
           <b>{{ primaryActionLabel }}</b>
@@ -33,9 +33,9 @@
           </template>
         </button>
       </div>
-      <p v-else class="messageRenderContent">
+      <div v-else class="messageRenderContent">
         <MessageAsTextRender :messageAsText="messageAsText" @dblclick="handleRenderContent" />
-      </p>
+      </div>
     </div>
     <div v-else class="editorAndDetails">
       <div class="messagePrimaryActionRow">
@@ -518,6 +518,11 @@ onBeforeUnmount(() => {
   border-radius: 5px;
   box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color)) inset;
   padding: 8px;
+  box-sizing: border-box;
+  line-height: 1.5;
+  min-height: calc(3em + 16px);
+  max-height: calc(75em + 16px);
+  overflow-y: auto;
 }
 
 .messageDraftWarning {
