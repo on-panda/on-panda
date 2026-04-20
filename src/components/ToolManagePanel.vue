@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import ToolInfo from './widgets/ToolInfo.vue'
 import { buildToolConfigTagName, getToolRuntime } from '../utils/toolUtils.js'
 
 const props = defineProps({
@@ -20,6 +21,11 @@ const { t } = useI18n()
 const detailsRef = ref(null)
 const panelOpen = ref(false)
 const hasPanelToggled = ref(false)
+const toolInfoTrigger = ['hover', 'contextmenu']
+const toolInfoPopoverStyle = {
+    width: 'min(80vw, 1024px)',
+    maxWidth: 'calc(100vw - 24px)',
+}
 
 const configTags = computed(() => toolManageState.visibleToolConfigItems.value.map(({ toolConfig, index, source }) => ({
     name: buildToolConfigTagName(toolConfig, index, source),
@@ -104,9 +110,16 @@ function handlePanelToggle() {
             <div class="tool-manage-section">
                 <div class="tool-manage-title">{{ t('toolManagePanel.configs') }}</div>
                 <div class="tool-manage-tags">
-                    <el-tag v-for="configTag in configTags" :key="configTag.key" size="small" effect="plain">
-                        {{ configTag.name }}
-                    </el-tag>
+                    <el-popover v-for="configTag in configTags" :key="configTag.key" :trigger="toolInfoTrigger"
+                        placement="bottom-start" enterable effect="light" :show-after="500"
+                        :popper-style="toolInfoPopoverStyle">
+                        <template #reference>
+                            <el-tag size="small" effect="plain">
+                                {{ configTag.name }}
+                            </el-tag>
+                        </template>
+                        <ToolInfo :title="configTag.name" :tool-config="configTag.toolConfig" />
+                    </el-popover>
                     <span v-if="!configTags.length" class="tool-manage-empty">{{ t('toolManagePanel.empty') }}</span>
                 </div>
             </div>
@@ -114,12 +127,18 @@ function handlePanelToggle() {
             <div class="tool-manage-section">
                 <div class="tool-manage-title">{{ t('toolManagePanel.candidate') }}</div>
                 <div class="tool-manage-tags">
-                    <el-tag v-for="candidate in candidateTools"
-                        :key="`candidate-${candidate.index}-${getToolTagName(candidate.tool)}`" size="small"
-                        effect="plain" type="info" class="tool-manage-tag-clickable"
-                        @click="appendTool(candidate.index)">
-                        {{ getToolTagName(candidate.tool) }}
-                    </el-tag>
+                    <el-popover v-for="candidate in candidateTools"
+                        :key="`candidate-${candidate.index}-${getToolTagName(candidate.tool)}`" :trigger="toolInfoTrigger"
+                        placement="bottom-start" enterable effect="light" :show-after="500"
+                        :popper-style="toolInfoPopoverStyle">
+                        <template #reference>
+                            <el-tag size="small" effect="plain" type="info" class="tool-manage-tag-clickable"
+                                @click="appendTool(candidate.index)">
+                                {{ getToolTagName(candidate.tool) }}
+                            </el-tag>
+                        </template>
+                        <ToolInfo :title="getToolTagName(candidate.tool)" :tool="candidate.tool" />
+                    </el-popover>
                     <span v-if="!candidateTools.length" class="tool-manage-empty">{{ t('toolManagePanel.empty')
                         }}</span>
                 </div>
@@ -128,11 +147,18 @@ function handlePanelToggle() {
             <div class="tool-manage-section">
                 <div class="tool-manage-title">{{ t('toolManagePanel.selected') }}</div>
                 <div class="tool-manage-tags">
-                    <el-tag v-for="selected in selectedTools"
-                        :key="`selected-${selected.index}-${getToolTagName(selected.tool)}`" size="small" type="success"
-                        class="tool-manage-tag-clickable" @click="removeTool(selected.index)">
-                        {{ getToolTagName(selected.tool) }}
-                    </el-tag>
+                    <el-popover v-for="selected in selectedTools"
+                        :key="`selected-${selected.index}-${getToolTagName(selected.tool)}`" :trigger="toolInfoTrigger"
+                        placement="bottom-start" enterable effect="light" :show-after="500"
+                        :popper-style="toolInfoPopoverStyle">
+                        <template #reference>
+                            <el-tag size="small" type="success" class="tool-manage-tag-clickable"
+                                @click="removeTool(selected.index)">
+                                {{ getToolTagName(selected.tool) }}
+                            </el-tag>
+                        </template>
+                        <ToolInfo :title="getToolTagName(selected.tool)" :tool="selected.tool" />
+                    </el-popover>
                     <span v-if="!selectedTools.length" class="tool-manage-empty">{{ t('toolManagePanel.empty') }}</span>
                 </div>
             </div>
