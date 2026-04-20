@@ -21,10 +21,11 @@ const { t } = useI18n()
 const detailsRef = ref(null)
 const panelOpen = ref(false)
 const hasPanelToggled = ref(false)
-const toolInfoTrigger = ['hover', 'contextmenu']
+const toolInfoTrigger = 'hover'
+const toolInfoVisibleKey = ref(null)
 const toolInfoPopoverStyle = {
-    width: 'min(80vw, 1024px)',
-    maxWidth: 'calc(100vw - 24px)',
+    width: 'max-content',
+    maxWidth: 'min(80vw, 1024px)',
 }
 
 const configTags = computed(() => toolManageState.visibleToolConfigItems.value.map(({ toolConfig, index, source }) => ({
@@ -36,6 +37,7 @@ const configTags = computed(() => toolManageState.visibleToolConfigItems.value.m
 const candidateTools = computed(() => toolManageState.allTools.value
     .map((tool, index) => ({
         index,
+        key: `candidate-${index}-${getToolTagName(tool)}`,
         tool,
         selectedIndex: toolManageState.matchedAllToSelectedIndex.value[index],
     }))
@@ -43,6 +45,7 @@ const candidateTools = computed(() => toolManageState.allTools.value
 
 const selectedTools = computed(() => toolManageState.currentDialogTools.value.map((tool, index) => ({
     index,
+    key: `selected-${index}-${getToolTagName(tool)}`,
     tool,
 })))
 const selectedToolCount = computed(() => selectedTools.value.length)
@@ -96,6 +99,16 @@ function handlePanelToggle() {
     panelOpen.value = detailsRef.value.open
     hasPanelToggled.value = true
 }
+
+function handleToolInfoVisibleChange(toolInfoKey, visible) {
+    if (visible) {
+        toolInfoVisibleKey.value = toolInfoKey
+        return
+    }
+    if (toolInfoVisibleKey.value === toolInfoKey) {
+        toolInfoVisibleKey.value = null
+    }
+}
 </script>
 
 <template>
@@ -111,10 +124,11 @@ function handlePanelToggle() {
                 <div class="tool-manage-title">{{ t('toolManagePanel.configs') }}</div>
                 <div class="tool-manage-tags">
                     <el-popover v-for="configTag in configTags" :key="configTag.key" :trigger="toolInfoTrigger"
-                        placement="bottom-start" enterable effect="light" :show-after="500"
-                        :popper-style="toolInfoPopoverStyle">
+                        :visible="toolInfoVisibleKey === configTag.key" placement="bottom-start" enterable effect="light"
+                        :show-after="500" :hide-after="500" :popper-style="toolInfoPopoverStyle"
+                        @update:visible="visible => handleToolInfoVisibleChange(configTag.key, visible)">
                         <template #reference>
-                            <el-tag size="small" effect="plain">
+                            <el-tag size="small" effect="plain" @contextmenu.prevent="toolInfoVisibleKey = configTag.key">
                                 {{ configTag.name }}
                             </el-tag>
                         </template>
@@ -127,12 +141,13 @@ function handlePanelToggle() {
             <div class="tool-manage-section">
                 <div class="tool-manage-title">{{ t('toolManagePanel.candidate') }}</div>
                 <div class="tool-manage-tags">
-                    <el-popover v-for="candidate in candidateTools"
-                        :key="`candidate-${candidate.index}-${getToolTagName(candidate.tool)}`" :trigger="toolInfoTrigger"
-                        placement="bottom-start" enterable effect="light" :show-after="500"
-                        :popper-style="toolInfoPopoverStyle">
+                    <el-popover v-for="candidate in candidateTools" :key="candidate.key" :trigger="toolInfoTrigger"
+                        :visible="toolInfoVisibleKey === candidate.key" placement="bottom-start" enterable effect="light"
+                        :show-after="500" :hide-after="500" :popper-style="toolInfoPopoverStyle"
+                        @update:visible="visible => handleToolInfoVisibleChange(candidate.key, visible)">
                         <template #reference>
                             <el-tag size="small" effect="plain" type="info" class="tool-manage-tag-clickable"
+                                @contextmenu.prevent="toolInfoVisibleKey = candidate.key"
                                 @click="appendTool(candidate.index)">
                                 {{ getToolTagName(candidate.tool) }}
                             </el-tag>
@@ -147,12 +162,13 @@ function handlePanelToggle() {
             <div class="tool-manage-section">
                 <div class="tool-manage-title">{{ t('toolManagePanel.selected') }}</div>
                 <div class="tool-manage-tags">
-                    <el-popover v-for="selected in selectedTools"
-                        :key="`selected-${selected.index}-${getToolTagName(selected.tool)}`" :trigger="toolInfoTrigger"
-                        placement="bottom-start" enterable effect="light" :show-after="500"
-                        :popper-style="toolInfoPopoverStyle">
+                    <el-popover v-for="selected in selectedTools" :key="selected.key" :trigger="toolInfoTrigger"
+                        :visible="toolInfoVisibleKey === selected.key" placement="bottom-start" enterable effect="light"
+                        :show-after="500" :hide-after="500" :popper-style="toolInfoPopoverStyle"
+                        @update:visible="visible => handleToolInfoVisibleChange(selected.key, visible)">
                         <template #reference>
                             <el-tag size="small" type="success" class="tool-manage-tag-clickable"
+                                @contextmenu.prevent="toolInfoVisibleKey = selected.key"
                                 @click="removeTool(selected.index)">
                                 {{ getToolTagName(selected.tool) }}
                             </el-tag>

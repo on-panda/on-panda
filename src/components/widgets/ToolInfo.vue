@@ -154,7 +154,9 @@ const summary = computed(() => {
 
         <div v-if="schemaMarkdown" class="tool-info-section">
             <div class="tool-info-section-title">Schema</div>
-            <MarkdownRender :content="schemaMarkdown" />
+            <div class="tool-info-schema">
+                <MarkdownRender :content="schemaMarkdown" />
+            </div>
         </div>
     </div>
 </template>
@@ -265,5 +267,10 @@ const summary = computed(() => {
     max-height: 320px;
     overflow: auto;
     box-sizing: border-box;
+}
+
+.tool-info-schema :deep(pre code) {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 </style>
