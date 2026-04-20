@@ -104,6 +104,8 @@ function handleClickInMarkdown(event) {
 
   /* Code block container */
   pre code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
     background-color: #f3f3f3;
     border: 4px solid #fff;
     border-radius: 10px;

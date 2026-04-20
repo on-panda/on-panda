@@ -250,27 +250,4 @@ const summary = computed(() => {
     white-space: pre-wrap;
 }
 
-.tool-info-panel :deep(.on-panda-markdown-content) {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-.tool-info-panel :deep(pre) {
-    width: 100%;
-    max-width: 100%;
-}
-
-.tool-info-panel :deep(pre code) {
-    width: 100%;
-    max-width: 100%;
-    max-height: 320px;
-    overflow: auto;
-    box-sizing: border-box;
-}
-
-.tool-info-schema :deep(pre code) {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-}
 </style>
