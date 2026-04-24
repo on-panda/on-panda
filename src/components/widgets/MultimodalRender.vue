@@ -16,7 +16,7 @@ import { computed } from 'vue'
 import MarkdownRender from './MarkdownRender.vue'
 import PlainTextRender from './PlainTextRender.vue'
 import { useGlobalStore } from '../../stores/globalStore.js'
-import { multimodalChunkStringToObject } from '../../utils/multimodalUtils.js'
+import { parseContentAsText } from '../../utils/messageTextCodec.js'
 
 const props = defineProps({
   content: {
@@ -32,18 +32,18 @@ const props = defineProps({
 const globalStore = useGlobalStore()
 
 const contentChunks = computed(() => {
-  var content = props.content
-  // var content = 'before<|ON_PANDA_OBJECT_START|>1st<|ON_PANDA_OBJECT_END|>after<|ON_PANDA_OBJECT_START|>2th<|ON_PANDA_OBJECT_END|><|ON_PANDA_OBJECT_START|>3th<|ON_PANDA_OBJECT_END|>end'
-  const chunkStrings = content.split(/(<\|ON_PANDA_OBJECT_START\|>.*?)<\|ON_PANDA_OBJECT_END\|>/)
-  var contentChunks = chunkStrings.filter(chunk => chunk.length > 0).map(chunk => {
-    if (chunk.startsWith('<|ON_PANDA_OBJECT_START|>')) {
-      chunk = chunk.slice('<|ON_PANDA_OBJECT_START|>'.length)
-      var chunkObj = multimodalChunkStringToObject(chunk, globalStore.blobUrlToBase64Cache, false)
-      return { type: chunkObj.type, content: chunkObj }
-    }
-    return { type: 'text', content: chunk }
+  var content = parseContentAsText(props.content, {
+    blobUrlToBase64Cache: globalStore.blobUrlToBase64Cache,
   })
-  return contentChunks
+  if (typeof content === 'string') {
+    return [{ type: 'text', content }]
+  }
+  return content.map(chunk => {
+    if (chunk.type === 'text') {
+      return { type: 'text', content: chunk.text }
+    }
+    return { type: chunk.type, content: chunk }
+  })
 })
 
 </script>

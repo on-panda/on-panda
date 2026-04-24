@@ -36,6 +36,9 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
 
     const multimodalPlugins = markRaw({
         // type to component(<component content="chunkObject">)
+        image_url: {
+            component: defineAsyncComponent(() => import('../components/plugins/ImagePlugin.vue'))
+        },
         audio_url: {
             component: defineAsyncComponent(() => import('../components/plugins/AudioPlugin.vue'))
         },

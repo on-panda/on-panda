@@ -1,6 +1,5 @@
 <template>
-  <div class="on-panda-markdown-content" ref="markdownContainer" v-html="htmlContent"
-    @dblclick="handleDoubleClickInMarkdown" @click="handleClickInMarkdown">
+  <div class="on-panda-markdown-content" ref="markdownContainer" v-html="htmlContent">
   </div>
 </template>
 
@@ -56,37 +55,9 @@ const scheduleCopyButtonUpdate = () => nextTick(updateCopyButtonLabels)
 watch(htmlContent, scheduleCopyButtonUpdate, { immediate: true })
 watch(locale, scheduleCopyButtonUpdate)
 
-function handleDoubleClickInMarkdown(event) {
-  if (event.target.tagName === 'IMG') {
-    window.open(event.target.src, '_blank')
-  }
-}
-
-function handleClickInMarkdown(event) {
-  if (event.target.tagName === 'IMG') {
-    event.target.classList.toggle('rawSizeImg')
-  }
-}
-
 </script>
 <style>
 /* global CSS */
-.on-panda-markdown-content img {
-  max-width: min(100% - 5px, 512px);
-  max-height: 512px;
-  box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 8px;
-  margin-left: 5px;
-  margin-right: 5px;
-  cursor: zoom-in;
-}
-
-.on-panda-markdown-content .rawSizeImg {
-  max-width: initial;
-  max-height: initial;
-  position: relative;
-  z-index: 1;
-}
-
 .on-panda-markdown-content {
   pre code {
     font-family: monospace;
