@@ -181,7 +181,7 @@ onMounted(async () => {
       // toolManageState.presetToolConfigsInput.value = toolManageState.presetToolConfigsInput.value.concat(deepCopy(TEST_TOOL_CONFIGS))
       // exampleToRun = operationCenter.generateNew
       exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
-      exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["js"]
+      // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["js"]
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
       var _exampleToRun = () => {
         var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]

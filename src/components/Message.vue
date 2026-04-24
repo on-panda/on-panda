@@ -516,7 +516,8 @@ onBeforeUnmount(() => {
   margin-bottom: 0px;
   color: #555;
   border-radius: 5px;
-  box-shadow: 0 0 0 1px var(--el-input-border-color, var(--el-border-color)) inset;
+  outline: 1px solid var(--el-input-border-color, var(--el-border-color));
+  outline-offset: -1px;
   padding: 8px;
   box-sizing: border-box;
   line-height: 1.5;
