@@ -1,6 +1,18 @@
 const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor
 const MAX_TEXT_LENGTH = 256 * 1024
 
+const instructions = `You are an agent running in a browser. The current webpage is a Vite + Vue3-based LLM chat UI, through which the user communicates with you. This webpage contains all of your information and context; if the webpage is closed, your session is interrupted, and all information will be lost, just like variables in the webpage. You can read and modify the interface through \`document\` and \`window\`. You should remember that you are operating in a browser environment and make corresponding adaptations and adjustments.
+
+## Skills
+A skill is a set of local instructions to follow that is stored in a \`SKILL.md\` file. Below is the list of skills that can be used. Each entry includes a name, description, and file path so you can open the source for full instructions when using a specific skill.
+### Available skills
+- cors-internet: Browser JS agent patterns for web search and information retrieval under CORS. Use when the you needs to access the internet for any information acquisition. (skillUrl: https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/cors-internet/SKILL.md)
+### How to load skills
+Use tool "run_browser_js" with this pattern code to load the skill:
+\`\`\`js
+await fetch(skillUrl).then(res => res.text()).then(console.log)
+\`\`\``
+
 const runBrowserJsTool = {
     name: 'run_browser_js',
     description: 'Run JavaScript in the current browser runtime and returns strings within `console.log`. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. You can access the internet under CORS restrictions. The current web page is where users interact with you, so do not replace the entire document.body.',
@@ -158,7 +170,7 @@ async function handleJsonRpcMessage(message = {}) {
                 name: 'browser-js-mcp',
                 version: '0.1.0',
             },
-            instructions: "You are an agent running in a browser. The current webpage is a Vite + Vue3-based LLM chat UI, through which the user communicates with you. This webpage contains all of your information and context; if the webpage is closed, your session is interrupted, and all information will be lost, just like variables in the webpage. You can read and modify the interface through `document` and `window`. You should remember that you are operating in a browser environment and make corresponding adaptations and adjustments."
+            instructions: instructions
         })
     }
 

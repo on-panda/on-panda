@@ -165,7 +165,7 @@ const defaultExampleNameToFunc = {
     ]
     operationCenter.generateNew()
   },
-  "js": () => {
+  "browser-agent": () => {
     // var JsExampleMessages = [{ role: "user", content: "Using JavaScript to solve 10086**4" }]
     var JsExampleMessages = [{ role: "user", content: "Using JavaScript to create HTML canvas above `.OnPandaResponsePanel`, draw content: A panda is riding on a llama" }]
     var JsExampleMessages = [{ role: "user", content: "Using tool `run_browser_js` to create an interactive desktop pet placed in the bottom-right corner of the current page." }]
