@@ -9,7 +9,7 @@ const runBrowserJsTool = {
         properties: {
             code: {
                 type: 'string',
-                description: 'JavaScript code to run in the current browser runtime. If your code starts async function, await it, otherwise the tool may return before later logs run. Do not use IIFE at the outer level.',
+                description: 'If your code starts any async work, such as fetch, promises, or async functions, await it with top-level await or await the returned promise; otherwise the tool may return before later logs run. Do not rely on un-awaited .then() callbacks for console.log output.',
             },
         },
     },
@@ -61,17 +61,23 @@ async function runBrowserJs(code = '') {
     const customConsole = {
         ...console,
         log(...args) {
-            logs.push(stringifyLogArgs(args))
+            const s = stringifyLogArgs(args)
+            logs.push(s)
+            console.log('[run_browser_js.log]:', s)
         },
         error(...args) {
-            errors.push(buildJsErrorText(stringifyLogArgs(args)))
+            const s = stringifyLogArgs(args)
+            errors.push(buildJsErrorText(s))
+            console.log('[run_browser_js.error]:', s)
         },
     }
 
     try {
         await new AsyncFunction('console', code)(customConsole)
     } catch (error) {
-        errors.push(buildJsErrorText(String(error)))
+        const s = String(error)
+        errors.push(buildJsErrorText(s))
+        console.log('[run_browser_js.error]:', s)
     }
 
     const executionTimeMs = Math.round(performance.now() - startTime)
@@ -152,6 +158,7 @@ async function handleJsonRpcMessage(message = {}) {
                 name: 'browser-js-mcp',
                 version: '0.1.0',
             },
+            instructions: "You are an agent running in a browser. The current webpage is a Vite + Vue3-based LLM chat UI, through which the user communicates with you. This webpage contains all of your information and context; if the webpage is closed, your session is interrupted, and all information will be lost, just like variables in the webpage. You can read and modify the interface through `document` and `window`. You should remember that you are operating in a browser environment and make corresponding adaptations and adjustments."
         })
     }
 
