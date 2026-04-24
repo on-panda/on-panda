@@ -1,11 +1,12 @@
-<!-- 
-    MultimodalRender is a component that renders markdown content with multimodal support.
+<!--
+    MultimodalRender is a component that renders text content with multimodal support.
   -->
 
 <template>
   <div class="on-panda-multimodal-render">
     <!-- <MarkdownRender v-for="chunk in contentChunks" :key="chunk.content" :content="chunk.content" /> -->
-    <component :is="globalStore.multimodalPlugins[chunk.type]?.component || MarkdownRender"
+    <component
+      :is="globalStore.multimodalPlugins[chunk.type]?.component || (props.isPlainText ? PlainTextRender : MarkdownRender)"
       v-for="chunk in contentChunks" :content="chunk.content" />
   </div>
 </template>
@@ -13,6 +14,7 @@
 <script setup>
 import { computed } from 'vue'
 import MarkdownRender from './MarkdownRender.vue'
+import PlainTextRender from './PlainTextRender.vue'
 import { useGlobalStore } from '../../stores/globalStore.js'
 import { multimodalChunkStringToObject } from '../../utils/multimodalUtils.js'
 
@@ -20,6 +22,10 @@ const props = defineProps({
   content: {
     type: String,
     default: ''
+  },
+  isPlainText: {
+    type: Boolean,
+    default: false,
   },
 })
 

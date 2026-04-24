@@ -11,7 +11,7 @@
       </div>
     </details>
     <div v-if="message.content" class="message-as-text-content">
-      <MultimodalRender :content="message.content" />
+      <MultimodalRender :content="message.content" :isPlainText="Boolean(message.tool_call_id)" />
     </div>
     <div v-if="message.tool_calls && message.tool_calls.length" class="message-as-text-tool-calls">
       <ToolCallRender v-for="toolCall in message.tool_calls" :key="toolCall.id || toolCall.index" :toolCall="toolCall" />

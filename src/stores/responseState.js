@@ -108,8 +108,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 body['echo'] = false
                 const modelName = apiConfig.value.chat_config.model.toLowerCase()
                 if (modelName.indexOf("kimi") != -1 || modelName.indexOf("qwen") != -1) {
-                    // for kimi-api and aliyun
                     messages[messages.length - 1]['partial'] = true
+                }
+                if (modelName.indexOf("deepseek") != -1) {
+                    messages[messages.length - 1]['prefix'] = true
                 }
             } else {
                 if (lastMessageContent.length < 20000000) {
