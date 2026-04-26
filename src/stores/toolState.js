@@ -273,7 +273,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                 nextMcpSystemMessages.push({
                     role: 'system',
                     content: entry.instructions,
-                    description: `Loaded from MCP instructions of ${sourceToolConfig.server_label || sourceToolConfig.server_url}`,
+                    description: `System prompt loaded from MCP instructions of ${sourceToolConfig.server_label || sourceToolConfig.server_url}`,
                 })
             }
             nextTools.push(...deepCopy(entry.tools))
