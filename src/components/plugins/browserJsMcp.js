@@ -8,7 +8,7 @@ A skill is a set of local instructions to follow that is stored in a \`SKILL.md\
 ### Available skills
 - cors-internet: Browser JS agent patterns for web search and information retrieval under CORS. Use when the you needs to access the internet for any information acquisition. (skillUrl: https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/cors-internet/SKILL.md)
 ### How to load skills
-Use tool "run_browser_js" with this pattern code to load the skill:
+If the task clearly matches a skill's description shown above, using tool "run_browser_js" with this pattern code to load the skill:
 \`\`\`js
 await fetch(skillUrl).then(res => res.text()).then(console.log)
 \`\`\``
