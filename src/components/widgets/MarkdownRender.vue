@@ -58,6 +58,14 @@ watch(locale, scheduleCopyButtonUpdate)
 </script>
 <style>
 /* global CSS */
+.on-panda-markdown-content img {
+  max-width: min(100% - 5px, 512px);
+  max-height: 512px;
+  box-shadow: rgba(0, 0, 0, 0.5) 0px 0px 8px;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
 .on-panda-markdown-content {
   pre code {
     font-family: monospace;
