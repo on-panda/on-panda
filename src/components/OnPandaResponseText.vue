@@ -1,6 +1,7 @@
 <template>
     <p ref="onPandaResponseTextRef" class="OnPandaResponseText onPandaContainers"
-        style="white-space: pre-wrap;cursor: default;">
+        style="white-space: pre-wrap;cursor: default; 
+    overflow-wrap: anywhere;">
         <span class="PatchSpan" v-for="patch in patches"
             :key="`t${pandaState.uuid.value}-d${pandaState.currentDialogKey.value}-p${patch.index}:${patch.patch}`"
             :style='{

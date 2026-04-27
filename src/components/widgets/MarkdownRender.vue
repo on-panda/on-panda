@@ -134,7 +134,7 @@ watch(locale, scheduleCopyButtonUpdate)
 
 /* markdown table CSS */
 .on-panda-markdown-content {
-
+  overflow-wrap: anywhere;
   table {
     border-spacing: 0;
     border-collapse: collapse;
