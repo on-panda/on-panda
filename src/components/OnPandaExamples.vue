@@ -166,8 +166,15 @@ const defaultExampleNameToFunc = {
     operationCenter.generateNew()
   },
   "browser-agent": () => {
-    // var JsExampleMessages = [{ role: "user", content: "Using JavaScript to solve 10086**4" }]
-    var JsExampleMessages = [{ role: "user", content: "Using JavaScript to create HTML canvas above `.OnPandaResponsePanel`, draw content: A panda is riding on a llama" }]
+    var JsExampleMessages = [{ role: "user", content: globalStore.currentLocale.indexOf('zh') == -1? "AI news in the past week." : "最近一周的 AI 新闻。" }]
+    operationCenter.loadMessages(JsExampleMessages)
+    operationCenter.pandaState.currentDialogData.value.tool_configs = [{
+      type: 'mcp',
+      server_url: 'local-fetch://browser-js-mcp',
+    }]
+    operationCenter.generateNew()
+  },
+  "pet": () => {
     var JsExampleMessages = [{ role: "user", content: "Using tool `run_browser_js` to create an interactive desktop pet placed in the bottom-right corner of the current page." }]
     JsExampleMessages[0].comment = "The `run_browser_js` tool executes code in the current page’s JavaScript runtime, so the agent can read and modify the page’s content. To restore the original layout, please refresh."
     operationCenter.loadMessages(JsExampleMessages)
@@ -177,15 +184,15 @@ const defaultExampleNameToFunc = {
     }]
     operationCenter.generateNew()
   },
-  "svg": () => {
-    var SvgExampleMessages = [{ role: "user", content: "Generate svg image and iterate 3 times, draw content: A panda is riding on a llama" }]
-    operationCenter.loadMessages(SvgExampleMessages)
-    operationCenter.pandaState.currentDialogData.value.tool_configs = [{
-      type: 'mcp',
-      server_url: 'local-fetch://browser-js-mcp',
-    }]
-    operationCenter.generateNew()
-  },
+  // "svg": () => {
+  //   var SvgExampleMessages = [{ role: "user", content: "Generate svg image and iterate 3 times, draw content: A panda is riding on a llama" }]
+  //   operationCenter.loadMessages(SvgExampleMessages)
+  //   operationCenter.pandaState.currentDialogData.value.tool_configs = [{
+  //     type: 'mcp',
+  //     server_url: 'local-fetch://browser-js-mcp',
+  //   }]
+  //   operationCenter.generateNew()
+  // },
   "tokenizer": () => {
     operationCenter.loadMessages(messagesTokenizerExample)
     operationCenter.generateNew()
