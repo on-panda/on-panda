@@ -186,7 +186,11 @@ export function tokenToDisplayString(token, tokens = undefined) {
         if (toolCall.function?.arguments) {
             return toolCall.function.arguments
         }
-        return JSON.stringify(toolCall)
+        // new vLLM resends the tool_call wrapper on every chunk; skip filler chunks (no name) to avoid noisy JSON in display
+        if (!toolCall.function?.name) {
+            return ""
+        }
+        return JSON.stringify(toolCall, (k, v) => k === "arguments" && v === "" ? undefined : v)
     }
     return ""
 }

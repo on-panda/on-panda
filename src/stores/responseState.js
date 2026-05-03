@@ -862,7 +862,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                         toolCalls.push(toolCall2)
                     } else {
                         var toolCall1 = toolCalls[toolCall2.index]
-                        toolCalls[toolCall2.index] = mergeTwoDeltas(toolCall1, toolCall2, ["type"])
+                        toolCalls[toolCall2.index] = mergeTwoDeltas(toolCall1, toolCall2, ["type", "id"])
                     }
                     delta.tool_calls = toolCalls
                     continue
