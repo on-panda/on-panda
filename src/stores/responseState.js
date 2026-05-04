@@ -853,7 +853,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         ).reduce((delta1, delta2) => {
             const delta = { ...delta1 }
             for (var key in delta2) {
-                if (key === "tool_calls" && delta2.tool_calls) {
+                if (key === "tool_calls" && delta2.tool_calls?.length) {
                     var toolCalls = delta.tool_calls || []
                     var toolCall2 = delta2.tool_calls[0]
                     console.assert(delta2.tool_calls.length === 1)

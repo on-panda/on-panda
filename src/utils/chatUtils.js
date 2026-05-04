@@ -216,12 +216,11 @@ export function normalizeRequest(requestBody) {
     if (!body.chat_template) {
         delete body.chat_template
     }
-    if (body.top_logprobs == 0) {  // turn off logprobs
-        delete body.logprobs
-        delete body.top_logprobs
-    }
     if (body.top_logprobs) {
         body.logprobs = true
+    } else{  // turn off logprobs
+        delete body.logprobs
+        delete body.top_logprobs
     }
     if (!body.max_tokens) {  // turn off max_tokens when its 0 or null
         delete body.max_tokens
