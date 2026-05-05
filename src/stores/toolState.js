@@ -1,4 +1,4 @@
-import { computed, isRef, onMounted, ref, watch } from 'vue'
+import { computed, getCurrentInstance, isRef, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepCopy } from '../utils/commonUtils.js'
 import {
@@ -16,10 +16,16 @@ import {
 } from '../utils/toolUtils.js'
 
 export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
+    // When constructed post-mount (e.g. from a computed during render), skip onMounted and treat as mounted.
+    const instance = getCurrentInstance()
     const isMounted = ref(false)
-    onMounted(() => {
+    if (instance && !instance.isMounted) {
+        onMounted(() => {
+            isMounted.value = true
+        })
+    } else {
         isMounted.value = true
-    })
+    }
 
     function showErrorMessage(message) {
         setTimeout(() => {

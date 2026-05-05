@@ -678,7 +678,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             await toolManageState.buildRequestTools()
             toolCallState.stopToolCalls()
             this.pandaState.beforeOperation()
-            requestPromptLogprobs().then(() => {
+            return requestPromptLogprobs().then(() => {
                 this.pandaState.afterOperation({
                     operator: "refresh_probability",
                     on_policy: this.pandaState.isPreviousOperationOnPolicy.value,

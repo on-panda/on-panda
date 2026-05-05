@@ -9,7 +9,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, nextTick } from 'vue'
 import { sleep } from '../utils/commonUtils.js'
 import { useGlobalStore } from '../stores/globalStore.js'
 
@@ -110,6 +110,135 @@ const messagesToolsExample = [
   }
 ]
 
+// Edit this helper to try different marker styles (e.g. `<${name}>`, `[[${name}]]`).
+// Each semantic slot becomes a unique string so you can locate it after the chat template is applied.
+const m = name => `_${name}_`
+
+const messagesTemplateExample = [
+  {
+    role: "system",
+    content: m('system_content1'),
+    comment: "Check the model's chat template via `prompt_logprobs`. Each field in the request data serves as a unique marker."
+  },
+  { role: "user", content: m('user_content1') },
+  {
+    role: "assistant",
+    reasoning: m('assistant_reasoning1'),
+    content: m('assistant_content1')
+  },
+  { role: "user", content: m('user_content2') },
+  {
+    role: "assistant",
+    reasoning: m('assistant_reasoning2'),
+    content: m('assistant_content2'),
+    tool_calls: [
+      {
+        id: `functions.${m('function_name1')}:0`,
+        type: "function",
+        index: 0,
+        function: {
+          name: m('function_name1'),
+          arguments: JSON.stringify({
+            [m('argument_name1')]: m('argument_value1'),
+            [m('argument_name2')]: m('argument_enum1')
+          })
+        }
+      },
+      {
+        id: `functions.${m('function_name2')}:1`,
+        type: "function",
+        index: 1,
+        function: {
+          name: m('function_name2'),
+          arguments: JSON.stringify({
+            [m('argument_name3')]: [m('argument_value2')],
+            [m('argument_name4')]: {
+              [m('argument_name5')]: m('argument_value3')
+            },
+            [m('argument_name6')]: m('argument_enum3')
+          })
+        }
+      }
+    ]
+  },
+  {
+    role: "tool",
+    content: m('tool_content1'),
+    tool_call_id: `functions.${m('function_name1')}:0`,
+    name: m('function_name1')
+  },
+  {
+    role: "tool",
+    content: m('tool_content2'),
+    tool_call_id: `functions.${m('function_name2')}:1`,
+    name: m('function_name2')
+  },
+  {
+    role: "assistant",
+    reasoning: m('assistant_reasoning3'),
+    content: m('assistant_content3'),
+    finish_reason: "stop"
+  }
+]
+
+const templateToolConfigs = [
+  {
+    type: "function",
+    function: {
+      name: m('function_name1'),
+      description: m('function_description1'),
+      parameters: {
+        type: "object",
+        properties: {
+          [m('argument_name1')]: {
+            type: "string",
+            description: m('argument_description1')
+          },
+          [m('argument_name2')]: {
+            type: "string",
+            enum: [m('argument_enum1'), m('argument_enum2')]
+          }
+        },
+        required: [m('argument_name1'), m('argument_name2')]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: m('function_name2'),
+      description: m('function_description2'),
+      parameters: {
+        type: "object",
+        properties: {
+          [m('argument_name3')]: {
+            type: "array",
+            items: { type: "string" },
+            description: m('argument_description3')
+          },
+          [m('argument_name4')]: {
+            type: "object",
+            description: m('argument_description4'),
+            properties: {
+              [m('argument_name5')]: {
+                type: "string",
+                description: m('argument_description5')
+              }
+            },
+            required: [m('argument_name5')]
+          },
+          [m('argument_name6')]: {
+            type: "string",
+            enum: [m('argument_enum3'), m('argument_enum4')],
+            default: m('argument_enum3')
+          }
+        },
+        required: [m('argument_name3'), m('argument_name4')]
+      }
+    }
+  }
+]
+
 // Define all example functions
 const defaultExampleNameToFunc = {
   "clear": () => {
@@ -166,7 +295,7 @@ const defaultExampleNameToFunc = {
     operationCenter.generateNew()
   },
   "browser-agent": () => {
-    var JsExampleMessages = [{ role: "user", content: globalStore.currentLocale.indexOf('zh') == -1? "AI news in the past week." : "最近一周的 AI 新闻。" }]
+    var JsExampleMessages = [{ role: "user", content: globalStore.currentLocale.indexOf('zh') == -1 ? "AI news in the past week." : "最近一周的 AI 新闻。" }]
     operationCenter.loadMessages(JsExampleMessages)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{
       type: 'mcp',
@@ -196,6 +325,13 @@ const defaultExampleNameToFunc = {
   "tokenizer": () => {
     operationCenter.loadMessages(messagesTokenizerExample)
     operationCenter.generateNew()
+  },
+  "template": () => {
+    operationCenter.loadMessages(messagesTemplateExample, templateToolConfigs)
+    operationCenter.refreshResponseProbability().then(async () => {
+      await nextTick()
+      document.querySelectorAll('.prompt-logprobs-details').forEach(d => { d.open = true })
+    })
   },
   // "random": () => {
   //   operationCenter.loadMessages([{ role: "user", content: "just output a random float128 number without any words, no code" }])
