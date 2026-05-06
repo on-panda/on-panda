@@ -1,6 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { deepCopy, hashObjectSHA256Base64, dateStringNow, safeArrayExtend } from '../utils/commonUtils'
 import { dialogDifferent, tokensToSeq, isFinalRoleModelRole, clearTokenObject } from '../utils/chatUtils'
+import { buildViewTokens, ChatTemplateStateClosure } from '../utils/chatTemplateUtils.js'
 import { stripRuntime } from '../utils/toolUtils.js'
 import { useGlobalStore } from './globalStore.js'
 import LZString from 'lz-string'
@@ -193,6 +194,15 @@ export class PandaState {
             var seqCache = tokensToSeq(tokensCache)
             // console.trace('restoreTokens:')
             // console.log('restoreTokens key:', this.currentDialogKey.value, seqNow , seqCache, 'pruned:', tokensCache.filter(token => token.pruned).length)
+            if (seqNow !== seqCache) {
+                var ct = ChatTemplateStateClosure({})
+                var rebuiltTokensCache = buildViewTokens({ message: ct.parse(this.tokens.value), chatTemplate: ct, logprobsTokens: tokensCache })
+                var seqRebuiltCache = tokensToSeq(rebuiltTokensCache)
+                if (seqNow === seqRebuiltCache) {
+                    tokensCache = rebuiltTokensCache
+                    seqCache = seqRebuiltCache
+                }
+            }
             if (seqNow === seqCache) {
                 this.tokens.value.length = 0
                 // must deep copy to aviod edit by reference

@@ -2,9 +2,9 @@ import { unref } from 'vue'
 import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils'
 import { formatMessageAsText, formatSimpleContentAsText } from './messageTextCodec.js'
 import { stripRuntime } from './toolUtils.js'
-import { buildViewTokens, ChatTemplateStateClosure } from './chatTemplateUtils.js'
+import { buildViewTokens, ChatTemplateStateClosure, tokenToDisplayString } from './chatTemplateUtils.js'
 
-export { mergeTwoDeltas } from './chatTemplateUtils.js'
+export { mergeTwoDeltas, tokenToDisplayString, probOfToken, tokensToPatches, matchTokensToPrompt, matchPatchesToTextFullDP } from './chatTemplateUtils.js'
 
 export {
     MESSAGE_KEYS_IN_CONTEXT,
@@ -134,29 +134,6 @@ export function convertMessageToTokens(message) {
     return tokens
 }
 
-export function tokenToDisplayString(token, tokens = undefined) {
-    const delta = token?.delta || {}
-    if (typeof delta.content === 'string' && delta.content !== '') {
-        return delta.content
-    }
-    const reasoning = delta.reasoning
-    if (typeof reasoning === 'string' && reasoning !== '') {
-        return reasoning
-    }
-    const toolCall = delta.tool_calls?.[0]
-    if (toolCall) {
-        if (toolCall.function?.arguments) {
-            return toolCall.function.arguments
-        }
-        // new vLLM resends the tool_call wrapper on every chunk; skip filler chunks (no name) to avoid noisy JSON in display
-        if (!toolCall.function?.name) {
-            return ""
-        }
-        return JSON.stringify(toolCall, (k, v) => k === "arguments" && v === "" ? undefined : v)
-    }
-    return ""
-}
-
 export function normalizeRequest(requestBody) {
     const body = deepCopy(requestBody)
     if (body.messages?.length) {
@@ -263,19 +240,6 @@ export function recordAsRejectedToken(token, tokens) {
     return rejected_token
 }
 
-
-export function probOfToken(token) {
-    var logprob = token.logprobs?.content?.[0]?.logprob
-    var prob = Math.exp(logprob)
-
-    if (typeof logprob !== 'number') {
-        if (token.tokenIndex === 0 && !(token.delta.content)) {
-            // if first role token has no prob and will in first patch
-            prob = 1
-        }
-    }
-    return prob
-}
 
 export function filterEmptyMessage(messages) {
     return messages.filter(message => messageToSeq(message, { includeFinishReason: false }))

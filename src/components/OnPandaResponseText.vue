@@ -106,7 +106,7 @@ import { useI18n } from 'vue-i18n'
 
 import { useGlobalStore } from '../stores/globalStore.js'
 import { useEventListener, closeFloatPanelMeta, copyToClipboard, escapeHTML } from '../utils/commonUtils.js'
-import { probOfToken, tokenToDisplayString } from '../utils/chatUtils.js'
+import { tokenToDisplayString, tokensToPatches } from '../utils/chatUtils.js'
 import { probToColor } from '../utils/userInterfaceUtils.js'
 import { SelectedTextStateClosure } from '../stores/SelectedTextState.js'
 
@@ -184,63 +184,7 @@ const patchToSpanHTML = (patch) => {
     return patch.tokens.map(token => tokenToSpanHTML(token)).join("")
 }
 
-const patches = computed(() => {
-    const responseDisplayTextAll = tokens.value.map(token => getTokenDisplayText(token)).join("");
-    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-    const visibleSegments = Array.from(segmenter.segment(responseDisplayTextAll));
-    // add a empty segment at the end for EOT token
-    Array.from({ length: 4 }, () => visibleSegments.push({ segment: "" }));
-
-    const patches = []
-    let segmentIndex = 0
-    let currentSegmentString = visibleSegments[segmentIndex]?.segment ?? ""
-    let tokenToSegmentString = ""
-    let tokenStartIndex = 0
-
-    tokens.value.forEach((token, tokenIndex) => {
-        const tokenDisplayText = getTokenDisplayText(token)
-        tokenToSegmentString += tokenDisplayText
-
-        while (
-            segmentIndex < visibleSegments.length - 1 &&
-            tokenToSegmentString.length > currentSegmentString.length
-        ) {
-            segmentIndex += 1
-            currentSegmentString += visibleSegments[segmentIndex].segment
-        }
-
-        if (tokenToSegmentString === currentSegmentString) {
-            const patchTokens = tokens.value.slice(tokenStartIndex, tokenIndex + 1)
-            patches.push({
-                patch: currentSegmentString,
-                tokens: patchTokens,
-                prob: patchTokens.reduce((acc, currentToken) => acc * probOfToken(currentToken), 1),
-                index: patches.length,
-            })
-            tokenStartIndex = tokenIndex + 1
-            tokenToSegmentString = ""
-            segmentIndex += 1
-            currentSegmentString = visibleSegments[segmentIndex]?.segment ?? ""
-        } else if (
-            currentSegmentString &&
-            !currentSegmentString.startsWith(tokenToSegmentString)
-        ) {
-            const patchTokens = tokens.value.slice(tokenStartIndex, tokenIndex + 1)
-            patches.push({
-                patch: tokenToSegmentString,
-                tokens: patchTokens,
-                prob: patchTokens.reduce((acc, currentToken) => acc * probOfToken(currentToken), 1),
-                index: patches.length,
-            })
-            tokenStartIndex = tokenIndex + 1
-            tokenToSegmentString = ""
-            segmentIndex += 1
-            currentSegmentString = visibleSegments[segmentIndex]?.segment ?? ""
-        }
-    })
-
-    return patches
-});
+const patches = computed(() => tokensToPatches(tokens.value));
 
 const selectedTextState = SelectedTextStateClosure({
     onPandaResponseTextRef,
