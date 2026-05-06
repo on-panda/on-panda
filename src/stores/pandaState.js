@@ -1,7 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { deepCopy, hashObjectSHA256Base64, dateStringNow, safeArrayExtend } from '../utils/commonUtils'
 import { dialogDifferent, tokensToSeq, isFinalRoleModelRole, clearTokenObject } from '../utils/chatUtils'
-import { buildViewTokens, ChatTemplateStateClosure } from '../utils/chatTemplateUtils.js'
+import { buildViewTokens, ChatTemplateClosure } from '../utils/chatTemplateUtils.js'
 import { stripRuntime } from '../utils/toolUtils.js'
 import { useGlobalStore } from './globalStore.js'
 import LZString from 'lz-string'
@@ -195,7 +195,7 @@ export class PandaState {
             // console.trace('restoreTokens:')
             // console.log('restoreTokens key:', this.currentDialogKey.value, seqNow , seqCache, 'pruned:', tokensCache.filter(token => token.pruned).length)
             if (seqNow !== seqCache) {
-                var ct = ChatTemplateStateClosure()
+                var ct = ChatTemplateClosure()
                 var rebuiltTokensCache = buildViewTokens({ message: ct.parse(this.tokens.value), chatTemplate: ct, logprobsTokens: tokensCache })
                 var seqRebuiltCache = tokensToSeq(rebuiltTokensCache)
                 if (seqNow === seqRebuiltCache) {

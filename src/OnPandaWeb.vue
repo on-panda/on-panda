@@ -82,7 +82,7 @@ var isMobile = computed(() => globalStore.isMobile)
 const customInfoForUser = computed(() => props.customInfoForUser + globalStore.customInfoForUser)
 const defaultModelNameTags = {
   'on-panda': 'on-panda',
-  'step3.5': 'step3.5-tag',
+  'step': 'step-tag',
   'image': 'image-tag',
   'GPT': 'gpt-tag',
   // 'claude': 'claude-tag',
@@ -183,6 +183,10 @@ onMounted(async () => {
       exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["js"]
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
+      var exampleToRun = () => {
+        onPandaExamplesRef.value.exampleNameToFunc["tools"]()
+        modelName.value = "standard-vllm"
+      }
       var _exampleToRun = () => {
         var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
         var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]

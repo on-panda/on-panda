@@ -283,6 +283,7 @@ export function pieceStructureViewTokens({ message, logprobsTokens = [], templat
 }
 
 export function buildViewTokens({ message, chatTemplate, logprobsTokens = [] } = {}) {
+    chatTemplate = chatTemplate || ChatTemplateClosure()
     const { templatedPrompt, keyPathPromptMapping } = chatTemplate.apply(message)
     const patchTextMapping = logprobsTokens.length ? matchTokensToPrompt(logprobsTokens, templatedPrompt) : []
     if (chatTemplate.chatTemplateType === "plain_text") {
@@ -297,7 +298,7 @@ export function buildViewTokens({ message, chatTemplate, logprobsTokens = [] } =
     })
 }
 
-export function ChatTemplateStateClosure() {
+export function ChatTemplateClosure({ apiConfig } = {}) {
     function apply(message = {}) {
         var templatedPrompt = ""
         var textCursor = 0

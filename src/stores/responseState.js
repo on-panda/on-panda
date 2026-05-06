@@ -2,7 +2,7 @@ import { ref, computed, toValue, watch, isRef, unref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
 import { tokensToSeq, getFinishReason, normalizeRequest, recordAsRejectedToken, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
-import { ChatTemplateStateClosure, buildViewTokens } from '../utils/chatTemplateUtils.js'
+import { ChatTemplateClosure, buildViewTokens } from '../utils/chatTemplateUtils.js'
 import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
 import { applyImageDetailLevel, assertNoLegacyChatConfigTools, dropStaleToolAsset } from '../utils/requestUtils.js'
 import { buildRejectedToolMessages } from '../utils/toolUtils.js'
@@ -39,7 +39,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
     const tokens = ref([])
     const promptLogprobsTokens = ref([])
-    const chatTemplate = ChatTemplateStateClosure()
+    var generationChatTemplate = ref(ChatTemplateClosure({ apiConfig }))
 
     // set rawPromptLogprobsTokens only when this responseState is promptLogprobsState
     const rawPromptLogprobsTokens = ref([])
@@ -59,7 +59,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             var isEqual = deepEqual(finalMessage.value, lastMessage)
             if (!isEqual) {
                 tokens.value = []
-                var newTokens = buildViewTokens({ message: lastMessage, chatTemplate })
+                var newTokens = buildViewTokens({ message: lastMessage })
                 tokens.value = newTokens
             }
             newMessages = newMessages.slice(0, newMessages.length - 1)
@@ -841,7 +841,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     }
 
     const finalMessage = computed(() => {
-        return chatTemplate.parse(tokens.value)
+        return generationChatTemplate.value.parse(tokens.value)
     })
 
     const messagesComputed = computed(() => {
