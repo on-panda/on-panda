@@ -106,7 +106,7 @@ import { useI18n } from 'vue-i18n'
 
 import { useGlobalStore } from '../stores/globalStore.js'
 import { useEventListener, closeFloatPanelMeta, copyToClipboard, escapeHTML } from '../utils/commonUtils.js'
-import { tokenToDisplayString, tokensToPatches } from '../utils/chatUtils.js'
+import { tokenToDisplayString, tokensToPatches } from '../utils/chatTemplateUtils.js'
 import { probToColor } from '../utils/userInterfaceUtils.js'
 import { SelectedTextStateClosure } from '../stores/SelectedTextState.js'
 

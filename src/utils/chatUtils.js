@@ -2,9 +2,7 @@ import { unref } from 'vue'
 import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils'
 import { formatMessageAsText, formatSimpleContentAsText } from './messageTextCodec.js'
 import { stripRuntime } from './toolUtils.js'
-import { buildViewTokens, ChatTemplateStateClosure, tokenToDisplayString } from './chatTemplateUtils.js'
-
-export { mergeTwoDeltas, tokenToDisplayString, probOfToken, tokensToPatches, matchTokensToPrompt, matchPatchesToTextFullDP } from './chatTemplateUtils.js'
+import { tokenToDisplayString } from './chatTemplateUtils.js'
 
 export {
     MESSAGE_KEYS_IN_CONTEXT,
@@ -126,13 +124,6 @@ export function messageToSeq(message, { includeFinishReason = true } = {}) {
     return seq
 }
 
-
-export function convertMessageToTokens(message) {
-    if (message.role == "assistant") {
-        var tokens = buildViewTokens({ message, chatTemplate: ChatTemplateStateClosure({}) })
-    }
-    return tokens
-}
 
 export function normalizeRequest(requestBody) {
     const body = deepCopy(requestBody)

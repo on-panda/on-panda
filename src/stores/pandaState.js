@@ -195,7 +195,7 @@ export class PandaState {
             // console.trace('restoreTokens:')
             // console.log('restoreTokens key:', this.currentDialogKey.value, seqNow , seqCache, 'pruned:', tokensCache.filter(token => token.pruned).length)
             if (seqNow !== seqCache) {
-                var ct = ChatTemplateStateClosure({})
+                var ct = ChatTemplateStateClosure()
                 var rebuiltTokensCache = buildViewTokens({ message: ct.parse(this.tokens.value), chatTemplate: ct, logprobsTokens: tokensCache })
                 var seqRebuiltCache = tokensToSeq(rebuiltTokensCache)
                 if (seqNow === seqRebuiltCache) {

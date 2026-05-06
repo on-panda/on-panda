@@ -132,45 +132,45 @@ export function matchPatchesToTextFullDP({ patchStrings, text }) {
         () => new Uint32Array(text.length + 1),
     )
 
-    for (let pathIndex = patchStrings.length - 1; pathIndex >= 0; pathIndex--) {
-        const patchString = patchStrings[pathIndex]
+    for (let patchIndex = patchStrings.length - 1; patchIndex >= 0; patchIndex--) {
+        const patchString = patchStrings[patchIndex]
         for (let textIndex = text.length; textIndex >= 0; textIndex--) {
-            var best = dp[pathIndex + 1][textIndex]
-            if (textIndex < text.length && dp[pathIndex][textIndex + 1] > best) {
-                best = dp[pathIndex][textIndex + 1]
+            var best = dp[patchIndex + 1][textIndex]
+            if (textIndex < text.length && dp[patchIndex][textIndex + 1] > best) {
+                best = dp[patchIndex][textIndex + 1]
             }
             if (patchString && text.startsWith(patchString, textIndex)) {
-                const matchValue = 1 + dp[pathIndex + 1][textIndex + patchString.length]
+                const matchValue = 1 + dp[patchIndex + 1][textIndex + patchString.length]
                 if (matchValue > best) {
                     best = matchValue
                 }
             }
-            dp[pathIndex][textIndex] = best
+            dp[patchIndex][textIndex] = best
         }
     }
 
     var patchTextMapping = []
-    var pathIndex = 0
+    var patchIndex = 0
     var textIndex = 0
-    while (pathIndex < patchStrings.length && textIndex <= text.length) {
-        const patchString = patchStrings[pathIndex]
+    while (patchIndex < patchStrings.length && textIndex <= text.length) {
+        const patchString = patchStrings[patchIndex]
         if (
             patchString &&
             text.startsWith(patchString, textIndex) &&
-            dp[pathIndex][textIndex] === 1 + dp[pathIndex + 1][textIndex + patchString.length]
+            dp[patchIndex][textIndex] === 1 + dp[patchIndex + 1][textIndex + patchString.length]
         ) {
             patchTextMapping.push({
-                pathStart: pathIndex,
-                pathEnd: pathIndex + 1,
+                patchStart: patchIndex,
+                patchEnd: patchIndex + 1,
                 textStart: textIndex,
                 textEnd: textIndex + patchString.length,
             })
-            pathIndex += 1
+            patchIndex += 1
             textIndex += patchString.length
         } else if (
-            dp[pathIndex + 1][textIndex] >= (textIndex < text.length ? dp[pathIndex][textIndex + 1] : 0)
+            dp[patchIndex + 1][textIndex] >= (textIndex < text.length ? dp[patchIndex][textIndex + 1] : 0)
         ) {
-            pathIndex += 1
+            patchIndex += 1
         } else {
             textIndex += 1
         }
@@ -185,65 +185,46 @@ export function matchTokensToPrompt(logprobsTokens, templatedPrompt) {
     // patchTextMapping should keep patch partition information and do not merge adjacent patches, which may lead big patch fail to match
     const patchTextMapping = matchPatchesToTextFullDP({ patchStrings, text: templatedPrompt })
     return patchTextMapping.map(mapping => ({
-        tokenStart: patches[mapping.pathStart].tokenStart,
-        tokenEnd: patches[mapping.pathEnd - 1].tokenEnd,
+        tokenStart: patches[mapping.patchStart].tokenStart,
+        tokenEnd: patches[mapping.patchEnd - 1].tokenEnd,
         textStart: mapping.textStart,
         textEnd: mapping.textEnd,
     }))
 }
 
-export function pieceViewTokens({ logprobsTokens = [], text = "", patchTextMapping = [], textStart = 0, textEnd = text.length, tokenIndexStart = 0, buildDelta = text => ({ content: text }) } = {}) {
-    if (logprobsTokens.length && patchTextMapping.length) {
-        var tokens = []
-        var textCursor = textStart
-        const appendTextToken = (text) => {
-            if (!text) {
-                return
-            }
+export function pieceViewTokens({ logprobsTokens = [], text = "", patchTextMapping = [], textStart = 0, textEnd = text.length } = {}) {
+    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' })
+    const tokens = []
+    const appendGraphemes = (segmentText) => {
+        for (const segment of segmenter.segment(segmentText)) {
             tokens.push({
-                delta: buildDelta(text),
-                tokenIndex: tokenIndexStart + tokens.length,
-                logprobs: { content: [{ token: text, top_logprobs: [] }] },
+                delta: { content: segment.segment },
+                tokenIndex: tokens.length,
+                logprobs: { content: [{ token: segment.segment, top_logprobs: [] }] },
             })
         }
+    }
 
-        for (const mapping of patchTextMapping) {
-            if (mapping.textStart < textStart || mapping.textEnd > textEnd) {
-                continue
-            }
-            appendTextToken(text.slice(textCursor, mapping.textStart))
-            for (const logprobsToken of logprobsTokens.slice(mapping.tokenStart, mapping.tokenEnd)) {
-                const token = deepCopy(logprobsToken)
-                token.delta = buildDelta(tokenToDisplayString(token, logprobsTokens))
-                delete token.finish_reason
-                token.tokenIndex = tokenIndexStart + tokens.length
-                tokens.push(token)
-            }
-            textCursor = mapping.textEnd
+    var textCursor = textStart
+    for (const mapping of patchTextMapping) {
+        if (mapping.textStart < textStart || mapping.textEnd > textEnd) {
+            continue
         }
-        appendTextToken(text.slice(textCursor, textEnd))
-        return tokens
+        appendGraphemes(text.slice(textCursor, mapping.textStart))
+        for (const logprobsToken of logprobsTokens.slice(mapping.tokenStart, mapping.tokenEnd)) {
+            const token = deepCopy(logprobsToken)
+            token.delta = { content: tokenToDisplayString(token, logprobsTokens) }
+            delete token.finish_reason
+            token.tokenIndex = tokens.length
+            tokens.push(token)
+        }
+        textCursor = mapping.textEnd
     }
-
-    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' })
-    var tokens = []
-    const viewText = text.slice(textStart, textEnd)
-    for (const segment of segmenter.segment(viewText)) {
-        tokens.push({
-            delta: buildDelta(segment.segment),
-            tokenIndex: tokenIndexStart + tokens.length,
-            logprobs: { content: [{ token: segment.segment, top_logprobs: [] }] },
-        })
-    }
+    appendGraphemes(text.slice(textCursor, textEnd))
     return tokens
 }
 
-export function pieceStructureViewTokens(options = {}) {
-    const message = options.finalMessage || options.message
-    const logprobsTokens = options.logprobsTokens || []
-    const templatedPrompt = options.templatedPrompt || ""
-    const patchTextMapping = options.patchTextMapping || []
-    const keyPathPromptMapping = options.keyPathPromptMapping || []
+export function pieceStructureViewTokens({ message, logprobsTokens = [], templatedPrompt = "", patchTextMapping = [], keyPathPromptMapping = [] } = {}) {
     var tokens = []
     const getKeyPathPromptMapping = (keyPath) => keyPathPromptMapping.find(mapping =>
         mapping.keyPath.length === keyPath.length &&
@@ -257,13 +238,10 @@ export function pieceStructureViewTokens(options = {}) {
             patchTextMapping,
             textStart: mapping.textStart,
             textEnd: mapping.textEnd,
-            tokenIndexStart: tokens.length,
-            buildDelta,
-        }) : pieceViewTokens({
-            text,
-            tokenIndexStart: tokens.length,
-            buildDelta,
-        })
+        }) : pieceViewTokens({ text })
+        for (const token of channelTokens) {
+            token.delta = buildDelta(token.delta.content)
+        }
         tokens.push(...channelTokens)
     }
 
@@ -304,10 +282,7 @@ export function pieceStructureViewTokens(options = {}) {
     return tokens
 }
 
-export function buildViewTokens(options = {}) {
-    const message = options.message
-    const chatTemplate = options.chatTemplate || ChatTemplateStateClosure({})
-    const logprobsTokens = options.logprobsTokens || []
+export function buildViewTokens({ message, chatTemplate, logprobsTokens = [] } = {}) {
     const { templatedPrompt, keyPathPromptMapping } = chatTemplate.apply(message)
     const patchTextMapping = logprobsTokens.length ? matchTokensToPrompt(logprobsTokens, templatedPrompt) : []
     if (chatTemplate.chatTemplateType === "plain_text") {
@@ -317,12 +292,12 @@ export function buildViewTokens(options = {}) {
         logprobsTokens,
         templatedPrompt,
         patchTextMapping,
-        finalMessage: message,
+        message,
         keyPathPromptMapping,
     })
 }
 
-export function ChatTemplateStateClosure(options = {}) {
+export function ChatTemplateStateClosure() {
     function apply(message = {}) {
         var templatedPrompt = ""
         var textCursor = 0

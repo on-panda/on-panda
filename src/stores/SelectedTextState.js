@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 
 import { closeFloatPanelMeta } from '../utils/commonUtils.js'
-import { tokenToDisplayString } from '../utils/chatUtils.js'
+import { tokenToDisplayString } from '../utils/chatTemplateUtils.js'
 import { useSelectedNodes } from '../utils/userInterfaceUtils.js'
 import { useGlobalStore } from './globalStore.js'
 
