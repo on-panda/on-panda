@@ -300,6 +300,8 @@ export function buildViewTokens({ message, chatTemplate, logprobsTokens = [] } =
 }
 
 export function ChatTemplateClosure({ apiConfig } = {}) {
+    const configMark = JSON.stringify((apiConfig?.value || apiConfig || {}).chat_template ?? null)
+
     function apply(message = {}) {
         var templatedPrompt = ""
         var textCursor = 0
@@ -405,5 +407,6 @@ export function ChatTemplateClosure({ apiConfig } = {}) {
         apply,
         parse,
         chatTemplateType: "default",
+        configMark,
     }
 }

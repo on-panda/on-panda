@@ -28,7 +28,8 @@ const { t } = useI18n()
 
 const responseState = props.responseState
 const pandaState = responseState.pandaState
-const tokens = responseState.tokens
+const tokens = responseState.viewTokens
+const generationTokens = responseState.tokens
 const requestStatus = responseState.requestStatus
 const apiConfig = responseState.apiConfig
 const operationCenter = responseState.operationCenter
@@ -75,10 +76,10 @@ async function handleCopyButtonClick() {
 
 async function pasteThenRequestPromptLogprobs() {
     var pasteText = await navigator.clipboard.readText()
-    if (tokens.value.length == 0) {
-        tokens.value = [{ delta: { role: "assistant", content: "" } }]
+    if (generationTokens.value.length == 0) {
+        responseState.setGenerationTokens([{ delta: { role: "assistant", content: "" } }])
     }
-    operationCenter.applyInputChange(tokens.value[0], pasteText)
+    operationCenter.applyInputChange(generationTokens.value[0], pasteText)
     operationCenter.refreshResponseProbability()
 }
 

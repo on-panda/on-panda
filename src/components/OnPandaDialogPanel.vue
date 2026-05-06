@@ -41,10 +41,11 @@ function setPromptLogprobsResponseState() {
             apiConfig: responseState.apiConfig,
         })
         const prefixTokens = { delta: { role: "assistant", content: "Hi!" + endOfText } }
-        promptLogprobsResponseState.tokens.value = [prefixTokens, ...responseState.promptLogprobsTokens.value].map((token, tokenIndex) => {
+        const promptTokens = [prefixTokens, ...responseState.promptLogprobsTokens.value].map((token, tokenIndex) => {
             token.tokenIndex = tokenIndex
             return token
         })
+        promptLogprobsResponseState.setGenerationTokens(promptTokens)
         promptLogprobsResponseState.rawPromptLogprobsTokens.value = responseState.promptLogprobsTokens.value
         return promptLogprobsResponseState
     }

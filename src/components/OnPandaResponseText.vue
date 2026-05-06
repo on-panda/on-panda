@@ -122,7 +122,7 @@ const props = defineProps({
 
 const responseState = props.responseState
 const pandaState = responseState.pandaState
-const tokens = responseState.tokens
+const tokens = responseState.viewTokens
 const operationCenter = responseState.operationCenter
 const apiConfig = responseState.apiConfig
 

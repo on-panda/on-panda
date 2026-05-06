@@ -1,7 +1,6 @@
 import { ref, computed, watch } from 'vue'
-import { deepCopy, hashObjectSHA256Base64, dateStringNow, safeArrayExtend } from '../utils/commonUtils'
-import { dialogDifferent, tokensToSeq, isFinalRoleModelRole, clearTokenObject } from '../utils/chatUtils'
-import { buildViewTokens, ChatTemplateClosure } from '../utils/chatTemplateUtils.js'
+import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '../utils/commonUtils'
+import { dialogDifferent, isFinalRoleModelRole, clearTokenObject } from '../utils/chatUtils'
 import { stripRuntime } from '../utils/toolUtils.js'
 import { useGlobalStore } from './globalStore.js'
 import LZString from 'lz-string'
@@ -11,10 +10,10 @@ function dumpCacheTree(cacheTree) {
     cacheTree = deepCopy(cacheTree)
     for (var dialogKey in cacheTree) {
         if (cacheTree[dialogKey].tokens) {
-            var tokens = cacheTree[dialogKey].tokens
-            var tokenLen = tokens.length
+            var logprobsTokens = cacheTree[dialogKey].tokens
+            var tokenLen = logprobsTokens.length
             for (var tokenIndex = 0; tokenIndex < tokenLen; tokenIndex++) {
-                var token = tokens[tokenIndex]
+                var token = logprobsTokens[tokenIndex]
                 clearTokenObject(token)
                 if (![0, tokenLen - 1].includes(tokenIndex)) {
                     delete token.model
@@ -184,40 +183,17 @@ export class PandaState {
     registerApiConfig = (apiConfig) => {
         this.apiConfig = apiConfig
     }
-    registerTokens = (tokens) => {
-        this.tokens = tokens
+    registerLogprobsTokens = (logprobsTokens) => {
+        this.logprobsTokens = logprobsTokens
     }
-    tryRestoreTokens = () => {
-        var tokensCache = this.cacheTree[this.currentDialogKey.value]?.tokens
-        if (this.tokens?.value?.length && tokensCache) {
-            var seqNow = tokensToSeq(this.tokens.value)
-            var seqCache = tokensToSeq(tokensCache)
-            // console.trace('restoreTokens:')
-            // console.log('restoreTokens key:', this.currentDialogKey.value, seqNow , seqCache, 'pruned:', tokensCache.filter(token => token.pruned).length)
-            if (seqNow !== seqCache) {
-                var ct = ChatTemplateClosure()
-                var rebuiltTokensCache = buildViewTokens({ message: ct.parse(this.tokens.value), chatTemplate: ct, logprobsTokens: tokensCache })
-                var seqRebuiltCache = tokensToSeq(rebuiltTokensCache)
-                if (seqNow === seqRebuiltCache) {
-                    tokensCache = rebuiltTokensCache
-                    seqCache = seqRebuiltCache
-                }
-            }
-            if (seqNow === seqCache) {
-                this.tokens.value.length = 0
-                // must deep copy to aviod edit by reference
-                safeArrayExtend(this.tokens.value, deepCopy(tokensCache))
-            } else {
-                console.trace('seqNow !== seqCache')
-                console.log('Warning! When tryRestoreTokens, unexpected seqNow !== seqCache:', seqNow === seqCache, '\n', seqNow, '\n----\n', seqCache, '\npruned now:', this.tokens.value.filter(token => token.pruned).length, 'pruned cache:', tokensCache.filter(token => token.pruned).length)
-            }
-        }
-    }
-    cacheTokens = () => {
-        // console.log('cacheTokens key:', this.currentDialogKey.value, tokensToSeq(this.tokens.value), 'pruned:', this.tokens.value.filter(token => token.pruned).length)
+    currentDialogLogprobsTokens = computed(() => {
+        this.currentDialogData.value
+        return this.cacheTree[this.currentDialogKey.value]?.tokens || []
+    })
+    cacheLogprobsTokens = () => {
         if (this.currentDialogData.value?.messages?.length) {
             this.cacheTree[this.currentDialogKey.value] = {
-                ...this.cacheTree[this.currentDialogKey.value], tokens: deepCopy(this.tokens.value)
+                ...this.cacheTree[this.currentDialogKey.value], tokens: deepCopy(this.logprobsTokens.value)
             }
         }
     }
@@ -276,10 +252,8 @@ export class PandaState {
         var oldIndex = this.currentDialogIndex.value
         this.beforeOperation()
         if (oldIndex != index) {
-            // setTimeout(this.tryRestoreTokens)
             this.currentDialogIndex.value = this.roundDialogIndex(index)
         }
-        // this.tryRestoreTokens()
     }
     roundDialogIndex = (index) => {
         return (index + this.dialogKeys.value.length) % this.dialogKeys.value.length
@@ -577,14 +551,14 @@ export class PandaState {
         if (MUST_RECORD_OPERATOR_LIST.includes(operation?.operator)) {
             this.currentDialogData.value.operations.push(operation)
         }
-        this.cacheTokens()
+        this.cacheLogprobsTokens()
     }
     writeBack = (operation) => {
         var newDialog = deepCopy(this.dialogComputed.value)
         if (operation) {
             newDialog.operations.push(operation)
         }
-        this.cacheTokens()
+        this.cacheLogprobsTokens()
         this.pandaTree.value.dialogs[this.currentDialogKey.value] = newDialog
         // console.trace('write back:', this.currentDialogKey.value, operation)
     }
@@ -599,7 +573,7 @@ export class PandaState {
         this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = newDialog
 
         this.currentDialogIndex.value = this.dialogKeys.value.indexOf(this.dialogMaxKeyAll.value)
-        this.cacheTokens()
+        this.cacheLogprobsTokens()
 
         // will throw recursion error
         // this.switchDialogByIndex(this.dialogKeys.value.length-1)

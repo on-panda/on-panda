@@ -1,7 +1,7 @@
 import { ref, computed, toValue, watch, isRef, unref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
-import { tokensToSeq, getFinishReason, normalizeRequest, recordAsRejectedToken, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
+import { deepEqual, ObjctKeyToCamelCaseNaming, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
+import { getFinishReason, normalizeRequest, recordAsRejectedToken, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
 import { ChatTemplateClosure, buildViewTokens } from '../utils/chatTemplateUtils.js'
 import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
 import { applyImageDetailLevel, assertNoLegacyChatConfigTools, dropStaleToolAsset } from '../utils/requestUtils.js'
@@ -37,10 +37,56 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     const uploadedJson = ref(null)
     const onPandaContainerRef = ref(document)
 
-    const tokens = ref([])
-    const promptLogprobsTokens = ref([])
-    var generationChatTemplate = ref(ChatTemplateClosure({ apiConfig }))
+    const tokens = ref([])  // aka generationTokens, the source of truth for generated tokens, will be parsed as finalMessage
+    const logprobsTokens = ref([])  // only provide logprobs info
 
+    var generationChatTemplate = ref(ChatTemplateClosure({ apiConfig: apiConfig.value }))
+
+    const viewChatTemplate = computed(() => ChatTemplateClosure({ apiConfig: apiConfig.value }))
+
+    const finalMessage = computed(() => {
+        return generationChatTemplate.value.parse(tokens.value)
+    })
+
+
+    const viewTokens = computed(() => {
+        if (!tokens.value.length) {
+            return tokens.value
+        }
+        if (
+            tokens.value === logprobsTokens.value &&
+            viewChatTemplate.value.configMark === generationChatTemplate.value.configMark
+        ) {
+            return tokens.value
+        }
+        if (
+            logprobsTokens.value.length
+        ) {
+            try {
+                const parsedMessage = viewChatTemplate.value.parse(logprobsTokens.value)
+                if (deepEqual(parsedMessage, finalMessage.value)) {
+                    return logprobsTokens.value
+                }
+            } catch {
+                // Fall through to rebuild viewTokens from finalMessage.
+            }
+        }
+        return buildViewTokens({
+            message: finalMessage.value,
+            chatTemplate: viewChatTemplate.value,
+            logprobsTokens: logprobsTokens.value,
+        })
+    })
+
+    const messagesComputed = computed(() => {
+        if (finalMessage.value.content || finalMessage.value.role) {
+            return messages.value.concat([finalMessage.value])
+        } else {
+            return messages.value
+        }
+    })
+
+    const promptLogprobsTokens = ref([])
     // set rawPromptLogprobsTokens only when this responseState is promptLogprobsState
     const rawPromptLogprobsTokens = ref([])
     const isPromptLogprobsState = computed(() => {
@@ -53,22 +99,18 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         requestModel: "",
     })
 
-    function loadMessagesToCurrentDialogUi(newMessages) {
-        if (newMessages[newMessages.length - 1].role == "assistant") {
-            var lastMessage = newMessages[newMessages.length - 1]
-            var isEqual = deepEqual(finalMessage.value, lastMessage)
-            if (!isEqual) {
-                tokens.value = []
-                var newTokens = buildViewTokens({ message: lastMessage })
-                tokens.value = newTokens
-            }
-            newMessages = newMessages.slice(0, newMessages.length - 1)
-        } else {
-            tokens.value = []
-        }
-        messages.value = newMessages
+    function setGenerationTokens(newTokens) {
+        tokens.value = newTokens
+        logprobsTokens.value = newTokens
     }
 
+    function promoteViewTokensToGeneration() {
+        const newTokens = viewTokens.value
+        tokens.value = newTokens
+        logprobsTokens.value = newTokens
+        generationChatTemplate.value = viewChatTemplate.value
+        return newTokens
+    }
 
     function modifyRequest(requestBody) {
         var body = normalizeRequest(requestBody)
@@ -89,6 +131,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
     async function requestLlmServer(messages) {
         assertNoLegacyChatConfigTools(apiConfig.value.chat_config)
+        promoteViewTokensToGeneration()
         messages = toValue(messages)
         const modelRoles = apiConfig.value?.model_roles || ["assistant"]
         const continue_final_message = modelRoles.includes(messages[messages.length - 1].role)
@@ -189,7 +232,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                         delete tokens.value[tokens.value.length - 1].finish_reason
                     }
                     // remove all pruned tokens
-                    tokens.value = tokens.value.filter(token => !token.pruned)
+                    setGenerationTokens(tokens.value.filter(token => !token.pruned))
                     tokensValuePtr = tokens.value
                     tokenIndex = tokens.value.length
                     if (!chunk?.choices[0]?.delta?.content) {
@@ -273,7 +316,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                             generatedContent = ""
                             tokenIndex = 0
                             if (tokens.value === tokensValuePtr) {
-                                tokens.value = tokens.value.slice(0, prefillTokensNumber)
+                                setGenerationTokens(tokens.value.slice(0, prefillTokensNumber))
                                 tokensValuePtr = tokens.value
                             } else {
                                 tokensValuePtr = tokens.value.slice(0, prefillTokensNumber)
@@ -351,8 +394,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 })
                 return
             }
+            var role = finalMessage.value.role || "assistant"
             var promptLogprobsTokensNew = json.prompt_logprobs_list.map(x => ({
-                delta: { role: tokens.value[0].delta.role, content: x.content[0].token },
+                delta: { role: role, content: x.content[0].token },
                 logprobs: x,
                 model: tokens.value[0].model,
             }))
@@ -377,7 +421,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             }
             if (decodeToken?.finish_reason == "stop") {  // if finish_reason is stop, add to tokensNew
                 const stopToken = {
-                    delta: { role: tokens.value[0].role, content: "" },
+                    delta: { role: role, content: "" },
                     logprobs: decodeToken.logprobs,
                     model: json.model,
                     finish_reason: decodeToken.finish_reason,
@@ -387,8 +431,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 promptLogprobsTokensNew = [...promptLogprobsTokensNew, stopToken]
             }
 
-            tokensNew.push({ delta: { role: tokens.value[0].role, content: "" }, model: json.model, usage: usage })
-            promptLogprobsTokensNew.push({ delta: { role: tokens.value[0].role, content: "" }, model: json.model, })
+            tokensNew.push({ delta: { role: role, content: "" }, model: json.model, usage: usage })
+            promptLogprobsTokensNew.push({ delta: { role: role, content: "" }, model: json.model, })
             tokensNew.map((token, tokenIndex) => {
                 token.tokenIndex = tokenIndex
             })
@@ -398,7 +442,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             })
             promptLogprobsTokens.value = promptLogprobsTokensCloned
 
-            tokens.value = tokensNew
+            logprobsTokens.value = tokensNew
             ElMessage({
                 showClose: true,
                 message: t('userMessages.responseRefreshed'),
@@ -457,7 +501,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                         break
                     }
                     messages.value = messagesComputed.value.concat(deepCopy(result.toolMessages))
-                    tokens.value = []
+                    setGenerationTokens([])
                     this.pandaState.afterOperation({
                         operator: "run_tool_calls",
                         on_policy: true,
@@ -481,7 +525,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             if (messageIndex !== -1) {
                 this.pandaState.beforeOperation()
                 messages.value = this.getNextMessages({ messageIndex })
-                tokens.value = []
+                setGenerationTokens([])
                 // if messageIndex != -1 , set nextNotSameOperationCache `on_policy: false` to prevent tool calls failures and end with tool call response
                 this.pandaState.nextNotSameOperationCache = {
                     operator: "run_tool_calls",
@@ -503,7 +547,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 this.pandaState.beforeOperation()
             }
             messages.value = this.getNextMessages({ messagesToAppend: rejectedToolMessages, messageIndex })
-            tokens.value = []
+            setGenerationTokens([])
             this.pandaState.setCurrentIsGood(false, true)
             this.pandaState.afterOperation({
                 operator: "reject_tool_calls",
@@ -534,6 +578,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             // function clickOnLogprobItem() {
             await toolManageState.buildRequestTools()
             this.pandaState.beforeOperation()
+            promoteViewTokensToGeneration()
             const rejected_token = recordAsRejectedToken(token, tokens)  // record rejected token before change tokens
             prepareContinueFromToken(token, logprobItem.token, logprobItem.logprob, logprobItem.finish_reason)
             this.pandaState.afterOperation({
@@ -544,10 +589,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             }, true)
             if (logprobItem.finish_reason) {
                 // remove all pruned tokens
-                tokens.value = tokens.value.filter(token => !token.pruned)
+                setGenerationTokens(tokens.value.filter(token => !token.pruned))
                 // if chosen <stop> in first token, clear tokens
                 if (logprobItem.finish_reason == "stop" && tokens.value.length <= 1 && !finalMessage.value.content) {
-                    tokens.value = []
+                    setGenerationTokens([])
                 }
             } else {
                 await this.startAgenticLoop()
@@ -559,6 +604,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
         applyInputChange = (token, continuePrefix, continuePrefixLogprob) => {
             this.pandaState.beforeOperation()
+            promoteViewTokensToGeneration()
             const rejected_token = recordAsRejectedToken(token, tokens)  // record rejected token before change tokens
             prepareContinueFromToken(token, continuePrefix, continuePrefixLogprob)
             this.pandaState.afterOperation({
@@ -592,7 +638,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                     const clampedIndex = Math.min(messageIndex, messages.value.length - 1)
                     messages.value = messages.value.slice(0, clampedIndex + 1)
                 }
-                tokens.value = []
+                setGenerationTokens([])
                 this.pandaState.afterOperation({
                     operator: "generate_new",
                     is_new_generated: true,
@@ -609,7 +655,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             await toolManageState.buildRequestTools()
             this.pandaState.beforeOperation()
             messages.value = this.getNextMessages({ messagesToAppend })
-            tokens.value = []
+            setGenerationTokens([])
             newRoundMessage.value = { role: role, content: '' }
             this.pandaState.afterOperation({
                 operator: "start_new_round",
@@ -707,13 +753,14 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             if (!selectedTokens?.length) {
                 return
             }
+            this.pandaState.beforeOperation()
+            promoteViewTokensToGeneration()
             const startIndex = tokens.value.indexOf(selectedTokens[0])
             const endIndex = tokens.value.indexOf(selectedTokens[selectedTokens.length - 1])
             if (startIndex === -1 || endIndex === -1) {
                 return
             }
             const rejected_token = recordAsRejectedToken(selectedTokens[0], tokens)  // record rejected token before change tokens
-            this.pandaState.beforeOperation()
             const baseToken = deepCopy(selectedTokens[0])
             delete baseToken.selected
             baseToken.bifurcationPoint = true
@@ -840,27 +887,29 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         dialogChangedHooks.forEach(hook => hook())
     }
 
-    const finalMessage = computed(() => {
-        return generationChatTemplate.value.parse(tokens.value)
-    })
-
-    const messagesComputed = computed(() => {
-        if (finalMessage.value.content || finalMessage.value.role) {
-            return messages.value.concat([finalMessage.value])
-        } else {
-            return messages.value
-        }
-    })
-
     watch(pandaState.dialogCache,
         function watchPandaStateDialogCache(newValue, oldValue) {
+            function loadMessagesToCurrentDialogUi(newMessages) {
+                if (newMessages[newMessages.length - 1].role == "assistant") {
+                    var lastMessage = newMessages[newMessages.length - 1]
+                    var isEqual = deepEqual(finalMessage.value, lastMessage)
+                    if (!isEqual) {
+                        generationChatTemplate.value = viewChatTemplate.value
+                        tokens.value = buildViewTokens({ message: lastMessage, chatTemplate: generationChatTemplate.value })
+                    }
+                    newMessages = newMessages.slice(0, newMessages.length - 1)
+                } else {
+                    tokens.value = []
+                }
+                messages.value = newMessages
+            }
+
             if (newValue.messages) {
                 toolCallState.toolCallStatus.value.calling = false
                 requestStatus.value.generating = false
                 loadMessagesToCurrentDialogUi(newValue.messages)
-                pandaState.tryRestoreTokens()
+                logprobsTokens.value = deepCopy(pandaState.currentDialogLogprobsTokens.value)
                 runDialogChangedHooks()
-                // p(tokensToSeq(tokens.value))
                 // console.trace()
             }
         }, { flush: 'sync' })
@@ -882,7 +931,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     // TODO better register in pandaState
     pandaState.registerDialogComputed(dialogComputed)
     pandaState.registerApiConfig(apiConfig)
-    pandaState.registerTokens(tokens)
+    pandaState.registerLogprobsTokens(logprobsTokens)
 
     const closeFloatPatchPanel = ref(() => { })
     function registerInResponseText({ closeFloatPatchPanel: externalCloseFloatPatchPanel }) {
@@ -904,7 +953,12 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         messages,
         apiConfig,
         tokens,
+        logprobsTokens,
+        viewTokens,
+        setGenerationTokens,
         promptLogprobsTokens,
+        generationChatTemplate,
+        viewChatTemplate,
         rawPromptLogprobsTokens,
         isPromptLogprobsState,
         requestStatus,
