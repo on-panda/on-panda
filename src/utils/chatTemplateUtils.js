@@ -213,6 +213,7 @@ export function pieceViewTokens({ logprobsTokens = [], text = "", patchTextMappi
         appendGraphemes(text.slice(textCursor, mapping.textStart))
         for (const logprobsToken of logprobsTokens.slice(mapping.tokenStart, mapping.tokenEnd)) {
             const token = deepCopy(logprobsToken)
+            // Disregarding logprobsTokens's structure
             token.delta = { content: tokenToDisplayString(token, logprobsTokens) }
             delete token.finish_reason
             token.tokenIndex = tokens.length
