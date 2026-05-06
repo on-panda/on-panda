@@ -2,6 +2,9 @@ import { unref } from 'vue'
 import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils'
 import { formatMessageAsText, formatSimpleContentAsText } from './messageTextCodec.js'
 import { stripRuntime } from './toolUtils.js'
+import { buildViewTokens, ChatTemplateStateClosure } from './chatTemplateUtils.js'
+
+export { mergeTwoDeltas } from './chatTemplateUtils.js'
 
 export {
     MESSAGE_KEYS_IN_CONTEXT,
@@ -126,48 +129,7 @@ export function messageToSeq(message, { includeFinishReason = true } = {}) {
 
 export function convertMessageToTokens(message) {
     if (message.role == "assistant") {
-        var reasoning = message.reasoning ?? ""
-        var content = message.content
-        const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
-        var tokens = []
-        const appendTextTokens = (text, key) => {
-            if (!text) {
-                return
-            }
-            for (const segment of segmenter.segment(text)) {
-                tokens.push({
-                    delta: { [key]: segment.segment },
-                    tokenIndex: tokens.length,
-                    logprobs: { content: [{ token: segment.segment, top_logprobs: [] }] },
-                })
-            }
-        }
-
-        appendTextTokens(reasoning, 'reasoning')
-        appendTextTokens(content, 'content')
-        for (const toolCall of message.tool_calls || []) {
-            tokens.push({
-                delta: { tool_calls: [deepCopy(toolCall)] },
-                tokenIndex: tokens.length,
-                logprobs: { content: [{ token: tokenToDisplayString({ delta: { tool_calls: [toolCall] } }), top_logprobs: [] }] },
-            })
-        }
-        if (tokens && tokens.length > 0) {
-            tokens[0].delta.role = "assistant"
-            if (message.finish_reason) {
-                tokens.push({
-                    delta: { content: "" },
-                    tokenIndex: tokens.length,
-                    finish_reason: message.finish_reason,
-                })
-            }
-        } else {  // final message is empty content but with role name
-            tokens = [{
-                delta: { role: message.role, content: "" },
-                tokenIndex: 0,
-                logprobs: { content: [{ token: "", top_logprobs: [], logprob: 0 }] },
-            }]
-        }
+        var tokens = buildViewTokens({ message, chatTemplate: ChatTemplateStateClosure({}) })
     }
     return tokens
 }
@@ -313,34 +275,6 @@ export function probOfToken(token) {
         }
     }
     return prob
-}
-
-export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
-    // Merge two deltas
-    // 1. if delta1 not has one key, set deepCopy delta2
-    // 2. if value is string, concate string
-    // 3. if value is number, assert same number
-    // 4. if value is obj, recurse
-    var merged = { ...delta1 }
-    for (const key in delta2) {
-        if (!(key in merged)) {
-            merged[key] = deepCopy(delta2[key])
-        } else {
-            const value1 = delta1[key]
-            const value2 = delta2[key]
-            if (unmergedKeys.includes(key)) {
-                merged[key] = deepCopy(merged[key])
-            } else if (typeof value1 === "string" && typeof value2 === "string") {
-                merged[key] = value1 + value2
-            } else if (typeof value1 === "number" && typeof value2 === "number") {
-                console.assert(value1 === value2, `Number mismatch: ${value1} !== ${value2}`)
-                merged[key] = value1
-            } else if (typeof value1 === "object" && typeof value2 === "object") {
-                merged[key] = mergeTwoDeltas(value1, value2, unmergedKeys)
-            }
-        }
-    }
-    return merged
 }
 
 export function filterEmptyMessage(messages) {

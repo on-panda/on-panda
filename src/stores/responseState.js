@@ -1,7 +1,8 @@
 import { ref, computed, toValue, watch, isRef, unref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
-import { tokensToSeq, getFinishReason, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
+import { tokensToSeq, getFinishReason, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
+import { ChatTemplateStateClosure } from '../utils/chatTemplateUtils.js'
 import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
 import { applyImageDetailLevel, assertNoLegacyChatConfigTools, dropStaleToolAsset } from '../utils/requestUtils.js'
 import { buildRejectedToolMessages } from '../utils/toolUtils.js'
@@ -38,6 +39,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
     const tokens = ref([])
     const promptLogprobsTokens = ref([])
+    const chatTemplate = ChatTemplateStateClosure({})
 
     // set rawPromptLogprobsTokens only when this responseState is promptLogprobsState
     const rawPromptLogprobsTokens = ref([])
@@ -839,73 +841,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     }
 
     const finalMessage = computed(() => {
-        var role = null  // Compatible with Claude that each token has a role
-        var finish_reason
-        var mergedMessage = tokens.value.filter(
-            token => !token.pruned
-        ).map(
-            token => {
-                if (token.finish_reason) {
-                    finish_reason = token.finish_reason
-                }
-                return (token.delta || {})
-            }
-        ).reduce((delta1, delta2) => {
-            const delta = { ...delta1 }
-            for (var key in delta2) {
-                if (key === "tool_calls" && delta2.tool_calls?.length) {
-                    var toolCalls = delta.tool_calls || []
-                    var toolCall2 = delta2.tool_calls[0]
-                    console.assert(delta2.tool_calls.length === 1)
-                    console.assert(typeof toolCall2.index === "number")
-                    if (toolCall2.index === toolCalls.length) {
-                        toolCalls.push(toolCall2)
-                    } else {
-                        var toolCall1 = toolCalls[toolCall2.index]
-                        toolCalls[toolCall2.index] = mergeTwoDeltas(toolCall1, toolCall2, ["type", "id"])
-                    }
-                    delta.tool_calls = toolCalls
-                    continue
-                }
-                if (key === "reasoning_details") {
-                    delta.reasoning_details = [mergeTwoDeltas(delta.reasoning_details?.[0], delta2.reasoning_details?.[0], ["type", "format"])]
-                    continue
-                }
-                delta[key] = (delta[key] || "") + (delta2[key] || "")
-                if (key === "role" && delta2.role) {
-                    role = delta2.role
-                }
-            }
-            return delta
-        }, {})
-        if (mergedMessage.reasoning) {
-            mergedMessage.reasoning = mergedMessage.reasoning.replace(/\n+$/, "")
-            if (mergedMessage.content) {
-                mergedMessage.content = mergedMessage.content.replace(/^\n+/, "")
-            }
-        }
-        if (mergedMessage.tool_calls?.length && mergedMessage.content) {
-            mergedMessage.content = mergedMessage.content.replace(/\n+$/, "")
-        }
-        if (role) {
-            mergedMessage.role = role
-        } else if (tokens.value.length) {
-            mergedMessage.role = "assistant" // when has token, the default role is assistant
-        }
-        if (role && !mergedMessage.content) {  // only role but no content
-            mergedMessage.content = ""
-        }
-        // Compatible with different models for continue generating
-        // For keys other than assistant and user, if v is the empty string, then delete
-        for (var key in mergedMessage) {
-            if (key !== "role" && key !== "content" && mergedMessage[key] === "") {
-                delete mergedMessage[key]
-            }
-        }
-        if (finish_reason) {
-            mergedMessage.finish_reason = finish_reason
-        }
-        return mergedMessage
+        return chatTemplate.parse(tokens.value)
     })
 
     const messagesComputed = computed(() => {
