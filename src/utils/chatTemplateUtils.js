@@ -149,7 +149,7 @@ export function matchPatchesToTextFullDP({ patchStrings, text }) {
         }
     }
 
-    var matchedPatches = []
+    var patchTextMapping = []
     var pathIndex = 0
     var textIndex = 0
     while (pathIndex < patchStrings.length && textIndex <= text.length) {
@@ -159,8 +159,9 @@ export function matchPatchesToTextFullDP({ patchStrings, text }) {
             text.startsWith(patchString, textIndex) &&
             dp[pathIndex][textIndex] === 1 + dp[pathIndex + 1][textIndex + patchString.length]
         ) {
-            matchedPatches.push({
-                pathIndex,
+            patchTextMapping.push({
+                pathStart: pathIndex,
+                pathEnd: pathIndex + 1,
                 textStart: textIndex,
                 textEnd: textIndex + patchString.length,
             })
@@ -174,33 +175,16 @@ export function matchPatchesToTextFullDP({ patchStrings, text }) {
             textIndex += 1
         }
     }
-
-    var patchTextMapping = []
-    for (const matchedPatch of matchedPatches) {
-        const lastMapping = patchTextMapping[patchTextMapping.length - 1]
-        if (
-            lastMapping &&
-            lastMapping.pathEnd === matchedPatch.pathIndex &&
-            lastMapping.textEnd === matchedPatch.textStart
-        ) {
-            lastMapping.pathEnd = matchedPatch.pathIndex + 1
-            lastMapping.textEnd = matchedPatch.textEnd
-        } else {
-            patchTextMapping.push({
-                pathStart: matchedPatch.pathIndex,
-                pathEnd: matchedPatch.pathIndex + 1,
-                textStart: matchedPatch.textStart,
-                textEnd: matchedPatch.textEnd,
-            })
-        }
-    }
     return patchTextMapping
 }
 
 export function matchTokensToPrompt(logprobsTokens, templatedPrompt) {
     const patches = tokensToPatches(logprobsTokens).filter(patch => patch.patch)
     const patchStrings = patches.map(patch => patch.patch)
-    return matchPatchesToTextFullDP({ patchStrings, text: templatedPrompt }).map(mapping => ({
+    // This is an interface, input array of string and text, output patchTextMapping, which can be replaced with other optimized versions of algorithms in the future
+    // patchTextMapping should keep patch partition information and do not merge adjacent patches, which may lead big patch fail to match
+    const patchTextMapping = matchPatchesToTextFullDP({ patchStrings, text: templatedPrompt })
+    return patchTextMapping.map(mapping => ({
         tokenStart: patches[mapping.pathStart].tokenStart,
         tokenEnd: patches[mapping.pathEnd - 1].tokenEnd,
         textStart: mapping.textStart,
@@ -346,6 +330,11 @@ export function ChatTemplateStateClosure(options = {}) {
         const appendText = (keyPath, text) => {
             if (!text) {
                 return
+            }
+            if (templatedPrompt) {
+                const separator = '✦'
+                templatedPrompt += separator
+                textCursor += separator.length
             }
             const textLength = text.length
             keyPathPromptMapping.push({ keyPath, textStart: textCursor, textEnd: textCursor + textLength })
