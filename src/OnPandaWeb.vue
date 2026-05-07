@@ -185,7 +185,8 @@ onMounted(async () => {
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
       var exampleToRun = () => {
         onPandaExamplesRef.value.exampleNameToFunc["tools"]()
-        modelName.value = "wo-parser-tag"
+        // modelName.value = "wo-parser-tag"
+        modelName.value = "k2.6-instruct-wo-parser-tag"
       }
       var _exampleToRun = () => {
         var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]

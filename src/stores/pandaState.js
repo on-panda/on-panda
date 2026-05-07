@@ -190,10 +190,11 @@ export class PandaState {
         this.currentDialogData.value
         return this.cacheTree[this.currentDialogKey.value]?.tokens || []
     })
-    cacheLogprobsTokens = () => {
-        if (this.currentDialogData.value?.messages?.length) {
-            this.cacheTree[this.currentDialogKey.value] = {
-                ...this.cacheTree[this.currentDialogKey.value], tokens: deepCopy(this.logprobsTokens.value)
+    cacheLogprobsTokens = (dialogKey = this.currentDialogKey.value) => {
+        if (this.allDialogs.value[dialogKey]?.messages?.length) {
+            this.cacheTree[dialogKey] = {
+                // the "tokens" field only stores logprobs information, not the data itself. It hasn't been renamed to "logprobsToken" in order to maintain compatibility with legacy data.
+                ...this.cacheTree[dialogKey], tokens: deepCopy(this.logprobsTokens.value)
             }
         }
     }
@@ -570,10 +571,10 @@ export class PandaState {
             newDialog.annotate.is_good = null
         }
         // console.trace('fork:', this.currentDialogKey.value, '->', this.dialogMaxKeyAll.value + 1, operation)
-        this.pandaTree.value.dialogs[this.dialogMaxKeyAll.value + 1] = newDialog
-
-        this.currentDialogIndex.value = this.dialogKeys.value.indexOf(this.dialogMaxKeyAll.value)
-        this.cacheLogprobsTokens()
+        const newDialogKey = this.dialogMaxKeyAll.value + 1
+        this.pandaTree.value.dialogs[newDialogKey] = newDialog
+        this.cacheLogprobsTokens(newDialogKey)  // copy logprobsTokens to new dialog before switch
+        this.currentDialogIndex.value = this.dialogKeys.value.indexOf(newDialogKey)
 
         // will throw recursion error
         // this.switchDialogByIndex(this.dialogKeys.value.length-1)

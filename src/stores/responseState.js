@@ -907,8 +907,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             if (newValue.messages) {
                 toolCallState.toolCallStatus.value.calling = false
                 requestStatus.value.generating = false
-                loadMessagesToCurrentDialogUi(newValue.messages)
                 logprobsTokens.value = deepCopy(pandaState.currentDialogLogprobsTokens.value)
+                loadMessagesToCurrentDialogUi(newValue.messages)
                 runDialogChangedHooks()
                 // console.trace()
             }
