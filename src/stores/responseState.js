@@ -2,7 +2,7 @@ import { ref, computed, toValue, watch, isRef, unref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
 import { getFinishReason, normalizeRequest, recordAsRejectedToken, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
-import { ChatTemplateClosure, buildViewTokens } from '../utils/chatTemplateUtils.js'
+import { ResponseTemplateClosure, buildViewTokens } from '../utils/responseTemplateUtils.js'
 import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
 import { applyImageDetailLevel, assertNoLegacyChatConfigTools, dropStaleToolAsset } from '../utils/requestUtils.js'
 import { buildRejectedToolMessages } from '../utils/toolUtils.js'
@@ -40,12 +40,12 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     const tokens = ref([])  // aka generationTokens, the source of truth for generated tokens, will be parsed as finalMessage
     const logprobsTokens = ref([])  // only provide logprobs info
 
-    var generationChatTemplate = ref(ChatTemplateClosure({ apiConfig: apiConfig.value }))
+    var generationResponseTemplate = ref(ResponseTemplateClosure({ apiConfig: apiConfig.value }))
 
-    const viewChatTemplate = computed(() => ChatTemplateClosure({ apiConfig: apiConfig.value }))
+    const viewResponseTemplate = computed(() => ResponseTemplateClosure({ apiConfig: apiConfig.value }))
 
     const finalMessage = computed(() => {
-        return generationChatTemplate.value.parse(tokens.value)
+        return generationResponseTemplate.value.parse(tokens.value)
     })
 
 
@@ -55,7 +55,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
         if (
             tokens.value === logprobsTokens.value &&
-            viewChatTemplate.value.configMark === generationChatTemplate.value.configMark
+            viewResponseTemplate.value.configMark === generationResponseTemplate.value.configMark
         ) {
             return tokens.value
         }
@@ -63,7 +63,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             logprobsTokens.value.length
         ) {
             try {
-                const parsedMessage = viewChatTemplate.value.parse(logprobsTokens.value)
+                const parsedMessage = viewResponseTemplate.value.parse(logprobsTokens.value)
                 if (deepEqual(parsedMessage, finalMessage.value)) {
                     return logprobsTokens.value
                 }
@@ -73,7 +73,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
         return buildViewTokens({
             message: finalMessage.value,
-            chatTemplate: viewChatTemplate.value,
+            responseTemplate: viewResponseTemplate.value,
             logprobsTokens: logprobsTokens.value,
         })
     })
@@ -108,7 +108,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         const newTokens = viewTokens.value
         tokens.value = newTokens
         logprobsTokens.value = newTokens
-        generationChatTemplate.value = viewChatTemplate.value
+        generationResponseTemplate.value = viewResponseTemplate.value
         return newTokens
     }
 
@@ -894,8 +894,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                     var lastMessage = newMessages[newMessages.length - 1]
                     var isEqual = deepEqual(finalMessage.value, lastMessage)
                     if (!isEqual) {
-                        generationChatTemplate.value = viewChatTemplate.value
-                        tokens.value = buildViewTokens({ message: lastMessage, chatTemplate: generationChatTemplate.value })
+                        generationResponseTemplate.value = viewResponseTemplate.value
+                        tokens.value = buildViewTokens({ message: lastMessage, responseTemplate: generationResponseTemplate.value })
                     }
                     newMessages = newMessages.slice(0, newMessages.length - 1)
                 } else {
@@ -957,8 +957,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         viewTokens,
         setGenerationTokens,
         promptLogprobsTokens,
-        generationChatTemplate,
-        viewChatTemplate,
+        generationResponseTemplate,
+        viewResponseTemplate,
         rawPromptLogprobsTokens,
         isPromptLogprobsState,
         requestStatus,

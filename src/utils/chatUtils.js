@@ -2,7 +2,6 @@ import { unref } from 'vue'
 import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils'
 import { formatMessageAsText, formatSimpleContentAsText } from './messageTextCodec.js'
 import { stripRuntime } from './toolUtils.js'
-import { tokenToDisplayString } from './chatTemplateUtils.js'
 
 export {
     MESSAGE_KEYS_IN_CONTEXT,
@@ -107,6 +106,104 @@ export function dialogDifferent(dialog1, dialog2, modelRoles = ['assistant',]) {
     return { is_prompt_modified, is_response_modified, response_modified_type, common_prefix_length }
 }
 
+
+export function tokenToDisplayString(token, tokens = undefined) {
+    const delta = token?.delta || {}
+    if (typeof delta.content === 'string' && delta.content !== '') {
+        return delta.content
+    }
+    const reasoning = delta.reasoning
+    if (typeof reasoning === 'string' && reasoning !== '') {
+        return reasoning
+    }
+    const toolCall = delta.tool_calls?.[0]
+    if (toolCall) {
+        if (toolCall.function?.arguments) {
+            return toolCall.function.arguments
+        }
+        // new vLLM resends the tool_call wrapper on every chunk; skip filler chunks (no name) to avoid noisy JSON in display
+        if (!toolCall.function?.name) {
+            return ""
+        }
+        return JSON.stringify(toolCall, (k, v) => k === "arguments" && v === "" ? undefined : v)
+    }
+    return ""
+}
+
+export function probOfToken(token) {
+    var logprob = token.logprobs?.content?.[0]?.logprob
+    var prob = Math.exp(logprob)
+
+    if (typeof logprob !== 'number') {
+        if (token.tokenIndex === 0 && !(token.delta.content)) {
+            // if first role token has no prob and will in first patch
+            prob = 1
+        }
+    }
+    return prob
+}
+
+export function tokensToPatches(tokens) {
+    const responseDisplayTextAll = tokens.map(token => tokenToDisplayString(token, tokens)).join("")
+    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' })
+    const visibleSegments = Array.from(segmenter.segment(responseDisplayTextAll))
+    // add a empty segment at the end for EOT token
+    Array.from({ length: 4 }, () => visibleSegments.push({ segment: "" }))
+
+    const patches = []
+    let segmentIndex = 0
+    let currentSegmentString = visibleSegments[segmentIndex]?.segment ?? ""
+    let tokenToSegmentString = ""
+    let tokenStartIndex = 0
+
+    tokens.forEach((token, tokenIndex) => {
+        const tokenDisplayText = tokenToDisplayString(token, tokens)
+        tokenToSegmentString += tokenDisplayText
+
+        while (
+            segmentIndex < visibleSegments.length - 1 &&
+            tokenToSegmentString.length > currentSegmentString.length
+        ) {
+            segmentIndex += 1
+            currentSegmentString += visibleSegments[segmentIndex].segment
+        }
+
+        if (tokenToSegmentString === currentSegmentString) {
+            const patchTokens = tokens.slice(tokenStartIndex, tokenIndex + 1)
+            patches.push({
+                patch: currentSegmentString,
+                tokens: patchTokens,
+                prob: patchTokens.reduce((acc, currentToken) => acc * probOfToken(currentToken), 1),
+                index: patches.length,
+                tokenStart: tokenStartIndex,
+                tokenEnd: tokenIndex + 1,
+            })
+            tokenStartIndex = tokenIndex + 1
+            tokenToSegmentString = ""
+            segmentIndex += 1
+            currentSegmentString = visibleSegments[segmentIndex]?.segment ?? ""
+        } else if (
+            currentSegmentString &&
+            !currentSegmentString.startsWith(tokenToSegmentString)
+        ) {
+            const patchTokens = tokens.slice(tokenStartIndex, tokenIndex + 1)
+            patches.push({
+                patch: tokenToSegmentString,
+                tokens: patchTokens,
+                prob: patchTokens.reduce((acc, currentToken) => acc * probOfToken(currentToken), 1),
+                index: patches.length,
+                tokenStart: tokenStartIndex,
+                tokenEnd: tokenIndex + 1,
+            })
+            tokenStartIndex = tokenIndex + 1
+            tokenToSegmentString = ""
+            segmentIndex += 1
+            currentSegmentString = visibleSegments[segmentIndex]?.segment ?? ""
+        }
+    })
+
+    return patches
+}
 
 export function tokensToSeq(tokens) {
     return tokens.map(token => tokenToDisplayString(token) + ((token.finish_reason && token.finish_reason !== 'length') ? ('<|' + token.finish_reason + '|>') : '')).join('')

@@ -1,4 +1,5 @@
 import { deepCopy } from './commonUtils.js'
+import { tokenToDisplayString, tokensToPatches } from './chatUtils.js'
 
 export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
     // Merge two deltas
@@ -26,104 +27,6 @@ export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
         }
     }
     return merged
-}
-
-export function tokenToDisplayString(token, tokens = undefined) {
-    const delta = token?.delta || {}
-    if (typeof delta.content === 'string' && delta.content !== '') {
-        return delta.content
-    }
-    const reasoning = delta.reasoning
-    if (typeof reasoning === 'string' && reasoning !== '') {
-        return reasoning
-    }
-    const toolCall = delta.tool_calls?.[0]
-    if (toolCall) {
-        if (toolCall.function?.arguments) {
-            return toolCall.function.arguments
-        }
-        // new vLLM resends the tool_call wrapper on every chunk; skip filler chunks (no name) to avoid noisy JSON in display
-        if (!toolCall.function?.name) {
-            return ""
-        }
-        return JSON.stringify(toolCall, (k, v) => k === "arguments" && v === "" ? undefined : v)
-    }
-    return ""
-}
-
-export function probOfToken(token) {
-    var logprob = token.logprobs?.content?.[0]?.logprob
-    var prob = Math.exp(logprob)
-
-    if (typeof logprob !== 'number') {
-        if (token.tokenIndex === 0 && !(token.delta.content)) {
-            // if first role token has no prob and will in first patch
-            prob = 1
-        }
-    }
-    return prob
-}
-
-export function tokensToPatches(tokens) {
-    const responseDisplayTextAll = tokens.map(token => tokenToDisplayString(token, tokens)).join("")
-    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' })
-    const visibleSegments = Array.from(segmenter.segment(responseDisplayTextAll))
-    // add a empty segment at the end for EOT token
-    Array.from({ length: 4 }, () => visibleSegments.push({ segment: "" }))
-
-    const patches = []
-    let segmentIndex = 0
-    let currentSegmentString = visibleSegments[segmentIndex]?.segment ?? ""
-    let tokenToSegmentString = ""
-    let tokenStartIndex = 0
-
-    tokens.forEach((token, tokenIndex) => {
-        const tokenDisplayText = tokenToDisplayString(token, tokens)
-        tokenToSegmentString += tokenDisplayText
-
-        while (
-            segmentIndex < visibleSegments.length - 1 &&
-            tokenToSegmentString.length > currentSegmentString.length
-        ) {
-            segmentIndex += 1
-            currentSegmentString += visibleSegments[segmentIndex].segment
-        }
-
-        if (tokenToSegmentString === currentSegmentString) {
-            const patchTokens = tokens.slice(tokenStartIndex, tokenIndex + 1)
-            patches.push({
-                patch: currentSegmentString,
-                tokens: patchTokens,
-                prob: patchTokens.reduce((acc, currentToken) => acc * probOfToken(currentToken), 1),
-                index: patches.length,
-                tokenStart: tokenStartIndex,
-                tokenEnd: tokenIndex + 1,
-            })
-            tokenStartIndex = tokenIndex + 1
-            tokenToSegmentString = ""
-            segmentIndex += 1
-            currentSegmentString = visibleSegments[segmentIndex]?.segment ?? ""
-        } else if (
-            currentSegmentString &&
-            !currentSegmentString.startsWith(tokenToSegmentString)
-        ) {
-            const patchTokens = tokens.slice(tokenStartIndex, tokenIndex + 1)
-            patches.push({
-                patch: tokenToSegmentString,
-                tokens: patchTokens,
-                prob: patchTokens.reduce((acc, currentToken) => acc * probOfToken(currentToken), 1),
-                index: patches.length,
-                tokenStart: tokenStartIndex,
-                tokenEnd: tokenIndex + 1,
-            })
-            tokenStartIndex = tokenIndex + 1
-            tokenToSegmentString = ""
-            segmentIndex += 1
-            currentSegmentString = visibleSegments[segmentIndex]?.segment ?? ""
-        }
-    })
-
-    return patches
 }
 
 export function matchPatchesToTextFullDP({ patchStrings, text }) {
@@ -283,11 +186,11 @@ export function pieceStructureViewTokens({ message, logprobsTokens = [], templat
     return tokens
 }
 
-export function buildViewTokens({ message, chatTemplate, logprobsTokens = [] } = {}) {
-    chatTemplate = chatTemplate || ChatTemplateClosure()
-    const { templatedPrompt, keyPathPromptMapping } = chatTemplate.apply(message)
+export function buildViewTokens({ message, responseTemplate, logprobsTokens = [] } = {}) {
+    responseTemplate = responseTemplate || ResponseTemplateClosure()
+    const { templatedPrompt, keyPathPromptMapping } = responseTemplate.apply(message)
     const patchTextMapping = logprobsTokens.length ? matchTokensToPrompt(logprobsTokens, templatedPrompt) : []
-    if (chatTemplate.chatTemplateType === "plain_text") {
+    if (responseTemplate.responseTemplateType === "plain_text") {
         return pieceViewTokens({ logprobsTokens, text: templatedPrompt, patchTextMapping })
     }
     return pieceStructureViewTokens({
@@ -299,8 +202,8 @@ export function buildViewTokens({ message, chatTemplate, logprobsTokens = [] } =
     })
 }
 
-export function ChatTemplateClosure({ apiConfig } = {}) {
-    const configMark = JSON.stringify((apiConfig?.value || apiConfig || {}).chat_template ?? null)
+export function ResponseTemplateClosure({ apiConfig } = {}) {
+    const configMark = JSON.stringify((apiConfig?.value || apiConfig || {}).response_template ?? null)
 
     function apply(message = {}) {
         var templatedPrompt = ""
@@ -406,7 +309,7 @@ export function ChatTemplateClosure({ apiConfig } = {}) {
     return {
         apply,
         parse,
-        chatTemplateType: "default",
+        responseTemplateType: "default",
         configMark,
     }
 }
