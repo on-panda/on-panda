@@ -239,6 +239,15 @@ const templateToolConfigs = [
   }
 ]
 
+
+const isZh = computed(() => globalStore.currentLocale.toLowerCase().indexOf('zh-cn') != -1)
+function switchDefaultToAgentTag() {
+  const defaultModel = modelNameTags.value['on-panda'] || 'on-panda'
+  if (modelName.value.indexOf(defaultModel) != -1) {
+    modelName.value = modelNameTags.value['default-agent-tag'] || 'default-agent-tag'
+  }
+}
+
 // Define all example functions
 const defaultExampleNameToFunc = {
   "clear": () => {
@@ -295,7 +304,16 @@ const defaultExampleNameToFunc = {
     operationCenter.generateNew()
   },
   "browser-agent": () => {
-    var JsExampleMessages = [{ role: "user", content: globalStore.currentLocale.indexOf('zh') == -1 ? "AI news in the past week." : "最近一周的 AI 新闻。" }]
+    switchDefaultToAgentTag()
+    var JsExampleMessages = [{ role: "user", content: "AI news in the past week." }]
+    if (isZh.value) {
+      JsExampleMessages = [{
+        role: "user", content: "最近一周的 AI 新闻。", comment: `一些 browser-agent 能执行的任务：
+- 用 render_svg 绘制："熊猫骑在骆驼上" 的 SVG 图像，并迭代 3 次。
+- 北京的天气如何？实现一个带动效的天气小卡片放在右上角。
+- 收集 step-3.5-flash 模型信息，然后实现一个苹果官网风格的介绍网页。
+- 介绍一下 github 项目 on-panda/harness_to_mcp` }]
+    }
     operationCenter.loadMessages(JsExampleMessages)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{
       type: 'mcp',
@@ -304,6 +322,7 @@ const defaultExampleNameToFunc = {
     operationCenter.generateNew()
   },
   "pet": () => {
+    switchDefaultToAgentTag()
     var JsExampleMessages = [{ role: "user", content: "Using tool `run_browser_js` to create an interactive desktop pet placed in the bottom-right corner of the current page." }]
     JsExampleMessages[0].comment = "The `run_browser_js` tool executes code in the current page’s JavaScript runtime, so the agent can read and modify the page’s content. To restore the original layout, please refresh."
     operationCenter.loadMessages(JsExampleMessages)
