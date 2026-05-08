@@ -33,7 +33,7 @@ const promptLogprobsToTopLogprobs = (promptLogprob, chosenTokenId) => {
   return logprobs
 }
 
-export async function* splitMultiTokensChunk(stream) {
+async function* splitMultiTokensChunk(stream) {
   for await (const chunk of stream) {
     const choices = chunk?.choices
     if (!Array.isArray(choices) || choices.length !== 1) {
@@ -104,6 +104,77 @@ export async function* splitMultiTokensChunk(stream) {
       yield splitChunk
     }
   }
+}
+
+async function* normalizeReasoningField(stream) {
+  // Unify `delta.reasoning_content` into `delta.reasoning` for downstream consumers
+  for await (const chunk of stream) {
+    const delta = chunk?.choices?.[0]?.delta
+    if (delta && typeof delta.reasoning_content === 'string') {
+      if (!('reasoning' in delta)) {
+        delta.reasoning = delta.reasoning_content
+      }
+      delete delta.reasoning_content
+    }
+    yield chunk
+  }
+}
+
+async function* removeTokenPrefixSpaceForWandbAPI({ stream, apiConfig } = {}) {
+  // Workaround for bug in wandb API like:
+  // `"delta":{"content":" Hi"},"logprobs":{"content":[{"token":"Hi","logprob":-0.0835`
+  if (!apiConfig.client_config.base_url.includes('api.inference.wandb.ai')) {
+    yield* stream
+    return
+  }
+  for await (const chunk of stream) {
+    const choice = chunk?.choices?.[0]
+    const logprobToken = choice?.logprobs?.content?.[0]?.token
+    for (const field of ['content', 'reasoning']) {
+      const text = choice?.delta?.[field]
+      if (typeof text === 'string' && text.startsWith(' ')) {
+        const trimmed = text.slice(1)
+        if (trimmed.length > 0 && trimmed === logprobToken) {
+          choice.delta[field] = trimmed
+        }
+      }
+    }
+    yield chunk
+  }
+}
+
+async function* repairStrippedFirstContinueToken({ stream, requestBody } = {}) {
+  // Workaround for doubao-seed series: under continue_final_message, the first
+  // continue token's `delta.content` is left-stripped, while
+  // `logprobs.content[0].token` preserves the original.
+  // e.g. `delta.content`="the" vs `logprobs.content[0].token`=" the"
+  if (!requestBody.continue_final_message) {
+    yield* stream
+    return
+  }
+  let needCheck = true
+  for await (const chunk of stream) {
+    if (needCheck) {
+      const choice = chunk?.choices?.[0]
+      const token = choice?.logprobs?.content?.[0]?.token
+      if (typeof token === 'string') {
+        const stripped = token.trimStart()
+        if (stripped.length > 0 && stripped !== token && stripped === choice?.delta?.content) {
+          choice.delta.content = token
+        }
+        needCheck = false
+      }
+    }
+    yield chunk
+  }
+}
+
+export async function* normalizeStream({ stream, requestBody, apiConfig } = {}) {
+  stream = normalizeReasoningField(stream)
+  stream = splitMultiTokensChunk(stream)
+  stream = removeTokenPrefixSpaceForWandbAPI({ stream, apiConfig })
+  stream = repairStrippedFirstContinueToken({ stream, requestBody })
+  yield* stream
 }
 
 export class OpenAI {
