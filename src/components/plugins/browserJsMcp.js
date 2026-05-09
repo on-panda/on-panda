@@ -1,5 +1,17 @@
 const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor
 const MAX_TEXT_LENGTH = 256 * 1024
+const SUPPORTED_BLOB_CHUNK_TYPES = {
+    'image/png': 'image',
+    'image/jpeg': 'image',
+    'image/gif': 'image',
+    'image/webp': 'image',
+    'audio/wav': 'audio',
+    'audio/mp3': 'audio',
+    'audio/mpeg': 'audio',
+    'video/mp4': 'video',
+    'video/webm': 'video',
+    'video/quicktime': 'video',
+}
 
 const instructions = `You are an agent running in a browser. The current webpage is a Vite + Vue3-based LLM chat UI, through which the user communicates with you. This webpage contains all of your information and context; if the webpage is closed, your session is interrupted, and all information will be lost, just like variables in the webpage. You can read and modify the interface through JavaScript. You should remember that you are operating in a browser environment and make corresponding adaptations and adjustments.
 
@@ -16,7 +28,7 @@ await fetch(skillUrl).then(res => res.text()).then(console.log)
 
 const runBrowserJsTool = {
     name: 'run_browser_js',
-    description: 'Run JavaScript in the current browser runtime and returns strings within `console.log`. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. You can access the internet under CORS restrictions. The current web page is where users interact with you, so do not replace the entire document.body.',
+    description: 'Run JavaScript in the current browser runtime and returns logs from `console.log`. `console.log` accepts `Blob` arguments of MCP-supported image, audio, and video types, returned as inline media in your context. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. You can access the internet under CORS restrictions. The current web page is where users interact with you, so do not replace the entire `document.body`.',
     inputSchema: {
         type: 'object',
         properties: {
@@ -42,8 +54,16 @@ const renderSvgTool = {
     },
 }
 
-function stringifyLogArgs(args = []) {
-    return args.map(arg => String(arg)).join(' ')
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+            const result = reader.result
+            resolve(result.slice(result.indexOf(',') + 1))
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+    })
 }
 
 function buildJsErrorText(message = '') {
@@ -68,19 +88,30 @@ ${text.slice(text.length - suffixLength)}`
 }
 
 async function runBrowserJs(code = '') {
-    const logs = []
-    const errors = []
+    // entries preserve temporal order across console.log / console.error / terminal exception
+    // - { kind: 'log', row: Array<string | { type, mimeType, data }> }: log row, items joined by ' ', rows by '\n'
+    // - { kind: 'error', text: string }: a single wrapped error block, rendered as its own text segment
+    const entries = []
+    const pendingBlobs = []
     const startTime = performance.now()
     const customConsole = {
         ...console,
         log(...args) {
-            const s = stringifyLogArgs(args)
-            logs.push(s)
-            console.log('[run_browser_js.log]:', s)
+            const row = args.map(arg => {
+                const chunkType = arg instanceof Blob ? SUPPORTED_BLOB_CHUNK_TYPES[arg.type] : null
+                if (chunkType) {
+                    const chunk = { type: chunkType, mimeType: arg.type, data: '' }
+                    pendingBlobs.push(blobToBase64(arg).then(b64 => { chunk.data = b64 }))
+                    return chunk
+                }
+                return String(arg)
+            })
+            entries.push({ kind: 'log', row })
+            console.log('[run_browser_js.log]:', ...args)
         },
         error(...args) {
-            const s = stringifyLogArgs(args)
-            errors.push(buildJsErrorText(s))
+            const s = args.map(arg => String(arg)).join(' ')
+            entries.push({ kind: 'error', text: buildJsErrorText(s) })
             console.log('[run_browser_js.error]:', s)
         },
     }
@@ -89,19 +120,47 @@ async function runBrowserJs(code = '') {
         await new AsyncFunction('console', code)(customConsole)
     } catch (error) {
         const s = String(error)
-        errors.push(buildJsErrorText(s))
+        entries.push({ kind: 'error', text: buildJsErrorText(s) })
         console.log('[run_browser_js.error]:', s)
     }
 
-    const executionTimeMs = Math.round(performance.now() - startTime)
+    await Promise.all(pendingBlobs)
 
-    return truncateLongText([
-        `<|execution_info_start|>
-Code execution time: ${executionTimeMs} ms
-<|execution_info_end|>`,
-        ...(logs.length ? logs : ['<|no_js_log|>']),
-        ...errors,
-    ].join('\n'))
+    const executionTimeMs = Math.round(performance.now() - startTime)
+    const content = [{
+        type: 'text',
+        text: `<|execution_info_start|>\nCode execution time: ${executionTimeMs} ms\n<|execution_info_end|>`,
+    }]
+    if (!entries.some(e => e.kind === 'log')) {
+        content.push({ type: 'text', text: '<|no_js_log|>' })
+    }
+
+    let textBuf = ''
+    const flushText = () => {
+        if (textBuf) {
+            content.push({ type: 'text', text: truncateLongText(textBuf) })
+            textBuf = ''
+        }
+    }
+    entries.forEach(entry => {
+        if (entry.kind === 'log') {
+            entry.row.forEach((item, itemIdx) => {
+                if (typeof item === 'string') {
+                    if (textBuf) textBuf += (itemIdx === 0 ? '\n' : ' ')
+                    textBuf += item
+                } else {
+                    flushText()
+                    content.push(item)
+                }
+            })
+        } else {
+            flushText()
+            content.push({ type: 'text', text: truncateLongText(entry.text) })
+        }
+    })
+    flushText()
+
+    return content
 }
 
 async function renderSvg(svg = '') {
@@ -187,10 +246,8 @@ async function handleJsonRpcMessage(message = {}) {
 
     if (message.method === 'tools/call') {
         if (message.params.name === 'run_browser_js') {
-            const output = await runBrowserJs(message.params.arguments?.code || '')
-            return buildJsonResultResponse(message.id, {
-                content: output ? [{ type: 'text', text: output }] : [],
-            })
+            const content = await runBrowserJs(message.params.arguments?.code || '')
+            return buildJsonResultResponse(message.id, { content })
         }
         if (message.params.name === 'render_svg') {
             const output = await renderSvg(message.params.arguments?.svg || '')

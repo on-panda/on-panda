@@ -313,7 +313,8 @@ const defaultExampleNameToFunc = {
 - 北京的天气如何？实现一个带动效的天气小卡片放在右上角。
 - 收集 step-3.5-flash 模型信息，然后实现一个苹果官网风格的介绍网页。
 - 介绍一下 github 项目 on-panda/harness_to_mcp
-- 请 review 一下这个 pull request: https://github.com/vllm-project/vllm/pull/33523` }]
+- 请 review 一下这个 pull request: https://github.com/vllm-project/vllm/pull/33523
+- 找到当前界面中的 logo 图片，请阅读图片并描述内容。` }]
     }
     operationCenter.loadMessages(JsExampleMessages)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{
