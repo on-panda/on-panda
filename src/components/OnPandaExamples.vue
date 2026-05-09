@@ -334,6 +334,44 @@ const defaultExampleNameToFunc = {
     }]
     operationCenter.generateNew()
   },
+  "codex/cc": () => {
+    switchDefaultToAgentTag()
+    var HarnessMessages = [
+      { role: "user", content: "1. List the current directory structure\n2. Read the key files\n3. Summarize and give suggestions", comment: "[onPanda + Local Harness]\n - Setup: pip3 install -U harness_to_mcp && harness_to_mcp codex # or claude/openclaw/opencode\n - Purpose: Expose the harness's internal tools as a standard MCP server and bridge them into onPanda\n - Details: https://github.com/on-panda/harness_to_mcp" },
+    ]
+    if (isZh.value) {
+      HarnessMessages = [
+        { role: "user", content: "1. 列出当前目录结构\n2. 阅读关键文件\n3. 汇总信息并给出建议", comment: "【onPanda 连接本地 Harness】\n - 部署命令: pip3 install -U harness_to_mcp && harness_to_mcp codex # or claude/openclaw/opencode\n - 作用: 将 harness 的内部 tools 暴露成标准 MCP server 并接入 onPanda\n - 详细信息: https://github.com/on-panda/harness_to_mcp" },
+      ]
+    }
+    operationCenter.loadMessages(HarnessMessages)
+    operationCenter.pandaState.currentDialogData.value.tool_configs = [{
+      type: 'mcp',
+      server_url: 'http://127.0.0.1:9330/mcp',
+    }]
+    // operationCenter.generateNew()
+  },
+  "GUI-agent": () => {
+    switchDefaultToAgentTag()
+    // modelName.value = 'gui-tag'
+    var GuiMessages = [
+      { role: "system", content: "", comment: "[Simple Computer Use Agent]\n - Usage: requires a local MCP server at http://127.0.0.1:9300/mcp\n - Setup: pip3 install -U pyautogui_mcp_server && python3 -m pyautogui_mcp_server\n - Details: https://github.com/on-panda/pyautogui_mcp_server" },
+      { role: "user", content: "Get the news:\n1. Take a screenshot of the desktop to understand the current environment\n2. Open any news website in a browser and screenshot its homepage\n3. Extract 5 news headlines so I can pick which one to read in detail" },
+    ]
+    if (isZh.value) {
+      GuiMessages = [
+        { role: "system", content: "", comment: "【简易 Computer Use Agent】\n - 使用说明: 需要用户在本机的 http://127.0.0.1:9300/mcp 提供 MCP server\n - 部署命令: pip3 install -U pyautogui_mcp_server && python3 -m pyautogui_mcp_server\n - 详细信息: https://github.com/on-panda/pyautogui_mcp_server" },
+        { role: "user", content: "获取新闻：\n1. 先截图查看电脑屏幕，了解环境和情况\n2. 用浏览器随便打开一个国内的新闻网站，截图看其首页\n3. 提取 5 个新闻关键词，我再来选择看那一条的正文" },
+      ]
+    }
+    operationCenter.loadMessages(GuiMessages)
+    operationCenter.pandaState.currentDialogData.value.tool_configs = [{
+      type: 'mcp',
+      server_url: 'http://127.0.0.1:9300/mcp',
+      require_approval: 'always',
+    }]
+    // operationCenter.generateNew()
+  },
   // "svg": () => {
   //   var SvgExampleMessages = [{ role: "user", content: "Generate svg image and iterate 3 times, draw content: A panda is riding on a llama" }]
   //   operationCenter.loadMessages(SvgExampleMessages)
