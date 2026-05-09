@@ -42,16 +42,49 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
 
     const presetToolConfigsInput = isRef(presetToolConfigs) ? presetToolConfigs : ref(deepCopy(presetToolConfigs || []))
     const registeredDialogCache = ref(null)
+    const registeredOperationCenter = ref(null)
     const runtimeVersion = ref(0)
     const runtimeEntryByHash = new Map()
     const presetConfigHashToIndex = ref({})
     const matchedDataToPresetIndex = ref({})
     const allTools = ref([])
     const matchedAllToSelectedIndex = ref({})
+    const localMcpServers = {}
+    const localMcpServerLocks = {}
+    const browserAgentMcpUrl = 'local-fetch://browser-agent-mcp'
+    async function registerBrowserAgentMcpServer(url) {
+        async function appendMessages(textOrMessages) {
+            if (!registeredOperationCenter.value) {
+                throw new Error('toolManageState.registeredOperationCenter.value not ready')
+            }
+            const messages = typeof textOrMessages === 'string'
+                ? [{ role: 'user', content: `<|browser_agent_append_start|>\n${textOrMessages}\n<|browser_agent_append_end|>` }]
+                : textOrMessages
+            return registeredOperationCenter.value.startNewRound(messages)
+        }
+        const browserAgentRuntime = {
+            functions: {
+                ExtensibleUi: {
+                    appendMessages: appendMessages,
+                },
+            },
+        }
+        const { BrowserAgentMcpClosure } = await import('../components/plugins/browserAgentMcp.js')
+        localMcpServers[url] = BrowserAgentMcpClosure({
+            browserAgentRuntime,
+            proxyPath: import.meta.env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH,
+        })
+    }
     const localFetches = {
-        'local-fetch://browser-js-mcp': async (resource, init) => {
-            const { localFetch } = await import('../components/plugins/browserJsMcp.js')
-            return await localFetch(resource, init)
+        [browserAgentMcpUrl]: async (resource, init) => {
+            const url = browserAgentMcpUrl
+            if (!localMcpServers[url]) {
+                if (!localMcpServerLocks[url]) {
+                    localMcpServerLocks[url] = registerBrowserAgentMcpServer(url)
+                }
+                await localMcpServerLocks[url]
+            }
+            return await localMcpServers[url].localFetch(resource, init)
         },
     }
 
@@ -534,6 +567,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         allTools,
         matchedAllToSelectedIndex,
         currentDialogTools,
+        registeredOperationCenter,
         localFetches,
         registerDialogCache,
         appendToolToDialog,

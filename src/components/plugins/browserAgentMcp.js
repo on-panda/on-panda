@@ -13,24 +13,6 @@ const SUPPORTED_BLOB_CHUNK_TYPES = {
     'video/quicktime': 'video',
 }
 
-const browserAgentProxyPath = import.meta.env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH
-const corsInternetSupplement = browserAgentProxyPath
-    ? `\n    - Fallback: for critical resources that even cors-internet cannot reach, use the server-side proxy at \`${browserAgentProxyPath}/{url}\`.`
-    : ''
-
-const instructions = `You are an agent running in a browser. You are operating in the JavaScript runtime of the current webpage, where the user interacts with you. So, make corresponding adaptations and adjustments for this browser JavaScript environment.
-
-## Skills
-A skill is a set of instructions to follow that is stored in a \`SKILL.md\` file. Below is the list of skills that can be used. Each entry includes a name, description, and skillUrl so you can open the source for full instructions when using a specific skill.
-### Available skills
-- cors-internet: Browser JS agent patterns for web search and information retrieval under CORS. Use when you need to access the internet for any information acquisition. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/cors-internet/SKILL.md))${corsInternetSupplement}
-- browser-screenshot: Browser screenshot patterns, used when taking screenshots or streaming. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/browser-screenshot/SKILL.md))
-### How to load skills
-If the task clearly matches a skill's description shown above, using tool "run_browser_js" with this pattern code to load the skill:
-\`\`\`js
-await fetch(skillUrl).then(res => res.text()).then(console.log)
-\`\`\``
-
 const runBrowserJsTool = {
     name: 'run_browser_js',
     description: 'Run JavaScript in the current browser runtime and returns logs from `console.log`. `console.log` accepts `Blob` arguments of MCP-supported image, audio, and video types, returned as inline media in your context. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. You can access the internet under CORS restrictions.',
@@ -92,7 +74,7 @@ ${text.slice(0, prefixLength)}
 ${text.slice(text.length - suffixLength)}`
 }
 
-async function runBrowserJs(code = '') {
+async function runBrowserJs(code = '', browserAgentRuntime) {
     // entries preserve temporal order across console.log / console.error / terminal exception
     // - { kind: 'log', row: Array<string | { type, mimeType, data }> }: log row, items joined by ' ', rows by '\n'
     // - { kind: 'error', text: string }: a single wrapped error block, rendered as its own text segment
@@ -101,6 +83,7 @@ async function runBrowserJs(code = '') {
     const startTime = performance.now()
     const customConsole = {
         ...console,
+        browserAgentRuntime,
         log(...args) {
             const row = args.map(arg => {
                 const chunkType = arg instanceof Blob ? SUPPORTED_BLOB_CHUNK_TYPES[arg.type] : null
@@ -122,7 +105,7 @@ async function runBrowserJs(code = '') {
     }
 
     try {
-        await new AsyncFunction('console', code)(customConsole)
+        await new AsyncFunction('console', 'browserAgentRuntime', code)(customConsole, browserAgentRuntime)
     } catch (error) {
         const s = String(error)
         entries.push({ kind: 'error', text: buildJsErrorText(s) })
@@ -224,7 +207,7 @@ function buildJsonErrorResponse(id, code, message) {
     })
 }
 
-async function handleJsonRpcMessage(message = {}) {
+async function handleJsonRpcMessage({ message = {}, instructions = '', browserAgentRuntime } = {}) {
     if (message.method === 'initialize') {
         return buildJsonResultResponse(message.id, {
             protocolVersion: message.params.protocolVersion,
@@ -232,7 +215,7 @@ async function handleJsonRpcMessage(message = {}) {
                 tools: {},
             },
             serverInfo: {
-                name: 'browser-js-mcp',
+                name: 'browser-agent-mcp',
                 version: '0.1.0',
             },
             instructions: instructions
@@ -251,7 +234,7 @@ async function handleJsonRpcMessage(message = {}) {
 
     if (message.method === 'tools/call') {
         if (message.params.name === 'run_browser_js') {
-            const content = await runBrowserJs(message.params.arguments?.code || '')
+            const content = await runBrowserJs(message.params.arguments?.code || '', browserAgentRuntime)
             return buildJsonResultResponse(message.id, { content })
         }
         if (message.params.name === 'render_svg') {
@@ -270,9 +253,34 @@ async function handleJsonRpcMessage(message = {}) {
     return buildJsonErrorResponse(message.id, -32601, `Method not found: ${message.method}`)
 }
 
-export async function localFetch(_input, init = {}) {
-    if ((init.method || 'GET') !== 'POST') {
-        return new Response(null, { status: 405 })
+export function BrowserAgentMcpClosure({ browserAgentRuntime, proxyPath = '' } = {}) {
+    const corsInternetSupplement = proxyPath
+        ? `\n    - Fallback: for critical resources that even cors-internet cannot reach, use the server-side proxy at \`${proxyPath}/{url}\`.`
+        : ''
+
+    const instructions = `You are an agent running in a browser. You are operating in the JavaScript runtime of the current webpage, where the user interacts with you. So, make corresponding adaptations and adjustments for this browser JavaScript environment.
+
+## Skills
+A skill is a set of instructions to follow that is stored in a \`SKILL.md\` file. Below is the list of skills that can be used. Each entry includes a name, description, and skillUrl so you can open the source for full instructions when using a specific skill.
+### Available skills
+- cors-internet: Browser JS agent patterns for web search and information retrieval under CORS. Use when you need to access the internet for any information acquisition. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/cors-internet/SKILL.md))${corsInternetSupplement}
+- browser-screenshot: Browser screenshot patterns, used when taking screenshots or streaming. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/browser-screenshot/SKILL.md))
+### How to load skills
+If the task clearly matches a skill's description shown above, using tool "run_browser_js" with this pattern code to load the skill:
+\`\`\`js
+await fetch(skillUrl).then(res => res.text()).then(console.log)
+\`\`\``
+
+    return {
+        localFetch: async function localFetch(_input, init = {}) {
+            if ((init.method || 'GET') !== 'POST') {
+                return new Response(null, { status: 405 })
+            }
+            return await handleJsonRpcMessage({
+                message: JSON.parse(init.body || '{}'),
+                instructions,
+                browserAgentRuntime,
+            })
+        },
     }
-    return await handleJsonRpcMessage(JSON.parse(init.body || '{}'))
 }

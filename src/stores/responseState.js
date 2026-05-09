@@ -603,12 +603,14 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
         startNewRound = async (newRoundMessages = null) => {  // TODO remove auto write back's append operation
             const messagesToAppend = newRoundMessages ? newRoundMessages : [newRoundMessage.value]
-            var role = newRoundMessages ? 'user' : newRoundMessage.value.role
+            var role = newRoundMessage.value.role
             await toolManageState.buildRequestTools()
             this.pandaState.beforeOperation()
             messages.value = this.getNextMessages({ messagesToAppend })
             tokens.value = []
-            newRoundMessage.value = { role: role, content: '' }
+            if (!newRoundMessages) {
+                newRoundMessage.value = { role: role, content: '' }
+            }
             this.pandaState.afterOperation({
                 operator: "start_new_round",
                 on_policy: true,
@@ -811,6 +813,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     const operationCenter = new OperationCenter()
     operationCenter.toolCallState = toolCallState
     operationCenter.toolManageState = toolManageState
+    toolManageState.registeredOperationCenter.value = operationCenter
     operationCenter.loadMessages(messages.value)
 
     const newRoundMessage = ref({ role: 'user', content: '' })

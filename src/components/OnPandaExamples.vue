@@ -319,7 +319,7 @@ const defaultExampleNameToFunc = {
     operationCenter.loadMessages(JsExampleMessages)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{
       type: 'mcp',
-      server_url: 'local-fetch://browser-js-mcp',
+      server_url: 'local-fetch://browser-agent-mcp',
     }]
     operationCenter.generateNew()
   },
@@ -330,7 +330,7 @@ const defaultExampleNameToFunc = {
     operationCenter.loadMessages(JsExampleMessages)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{
       type: 'mcp',
-      server_url: 'local-fetch://browser-js-mcp',
+      server_url: 'local-fetch://browser-agent-mcp',
     }]
     operationCenter.generateNew()
   },
@@ -377,7 +377,7 @@ const defaultExampleNameToFunc = {
   //   operationCenter.loadMessages(SvgExampleMessages)
   //   operationCenter.pandaState.currentDialogData.value.tool_configs = [{
   //     type: 'mcp',
-  //     server_url: 'local-fetch://browser-js-mcp',
+  //     server_url: 'local-fetch://browser-agent-mcp',
   //   }]
   //   operationCenter.generateNew()
   // },
