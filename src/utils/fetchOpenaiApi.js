@@ -106,6 +106,34 @@ export async function* splitMultiTokensChunk(stream) {
   }
 }
 
+// Fetch with retry on transient failures (5xx, network/CORS) at fixed offsets (ms) from the first attempt's start.
+// Skip an offset if it has already elapsed; throw the last error after all offsets are exhausted.
+// Bail immediately on AbortError or HTTP 4xx.
+async function retryWithSchedule(fn, schedule) {
+  const startTime = Date.now()
+  let lastError
+  for (let attempt = 0; attempt <= schedule.length; attempt++) {
+    if (attempt > 0) {
+      const elapsed = Date.now() - startTime
+      const target = schedule[attempt - 1]
+      if (elapsed >= target) continue
+      await new Promise(r => setTimeout(r, target - elapsed))
+    }
+    let response
+    try {
+      response = await fn()
+    } catch (error) {
+      lastError = error
+      if (error.name === 'AbortError') throw error
+      continue
+    }
+    if (response.ok) return response
+    lastError = new Error(`Failed to fetch: ${response.statusText}\n${await response?.text()}`)
+    if (response.status >= 400 && response.status < 500) throw lastError
+  }
+  throw lastError
+}
+
 export class OpenAI {
   // imitate openai-node without x-stainless-os 
   // x-stainless-os in header may not allowed in browser
@@ -142,16 +170,12 @@ export class OpenAI {
       'Authorization': `Bearer ${this.apiKey}`
     };
 
-    const response = await fetch(url, {
+    const response = await retryWithSchedule(() => fetch(url, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(body),
       ...options
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch completions: ${response.statusText}\n${await response?.text()}`);
-    }
+    }), [5000, 30000]);
 
     // 如果是流模式，我们要解析 EventStream 响应
     if (body.stream) {
