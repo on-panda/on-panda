@@ -1,8 +1,8 @@
 <template>
     <div class="DataControlPanel" ref="dataControlPanelRef" v-if="pandaState.dialogKeys.value?.length">
-        <div style="line-height:2; margin-bottom:10px;">
+        <div style="line-height:2; margin-bottom:10px;" class="DataControlPanelButtonRow">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
-            <el-tooltip :content="t('tooltips.saveData')" raw-content placement="bottom">
+            <el-tooltip :content="t('tooltips.saveData')" raw-content placement="bottom" v-if="0">
                 <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump({})" />
             </el-tooltip>
             <el-tooltip :content="t('tooltips.clearAndReset')" raw-content placement="bottom">

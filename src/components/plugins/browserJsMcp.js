@@ -18,7 +18,7 @@ const corsInternetSupplement = browserAgentProxyPath
     ? `\n    - Fallback: for critical resources that even cors-internet cannot reach, use the server-side proxy at \`${browserAgentProxyPath}/{url}\`.`
     : ''
 
-const instructions = `You are an agent running in a browser. The current webpage is a Vite + Vue3-based LLM chat UI, through which the user communicates with you. This webpage contains all of your information and context; if the webpage is closed, your session is interrupted, and all information will be lost, just like variables in the webpage. You can read and modify the interface through JavaScript. You should remember that you are operating in a browser environment and make corresponding adaptations and adjustments.
+const instructions = `You are an agent running in a browser. You are operating in the JavaScript runtime of the current webpage, where the user interacts with you. So, make corresponding adaptations and adjustments for this browser JavaScript environment.
 
 ## Skills
 A skill is a set of instructions to follow that is stored in a \`SKILL.md\` file. Below is the list of skills that can be used. Each entry includes a name, description, and skillUrl so you can open the source for full instructions when using a specific skill.
@@ -33,7 +33,7 @@ await fetch(skillUrl).then(res => res.text()).then(console.log)
 
 const runBrowserJsTool = {
     name: 'run_browser_js',
-    description: 'Run JavaScript in the current browser runtime and returns logs from `console.log`. `console.log` accepts `Blob` arguments of MCP-supported image, audio, and video types, returned as inline media in your context. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. You can access the internet under CORS restrictions. The current web page is where users interact with you, so do not replace the entire `document.body`.',
+    description: 'Run JavaScript in the current browser runtime and returns logs from `console.log`. `console.log` accepts `Blob` arguments of MCP-supported image, audio, and video types, returned as inline media in your context. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. You can access the internet under CORS restrictions.',
     inputSchema: {
         type: 'object',
         properties: {
