@@ -63,10 +63,8 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
             return registeredOperationCenter.value.startNewRound(messages)
         }
         const browserAgentRuntime = {
-            functions: {
-                ExtensibleUi: {
-                    appendMessages: appendMessages,
-                },
+            extensibleUi: {
+                appendMessages: appendMessages,
             },
         }
         const { BrowserAgentMcpClosure } = await import('../components/plugins/browserAgentMcp.js')

@@ -180,7 +180,10 @@ onMounted(async () => {
       // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
       // toolManageState.presetToolConfigsInput.value = toolManageState.presetToolConfigsInput.value.concat(deepCopy(TEST_TOOL_CONFIGS))
       // exampleToRun = operationCenter.generateNew
-      exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
+      exampleToRun = () => {
+        modelName.value = "claude-api-tag"
+        onPandaExamplesRef.value.exampleNameToFunc["tools"](dialogWithControlState)
+      }
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["js"]
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
       var _exampleToRun = () => {
