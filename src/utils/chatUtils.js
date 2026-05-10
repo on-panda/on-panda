@@ -13,7 +13,7 @@ export {
 
 export function verifyUrlIsLlmApiCall(url) {
     // check is LLM api call by /models or /completions
-    return /(^|\/)(models|completions)(\/|$)/.test(url.pathname);
+    return /(^|\/)(models|completions|messages)(\/|$)/.test(url.pathname);
 }
 
 export function verifyUrlIsMcp(url) {
@@ -154,6 +154,9 @@ export function convertMessageToTokens(message) {
         }
         if (tokens && tokens.length > 0) {
             tokens[0].delta.role = "assistant"
+            if (message.sidecar) {
+                tokens[0].delta.sidecar = deepCopy(message.sidecar)
+            }
             if (message.finish_reason) {
                 tokens.push({
                     delta: { content: "" },

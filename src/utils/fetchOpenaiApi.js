@@ -1,5 +1,6 @@
 import { useGlobalStore } from '../stores/globalStore'
 import { ElMessage } from 'element-plus'
+import { retryWithSchedule, parseSseJsonStream } from './apiProtocols/utils.js'
 
 const promptLogprobsToTopLogprobs = (promptLogprob, chosenTokenId) => {
   // list of {tokenId: obj} => same as top_logprobs, TokenId are string
@@ -104,34 +105,6 @@ async function* splitMultiTokensChunk(stream) {
       yield splitChunk
     }
   }
-}
-
-// Fetch with retry on transient failures (5xx, network/CORS) at fixed offsets (ms) from the first attempt's start.
-// Skip an offset if it has already elapsed; throw the last error after all offsets are exhausted.
-// Bail immediately on AbortError or HTTP 4xx.
-async function retryWithSchedule(fn, schedule) {
-  const startTime = Date.now()
-  let lastError
-  for (let attempt = 0; attempt <= schedule.length; attempt++) {
-    if (attempt > 0) {
-      const elapsed = Date.now() - startTime
-      const target = schedule[attempt - 1]
-      if (elapsed >= target) continue
-      await new Promise(r => setTimeout(r, target - elapsed))
-    }
-    let response
-    try {
-      response = await fn()
-    } catch (error) {
-      lastError = error
-      if (error.name === 'AbortError') throw error
-      continue
-    }
-    if (response.ok) return response
-    lastError = new Error(`Failed to fetch: ${response.statusText}\n${await response?.text()}`)
-    if (response.status >= 400 && response.status < 500) throw lastError
-  }
-  throw lastError
 }
 
 async function* normalizeReasoningField(stream) {
@@ -250,49 +223,41 @@ export class OpenAI {
 
     // 如果是流模式，我们要解析 EventStream 响应
     if (body.stream) {
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let buffer = ''; // 用于存储未完整的 chunk
-      let done = false;
-
       // 返回一个异步迭代器用于处理流式的响应
       return {
         [Symbol.asyncIterator]: async function* () {
-          while (!done) {
-            const { value, done: readerDone } = await reader.read();
-            done = readerDone;
-            buffer += decoder.decode(value, { stream: !readerDone });
-            let events = buffer.split(/\r?\n\r?\n/);
-
-            buffer = events.pop(); // 保留最后一个部分，如果它不是完整的数据会保留到下次解析
-            for (let event of events) {
-              if (event.startsWith("data: ")) {
-                const jsonData = event.slice(6); // 去掉 "data: "
-                if (jsonData.trim() !== "[DONE]") {
-                  try {
-                    const parsedData = JSON.parse(jsonData);
-                    // forward real error when API that does not support HTTP status code (SADO-platform)
-                    if ((parsedData?.object == "error") && (parsedData?.code) && (parsedData.code != 200)) {
-                      throw new Error(`Failed to fetch completions (Code: ${parsedData.code}): ${JSON.stringify(parsedData)} `);
-                    }
-                    if (!parsedData.choices && parsedData.detail) {
-                      throw new Error(`Failed to fetch completions: ${JSON.stringify(parsedData)}`);
-                    }
-                    yield parsedData
-                  } catch (error) {
-                    setTimeout(() => {
-                      ElMessage({
-                        showClose: true,
-                        message: `${error.message}`,
-                        type: 'error',
-                        duration: 10000,
-                      })
-                    }, 1000)
-                    console.error('Error parsing JSON:', error);
-                    continue; // 如果解析错误，跳过当前 chunk
-                  }
-                }
+          const onJsonParseError = (error) => {
+            setTimeout(() => {
+              ElMessage({
+                showClose: true,
+                message: `${error.message}`,
+                type: 'error',
+                duration: 10000,
+              })
+            }, 1000)
+            console.error('Error parsing JSON:', error);
+          }
+          for await (const parsedData of parseSseJsonStream(response, { onJsonParseError })) {
+            try {
+              // forward real error when API that does not support HTTP status code (SADO-platform)
+              if ((parsedData?.object == "error") && (parsedData?.code) && (parsedData.code != 200)) {
+                throw new Error(`Failed to fetch completions (Code: ${parsedData.code}): ${JSON.stringify(parsedData)} `);
               }
+              if (!parsedData.choices && parsedData.detail) {
+                throw new Error(`Failed to fetch completions: ${JSON.stringify(parsedData)}`);
+              }
+              yield parsedData
+            } catch (error) {
+              setTimeout(() => {
+                ElMessage({
+                  showClose: true,
+                  message: `${error.message}`,
+                  type: 'error',
+                  duration: 10000,
+                })
+              }, 1000)
+              console.error('Error parsing JSON:', error);
+              continue; // 如果解析错误，跳过当前 chunk
             }
           }
         },

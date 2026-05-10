@@ -2,7 +2,8 @@ import { ref, computed, toValue, watch, isRef, unref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, p, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
 import { tokensToSeq, getFinishReason, convertMessageToTokens, normalizeRequest, recordAsRejectedToken, mergeTwoDeltas, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
-import { OpenAI, normalizeStream } from '../utils/fetchOpenaiApi.js'
+import { OpenAI } from '../utils/fetchOpenaiApi.js'
+import { createChatCompletionsStream } from '../utils/apiProtocols/index.js'
 import { applyImageDetailLevel, assertNoLegacyChatConfigTools, dropStaleToolAsset } from '../utils/requestUtils.js'
 import { buildRejectedToolMessages } from '../utils/toolUtils.js'
 
@@ -151,10 +152,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         var concatTokens = () => { }
 
         try {
-            const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
             var requestBody = modifyRequest(body)  // deepCopyed
-            var stream = await openai.chat.completions.create(requestBody, { signal: fetchController.signal });
-            stream = normalizeStream({ stream, requestBody, apiConfig: apiConfig.value })
+            var stream = await createChatCompletionsStream({ requestBody, apiConfig: apiConfig.value, signal: fetchController.signal })
 
             var tokenIndex = 0
             var streamIndex = -1
@@ -868,6 +867,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 }
                 if (key === "reasoning_details") {
                     delta.reasoning_details = [mergeTwoDeltas(delta.reasoning_details?.[0], delta2.reasoning_details?.[0], ["type", "format"])]
+                    continue
+                }
+                if (key === "sidecar") {
+                    delta.sidecar = mergeTwoDeltas(delta.sidecar || {}, delta2.sidecar || {})
                     continue
                 }
                 delta[key] = (delta[key] || "") + (delta2[key] || "")
