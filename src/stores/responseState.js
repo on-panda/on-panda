@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
 import { getFinishReason, normalizeRequest, recordAsRejectedToken, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
 import { ResponseTemplateClosure, buildViewTokens } from '../utils/responseTemplateUtils.js'
-import { OpenAI, normalizeStream } from '../utils/fetchOpenaiApi.js'
+import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
 import { applyImageDetailLevel, assertNoLegacyChatConfigTools, dropStaleToolAsset } from '../utils/requestUtils.js'
 import { buildRejectedToolMessages } from '../utils/toolUtils.js'
 
@@ -199,7 +199,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
             var requestBody = modifyRequest(body)  // deepCopyed
             var stream = await openai.chat.completions.create(requestBody, { signal: fetchController.signal });
-            stream = normalizeStream({ stream, requestBody, apiConfig: apiConfig.value })
+            stream = splitMultiTokensChunk(stream)
 
             var tokenIndex = 0
             var streamIndex = -1
@@ -239,7 +239,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                         continue  // if first chunk only not has content, no more role for continue_final_message
                     }
                 }
-                if (!chunk?.choices?.length) {  // set usage and model if only in last token
+                if (!chunk?.choices?.length) {  // set usage and model if noly in last token
                     if (chunk.usage) {
                         if (tokenBatch.length) {
                             tokenBatch[tokenBatch.length - 1].usage = chunk.usage
@@ -260,6 +260,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 if (!token?.delta) {
                     continue
                 }
+                if (typeof token.delta.reasoning_content === "string" && !("reasoning" in token.delta)) {
+                    token.delta.reasoning = token.delta.reasoning_content
+                }
+                delete token.delta.reasoning_content
                 streamIndex++
                 if (streamIndex === 0) { // first token
                     clearTimeout(firstTokenTimeoutId)
