@@ -53,23 +53,26 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     const localMcpServerLocks = {}
     const browserAgentMcpUrl = 'local-fetch://browser-agent-mcp'
     async function registerBrowserAgentMcpServer(url) {
-        async function appendMessages(textOrMessages) {
-            if (!registeredOperationCenter.value) {
-                throw new Error('toolManageState.registeredOperationCenter.value not ready')
+        function buildBrowserAgent({ callScope }) {
+            return {
+                name: "root",
+                path: "root",
+                send({ text }) {
+                    if (!registeredOperationCenter.value) {
+                        throw new Error('toolManageState.registeredOperationCenter.value not ready')
+                    }
+                    registeredOperationCenter.value.startNewRound([
+                        { role: 'user', content: `<|browser_agent_send_start|>\n${text}\n<|browser_agent_send_end|>` },
+                    ])
+                    callScope.console.log('browserAgent.send success')
+                },
+                local: {},  // store things that cross-tool_calls reuse for one agent
+                shared: {},   // TODO: share with all sub-agents
             }
-            const messages = typeof textOrMessages === 'string'
-                ? [{ role: 'user', content: `<|browser_agent_append_start|>\n${textOrMessages}\n<|browser_agent_append_end|>` }]
-                : textOrMessages
-            return registeredOperationCenter.value.startNewRound(messages)
-        }
-        const browserAgentRuntime = {
-            extensibleUi: {
-                appendMessages: appendMessages,
-            },
         }
         const { BrowserAgentMcpClosure } = await import('../components/plugins/browserAgentMcp.js')
         localMcpServers[url] = BrowserAgentMcpClosure({
-            browserAgentRuntime,
+            buildBrowserAgent,
             proxyPath: import.meta.env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH,
         })
     }

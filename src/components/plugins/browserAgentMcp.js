@@ -74,7 +74,7 @@ ${text.slice(0, prefixLength)}
 ${text.slice(text.length - suffixLength)}`
 }
 
-async function runBrowserJs(code = '', browserAgentRuntime) {
+async function runBrowserJs(code = '', buildBrowserAgent) {
     // entries preserve temporal order across console.log / console.error / terminal exception
     // - { kind: 'log', row: Array<string | { type, mimeType, data }> }: log row, items joined by ' ', rows by '\n'
     // - { kind: 'error', text: string }: a single wrapped error block, rendered as its own text segment
@@ -83,7 +83,6 @@ async function runBrowserJs(code = '', browserAgentRuntime) {
     const startTime = performance.now()
     const customConsole = {
         ...console,
-        browserAgentRuntime,
         log(...args) {
             const row = args.map(arg => {
                 const chunkType = arg instanceof Blob ? SUPPORTED_BLOB_CHUNK_TYPES[arg.type] : null
@@ -103,9 +102,10 @@ async function runBrowserJs(code = '', browserAgentRuntime) {
             console.log('[run_browser_js.error]:', s)
         },
     }
+    const browserAgent = buildBrowserAgent({ callScope: { console: customConsole } })
 
     try {
-        await new AsyncFunction('console', 'browserAgentRuntime', code)(customConsole, browserAgentRuntime)
+        await new AsyncFunction('console', 'browserAgent', code)(customConsole, browserAgent)
     } catch (error) {
         const s = String(error)
         entries.push({ kind: 'error', text: buildJsErrorText(s) })
@@ -207,7 +207,7 @@ function buildJsonErrorResponse(id, code, message) {
     })
 }
 
-async function handleJsonRpcMessage({ message = {}, instructions = '', browserAgentRuntime } = {}) {
+async function handleJsonRpcMessage({ message = {}, instructions = '', buildBrowserAgent } = {}) {
     if (message.method === 'initialize') {
         return buildJsonResultResponse(message.id, {
             protocolVersion: message.params.protocolVersion,
@@ -234,7 +234,7 @@ async function handleJsonRpcMessage({ message = {}, instructions = '', browserAg
 
     if (message.method === 'tools/call') {
         if (message.params.name === 'run_browser_js') {
-            const content = await runBrowserJs(message.params.arguments?.code || '', browserAgentRuntime)
+            const content = await runBrowserJs(message.params.arguments?.code || '', buildBrowserAgent)
             return buildJsonResultResponse(message.id, { content })
         }
         if (message.params.name === 'render_svg') {
@@ -253,7 +253,7 @@ async function handleJsonRpcMessage({ message = {}, instructions = '', browserAg
     return buildJsonErrorResponse(message.id, -32601, `Method not found: ${message.method}`)
 }
 
-export function BrowserAgentMcpClosure({ browserAgentRuntime, proxyPath = '' } = {}) {
+export function BrowserAgentMcpClosure({ buildBrowserAgent, proxyPath = '' } = {}) {
     const corsInternetSupplement = proxyPath
         ? `\n    - Fallback: for critical resources that even cors-internet cannot reach, use the server-side proxy at \`${proxyPath}/{url}\`.`
         : ''
@@ -279,7 +279,7 @@ await fetch(skillUrl).then(res => res.text()).then(console.log)
             return await handleJsonRpcMessage({
                 message: JSON.parse(init.body || '{}'),
                 instructions,
-                browserAgentRuntime,
+                buildBrowserAgent,
             })
         },
     }
