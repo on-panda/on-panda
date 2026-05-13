@@ -1,6 +1,7 @@
 <template>
     <div class="DataControlPanel" ref="dataControlPanelRef" v-if="pandaState.dialogKeys.value?.length">
-        <div style="line-height:2; margin-bottom:10px;" class="DataControlPanelButtonRow">
+        <div ref="dataControlPanelButtonRowRef" style="line-height:2; margin-bottom:10px;"
+            class="DataControlPanelButtonRow">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
             <el-tooltip :content="t('tooltips.saveData')" raw-content placement="bottom" v-if="0">
                 <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump({})" />
@@ -90,7 +91,7 @@
     </div>
 </template>
 <script setup>
-import { ref, watch, onMounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore.js'
@@ -111,6 +112,8 @@ const pandaState = props.responseState.pandaState
 const uploadedJson = props.responseState.uploadedJson
 const onPandaContainerRef = props.responseState.onPandaContainerRef
 const messages = props.responseState.messages
+const requestStatus = props.responseState.requestStatus
+const toolCallStatus = props.responseState.operationCenter.toolCallState.toolCallStatus
 
 const globalStore = useGlobalStore()
 
@@ -195,6 +198,130 @@ watch(onPandaContainerRef, (newContainer) => {
 })
 
 const dataControlPanelRef = ref(null)
+const dataControlPanelButtonRowRef = ref(null)
+const isAgenticLoopRunning = computed(() => requestStatus.value.generating || toolCallStatus.value.calling)
+const tokens = props.responseState.tokens
+const buttonRowAutoFollow = {
+    enabled: true,
+    shouldFollow: false,
+    isPinned: false,
+    isStoppedByUser: false,
+    bottomBeforeUpdate: 0,
+    isScheduled: false,
+    userScrollFrame: 0,
+    stabilizeFrame: 0,
+    endTimer: 0,
+    schedule() {
+        if (!buttonRowAutoFollow.enabled || !buttonRowAutoFollow.shouldFollow || !dataControlPanelButtonRowRef.value || buttonRowAutoFollow.isScheduled) {
+            return
+        }
+        const targetBottom = window.innerHeight - 8
+        const rect = dataControlPanelButtonRowRef.value.getBoundingClientRect()
+        buttonRowAutoFollow.bottomBeforeUpdate = buttonRowAutoFollow.isPinned ? targetBottom : rect.bottom
+        buttonRowAutoFollow.isScheduled = true
+        nextTick(buttonRowAutoFollow.follow)
+    },
+    follow() {
+        buttonRowAutoFollow.isScheduled = false
+        if (!buttonRowAutoFollow.enabled || !dataControlPanelButtonRowRef.value) {
+            return
+        }
+        const rect = dataControlPanelButtonRowRef.value.getBoundingClientRect()
+        const targetBottom = window.innerHeight - 8
+        const shouldPin = buttonRowAutoFollow.isPinned || buttonRowAutoFollow.bottomBeforeUpdate > targetBottom || rect.bottom > targetBottom
+        if (!shouldPin) {
+            return
+        }
+        buttonRowAutoFollow.isPinned = true
+        buttonRowAutoFollow.scrollToBottom()
+        buttonRowAutoFollow.stabilize(2)
+    },
+    scrollToBottom() {
+        const rect = dataControlPanelButtonRowRef.value.getBoundingClientRect()
+        const targetScrollTop = window.scrollY + rect.bottom - (window.innerHeight - 8)
+        if (Math.abs(window.scrollY - targetScrollTop) >= 1) {
+            window.scrollTo({ top: targetScrollTop })
+        }
+    },
+    reset() {
+        if (!buttonRowAutoFollow.enabled || !dataControlPanelButtonRowRef.value || buttonRowAutoFollow.isStoppedByUser) {
+            return
+        }
+        const rect = dataControlPanelButtonRowRef.value.getBoundingClientRect()
+        buttonRowAutoFollow.shouldFollow = rect.top < window.innerHeight && rect.bottom > 0
+        buttonRowAutoFollow.isPinned = false
+        buttonRowAutoFollow.schedule()
+    },
+    handleUserScroll() {
+        cancelAnimationFrame(buttonRowAutoFollow.userScrollFrame)
+        buttonRowAutoFollow.userScrollFrame = requestAnimationFrame(() => {
+            buttonRowAutoFollow.userScrollFrame = 0
+            if (!buttonRowAutoFollow.enabled || !dataControlPanelButtonRowRef.value || !isAgenticLoopRunning.value && !buttonRowAutoFollow.shouldFollow) {
+                return
+            }
+            const rect = dataControlPanelButtonRowRef.value.getBoundingClientRect()
+            buttonRowAutoFollow.shouldFollow = rect.top < window.innerHeight && rect.bottom > 0
+            buttonRowAutoFollow.isPinned = false
+            buttonRowAutoFollow.isStoppedByUser = !buttonRowAutoFollow.shouldFollow
+        })
+    },
+    stabilize(retryTimes) {
+        cancelAnimationFrame(buttonRowAutoFollow.stabilizeFrame)
+        buttonRowAutoFollow.stabilizeFrame = requestAnimationFrame(() => {
+            buttonRowAutoFollow.stabilizeFrame = 0
+            if (!buttonRowAutoFollow.enabled || !buttonRowAutoFollow.shouldFollow || !buttonRowAutoFollow.isPinned || !dataControlPanelButtonRowRef.value) {
+                return
+            }
+            buttonRowAutoFollow.scrollToBottom()
+            if (retryTimes > 0) {
+                buttonRowAutoFollow.stabilize(retryTimes - 1)
+            }
+        })
+    },
+    start() {
+        if (!buttonRowAutoFollow.enabled) {
+            return
+        }
+        document.documentElement.style.overflowAnchor = 'none'
+        window.addEventListener('wheel', buttonRowAutoFollow.handleUserScroll, { passive: true })
+        window.addEventListener('touchmove', buttonRowAutoFollow.handleUserScroll, { passive: true })
+        if (isAgenticLoopRunning.value) {
+            nextTick(buttonRowAutoFollow.reset)
+        }
+    },
+    stop() {
+        if (!buttonRowAutoFollow.enabled) {
+            return
+        }
+        document.documentElement.style.overflowAnchor = ''
+        window.removeEventListener('wheel', buttonRowAutoFollow.handleUserScroll)
+        window.removeEventListener('touchmove', buttonRowAutoFollow.handleUserScroll)
+        cancelAnimationFrame(buttonRowAutoFollow.userScrollFrame)
+        cancelAnimationFrame(buttonRowAutoFollow.stabilizeFrame)
+        clearTimeout(buttonRowAutoFollow.endTimer)
+    },
+}
+
+watch(isAgenticLoopRunning, (isRunning) => {
+    if (!buttonRowAutoFollow.enabled) {
+        return
+    }
+    clearTimeout(buttonRowAutoFollow.endTimer)
+    if (isRunning) {
+        nextTick(buttonRowAutoFollow.reset)
+    } else {
+        buttonRowAutoFollow.endTimer = setTimeout(() => {
+            buttonRowAutoFollow.shouldFollow = false
+            buttonRowAutoFollow.isPinned = false
+            buttonRowAutoFollow.isStoppedByUser = false
+        }, 1000)
+    }
+})
+
+watch([
+    () => tokens.value.length,
+    () => messages.value.length,
+], buttonRowAutoFollow.schedule)
 
 async function jumpToLatestUserIfNeeded() {
     await nextTick()
@@ -222,6 +349,11 @@ onMounted(() => {
     if (dataControlPanelRef.value) {
         props.responseState.onPandaContainerRef.value = dataControlPanelRef.value
     }
+    buttonRowAutoFollow.start()
+})
+
+onBeforeUnmount(() => {
+    buttonRowAutoFollow.stop()
 })
 
 </script>
