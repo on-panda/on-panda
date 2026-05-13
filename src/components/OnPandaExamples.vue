@@ -48,23 +48,6 @@ const messagesImageExample = [{
   ]
 }]
 
-const messagesAudioExample = [
-  {
-    "role": "system",
-    "content": ""
-  },
-  {
-    "role": "user",
-    "content": [
-      { type: "text", text: "分两步:\n1. 把这段语音转换为文字\n2. 回答语音中的问题\n" },
-      {
-        "type": "audio_token",
-        "audio_token": "<audio_667><audio_667><audio_4390><audio_1326><audio_3886><audio_993><audio_689><audio_4171><audio_1367><audio_1349><audio_194><audio_853><audio_3690><audio_1044><audio_3123><audio_759><audio_776><audio_2449><audio_2502><audio_3738><audio_573><audio_573><audio_1226><audio_3270><audio_2377><audio_72><audio_35><audio_4106><audio_2267><audio_2930><audio_321><audio_321><audio_1155><audio_3274><audio_3450><audio_866><audio_54><audio_3317><audio_1535><audio_1484><audio_54><audio_925><audio_2264><audio_3593><audio_1089><audio_925><audio_133><audio_1484><audio_1768><audio_1146><audio_634><audio_634><audio_3074><audio_3311><audio_4329><audio_123><audio_936><audio_2265><audio_3172><audio_2317><audio_866><audio_72><audio_1048><audio_5080><audio_2377><audio_72><audio_936><audio_3211><audio_1795><audio_1039><audio_571><audio_431><audio_3186><audio_3186><audio_3186>"
-      }
-    ]
-  }
-]
-
 const messagesToolsExample = [
   { "role": "system", "content": "You are a weather inquiry agent." },
   {
@@ -259,17 +242,10 @@ const defaultExampleNameToFunc = {
     operationCenter.loadMessages(welcomeMessages)
     operationCenter.generateNew()
   },
-  "R in 🍓": () => {
-    operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }])
-    operationCenter.generateNew()
-  },
-  "image": () => {
-    if (modelNameTags.value['image']) {
-      modelName.value = modelNameTags.value['image']
-    }
-    operationCenter.loadMessages(messagesImageExample)
-    operationCenter.generateNew()
-  },
+  // "R in 🍓": () => {
+  //   operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }])
+  //   operationCenter.generateNew()
+  // },
   "tools": () => {
     operationCenter.loadMessages(messagesToolsExample)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [
@@ -303,7 +279,7 @@ const defaultExampleNameToFunc = {
     ]
     operationCenter.generateNew()
   },
-  "browser-agent": () => {
+  "🤖 browser-agent": () => {
     switchDefaultToAgentTag()
     var JsExampleMessages = [{ role: "user", content: "AI news in the past week." }]
     if (isZh.value) {
@@ -323,7 +299,7 @@ const defaultExampleNameToFunc = {
     }]
     operationCenter.generateNew()
   },
-  "pet": () => {
+  "🐱 pet": () => {
     switchDefaultToAgentTag()
     var JsExampleMessages = [{ role: "user", content: "Using tool `run_browser_js` to create an interactive desktop pet placed in the bottom-right corner of the current page." }]
     JsExampleMessages[0].comment = "The `run_browser_js` tool executes code in the current page’s JavaScript runtime, so the agent can read and modify the page’s content. To restore the original layout, please refresh."
@@ -414,6 +390,11 @@ const defaultExampleNameToFunc = {
   },
   "AIME": () => {
     operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "Real numbers $x$ and $y$ with $x,y>1$ satisfy $\log_x(y^x)=\log_y(x^{4y})=10.$ What is the value of $xy$?", description: "Answer is 25" }])
+    operationCenter.generateNew()
+  },
+  "image": () => {
+    modelName.value = "image-tag"
+    operationCenter.loadMessages(messagesImageExample)
     operationCenter.generateNew()
   },
   "continue": () => {

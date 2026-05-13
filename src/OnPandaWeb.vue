@@ -82,15 +82,16 @@ var isMobile = computed(() => globalStore.isMobile)
 const customInfoForUser = computed(() => props.customInfoForUser + globalStore.customInfoForUser)
 const defaultModelNameTags = {
   'on-panda': 'on-panda',
-  'step3.5': 'step3.5-tag',
-  'image': 'image-tag',
-  'GPT': 'gpt-tag',
-  // 'claude': 'claude-tag',
-  // 'audio': 'step1f-on-policy',
+  'step3.7': 'step-tag',
+  'kimi': 'kimi-tag',
   'DS': 'ds-tag',
-  // 'groq': 'groq-tag',
+  'GPT': 'gpt-tag',
+  'claude': 'claude-tag',
+  // 'image': 'image-tag',
+  // 'audio': 'step1f-on-policy',
   'test': 'test-tag',
   'fast': 'fast-tag',
+  // 'groq': 'groq-tag',
 }
 const modelNameTags = computed(() => {
   // only use defaultModelNameTags if both props.modelNameTags and globalStore.customModelNameTags is not set
@@ -181,7 +182,7 @@ onMounted(async () => {
       // toolManageState.presetToolConfigsInput.value = toolManageState.presetToolConfigsInput.value.concat(deepCopy(TEST_TOOL_CONFIGS))
       // exampleToRun = operationCenter.generateNew
       exampleToRun = () => {
-        modelName.value = "claude-api-tag"
+        modelName.value = "k2.6-instruct-wo-parser-tag"
         onPandaExamplesRef.value.exampleNameToFunc["tools"](dialogWithControlState)
       }
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["js"]
