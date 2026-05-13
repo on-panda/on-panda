@@ -130,7 +130,7 @@ async function uploadAndLoadJson() {
 
 const handleDropJson = (uploadFile) => {
     const file = uploadFile.raw;
-    if (!file.type.includes('json')) {
+    if (!file.name.toLowerCase().endsWith('.json')) {
         ElMessage.error('Please upload JSON file only!');
         return;
     }
@@ -172,14 +172,8 @@ watch(onPandaContainerRef, (newContainer) => {
         newContainer.addEventListener('dragover', function (event) {
             event.preventDefault();
             event.stopPropagation();
-            const files = event.dataTransfer.items;
-            for (let item of files) {
-                if (item.kind === 'file') {
-                    if (item.type.includes('json')) {
-                        isDragged.value = true;
-                        // console.log('Dragged file:', item, item.getAsFile());
-                    }
-                }
+            if (Array.from(event.dataTransfer.types).includes('Files')) {
+                isDragged.value = true;
             }
         });
 
