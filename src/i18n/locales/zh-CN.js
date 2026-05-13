@@ -154,7 +154,7 @@ export default {
   toolManagePanel: {
     configs: '配置',
     candidate: '候选',
-    selected: '已选',
+    loaded: '已加载',
     empty: '空'
   },
   header: {

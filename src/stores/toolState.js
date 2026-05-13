@@ -48,7 +48,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     const presetConfigHashToIndex = ref({})
     const matchedDataToPresetIndex = ref({})
     const allTools = ref([])
-    const matchedAllToSelectedIndex = ref({})
+    const matchedAllToLoadedIndex = ref({})
     const localMcpServers = {}
     const localMcpServerLocks = {}
     const browserAgentMcpUrl = 'local-fetch://browser-agent-mcp'
@@ -442,13 +442,13 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         setDialogTools(nextTools)
     }
 
-    async function removeSelectedTool(selectedToolIndex = -1) {
+    async function removeLoadedTool(loadedToolIndex = -1) {
         const dialogCache = getDialogCacheValue()
-        if (!dialogCache?.tools?.length || selectedToolIndex < 0 || selectedToolIndex >= dialogCache.tools.length) {
+        if (!dialogCache?.tools?.length || loadedToolIndex < 0 || loadedToolIndex >= dialogCache.tools.length) {
             return
         }
         const nextTools = deepCopy(dialogCache.tools)
-        nextTools.splice(selectedToolIndex, 1)
+        nextTools.splice(loadedToolIndex, 1)
         setDialogTools(nextTools)
     }
 
@@ -514,7 +514,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
             ; (async () => {
                 const matchedIndex = await matchTwoToolLists(allTools.value, currentDialogTools.value)
                 if (!expired) {
-                    matchedAllToSelectedIndex.value = matchedIndex
+                    matchedAllToLoadedIndex.value = matchedIndex
                 }
             })().catch(error => {
                 console.error(error)
@@ -566,13 +566,13 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         dataToolConfigs,
         visibleToolConfigItems,
         allTools,
-        matchedAllToSelectedIndex,
+        matchedAllToLoadedIndex,
         currentDialogTools,
         registeredOperationCenter,
         localFetches,
         registerDialogCache,
         appendToolToDialog,
-        removeSelectedTool,
+        removeLoadedTool,
         buildRequestTools,
         checkCallReady,
         checkRequireApproval,

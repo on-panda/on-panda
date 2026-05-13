@@ -154,7 +154,7 @@ export default {
   toolManagePanel: {
     configs: 'configs',
     candidate: 'candidate',
-    selected: 'selected',
+    loaded: 'loaded',
     empty: 'empty'
   },
   header: {
