@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, provide, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, provide, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { DArrowRight, VideoPause, Edit, View, DocumentCopy, Refresh, Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -83,6 +83,48 @@ async function pasteThenRequestPromptLogprobs() {
 
 const scrollDiv = ref(null)
 const scrollSwitch = useScrollSwitchSync(scrollDiv); // { isSwitched, scrollToPosition }
+const finalMessageTwoPanelBodyRef = ref(null)
+const rawMessagePanelRef = ref(null)
+const markdownMessagePanelRef = ref(null)
+const rawMessagePanelStyle = ref({})
+const markdownMessagePanelStyle = ref({})
+const shortPanelAutoFollow = {
+    frame: 0,
+    resizeObserver: null,
+    schedule() {
+        cancelAnimationFrame(shortPanelAutoFollow.frame)
+        shortPanelAutoFollow.frame = requestAnimationFrame(shortPanelAutoFollow.update)
+    },
+    update() {
+        shortPanelAutoFollow.frame = 0
+        const bodyRect = finalMessageTwoPanelBodyRef.value.getBoundingClientRect()
+        const rawHeight = rawMessagePanelRef.value.firstElementChild.offsetHeight
+        const markdownHeight = markdownMessagePanelRef.value.firstElementChild.offsetHeight
+        const shortHeight = Math.min(rawHeight, markdownHeight)
+        const longHeight = Math.max(rawHeight, markdownHeight)
+        const heightDiff = longHeight - shortHeight
+        const offset = shortHeight > window.innerHeight
+            ? Math.min(Math.max(-bodyRect.top, 0) * heightDiff / (longHeight - window.innerHeight), heightDiff)
+            : Math.min(Math.max(-bodyRect.top, 0), heightDiff)
+        rawMessagePanelStyle.value = rawHeight < markdownHeight && offset ? { position: 'relative', top: `${offset}px` } : {}
+        markdownMessagePanelStyle.value = markdownHeight < rawHeight && offset ? { position: 'relative', top: `${offset}px` } : {}
+    },
+    start() {
+        window.addEventListener('scroll', shortPanelAutoFollow.schedule, { passive: true })
+        window.addEventListener('resize', shortPanelAutoFollow.schedule, { passive: true })
+        shortPanelAutoFollow.resizeObserver = new ResizeObserver(shortPanelAutoFollow.schedule)
+        shortPanelAutoFollow.resizeObserver.observe(finalMessageTwoPanelBodyRef.value)
+        shortPanelAutoFollow.resizeObserver.observe(rawMessagePanelRef.value.firstElementChild)
+        shortPanelAutoFollow.resizeObserver.observe(markdownMessagePanelRef.value.firstElementChild)
+        shortPanelAutoFollow.schedule()
+    },
+    stop() {
+        window.removeEventListener('scroll', shortPanelAutoFollow.schedule)
+        window.removeEventListener('resize', shortPanelAutoFollow.schedule)
+        shortPanelAutoFollow.resizeObserver.disconnect()
+        cancelAnimationFrame(shortPanelAutoFollow.frame)
+    },
+}
 
 var handleScrollDivFunctions = []
 provide('handleScrollDivFunctions', handleScrollDivFunctions)
@@ -93,11 +135,28 @@ function handleScrollDivFunction(e) {
 }
 
 onMounted(async () => {
-    scrollDiv.value.addEventListener('scroll', handleScrollDivFunction);
+    if (!globalStore.cleanMode) {
+        scrollDiv.value.addEventListener('scroll', handleScrollDivFunction);
+        shortPanelAutoFollow.start()
+    }
 })
 
 onBeforeUnmount(() => {
-    scrollDiv.value?.removeEventListener('scroll', handleScrollDivFunction);
+    if (!globalStore.cleanMode) {
+        scrollDiv.value.removeEventListener('scroll', handleScrollDivFunction);
+        shortPanelAutoFollow.stop()
+    }
+})
+
+watch(() => globalStore.cleanMode, async function watchCleanMode(cleanMode) {
+    if (cleanMode) {
+        scrollDiv.value.removeEventListener('scroll', handleScrollDivFunction);
+        shortPanelAutoFollow.stop()
+        return
+    }
+    await nextTick()
+    scrollDiv.value.addEventListener('scroll', handleScrollDivFunction);
+    shortPanelAutoFollow.start()
 })
 </script>
 
@@ -184,16 +243,16 @@ onBeforeUnmount(() => {
 
         <div class="finalMessageTwoPanel" v-if="!globalStore.cleanMode"
             style="width: 100%;overflow:scroll;overflow-y:hidden; padding-bottom: 3px;" ref="scrollDiv">
-            <div style="display: flex; justify-content: space-between;"
+            <div ref="finalMessageTwoPanelBodyRef" style="display: flex; justify-content: space-between;"
                 :style="{ 'width': isMobile ? '195%' : '100%' }">
-                <div class="final-message-half-panel">
+                <div ref="rawMessagePanelRef" class="final-message-half-panel" :style="rawMessagePanelStyle">
                     <div style="background-color: #eee;">
                         <WaitingInfo v-if="!tokens.length" v-bind="waitingInfoProps" />
                         <OnPandaResponseText :responseState="responseState" />
                     </div>
                 </div>
                 <hr style="color:#eee">
-                <div class="final-message-half-panel">
+                <div ref="markdownMessagePanelRef" class="final-message-half-panel" :style="markdownMessagePanelStyle">
                     <MarkdownResponse :content="finalMessageAsText" :waiting-info-props="waitingInfoProps" />
                 </div>
             </div>
