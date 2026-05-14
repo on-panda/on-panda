@@ -321,6 +321,8 @@ watch(isAgenticLoopRunning, (isRunning) => {
 watch([
     () => tokens.value.length,
     () => messages.value.length,
+    () => requestStatus.value.generating,
+    () => toolCallStatus.value.calling,
 ], buttonRowAutoFollow.schedule)
 
 async function jumpToLatestUserIfNeeded() {
