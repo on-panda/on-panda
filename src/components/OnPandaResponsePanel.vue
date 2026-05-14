@@ -29,6 +29,7 @@ const responseState = props.responseState
 const pandaState = responseState.pandaState
 const tokens = responseState.tokens
 const requestStatus = responseState.requestStatus
+const agenticLoopStatus = responseState.agenticLoopStatus
 const apiConfig = responseState.apiConfig
 const operationCenter = responseState.operationCenter
 const finalMessage = responseState.finalMessage
@@ -173,13 +174,13 @@ watch(() => globalStore.cleanMode, async function watchCleanMode(cleanMode) {
                     <el-button :icon="Close" size="small"
                         @click="responseState.rawPromptLogprobsTokens.value.length = 0" />
                 </el-tooltip>
-                <el-tooltip v-if="!requestStatus.generating" :content="t('tooltips.continueGenerating')"
+                <el-tooltip v-if="!agenticLoopStatus.running" :content="t('tooltips.continueGenerating')"
                     placement="top">
                     <el-button :icon="DArrowRight" size="small" :disabled="!tokens?.length"
                         @click="operationCenter.continueGenerating()" />
                 </el-tooltip>
                 <el-tooltip v-if="requestStatus.generating" :content="t('tooltips.stopGenerating')" placement="top">
-                    <el-button :icon="VideoPause" size="small" @click="operationCenter.stopGenerating()" />
+                    <el-button :icon="VideoPause" size="small" @click="operationCenter.stopAgenticLoop()" />
                 </el-tooltip>
                 <!-- <el-tooltip content="try again" placement="top">
               <el-button :icon="Refresh" size="small" @click="operationCenter.generateNew()" />
@@ -195,7 +196,7 @@ watch(() => globalStore.cleanMode, async function watchCleanMode(cleanMode) {
                             {{ t('tooltips.pasteAndRefresh') }}
                         </el-button>
                     </template>
-                    <el-button :icon="View" size="small" :disabled="!finalMessageAsText || requestStatus.generating"
+                    <el-button :icon="View" size="small" :disabled="!finalMessageAsText || agenticLoopStatus.running"
                         @click="operationCenter.refreshResponseProbability()"
                         @dblclick="pasteThenRequestPromptLogprobs" />
                 </el-tooltip>

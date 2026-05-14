@@ -3,12 +3,29 @@
         <div ref="dataControlPanelButtonRowRef" style="line-height:2; margin-bottom:10px;"
             class="DataControlPanelButtonRow">
             <!-- <span class="stretch" style="margin-right: auto" /> -->
+            <el-tooltip :content="agenticLoopStatus.running ? t('tooltips.stopAgenticLoop') : t('tooltips.regenerate')"
+                raw-content placement="bottom">
+                <el-button class="agenticControlButton" size="small" :plain="showAgenticPauseControl"
+                    :type="showAgenticPauseControl ? 'danger' : ''" @mouseenter="isAgenticControlButtonHovering = true"
+                    @mouseleave="isAgenticControlButtonHovering = false" @click="handleAgenticControlButtonClick">
+                    <span v-if="agenticLoopStatus.running" class="agenticControlIconStack">
+                        <el-icon class="is-loading agenticControlRunningIcon">
+                            <Loading />
+                        </el-icon>
+                        <el-icon class="agenticControlPauseIcon">
+                            <VideoPause />
+                        </el-icon>
+                    </span>
+                    <el-icon v-else>
+                        <Refresh />
+                    </el-icon>
+                </el-button>
+            </el-tooltip>
             <el-tooltip :content="t('tooltips.saveData')" raw-content placement="bottom" v-if="0">
                 <el-button plain type="success" :icon="Select" size="small" @click="pandaState.dump({})" />
             </el-tooltip>
             <el-tooltip :content="t('tooltips.clearAndReset')" raw-content placement="bottom">
-                <el-button plain type="danger" :icon="CloseBold" size="small"
-                    @click="pandaState.setEmpty()" />
+                <el-button plain type="danger" :icon="CloseBold" size="small" @click="pandaState.setEmpty()" />
             </el-tooltip>
             <!-- TODO mv left, right button to keys foooter -->
             <!-- <el-tooltip :content="t('tooltips.previousModification') + '<br>(Shortcut key: left)'" raw-content
@@ -31,8 +48,7 @@
             </el-tooltip>
             <el-tooltip :content="t('tooltips.eraseDialog')" raw-content placement="bottom"
                 v-if="pandaState.isDeleted.value">
-                <el-button default type="danger" :icon="Delete" size="small"
-                    @click="pandaState.eraseCurrentDialog()" />
+                <el-button default type="danger" :icon="Delete" size="small" @click="pandaState.eraseCurrentDialog()" />
             </el-tooltip>
             <el-tooltip :content="t('tooltips.uploadFile') + '<br>' + t('userMessages.dropJsonHere')" raw-content
                 placement="bottom">
@@ -95,7 +111,7 @@ import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore.js'
-import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled, Postcard, Reading } from '@element-plus/icons-vue'
+import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled, Postcard, Reading, VideoPause, Refresh, Loading } from '@element-plus/icons-vue'
 import { registerKeyActions, downloadJsonFile, uploadJsonFile } from '../utils/commonUtils.js'
 import AnnotatorPanel from './AnnotatorPanel.vue'
 
@@ -112,8 +128,8 @@ const pandaState = props.responseState.pandaState
 const uploadedJson = props.responseState.uploadedJson
 const onPandaContainerRef = props.responseState.onPandaContainerRef
 const messages = props.responseState.messages
-const requestStatus = props.responseState.requestStatus
-const toolCallStatus = props.responseState.operationCenter.toolCallState.toolCallStatus
+const agenticLoopStatus = props.responseState.agenticLoopStatus
+const operationCenter = props.responseState.operationCenter
 
 const globalStore = useGlobalStore()
 
@@ -199,8 +215,18 @@ watch(onPandaContainerRef, (newContainer) => {
 
 const dataControlPanelRef = ref(null)
 const dataControlPanelButtonRowRef = ref(null)
-const isAgenticLoopRunning = computed(() => requestStatus.value.generating || toolCallStatus.value.calling)
+const isAgenticControlButtonHovering = ref(false)
 const tokens = props.responseState.tokens
+const showAgenticPauseControl = computed(() => agenticLoopStatus.running && isAgenticControlButtonHovering.value)
+
+function handleAgenticControlButtonClick() {
+    if (agenticLoopStatus.running) {
+        operationCenter.stopAgenticLoop()
+    } else {
+        operationCenter.generateNew()
+    }
+}
+
 const buttonRowAutoFollow = {
     enabled: true,
     shouldFollow: false,
@@ -256,7 +282,7 @@ const buttonRowAutoFollow = {
         cancelAnimationFrame(buttonRowAutoFollow.userScrollFrame)
         buttonRowAutoFollow.userScrollFrame = requestAnimationFrame(() => {
             buttonRowAutoFollow.userScrollFrame = 0
-            if (!buttonRowAutoFollow.enabled || !dataControlPanelButtonRowRef.value || !isAgenticLoopRunning.value && !buttonRowAutoFollow.shouldFollow) {
+            if (!buttonRowAutoFollow.enabled || !dataControlPanelButtonRowRef.value || !agenticLoopStatus.running && !buttonRowAutoFollow.shouldFollow) {
                 return
             }
             const rect = dataControlPanelButtonRowRef.value.getBoundingClientRect()
@@ -285,7 +311,7 @@ const buttonRowAutoFollow = {
         document.documentElement.style.overflowAnchor = 'none'
         window.addEventListener('wheel', buttonRowAutoFollow.handleUserScroll, { passive: true })
         window.addEventListener('touchmove', buttonRowAutoFollow.handleUserScroll, { passive: true })
-        if (isAgenticLoopRunning.value) {
+        if (agenticLoopStatus.running) {
             nextTick(buttonRowAutoFollow.reset)
         }
     },
@@ -302,7 +328,7 @@ const buttonRowAutoFollow = {
     },
 }
 
-watch(isAgenticLoopRunning, (isRunning) => {
+watch(() => agenticLoopStatus.running, (isRunning) => {
     if (!buttonRowAutoFollow.enabled) {
         return
     }
@@ -321,8 +347,7 @@ watch(isAgenticLoopRunning, (isRunning) => {
 watch([
     () => tokens.value.length,
     () => messages.value.length,
-    () => requestStatus.value.generating,
-    () => toolCallStatus.value.calling,
+    () => agenticLoopStatus.running,
 ], buttonRowAutoFollow.schedule)
 
 async function jumpToLatestUserIfNeeded() {
@@ -362,5 +387,35 @@ onBeforeUnmount(() => {
 <style>
 .on-panda-dropzone .el-upload .el-upload-dragger {
     background-color: rgb(158, 218, 255)
+}
+
+.agenticControlButton .agenticControlIconStack {
+    position: relative;
+    display: inline-flex;
+    width: 1em;
+    height: 1em;
+    align-items: center;
+    justify-content: center;
+}
+
+.agenticControlButton .agenticControlIconStack .el-icon {
+    position: absolute;
+}
+
+.agenticControlButton .agenticControlRunningIcon {
+    opacity: 1;
+    color: var(--el-text-color-regular);
+}
+
+.agenticControlButton .agenticControlPauseIcon {
+    opacity: 0;
+}
+
+.agenticControlButton:hover .agenticControlRunningIcon {
+    opacity: 0.2;
+}
+
+.agenticControlButton:hover .agenticControlPauseIcon {
+    opacity: 0.8;
 }
 </style>

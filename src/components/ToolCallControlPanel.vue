@@ -444,7 +444,7 @@ async function handleRejectTriggerClick() {
                     </span>
                 </span>
                 <el-button class="toolCallActionButton" type="danger" size="small" :icon="CloseBold"
-                    @click="toolCallState.stopToolCalls()">
+                    @click="operationCenter.stopAgenticLoop()">
                     {{ t('common.stop') }}
                 </el-button>
             </div>

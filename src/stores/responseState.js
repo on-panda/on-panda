@@ -523,6 +523,15 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             requestStatus.value.generating = false
         }
 
+        stopAgenticLoop = () => {
+            if (requestStatus.value.generating) {
+                this.stopGenerating()
+            }
+            if (toolCallState.toolCallStatus.value.calling) {
+                toolCallState.stopToolCalls()
+            }
+        }
+
         continueWithChosen = async (token, logprobItem) => {
             // function clickOnLogprobItem() {
             await toolManageState.buildRequestTools()
@@ -804,6 +813,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     const toolCallState = ToolCallStateClosure({
         toolManageState,
     })
+    const agenticLoopStatus = {
+        get running() {
+            return requestStatus.value.generating || toolCallState.toolCallStatus.value.calling
+        },
+    }
 
     const operationCenter = new OperationCenter()
     operationCenter.toolCallState = toolCallState
@@ -974,6 +988,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         rawPromptLogprobsTokens,
         isPromptLogprobsState,
         requestStatus,
+        agenticLoopStatus,
         toolManageState,
         operationCenter,
         newRoundMessage,

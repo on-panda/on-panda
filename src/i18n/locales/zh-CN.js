@@ -95,6 +95,8 @@ export default {
     cleanUI: '简洁界面（阅读模式）',
     continueGenerating: '继续生成',
     stopGenerating: '停止生成',
+    stopAgenticLoop: '运行中，要停吗？',
+    regenerate: '重新生成',
     modelTagClick: '1. 单击标签切换模型；双击标签切换模型并重新生成。\n2. 如果按住 `Ctrl` 键并点击或者用鼠标中键点击，将打开新窗口并用对应模型重新生成',
     continueGeneratingSupport: '此模型是否支持原生续写 assistant 消息？\n\n如果不支持，将使用提示工程(prompt engineering)进行续写：\n\n> ',
     refreshTokenProb: '更新词组概率和候选',

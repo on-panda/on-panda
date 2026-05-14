@@ -113,7 +113,7 @@ const { responseState, controlParameterState, toolManageState } = dialogWithCont
 
 
 const tokens = responseState.tokens
-const requestStatus = responseState.requestStatus
+const agenticLoopStatus = responseState.agenticLoopStatus
 const operationCenter = responseState.operationCenter
 
 // Initialize with welcome messages
@@ -207,7 +207,7 @@ onMounted(async () => {
     await controlParameterState.apiUpdateCompletedPromise.value
     await toolManageState.presetToolReadyPromise.value.catch(responseState.warning)
     await sleep(5)
-    if (!requestStatus.value.generating && exampleToRun) {
+    if (!agenticLoopStatus.running && exampleToRun) {
       await exampleToRun(dialogWithControlState)
     }
     if (globalStore.debug) {
