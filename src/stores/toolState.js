@@ -42,7 +42,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
 
     const presetToolConfigsInput = isRef(presetToolConfigs) ? presetToolConfigs : ref(deepCopy(presetToolConfigs || []))
     const registeredDialogCache = ref(null)
-    const registeredOperationCenter = ref(null)
+    const registeredResponseState = ref(null)
     const runtimeVersion = ref(0)
     const runtimeEntryByHash = new Map()
     const presetConfigHashToIndex = ref({})
@@ -54,21 +54,24 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     const browserAgentMcpUrl = 'local-fetch://browser-agent-mcp'
     async function registerBrowserAgentMcpServer(url) {
         function buildBrowserAgent({ callScope }) {
-            return {
+            const browserAgent = {
                 name: "root",
                 path: "root",
                 send({ text }) {
-                    if (!registeredOperationCenter.value) {
-                        throw new Error('toolManageState.registeredOperationCenter.value not ready')
+                    if (!registeredResponseState.value) {
+                        throw new Error('toolManageState.registeredResponseState.value not ready')
                     }
-                    registeredOperationCenter.value.startNewRound([
+                    registeredResponseState.value.operationCenter.startNewRound([
                         { role: 'user', content: `<|browser_agent_send_start|>\n${text}\n<|browser_agent_send_end|>` },
                     ])
                     callScope.console.log('browserAgent.send success')
                 },
                 local: {},  // store things that cross-tool_calls reuse for one agent
-                shared: {},   // TODO: share with all sub-agents
+                shared: {
+                    uiRootElement: registeredResponseState.value.onPandaContainerRef
+                },   // share with all sub-agents
             }
+            return browserAgent
         }
         const { BrowserAgentMcpClosure } = await import('../components/plugins/browserAgentMcp.js')
         localMcpServers[url] = BrowserAgentMcpClosure({
@@ -568,7 +571,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         allTools,
         matchedAllToLoadedIndex,
         currentDialogTools,
-        registeredOperationCenter,
+        registeredResponseState,
         localFetches,
         registerDialogCache,
         appendToolToDialog,

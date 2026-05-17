@@ -828,7 +828,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     const operationCenter = new OperationCenter()
     operationCenter.toolCallState = toolCallState
     operationCenter.toolManageState = toolManageState
-    toolManageState.registeredOperationCenter.value = operationCenter
     operationCenter.loadMessages(messages.value)
 
     const newRoundMessage = ref({ role: 'user', content: '' })
@@ -983,7 +982,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }, { deep: true, immediate: true, flush: 'sync' })
     }
 
-    return {
+    const responseState = {
         pandaState,
         uploadedJson,
         onPandaContainerRef,
@@ -1006,4 +1005,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         // requestPromptLogprobs, // using operationCenter instead
         // requestLlmServer
     }
+    toolManageState.registeredResponseState.value = responseState
+    return responseState
 }

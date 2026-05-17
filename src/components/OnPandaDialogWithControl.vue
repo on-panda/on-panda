@@ -35,6 +35,7 @@ onMounted(() => {
         <ToolManagePanel :responseState="responseState" :toolManageState="toolManageState" />
         <OnPandaDialogPanel :responseState="responseState">
             <template #beforeNewRoundMessageSlot>
+                <div id="browser-agent-interaction-area"></div>
                 <DataControlPanel :responseState="responseState" />
             </template>
         </OnPandaDialogPanel>
