@@ -426,6 +426,12 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             return messagesComputed.value[clampedIndex]
         }
 
+        buildRequestToolsAndResolveMessageIndex = async (messageIndex = -1) => {
+            const targetMessage = messageIndex >= 0 ? messages.value[messageIndex] : null
+            await toolManageState.buildRequestTools()
+            return targetMessage ? messages.value.indexOf(targetMessage) : messageIndex
+        }
+
         // Run tool-call and generation rounds until the assistant stops or needs manual approval.
         startAgenticLoop = async ({ autoApproveRunNum = 0, defaultFinishReason = null } = {}) => {
             await toolManageState.buildRequestTools()
@@ -468,12 +474,12 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
 
         runToolCalls = async ({ autoApproveRunNum = 1, messageIndex = -1 } = {}) => {
-            await toolManageState.buildRequestTools()
-            const toolCallMessage = this.getMessageByIndex(messageIndex)
+            const resolvedMessageIndex = await this.buildRequestToolsAndResolveMessageIndex(messageIndex)
+            const toolCallMessage = this.getMessageByIndex(resolvedMessageIndex)
             console.assert(toolCallMessage.tool_calls.length, "runToolCalls requires tool_calls", toolCallMessage)
-            if (messageIndex !== -1) {
+            if (resolvedMessageIndex !== -1) {
                 this.pandaState.beforeOperation()
-                messages.value = this.getNextMessages({ messageIndex })
+                messages.value = this.getNextMessages({ messageIndex: resolvedMessageIndex })
                 tokens.value = []
                 // if messageIndex != -1 , set nextNotSameOperationCache `on_policy: false` to prevent tool calls failures and end with tool call response
                 this.pandaState.nextNotSameOperationCache = {
@@ -485,17 +491,17 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
 
         rejectToolCalls = async ({ toolCallsRejectedGuidance = '', messageIndex = -1, autoApproveRunNum = 0 } = {}) => {
-            await toolManageState.buildRequestTools()
-            const toolCallMessage = this.getMessageByIndex(messageIndex)
+            const resolvedMessageIndex = await this.buildRequestToolsAndResolveMessageIndex(messageIndex)
+            const toolCallMessage = this.getMessageByIndex(resolvedMessageIndex)
             console.assert(toolCallMessage.tool_calls.length, "rejectToolCalls requires tool_calls", toolCallMessage)
             const rejectedToolMessages = buildRejectedToolMessages(
                 toolCallMessage.tool_calls,
                 toolCallsRejectedGuidance,
             )
-            if (messageIndex !== -1 && messages.value.length) {
+            if (resolvedMessageIndex !== -1 && messages.value.length) {
                 this.pandaState.beforeOperation()
             }
-            messages.value = this.getNextMessages({ messagesToAppend: rejectedToolMessages, messageIndex })
+            messages.value = this.getNextMessages({ messagesToAppend: rejectedToolMessages, messageIndex: resolvedMessageIndex })
             tokens.value = []
             this.pandaState.setCurrentIsGood(false, true)
             this.pandaState.afterOperation({
@@ -578,9 +584,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
 
         generateNew = async ({ messageIndex = -1 } = {}) => {
-            await toolManageState.buildRequestTools()
+            const resolvedMessageIndex = await this.buildRequestToolsAndResolveMessageIndex(messageIndex)
             const shouldContinueFinalMessage = (
-                messageIndex === -1 &&
+                resolvedMessageIndex === -1 &&
                 !messageToSeq(finalMessage.value, { includeFinishReason: false }) &&
                 finalMessage.value.role &&
                 apiConfig.value.support_continue_final_message
@@ -590,8 +596,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 await this.continueGenerating()
             } else {
                 this.pandaState.beforeOperation()
-                if (messageIndex >= 0 && messages.value.length) {
-                    const clampedIndex = Math.min(messageIndex, messages.value.length - 1)
+                if (resolvedMessageIndex >= 0 && messages.value.length) {
+                    const clampedIndex = Math.min(resolvedMessageIndex, messages.value.length - 1)
                     messages.value = messages.value.slice(0, clampedIndex + 1)
                 }
                 tokens.value = []
@@ -599,7 +605,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                     operator: "generate_new",
                     is_new_generated: true,
                     on_policy: true,
-                    message_index: messageIndex,
+                    message_index: resolvedMessageIndex,
                 })
                 await this.startAgenticLoop()
             }
