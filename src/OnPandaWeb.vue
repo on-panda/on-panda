@@ -185,6 +185,7 @@ onMounted(async () => {
         modelName.value = "k2.6-instruct-wo-parser-tag"
         onPandaExamplesRef.value.exampleNameToFunc["tools"](dialogWithControlState)
       }
+      exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["🤖 browser-agent"]
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["js"]
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
       var _exampleToRun = () => {

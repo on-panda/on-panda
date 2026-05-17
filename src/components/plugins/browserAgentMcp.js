@@ -15,7 +15,7 @@ const SUPPORTED_BLOB_CHUNK_TYPES = {
 
 const runBrowserJsTool = {
     name: 'run_browser_js',
-    description: 'Run JavaScript in the current browser runtime and returns logs from `console.log`. `console.log` accepts `Blob` arguments of MCP-supported image, audio, and video types, returned as inline media in your context. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. You can access the internet under CORS restrictions.',
+    description: 'Run JavaScript in the current browser runtime and returns logs from `console.log`. `console.log` accepts `Blob` arguments of MCP-supported image, audio, and video types, returned as inline media in your context. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. You can access the internet under CORS restrictions. Do not refresh or switch the current webpage, as this will reset the JavaScript runtime and your context lost.',
     inputSchema: {
         type: 'object',
         properties: {
@@ -258,7 +258,7 @@ export function BrowserAgentMcpClosure({ buildBrowserAgent, proxyPath = '' } = {
         ? `\n    - Fallback: for critical resources that even cors-internet cannot reach, use the server-side proxy at \`${proxyPath}/{url}\`.`
         : ''
 
-    const instructions = `You are an agent running in a browser. You are operating in the JavaScript runtime of the current webpage, where the user interacts with you. So, make corresponding adaptations and adjustments for this browser JavaScript environment.
+    const instructions = `You are an agent running in a browser. You are operating in the JavaScript runtime of the current webpage, where the user interacts with you. Please make the appropriate adjustments for this browser JavaScript environment.
 
 ## Skills
 A skill is a set of instructions to follow that is stored in a \`SKILL.md\` file. Below is the list of skills that can be used. Each entry includes a name, description, and skillUrl so you can open the source for full instructions when using a specific skill.
