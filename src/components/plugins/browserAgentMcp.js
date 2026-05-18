@@ -15,7 +15,7 @@ const SUPPORTED_BLOB_CHUNK_TYPES = {
 
 const runBrowserJsTool = {
     name: 'run_browser_js',
-    description: 'Run JavaScript in the current browser runtime and returns logs from `console.log`. `console.log` accepts `Blob` arguments of MCP-supported image, audio, and video types, returned as inline media in your context. Each call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. You can access the internet under CORS restrictions. Do not refresh or switch the current webpage, as this will reset the JavaScript runtime and your context lost.',
+    description: 'Run JavaScript in the current browser runtime and return logs from `console.log`. `console.log` accepts `Blob` arguments of MCP-supported image, audio, and video types, returned as inline media in your context. Each tool call uses a fresh local scope, so local variables do not persist across calls, but shared globals like window and document do persist. Your JavaScript local scope includes a `browserAgent` variable. For content that should be reused across tool calls, prefer storing it on the `browserAgent.local` object. You can access the internet under CORS restrictions. Do not refresh or switch the current webpage, as this will reset the JavaScript runtime and your context lost.',
     inputSchema: {
         type: 'object',
         properties: {

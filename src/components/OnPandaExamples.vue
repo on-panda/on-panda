@@ -284,7 +284,7 @@ const defaultExampleNameToFunc = {
     var JsExampleMessages = [{ role: "user", content: "AI news in the past week." }]
     if (isZh.value) {
       JsExampleMessages = [{
-        role: "user", content: "最近一周的 AI 新闻。", comment: `一些 browser-agent 能执行的任务：
+        role: "user", content: "最近一周的 AI 新闻。", comment: `【任务例子】
 - 用 render_svg 绘制："熊猫骑在骆驼上" 的 SVG 图像，并迭代 3 次。
 - 北京的天气如何？实现一个带动效的天气小卡片放在右上角。
 - 收集 step-3.5-flash 模型信息，然后实现一个苹果官网风格的介绍网页。

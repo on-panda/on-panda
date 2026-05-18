@@ -53,6 +53,11 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     const localMcpServerLocks = {}
     const browserAgentMcpUrl = 'local-fetch://browser-agent-mcp'
     async function registerBrowserAgentMcpServer(url) {
+        // Cross tool_calls storage needs to be initialized outside of buildBrowserAgent
+        const local = {}
+        const shared = {
+            uiRootElement: registeredResponseState.value.onPandaContainerRef
+        }  // TODO: only for root agent, sub agent ref this
         function buildBrowserAgent({ callScope }) {
             const browserAgent = {
                 name: "root",
@@ -66,10 +71,8 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                     ])
                     callScope.console.log('browserAgent.send success')
                 },
-                local: {},  // store things that cross-tool_calls reuse for one agent
-                shared: {
-                    uiRootElement: registeredResponseState.value.onPandaContainerRef
-                },   // share with all sub-agents
+                local: local,  // store things that cross-tool_calls reuse for one agent
+                shared: shared,   // share with all sub-agents
             }
             return browserAgent
         }
