@@ -68,6 +68,7 @@ export default {
     waiting: 'Waiting...',
     copied: 'Copied',
     copyFailed: 'Copy failed',
+    pasteManually: 'Clipboard read failed. Please paste manually.',
     responseRefreshed: 'Response probability refreshed',
     modelsRefreshed: 'Model list refresh completed',
     noPromptLogprobs: 'No prompt_logprobs in response, maybe the model does not support prompt_logprobs',
@@ -76,6 +77,10 @@ export default {
     openAnnotatorPanel: 'Open annotator panel',
     waitingForModel: 'request, waiting response from model:',
     clickSendButton: '➡️ Please click the send button.'
+  },
+  localMcp: {
+    safariUnsupportedTitle: 'Please use desktop Chrome to connect local MCP',
+    safariUnsupportedMessage: 'Safari and iOS browsers block HTTPS pages from connecting to local HTTP MCP servers. Please use desktop Chrome or Firefox for this feature.'
   },
   tooltips: {
     dialogKeyHint: `Dialog tab:

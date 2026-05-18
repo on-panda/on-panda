@@ -64,17 +64,36 @@ const tokensModelNames = computed(() => {
 })
 
 async function handleCopyButtonClick() {
-    await copyToClipboard(finalMessage.value.content)
-    ElMessage({
-        showClose: true,
-        message: t('userMessages.copied'),
-        type: 'success',
-        duration: 2000,
-    })
+    try {
+        await copyToClipboard(finalMessage.value.content)
+        ElMessage({
+            showClose: true,
+            message: t('userMessages.copied'),
+            type: 'success',
+            duration: 2000,
+        })
+    } catch {
+        ElMessage({
+            showClose: true,
+            message: t('userMessages.copyFailed'),
+            type: 'error',
+            duration: 5000,
+        })
+    }
 }
 
 async function pasteThenRequestPromptLogprobs() {
-    var pasteText = await navigator.clipboard.readText()
+    try {
+        var pasteText = await navigator.clipboard.readText()
+    } catch {
+        ElMessage({
+            showClose: true,
+            message: t('userMessages.pasteManually'),
+            type: 'warning',
+            duration: 5000,
+        })
+        return
+    }
     if (tokens.value.length == 0) {
         tokens.value = [{ delta: { role: "assistant", content: "" } }]
     }

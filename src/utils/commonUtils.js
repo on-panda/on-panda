@@ -221,21 +221,27 @@ export function closeFloatPanelMeta(refElement, closeFunction, usingEscapeKey = 
 export async function copyToClipboard(string) {
   const useNavigatorClipboard = navigator?.clipboard?.writeText && window.isSecureContext
   if (useNavigatorClipboard) {
-    await navigator.clipboard.writeText(string)
-  } else {  // fallback to document.execCommand('copy'), only works when user click
-    const textarea = document.createElement('textarea')
-    textarea.value = string
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    textarea.style.pointerEvents = 'none'
-    document.body.appendChild(textarea)
-    textarea.focus()
-    textarea.select()
     try {
-      document.execCommand('copy')
-    } finally {
-      document.body.removeChild(textarea)
+      await navigator.clipboard.writeText(string)
+      return
+    } catch {
+      // Fallback to execCommand when async clipboard is denied.
     }
+  }
+  const textarea = document.createElement('textarea')
+  textarea.value = string
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  textarea.style.pointerEvents = 'none'
+  document.body.appendChild(textarea)
+  textarea.focus()
+  textarea.select()
+  try {
+    if (!document.execCommand('copy')) {
+      throw new Error('Copy failed')
+    }
+  } finally {
+    document.body.removeChild(textarea)
   }
 }
 

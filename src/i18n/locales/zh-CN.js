@@ -68,6 +68,7 @@ export default {
     waiting: '等待中...',
     copied: '已复制',
     copyFailed: '复制失败',
+    pasteManually: '读取剪贴板失败，请手动粘贴。',
     responseRefreshed: '响应概率已刷新',
     modelsRefreshed: '模型列表刷新完成',
     noPromptLogprobs: '响应中没有 prompt_logprobs，可能当前模型不支持刷新概率和候选',
@@ -76,6 +77,10 @@ export default {
     openAnnotatorPanel: '打开标注面板',
     waitingForModel: '请求，正在等待模型响应：',
     clickSendButton: '➡️ 请点击生成按钮'
+  },
+  localMcp: {
+    safariUnsupportedTitle: '请使用桌面版 Chrome 连接本地 MCP',
+    safariUnsupportedMessage: 'Safari 和 iOS 浏览器会阻止 HTTPS 页面连接本地 HTTP MCP server。请使用桌面版 Chrome 或 Firefox 使用该功能。'
   },
   tooltips: {
     dialogKeyHint: `对话标签页说明：

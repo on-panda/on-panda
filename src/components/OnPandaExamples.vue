@@ -10,10 +10,13 @@
 
 <script setup>
 import { computed, nextTick } from 'vue'
+import { ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { sleep } from '../utils/commonUtils.js'
 import { useGlobalStore } from '../stores/globalStore.js'
 
 const globalStore = useGlobalStore()
+const { t } = useI18n()
 
 const props = defineProps({
   dialogWithControlState: {
@@ -231,6 +234,28 @@ function switchDefaultToAgentTag() {
   }
 }
 
+function checkLocalhostMcpSupport() {
+  const userAgent = navigator.userAgent
+  const isIosWebKitBrowser = /CriOS|FxiOS|EdgiOS/.test(userAgent)
+  const isSafari = userAgent.includes('Safari')
+    && !/Chrome|Chromium|CriOS|FxiOS|Edg|EdgiOS|OPR|Opera/.test(userAgent)
+  if ((!isSafari && !isIosWebKitBrowser) || window.location.protocol !== 'https:') {
+    return
+  }
+  ElMessageBox.alert(
+    t('localMcp.safariUnsupportedMessage'),
+    t('localMcp.safariUnsupportedTitle'),
+    {
+      customClass: 'on-panda-local-mcp-message-box',
+      confirmButtonText: 'OK',
+      buttonSize: 'small',
+      showClose: true,
+      type: 'warning',
+    },
+  ).catch(() => {})
+  throw new Error(t('localMcp.safariUnsupportedTitle'))
+}
+
 // Define all example functions
 const defaultExampleNameToFunc = {
   "clear": () => {
@@ -326,6 +351,7 @@ const defaultExampleNameToFunc = {
       type: 'mcp',
       server_url: 'http://127.0.0.1:9330/mcp',
     }]
+    checkLocalhostMcpSupport()
     // operationCenter.generateNew()
   },
   "GUI-agent": () => {
@@ -347,6 +373,7 @@ const defaultExampleNameToFunc = {
       server_url: 'http://127.0.0.1:9300/mcp',
       require_approval: 'always',
     }]
+    checkLocalhostMcpSupport()
     // operationCenter.generateNew()
   },
   // "svg": () => {
@@ -428,3 +455,11 @@ defineExpose({
 })
 
 </script>
+
+<style>
+.on-panda-local-mcp-message-box {
+  max-width: min(420px, calc(100vw - 32px));
+  border-radius: 6px;
+  font-family: Arial, sans-serif;
+}
+</style>
