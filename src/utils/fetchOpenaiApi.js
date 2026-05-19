@@ -57,28 +57,71 @@ async function* splitMultiTokensChunk(stream) {
       // sometimes, reasoning_content or reasoning is string and content is empty string
       delete delta.content
     }
-    const deltaField = delta && (('content' in delta && 'content') ||
-      ('reasoning_content' in delta && 'reasoning_content') ||
-      ('reasoning' in delta && 'reasoning'))
-    if (!deltaField) {
+    const deltaFields = ['reasoning_content', 'reasoning', 'content'].filter(field => typeof delta[field] === 'string' && delta[field] !== '')
+    if (!deltaFields.length) {
       yield chunk
       continue
     }
     choice.tokenInfo = choice.tokenInfo ?? ''  // add tokenInfo for debugging TODO: remove
-    choice.tokenInfo += delta?.[deltaField] ?? ''
+    choice.tokenInfo += deltaFields.map(field => delta[field]).join('')
 
+    let fieldIndex = 0
+    let fieldOffset = 0
+    const deltaField = deltaFields[0]
     const deltaText = delta?.[deltaField] ?? ''
     const tokensText = logprobsContent.map(item => item?.token ?? '').join('')
 
     for (let i = 0; i < logprobsContent.length; i++) {
       const logprobItem = logprobsContent[i]
       const isLast = i === logprobsContent.length - 1
-      if (tokensText == deltaText) {  // try to split
-        var splitTokenText = logprobItem?.token ?? ''
-      } else {  // else its one patch
-        var splitTokenText = isLast ? deltaText : ''
+      let splitDelta
+      if (deltaFields.length > 1) {
+        splitDelta = { ...delta }
+        for (const field of deltaFields) {
+          delete splitDelta[field]
+        }
+        const tokenText = logprobItem?.token ?? ''
+        let tokenOffset = 0
+        while (tokenOffset < tokenText.length && fieldIndex < deltaFields.length) {
+          const field = deltaFields[fieldIndex]
+          const fieldText = delta[field]
+          const fieldRemaining = fieldText.slice(fieldOffset)
+          if (!fieldRemaining) {
+            fieldIndex++
+            fieldOffset = 0
+            continue
+          }
+
+          let tokenRemaining = tokenText.slice(tokenOffset)
+          if (!fieldRemaining.startsWith(tokenRemaining) && !tokenRemaining.startsWith(fieldRemaining)) {
+            let nextTokenOffset = -1
+            for (let index = 1; index < tokenRemaining.length; index++) {
+              const nextTokenRemaining = tokenRemaining.slice(index)
+              if (fieldRemaining.startsWith(nextTokenRemaining) || nextTokenRemaining.startsWith(fieldRemaining)) {
+                nextTokenOffset = index
+                break
+              }
+            }
+            if (nextTokenOffset === -1) {
+              break
+            }
+            tokenOffset += nextTokenOffset
+            tokenRemaining = tokenText.slice(tokenOffset)
+          }
+
+          const splitTokenText = fieldRemaining.startsWith(tokenRemaining) ? tokenRemaining : fieldRemaining
+          splitDelta[field] = (splitDelta[field] || '') + splitTokenText
+          fieldOffset += splitTokenText.length
+          tokenOffset += splitTokenText.length
+          if (fieldOffset === fieldText.length) {
+            fieldIndex++
+            fieldOffset = 0
+          }
+        }
+      } else {
+        const splitTokenText = tokensText == deltaText ? logprobItem?.token ?? '' : isLast ? deltaText : ''
+        splitDelta = { ...delta, [deltaField]: splitTokenText }
       }
-      const splitDelta = { ...delta, [deltaField]: splitTokenText }
       if (i > 0 && 'role' in splitDelta) {
         delete splitDelta.role
       }
