@@ -451,8 +451,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             const fileMessage = {
                 role: 'user',
                 content: `<|user_local_files_start|>
-User drop those files to you, using \`browserAgent.shared.userLocalFiles[key]\` to get the file object. Here is the files list in \`\${key}: \${object.constructor.name}\` format:
-${addedFiles.map(({ key, handleOrEntry }) => `- ${key}: ${handleOrEntry.constructor.name}`).join('\n')}
+User share those files to you, please load "user-local-files" skill:
+${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.constructor.name}`).join('\n')}
 <|user_local_files_end|>`,
             }
             this.pandaState.beforeOperation()

@@ -205,6 +205,9 @@ export function normalizeRequest(requestBody) {
             delete message.finish_reason
             delete message.comment
             delete message.description
+            if (!message.name) {
+                delete message.name  // delete name: null
+            }
         })
     }
     if (body.stop) {

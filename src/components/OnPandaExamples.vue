@@ -323,7 +323,7 @@ const defaultExampleNameToFunc = {
       type: 'mcp',
       server_url: 'local-fetch://browser-agent-mcp',
     }]
-    operationCenter.generateNew()
+    // operationCenter.generateNew()
   },
   "🐱 pet": () => {
     switchDefaultToAgentTag()
