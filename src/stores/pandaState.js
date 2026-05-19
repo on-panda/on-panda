@@ -385,18 +385,10 @@ export class PandaState {
 
 
         if (isMessages) {
-            const normalizedMessages = obj.map(message => {
-                const nextMessage = { ...message }
-                if (typeof nextMessage.reasoning_content === 'string' && !nextMessage.reasoning) {
-                    nextMessage.reasoning = nextMessage.reasoning_content
-                }
-                delete nextMessage.reasoning_content
-                return nextMessage
-            })
             return {
                 dialogs: {
                     "1": {
-                        messages: normalizedMessages,
+                        messages: obj.map(message => ({ ...message })),
                         annotate: { is_good: null }
                     }
                 }
@@ -454,6 +446,12 @@ export class PandaState {
                 // set is_good default when has annotate
                 if (dialog.annotate && !('is_good' in dialog.annotate)) {
                     dialog.annotate.is_good = null
+                }
+                for (var message of dialog.messages) {
+                    if (typeof message.reasoning_content === 'string' && !('reasoning' in message)) {
+                        message.reasoning = message.reasoning_content
+                    }
+                    delete message.reasoning_content
                 }
             }
         }
