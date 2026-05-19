@@ -15,6 +15,8 @@ import {
     stripRuntime,
 } from '../utils/toolUtils.js'
 
+export const browserAgentMcpUrl = 'local-fetch://browser-agent-mcp'
+
 export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     // When constructed post-mount (e.g. from a computed during render), skip onMounted and treat as mounted.
     const instance = getCurrentInstance()
@@ -57,7 +59,6 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         },
         userLocalFiles: {},
     }
-    const browserAgentMcpUrl = 'local-fetch://browser-agent-mcp'
     async function registerBrowserAgentMcpServer(url) {
         // Cross tool_calls storage needs to be initialized outside of buildBrowserAgent
         const local = {}

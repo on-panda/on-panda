@@ -11,7 +11,7 @@ import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
 import { WarningState } from './warningState.js'
 import { defaultApiConfig, CONTINUE_PROMPT } from './controlParameterState.js'
-import { ToolManageStateClosure, ToolCallStateClosure } from './toolState.js'
+import { ToolManageStateClosure, ToolCallStateClosure, browserAgentMcpUrl } from './toolState.js'
 
 export const defaultMessages = [{ role: "system", content: "" }, { role: "user", content: "" }]
 
@@ -456,6 +456,17 @@ ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.cons
 <|user_local_files_end|>`,
             }
             this.pandaState.beforeOperation()
+            // try to add tool config for browser agent mcp if not exist
+            const dialogCache = this.pandaState.dialogCache.value
+            if (!('tools' in dialogCache)) {
+                dialogCache.tool_configs = dialogCache.tool_configs || []
+                if (!dialogCache.tool_configs.some(toolConfig => toolConfig.server_url === browserAgentMcpUrl)) {
+                    dialogCache.tool_configs.push({
+                        type: 'mcp',
+                        server_url: browserAgentMcpUrl,
+                    })
+                }
+            }
             const nextMessages = this.getNextMessages()
             let insertIndex = nextMessages.length
             if (nextMessages[insertIndex - 1]?.role === 'user') {
