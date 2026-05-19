@@ -50,9 +50,9 @@
                 v-if="pandaState.isDeleted.value">
                 <el-button default type="danger" :icon="Delete" size="small" @click="pandaState.eraseCurrentDialog()" />
             </el-tooltip>
-            <el-tooltip :content="t('tooltips.uploadFile') + '<br>' + t('userMessages.dropJsonHere')" raw-content
+            <el-tooltip :content="t('tooltips.uploadFile') + '<br>' + t('userMessages.dropFilesHere')" raw-content
                 placement="bottom">
-                <el-button :icon="UploadFilled" size="small" @click="uploadAndLoadJson"
+                <el-button :icon="UploadFilled" size="small" @click="uploadFile"
                     :style="isDragged ? { backgroundColor: 'rgb(158, 218, 255)' } : {}" />
             </el-tooltip>
             <el-tooltip :content="t('tooltips.downloadFile')" raw-content placement="bottom">
@@ -92,14 +92,14 @@
 
         <el-dialog v-model="isDragged" style="width: 80%;">
             <el-upload v-show="isDragged" class="on-panda-dropzone" :drag="true" :auto-upload="false"
-                :on-change="handleDropJson" accept=".json" :multiple="false">
+                :on-change="handleDropJson" :multiple="false" @drop.capture.prevent.stop="handleDropFiles">
                 <el-icon class="el-icon--upload"><upload-filled /></el-icon>
                 <div class="el-upload__text">
-                    {{ t('userMessages.dropJsonHere') }}
+                    {{ t('userMessages.dropFilesHere') }}
                 </div>
                 <template #tip>
                     <div class="el-upload__tip">
-                        {{ t('userMessages.onlyOneJsonFile') }}
+                        {{ t('userMessages.localFilesUploadTip') }}
                     </div>
                 </template>
             </el-upload>
@@ -112,7 +112,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useGlobalStore } from '../stores/globalStore.js'
 import { Select, Back, Right, RefreshLeft, RefreshRight, Delete, Help, CloseBold, Download, UploadFilled, Postcard, Reading, VideoPause, Refresh, Loading } from '@element-plus/icons-vue'
-import { registerKeyActions, downloadJsonFile, uploadJsonFile } from '../utils/commonUtils.js'
+import { registerKeyActions, downloadJsonFile } from '../utils/commonUtils.js'
 import AnnotatorPanel from './AnnotatorPanel.vue'
 
 const { t } = useI18n()
@@ -139,36 +139,55 @@ registerKeyActions({
 })
 
 
-async function uploadAndLoadJson() {
+async function uploadFile() {
     isDragged.value = false;
-    uploadedJson.value = await uploadJsonFile()
-    pandaState.load(uploadedJson.value.data)
-    ElMessage.success('JSON file uploaded successfully.');
-    jumpToLatestUserIfNeeded()
+    const fileInput = document.createElement('input')
+    fileInput.type = 'file'
+    fileInput.onchange = async () => {
+        const file = fileInput.files[0]
+        if (isPandaJsonFile(file)) {
+            await loadPandaJsonFile(file)
+        } else {
+            operationCenter.addUserLocalFiles([{ path: file.name, handleOrEntry: file }])
+        }
+    }
+    fileInput.click()
 }
 
-const handleDropJson = (uploadFile) => {
+function isPandaJsonFile(file) {
+    const name = file.name
+    return name.includes('.panda') && name.endsWith('.json')
+}
+
+function loadPandaJsonFile(file) {
+    return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(reader.result);
+
+                pandaState.load(data);
+                uploadedJson.value = { name: file.name, file, data, }
+                ElMessage.success('JSON file uploaded successfully.');
+                jumpToLatestUserIfNeeded()
+            } catch (error) {
+                ElMessage.error('Invalid JSON file!');
+                console.error(error);
+            }
+            resolve()
+        };
+        reader.readAsText(file);
+        isDragged.value = false;
+    })
+}
+
+const handleDropJson = async (uploadFile) => {
     const file = uploadFile.raw;
-    if (!file.name.toLowerCase().endsWith('.json')) {
-        ElMessage.error('Please upload JSON file only!');
+    if (!isPandaJsonFile(file)) {
+        operationCenter.addUserLocalFiles([{ path: file.name, handleOrEntry: file }])
         return;
     }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const data = JSON.parse(reader.result);
-
-            pandaState.load(data);
-            uploadedJson.value = { name: file.name, file, data, }
-            ElMessage.success('JSON file uploaded successfully.');
-            jumpToLatestUserIfNeeded()
-        } catch (error) {
-            ElMessage.error('Invalid JSON file!');
-            console.error(error);
-        }
-    };
-    reader.readAsText(file);
-    isDragged.value = false;
+    await loadPandaJsonFile(file)
 };
 
 const clickToDownload = async () => {
@@ -182,6 +201,50 @@ const clickToDownload = async () => {
     downloadJsonFile(await pandaState.dump({ includeCache: true }), name)
 }
 
+
+async function getFileFromHandleOrEntry(handleOrEntry) {
+    if (handleOrEntry.getFile) {
+        return await handleOrEntry.getFile()
+    }
+    return await new Promise(resolve => handleOrEntry.file(resolve))
+}
+
+async function getDroppedFileItem(item) {
+    if (item.getAsFileSystemHandle) {
+        const handle = await item.getAsFileSystemHandle()
+        return {
+            path: handle.name,
+            handleOrEntry: handle,
+            file: handle.kind === 'file' ? await getFileFromHandleOrEntry(handle) : null,
+        }
+    }
+    const entry = item.webkitGetAsEntry()
+    return {
+        path: (entry.fullPath || entry.name).replace(/^\//, ''),
+        handleOrEntry: entry,
+        file: entry.isFile ? await getFileFromHandleOrEntry(entry) : null,
+    }
+}
+
+async function handleDropFiles(event) {
+    isDragged.value = false
+    const items = Array.from(event.dataTransfer.items || [])
+    const droppedFilePromises = items
+        .filter(item => item.kind === 'file' && (item.getAsFileSystemHandle || item.webkitGetAsEntry))
+        .map(item => getDroppedFileItem(item))
+    const droppedFiles = await Promise.all(droppedFilePromises)
+    if (!droppedFiles.length) {
+        for (const file of Array.from(event.dataTransfer.files || [])) {
+            droppedFiles.push({ path: file.name, handleOrEntry: file, file })
+        }
+    }
+
+    if (droppedFiles.length === 1 && droppedFiles[0].file && isPandaJsonFile(droppedFiles[0].file)) {
+        await loadPandaJsonFile(droppedFiles[0].file)
+        return
+    }
+    operationCenter.addUserLocalFiles(droppedFiles.map(({ path, handleOrEntry }) => ({ path, handleOrEntry })))
+}
 
 const isDragged = ref(false)
 watch(onPandaContainerRef, (newContainer) => {

@@ -432,6 +432,50 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             return targetMessage ? messages.value.indexOf(targetMessage) : messageIndex
         }
 
+        addUserLocalFiles = (files = []) => {
+            const userLocalFiles = toolManageState.browserAgentShared.userLocalFiles
+            const addedFiles = files.map(({ path, handleOrEntry }) => {
+                let key = path
+                let i = 1
+                while (key in userLocalFiles) {
+                    key = `another${i}/${path}`
+                    i += 1
+                }
+                userLocalFiles[key] = handleOrEntry
+                return { key, handleOrEntry }
+            })
+            if (!addedFiles.length) {
+                return
+            }
+
+            const fileMessage = {
+                role: 'user',
+                content: `<|user_local_files_start|>
+User drop those files to you, using \`browserAgent.shared.userLocalFiles[key]\` to get the file object. Here is the files list in \`\${key}: \${object.constructor.name}\` format:
+${addedFiles.map(({ key, handleOrEntry }) => `- ${key}: ${handleOrEntry.constructor.name}`).join('\n')}
+<|user_local_files_end|>`,
+            }
+            this.pandaState.beforeOperation()
+            const nextMessages = this.getNextMessages()
+            let insertIndex = nextMessages.length
+            if (nextMessages[insertIndex - 1]?.role === 'user') {
+                while (
+                    insertIndex > 0 &&
+                    nextMessages[insertIndex - 1].role === 'user' &&
+                    !(typeof nextMessages[insertIndex - 1].content === 'string' && nextMessages[insertIndex - 1].content.includes('<|user_local_files_'))
+                ) {
+                    insertIndex -= 1
+                }
+            }
+            nextMessages.splice(insertIndex, 0, fileMessage)
+            messages.value = nextMessages
+            tokens.value = []
+            this.pandaState.afterOperation({
+                operator: "add_user_local_files",
+                on_policy: false,
+            })
+        }
+
         // Run tool-call and generation rounds until the assistant stops or needs manual approval.
         startAgenticLoop = async ({ autoApproveRunNum = 0, defaultFinishReason = null } = {}) => {
             await toolManageState.buildRequestTools()
