@@ -451,7 +451,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             const fileMessage = {
                 role: 'user',
                 content: `<|user_local_files_start|>
-User share those files to you, please load "user-local-files" skill:
+User shares those files with you. Please load the "user-local-files" skill:
 ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.constructor.name}`).join('\n')}
 <|user_local_files_end|>`,
             }

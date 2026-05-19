@@ -263,9 +263,9 @@ export function BrowserAgentMcpClosure({ buildBrowserAgent, proxyPath = '' } = {
 ## Skills
 A skill is a set of instructions to follow that is stored in a \`SKILL.md\` file. Below is the list of skills that can be used. Each entry includes a name, description, and skillUrl so you can open the source for full instructions when using a specific skill.
 ### Available skills
-- \`cors-internet\`: Browser JS agent patterns for web search and information retrieval under CORS. Use when you need to access the internet for any information acquisition. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/cors-internet/SKILL.md))${corsInternetSupplement}
-- \`interactive-webpage\`: Browser JS agent patterns for creating webpages or interactive artifacts, and for modifying the current UI. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/interactive-webpage/SKILL.md))
-- \`user-local-files\`: Browser JS agent patterns for reading user-shared local files, requesting write access, and inspecting local git repositories. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/user-local-files/SKILL.md))
+- \`cors-internet\`: Skill for web search and information retrieval under CORS. Use when you need to access the internet. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/cors-internet/SKILL.md))${corsInternetSupplement}
+- \`interactive-webpage\`: Use when you need to create webpages or interactive artifacts, or modify the current UI. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/interactive-webpage/SKILL.md))
+- \`user-local-files\`: Use when the user shares local files, indicated by \`<|user_local_files\` in the context. Includes local filesystem read/write guidelines and common tools. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/user-local-files/SKILL.md))
 ### How to load skills
 If the task clearly matches a skill's description shown above, using tool "run_browser_js" with this pattern code to load the skill:
 \`\`\`js

@@ -252,7 +252,7 @@ function checkLocalhostMcpSupport() {
       showClose: true,
       type: 'warning',
     },
-  ).catch(() => {})
+  ).catch(() => { })
   throw new Error(t('localMcp.safariUnsupportedTitle'))
 }
 
@@ -310,13 +310,14 @@ const defaultExampleNameToFunc = {
     if (isZh.value) {
       JsExampleMessages = [{
         role: "user", content: "最近一周的 AI 新闻。", comment: `【任务例子】
-- 用 render_svg 绘制："熊猫骑在骆驼上" 的 SVG 图像，并迭代 3 次。
-- 北京的天气如何？实现一个带动效的天气小卡片放在右上角。
 - 收集 step-3.5-flash 模型信息，然后实现一个苹果官网风格的介绍网页。
+- 用 render_svg 绘制："熊猫骑在骆驼上" 的 SVG 图像，并迭代 3 次。
+- 查看论文第一页的截图，评价图1的设计和配色 https://arxiv.org/pdf/2401.00036
+- 北京的天气如何？实现一个带动效的天气小卡片放在右上角。
 - 介绍一下 github 项目 on-panda/harness_to_mcp
 - 请 review 一下这个 pull request: https://github.com/vllm-project/vllm/pull/33523
-- 找到当前界面中的 logo 图片，请阅读图片并描述内容。
-- 查看 PDF 第一页的截图，评价图1的设计和配色 https://arxiv.org/pdf/2401.00036` }]
+- 统计我上传的文件夹的存储分布，并在文件夹下创建 stat.html 来展示（需用户拖拽上传）
+- review 这个 repo 未 commit 的改动，有 BUG 请直接修改（需用户拖拽上传）` }]
     }
     operationCenter.loadMessages(JsExampleMessages)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{

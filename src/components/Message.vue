@@ -39,8 +39,8 @@
     </div>
     <div v-else class="editorAndDetails">
       <div class="messagePrimaryActionRow">
-        <el-input class="message-content messagePrimaryActionContent" v-model="messageDraft" type="textarea"
-          :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: 50 }"
+        <el-input ref="messageContentInput" class="message-content messagePrimaryActionContent" v-model="messageDraft"
+          type="textarea" :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: 50 }"
           @keydown.ctrl.enter="handlePrimaryAction" @paste="handlePaste" @focus="handleEditorFocus"
           @blur="handleEditorBlur" />
 
@@ -75,7 +75,7 @@ import MessageRole from './widgets/MessageRole.vue'
 import EditableStringAttribute from './widgets/EditableStringAttribute.vue'
 import MessageAsTextRender from './widgets/MessageAsTextRender.vue'
 
-import { computed, ref, onMounted, onBeforeUnmount, watch, watchEffect } from 'vue'
+import { computed, ref, nextTick, onMounted, onBeforeUnmount, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { convertImageUrlToBase64, deepCopy, mockObject, sleep, TaskQueue } from '../utils/commonUtils.js'
 import { Close, Delete, Edit } from '@element-plus/icons-vue'
@@ -194,7 +194,7 @@ const messageActionIcon = computed(() => hasClearableMessageContent.value ? Dele
 const messageActionTooltip = computed(() => hasClearableMessageContent.value ? t('chatMessage.clear') : t('chatMessage.delete'))
 const primaryActionButtonStyle = computed(() => ({
   cursor: isPrimaryActionDisabled.value ? 'not-allowed' : 'pointer',
-  'background-color': isPrimaryActionDisabled.value ? 'rgb(185, 228, 255)': "lightskyblue",
+  'background-color': isPrimaryActionDisabled.value ? 'rgb(185, 228, 255)' : "lightskyblue",
 }))
 
 const showMessageDraftWarning = computed(() => {
@@ -213,6 +213,14 @@ const isRenderRole = computed(() => ['assistant', 'context', 'tool'].includes(ge
 const isRenderContentEditing = ref(false)
 
 const isRenderContentEditingButton = ref(null)
+const messageContentInput = ref(null)
+
+function focusMessageContentInput() {
+  nextTick(() => {
+    const textarea = messageContentInput.value || document.getElementById(messageAnchorId.value).querySelector('textarea')
+    textarea.focus()
+  })
+}
 
 function getCodecContext() {
   return {
@@ -292,17 +300,24 @@ function handleToggleRenderContentEditing() {
   isRenderContentEditing.value = !isRenderContentEditing.value
 }
 
-function queueDeleteMessageTask() {
+function queueDeleteMessageTask({ focusTextareaAfterClear = false } = {}) {
   taskQueue.addTask(async () => await sleep(1))
   // if not sleep, will cause element-plus.js Uncaught (in promise) TypeError: Cannot read properties of null (reading 'offsetHeight')
   taskQueue.addTask(async () => props.operationCenter.clearOrDeleteMessage(getMessage(), props.messageIndex))
+  if (focusTextareaAfterClear) {
+    taskQueue.addTask(focusMessageContentInput)
+  }
 }
 
 function handleDeleteMessage() {
+  const shouldFocusTextareaAfterClear = hasClearableMessageContent.value && !isRenderRole.value
   if (usingOperators) {
-    queueDeleteMessageTask()
+    queueDeleteMessageTask({ focusTextareaAfterClear: shouldFocusTextareaAfterClear })
   } else {
     emit('deleteMessage')
+    if (shouldFocusTextareaAfterClear) {
+      focusMessageContentInput()
+    }
   }
 }
 
