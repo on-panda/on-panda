@@ -5,8 +5,9 @@
             <!-- <span class="stretch" style="margin-right: auto" /> -->
             <el-tooltip :content="agenticLoopStatus.running ? t('tooltips.stopAgenticLoop') : t('tooltips.regenerate')"
                 raw-content placement="bottom">
-                <el-button class="agenticControlButton" size="small" :plain="showAgenticPauseControl"
-                    :type="showAgenticPauseControl ? 'danger' : ''" @mouseenter="isAgenticControlButtonHovering = true"
+                <el-button class="agenticControlButton" size="small" :plain="agenticLoopStatus.running"
+                    :type="showAgenticPauseControl ? 'danger' : agenticLoopStatus.running ? 'success' : ''"
+                    @mouseenter="isAgenticControlButtonHovering = true"
                     @mouseleave="isAgenticControlButtonHovering = false" @click="handleAgenticControlButtonClick">
                     <span v-if="agenticLoopStatus.running" class="agenticControlIconStack">
                         <el-icon class="is-loading agenticControlRunningIcon">
@@ -467,7 +468,6 @@ onBeforeUnmount(() => {
 
 .agenticControlButton .agenticControlRunningIcon {
     opacity: 1;
-    color: var(--el-text-color-regular);
 }
 
 .agenticControlButton .agenticControlPauseIcon {

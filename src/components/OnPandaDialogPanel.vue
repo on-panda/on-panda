@@ -40,8 +40,8 @@ function setPromptLogprobsResponseState() {
             messages: [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }],
             apiConfig: responseState.apiConfig,
         })
-        const prefixTokens = { delta: { role: "assistant", content: "Hi!" + endOfText } }
-        promptLogprobsResponseState.tokens.value = [prefixTokens, ...responseState.promptLogprobsTokens.value].map((token, tokenIndex) => {
+        const prefixTokens = { delta: { role: "assistant", content: "Hi!" + endOfText } }  // for debug only
+        promptLogprobsResponseState.tokens.value = [...responseState.promptLogprobsTokens.value].map((token, tokenIndex) => {
             token.tokenIndex = tokenIndex
             return token
         })

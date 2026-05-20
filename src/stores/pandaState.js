@@ -452,6 +452,16 @@ export class PandaState {
                         message.reasoning = message.reasoning_content
                     }
                     delete message.reasoning_content
+                    if (message.name === null) {
+                        delete message.name
+                    }
+                    if (message.tool_calls) {
+                        for (var [toolCallIndex, toolCall] of message.tool_calls.entries()) {
+                            if (toolCall.index == null) {
+                                toolCall.index = toolCallIndex
+                            }
+                        }
+                    }
                 }
             }
         }

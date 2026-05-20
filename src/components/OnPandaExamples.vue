@@ -314,6 +314,7 @@ const defaultExampleNameToFunc = {
 - 用 render_svg 绘制："熊猫骑在骆驼上" 的 SVG 图像，并迭代 3 次。
 - 查看论文第一页的截图，评价图1的设计和配色 https://arxiv.org/pdf/2401.00036
 - 北京的天气如何？实现一个带动效的天气小卡片放在右上角。
+- 给我拍个照，然后你边看照片(用 console.log)边剪裁，让头像居中，再画一个贴合双眼的墨镜，再下载给我。
 - 介绍一下 github 项目 on-panda/harness_to_mcp
 - 请 review 一下这个 pull request: https://github.com/vllm-project/vllm/pull/33523
 - 统计我上传的文件夹的存储分布，并在文件夹下创建 stat.html 来展示（需用户拖拽上传）
