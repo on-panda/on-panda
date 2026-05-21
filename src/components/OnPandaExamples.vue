@@ -306,18 +306,24 @@ const defaultExampleNameToFunc = {
   },
   "🤖 browser-agent": () => {
     switchDefaultToAgentTag()
-    var JsExampleMessages = [{ role: "user", content: "AI news in the past week." }]
+    var JsExampleMessages = [{
+      role: "user", content: "AI news in the past week.", comment: `[Task Examples]
+- Search for information about the step-3.5-flash model, then build an Apple.com-style introduction page.
+- Use render_svg to draw an SVG image of "a panda riding a camel" and iterate 3 times.
+- What's the weather in Beijing? Build an animated weather card in the top-right corner.
+- View the screenshot of the paper's first page and evaluate the design and color palette of Figure 1: https://arxiv.org/pdf/2401.00036
+- Take a photo of me, then crop it while viewing the photo so my face is centered. Draw sunglasses that fit both eyes, then create a photo booth-style portrait for me to download.
+- Organize the PDF files in a folder by topic, move them into matching subfolders, and finally create index.html to summarize the information. (Requires the user to drag and drop the folder to share it with onPanda.)
+- Review the uncommitted changes in this repo and directly fix any bugs. (Requires the user to drag and drop the repo.)` }]
     if (isZh.value) {
       JsExampleMessages = [{
-        role: "user", content: "最近一周的 AI 新闻。", comment: `【任务例子】
-- 收集 step-3.5-flash 模型信息，然后实现一个苹果官网风格的介绍网页。
+        role: "user", content: "汇总最近一周的 AI 新闻。", comment: `【任务例子】
+- 搜索 step-3.5-flash 模型信息，然后实现一个苹果官网风格的介绍网页。
 - 用 render_svg 绘制："熊猫骑在骆驼上" 的 SVG 图像，并迭代 3 次。
-- 查看论文第一页的截图，评价图1的设计和配色 https://arxiv.org/pdf/2401.00036
 - 北京的天气如何？实现一个带动效的天气小卡片放在右上角。
-- 给我拍个照，然后你边看照片(用 console.log)边剪裁，让头像居中，再画一个贴合双眼的墨镜，再下载给我。
-- 介绍一下 github 项目 on-panda/harness_to_mcp
-- 请 review 一下这个 pull request: https://github.com/vllm-project/vllm/pull/33523
-- 统计我上传的文件夹的存储分布，并在文件夹下创建 stat.html 来展示（需用户拖拽上传）
+- 查看论文第一页的截图，评价图1的设计和配色 https://arxiv.org/pdf/2401.00036
+- 给我拍个照，然后你边看照片边剪裁，让头像居中，你再画一个贴合双眼的墨镜，做个大头贴下载给我。
+- 整理文件夹内的 PDF 文件，按照主题归类并移入对应的子文件夹，最后创建 index.html 来汇总信息（需用户拖拽文件夹分享给 onPanda）
 - review 这个 repo 未 commit 的改动，有 BUG 请直接修改（需用户拖拽上传）` }]
     }
     operationCenter.loadMessages(JsExampleMessages)

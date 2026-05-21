@@ -141,7 +141,7 @@ const handleDetailsToggle = () => {
 // when user edit content, and then click button right now, what thing happens?
 // 1. text area blur event is triggered, add a async task to taskQueue for updating content with a delay
 // 2. button click event is triggered, add a async task to taskQueue for updatePromptMessage and generating new message
-const DELAY_MS_TO_UPDATE_CONTENT = 400
+const DELAY_MS_TO_UPDATE_CONTENT = 600
 const taskQueue = new TaskQueue()
 
 const getMessage = () => {
