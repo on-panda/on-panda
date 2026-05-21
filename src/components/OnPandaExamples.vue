@@ -313,7 +313,7 @@ const defaultExampleNameToFunc = {
 - What's the weather in Beijing? Build an animated weather card in the top-right corner.
 - View the screenshot of the paper's first page and evaluate the design and color palette of Figure 1: https://arxiv.org/pdf/2401.00036
 - Take a photo of me, then crop it while viewing the photo so my face is centered. Draw sunglasses that fit both eyes, then create a photo booth-style portrait for me to download.
-- Organize the PDF files in a folder by topic, move them into matching subfolders, and finally create index.html to summarize the information. (Requires the user to drag and drop the folder to share it with onPanda.)
+- Organize the PDF files in a folder by topic, move them into matching subfolders, and finally create index.html to summarize the information. (Requires the user to drag and drop the folder.)
 - Review the uncommitted changes in this repo and directly fix any bugs. (Requires the user to drag and drop the repo.)` }]
     if (isZh.value) {
       JsExampleMessages = [{
@@ -321,10 +321,10 @@ const defaultExampleNameToFunc = {
 - 搜索 step-3.5-flash 模型信息，然后实现一个苹果官网风格的介绍网页。
 - 用 render_svg 绘制："熊猫骑在骆驼上" 的 SVG 图像，并迭代 3 次。
 - 北京的天气如何？实现一个带动效的天气小卡片放在右上角。
-- 查看论文第一页的截图，评价图1的设计和配色 https://arxiv.org/pdf/2401.00036
-- 给我拍个照，然后你边看照片边剪裁，让头像居中，你再画一个贴合双眼的墨镜，做个大头贴下载给我。
-- 整理文件夹内的 PDF 文件，按照主题归类并移入对应的子文件夹，最后创建 index.html 来汇总信息（需用户拖拽文件夹分享给 onPanda）
-- review 这个 repo 未 commit 的改动，有 BUG 请直接修改（需用户拖拽上传）` }]
+- 查看论文第一页的截图，评价图1的设计和配色: https://arxiv.org/pdf/2401.00036
+- 给我拍个照，然后你边看照片边裁剪，让头像居中，你再画一个贴合双眼的墨镜，做个大头贴下载给我。
+- 整理文件夹内的 PDF 文件，按照主题归类并移入对应的子文件夹，最后创建 index.html 来汇总信息（需用户拖拽分享文件夹）
+- review 这个 repo 未 commit 的改动，有 BUG 请直接修改（需用户拖拽分享 repo）` }]
     }
     operationCenter.loadMessages(JsExampleMessages)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{
@@ -335,8 +335,10 @@ const defaultExampleNameToFunc = {
   },
   "🐱 pet": () => {
     switchDefaultToAgentTag()
-    var JsExampleMessages = [{ role: "user", content: "Using tool `run_browser_js` to create an interactive desktop pet placed in the bottom-right corner of the current page." }]
-    JsExampleMessages[0].comment = "The `run_browser_js` tool executes code in the current page’s JavaScript runtime, so the agent can read and modify the page’s content. To restore the original layout, please refresh."
+    var JsExampleMessages = [{ role: "user", content: "Create an interactive desktop pet placed in the bottom-right corner of the current page." }]
+    if (isZh.value) {
+      JsExampleMessages = [{ role: "user", content: "创建一个可交互的桌面宠物，放在当前页面右下角。" }]
+    }
     operationCenter.loadMessages(JsExampleMessages)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{
       type: 'mcp',
