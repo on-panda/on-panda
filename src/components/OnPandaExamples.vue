@@ -309,7 +309,7 @@ const defaultExampleNameToFunc = {
     var JsExampleMessages = [{
       role: "user", content: "AI news in the past week.", comment: `[Task Examples]
 - Search for information about the step-3.5-flash model, then build an Apple.com-style introduction page.
-- Use render_svg to draw an SVG image of "a panda riding a camel" and iterate 3 times.
+- Use render_svg to draw an SVG image of "a panda riding a llama" and iterate 3 times.
 - What's the weather in Beijing? Build an animated weather card in the top-right corner.
 - View the screenshot of the paper's first page and evaluate the design and color palette of Figure 1: https://arxiv.org/pdf/2401.00036
 - Take a photo of me, then crop it while viewing the photo so my face is centered. Draw sunglasses that fit both eyes, then create a photo booth-style portrait for me to download.
@@ -319,7 +319,7 @@ const defaultExampleNameToFunc = {
       JsExampleMessages = [{
         role: "user", content: "汇总最近一周的 AI 新闻。", comment: `【任务例子】
 - 搜索 step-3.5-flash 模型信息，然后实现一个苹果官网风格的介绍网页。
-- 用 render_svg 绘制："熊猫骑在骆驼上" 的 SVG 图像，并迭代 3 次。
+- 用 render_svg 绘制："熊猫骑在羊驼上" 的 SVG 图像，并迭代 3 次。
 - 北京的天气如何？实现一个带动效的天气小卡片放在右上角。
 - 查看论文第一页的截图，评价图1的设计和配色: https://arxiv.org/pdf/2401.00036
 - 给我拍个照，然后你边看照片边裁剪，让头像居中，你再画一个贴合双眼的墨镜，做个大头贴下载给我。
