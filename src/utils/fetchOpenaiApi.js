@@ -216,6 +216,14 @@ async function* removeTokenPrefixSpaceForWandbAPI({ stream, apiConfig } = {}) {
         }
       }
     }
+    const toolCall = choice?.delta?.tool_calls?.[0]
+    const argumentsText = toolCall?.function?.arguments
+    if (typeof argumentsText === 'string' && argumentsText.startsWith(' ')) {
+      const trimmed = argumentsText.slice(1)
+      if (trimmed.length > 0 && trimmed === logprobToken) {
+        toolCall.function.arguments = trimmed
+      }
+    }
     yield chunk
   }
 }
