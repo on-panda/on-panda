@@ -34,6 +34,26 @@ const promptLogprobsToTopLogprobs = (promptLogprob, chosenTokenId) => {
   return logprobs
 }
 
+function splitTextByLogprobs(text, logprobsContent) {
+  let offset = 0
+  return logprobsContent.map((logprobItem, index) => {
+    const tokenText = logprobItem?.token ?? ''
+    const remaining = text.slice(offset)
+    if (!remaining) {
+      return ''
+    }
+    if (tokenText && remaining.startsWith(tokenText)) {
+      offset += tokenText.length
+      return tokenText
+    }
+    if (index === logprobsContent.length - 1) {
+      offset = text.length
+      return remaining
+    }
+    return ''
+  })
+}
+
 async function* splitMultiTokensChunk(stream) {
   for await (const chunk of stream) {
     const choices = chunk?.choices
@@ -58,7 +78,11 @@ async function* splitMultiTokensChunk(stream) {
       delete delta.content
     }
     const deltaFields = ['reasoning_content', 'reasoning', 'content'].filter(field => typeof delta[field] === 'string' && delta[field] !== '')
-    if (!deltaFields.length) {
+    const toolCall = delta.tool_calls?.[0]
+    const toolCallArguments = toolCall?.function?.arguments
+    const splitToolCallName = !deltaFields.length && typeof toolCall?.function?.name === 'string' && toolCall.function.name !== ''
+    const splitToolCallArguments = !deltaFields.length && typeof toolCallArguments === 'string' && toolCallArguments !== ''
+    if (!deltaFields.length && !splitToolCallName && !splitToolCallArguments) {
       yield chunk
       continue
     }
@@ -69,13 +93,22 @@ async function* splitMultiTokensChunk(stream) {
     let fieldOffset = 0
     const deltaField = deltaFields[0]
     const deltaText = delta?.[deltaField] ?? ''
-    const tokensText = logprobsContent.map(item => item?.token ?? '').join('')
+    const splitTokenTexts = deltaFields.length === 1 ? splitTextByLogprobs(deltaText, logprobsContent) : null
+    const splitToolCallArgumentTexts = splitToolCallArguments ? splitTextByLogprobs(toolCallArguments, logprobsContent) : null
 
     for (let i = 0; i < logprobsContent.length; i++) {
       const logprobItem = logprobsContent[i]
       const isLast = i === logprobsContent.length - 1
       let splitDelta
-      if (deltaFields.length > 1) {
+      if (splitToolCallArguments) {
+        const splitTokenText = splitToolCallArgumentTexts[i]
+        const splitToolCall = i === 0
+          ? { ...toolCall, function: { ...toolCall.function, arguments: splitTokenText } }
+          : { index: toolCall.index, function: { arguments: splitTokenText } }
+        splitDelta = { ...delta, tool_calls: [splitToolCall] }
+      } else if (splitToolCallName) {
+        splitDelta = isLast ? delta : { content: "" }
+      } else if (deltaFields.length > 1) {
         splitDelta = { ...delta }
         for (const field of deltaFields) {
           delete splitDelta[field]
@@ -119,7 +152,7 @@ async function* splitMultiTokensChunk(stream) {
           }
         }
       } else {
-        const splitTokenText = tokensText == deltaText ? logprobItem?.token ?? '' : isLast ? deltaText : ''
+        const splitTokenText = splitTokenTexts[i]
         splitDelta = { ...delta, [deltaField]: splitTokenText }
       }
       if (i > 0 && 'role' in splitDelta) {
