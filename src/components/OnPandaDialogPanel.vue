@@ -92,7 +92,7 @@ function clearNewRoundMessage() {
         <slot name="beforeNewRoundMessageSlot"></slot>
 
         <el-divider content-position="left" style="margin-bottom: 5px;">{{ t('common.newMessage') }}:</el-divider>
-        <div>
+        <div class="newRoundMessage">
             <Message :message="newRoundMessage" :messageIndex="-2" @deleteMessage="clearNewRoundMessage"
                 @sendButton="operationCenter.startNewRound()" />
         </div>

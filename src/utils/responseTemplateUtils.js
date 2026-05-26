@@ -168,6 +168,9 @@ export function pieceStructureViewTokens({ message, logprobsTokens = [], templat
 
     if (tokens.length > 0) {
         tokens[0].delta.role = message.role || "assistant"
+        if (message.sidecar) {
+            tokens[0].delta.sidecar = deepCopy(message.sidecar)
+        }
         if (message.finish_reason) {
             tokens.push({
                 delta: { content: "" },
@@ -267,6 +270,10 @@ export function ResponseTemplateClosure({ apiConfig } = {}) {
                 }
                 if (key === "reasoning_details") {
                     delta.reasoning_details = [mergeTwoDeltas(delta.reasoning_details?.[0], delta2.reasoning_details?.[0], ["type", "format"])]
+                    continue
+                }
+                if (key === "sidecar") {
+                    delta.sidecar = mergeTwoDeltas(delta.sidecar || {}, delta2.sidecar || {})
                     continue
                 }
                 delta[key] = (delta[key] || "") + (delta2[key] || "")

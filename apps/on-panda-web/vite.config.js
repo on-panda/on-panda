@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => {
     publicDir: fileURLToPath(new URL('../../public', import.meta.url)),
     plugins: [
       vue(),
-      createBypassCorsProxyPlugin(),
+      createBypassCorsProxyPlugin(env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH),
       createRuntimeImportPlugin(resolvedRuntimeImport),
       createUsingServerProxyPlugin(),
       mode === 'analyze' && visualizer({

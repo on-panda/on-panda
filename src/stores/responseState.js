@@ -3,7 +3,8 @@ import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
 import { getFinishReason, normalizeRequest, recordAsRejectedToken, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
 import { ResponseTemplateClosure, buildViewTokens } from '../utils/responseTemplateUtils.js'
-import { OpenAI, splitMultiTokensChunk } from '../utils/fetchOpenaiApi.js'
+import { OpenAI } from '../utils/fetchOpenaiApi.js'
+import { createChatCompletionsStream } from '../utils/apiProtocols/index.js'
 import { applyImageDetailLevel, assertNoLegacyChatConfigTools, dropStaleToolAsset } from '../utils/requestUtils.js'
 import { buildRejectedToolMessages } from '../utils/toolUtils.js'
 
@@ -11,7 +12,7 @@ import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
 import { WarningState } from './warningState.js'
 import { defaultApiConfig, CONTINUE_PROMPT } from './controlParameterState.js'
-import { ToolManageStateClosure, ToolCallStateClosure } from './toolState.js'
+import { ToolManageStateClosure, ToolCallStateClosure, browserAgentMcpUrl } from './toolState.js'
 
 export const defaultMessages = [{ role: "system", content: "" }, { role: "user", content: "" }]
 
@@ -196,10 +197,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         var concatTokens = () => { }
 
         try {
-            const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
             var requestBody = modifyRequest(body)  // deepCopyed
-            var stream = await openai.chat.completions.create(requestBody, { signal: fetchController.signal });
-            stream = splitMultiTokensChunk(stream)
+            var stream = await createChatCompletionsStream({ requestBody, apiConfig: apiConfig.value, signal: fetchController.signal })
 
             var tokenIndex = 0
             var streamIndex = -1
@@ -239,7 +238,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                         continue  // if first chunk only not has content, no more role for continue_final_message
                     }
                 }
-                if (!chunk?.choices?.length) {  // set usage and model if noly in last token
+                if (!chunk?.choices?.length) {  // set usage and model if only in last token
                     if (chunk.usage) {
                         if (tokenBatch.length) {
                             tokenBatch[tokenBatch.length - 1].usage = chunk.usage
@@ -260,10 +259,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 if (!token?.delta) {
                     continue
                 }
-                if (typeof token.delta.reasoning_content === "string" && !("reasoning" in token.delta)) {
-                    token.delta.reasoning = token.delta.reasoning_content
-                }
-                delete token.delta.reasoning_content
                 streamIndex++
                 if (streamIndex === 0) { // first token
                     clearTimeout(firstTokenTimeoutId)
@@ -477,6 +472,67 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             return messagesComputed.value[clampedIndex]
         }
 
+        buildRequestToolsAndResolveMessageIndex = async (messageIndex = -1) => {
+            const targetMessage = messageIndex >= 0 ? messages.value[messageIndex] : null
+            await toolManageState.buildRequestTools()
+            return targetMessage ? messages.value.indexOf(targetMessage) : messageIndex
+        }
+
+        addUserLocalFiles = (files = []) => {
+            const userLocalFiles = toolManageState.browserAgentShared.userLocalFiles
+            const addedFiles = files.map(({ path, handleOrEntry }) => {
+                let key = path
+                let i = 1
+                while (key in userLocalFiles) {
+                    key = `another${i}/${path}`
+                    i += 1
+                }
+                userLocalFiles[key] = handleOrEntry
+                return { key, handleOrEntry }
+            })
+            if (!addedFiles.length) {
+                return
+            }
+
+            const fileMessage = {
+                role: 'user',
+                content: `<|user_local_files_start|>
+User shares those files with you. Please load the "user-local-files" skill:
+${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.constructor.name}`).join('\n')}
+<|user_local_files_end|>`,
+            }
+            this.pandaState.beforeOperation()
+            // try to add tool config for browser agent mcp if not exist
+            const dialogCache = this.pandaState.dialogCache.value
+            if (!('tools' in dialogCache)) {
+                dialogCache.tool_configs = dialogCache.tool_configs || []
+                if (!dialogCache.tool_configs.some(toolConfig => toolConfig.server_url === browserAgentMcpUrl)) {
+                    dialogCache.tool_configs.push({
+                        type: 'mcp',
+                        server_url: browserAgentMcpUrl,
+                    })
+                }
+            }
+            const nextMessages = this.getNextMessages()
+            let insertIndex = nextMessages.length
+            if (nextMessages[insertIndex - 1]?.role === 'user') {
+                while (
+                    insertIndex > 0 &&
+                    nextMessages[insertIndex - 1].role === 'user' &&
+                    !(typeof nextMessages[insertIndex - 1].content === 'string' && nextMessages[insertIndex - 1].content.includes('<|user_local_files_'))
+                ) {
+                    insertIndex -= 1
+                }
+            }
+            nextMessages.splice(insertIndex, 0, fileMessage)
+            messages.value = nextMessages
+            setGenerationTokens([])
+            this.pandaState.afterOperation({
+                operator: "add_user_local_files",
+                on_policy: false,
+            })
+        }
+
         // Run tool-call and generation rounds until the assistant stops or needs manual approval.
         startAgenticLoop = async ({ autoApproveRunNum = 0, defaultFinishReason = null } = {}) => {
             await toolManageState.buildRequestTools()
@@ -519,12 +575,12 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
 
         runToolCalls = async ({ autoApproveRunNum = 1, messageIndex = -1 } = {}) => {
-            await toolManageState.buildRequestTools()
-            const toolCallMessage = this.getMessageByIndex(messageIndex)
+            const resolvedMessageIndex = await this.buildRequestToolsAndResolveMessageIndex(messageIndex)
+            const toolCallMessage = this.getMessageByIndex(resolvedMessageIndex)
             console.assert(toolCallMessage.tool_calls.length, "runToolCalls requires tool_calls", toolCallMessage)
-            if (messageIndex !== -1) {
+            if (resolvedMessageIndex !== -1) {
                 this.pandaState.beforeOperation()
-                messages.value = this.getNextMessages({ messageIndex })
+                messages.value = this.getNextMessages({ messageIndex: resolvedMessageIndex })
                 setGenerationTokens([])
                 // if messageIndex != -1 , set nextNotSameOperationCache `on_policy: false` to prevent tool calls failures and end with tool call response
                 this.pandaState.nextNotSameOperationCache = {
@@ -536,17 +592,17 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
 
         rejectToolCalls = async ({ toolCallsRejectedGuidance = '', messageIndex = -1, autoApproveRunNum = 0 } = {}) => {
-            await toolManageState.buildRequestTools()
-            const toolCallMessage = this.getMessageByIndex(messageIndex)
+            const resolvedMessageIndex = await this.buildRequestToolsAndResolveMessageIndex(messageIndex)
+            const toolCallMessage = this.getMessageByIndex(resolvedMessageIndex)
             console.assert(toolCallMessage.tool_calls.length, "rejectToolCalls requires tool_calls", toolCallMessage)
             const rejectedToolMessages = buildRejectedToolMessages(
                 toolCallMessage.tool_calls,
                 toolCallsRejectedGuidance,
             )
-            if (messageIndex !== -1 && messages.value.length) {
+            if (resolvedMessageIndex !== -1 && messages.value.length) {
                 this.pandaState.beforeOperation()
             }
-            messages.value = this.getNextMessages({ messagesToAppend: rejectedToolMessages, messageIndex })
+            messages.value = this.getNextMessages({ messagesToAppend: rejectedToolMessages, messageIndex: resolvedMessageIndex })
             setGenerationTokens([])
             this.pandaState.setCurrentIsGood(false, true)
             this.pandaState.afterOperation({
@@ -572,6 +628,15 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         stopGenerating = () => {
             this.pandaState.beforeOperation()
             requestStatus.value.generating = false
+        }
+
+        stopAgenticLoop = () => {
+            if (requestStatus.value.generating) {
+                this.stopGenerating()
+            }
+            if (toolCallState.toolCallStatus.value.calling) {
+                toolCallState.stopToolCalls()
+            }
         }
 
         continueWithChosen = async (token, logprobItem) => {
@@ -622,9 +687,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
 
         generateNew = async ({ messageIndex = -1 } = {}) => {
-            await toolManageState.buildRequestTools()
+            const resolvedMessageIndex = await this.buildRequestToolsAndResolveMessageIndex(messageIndex)
             const shouldContinueFinalMessage = (
-                messageIndex === -1 &&
+                resolvedMessageIndex === -1 &&
                 !messageToSeq(finalMessage.value, { includeFinishReason: false }) &&
                 finalMessage.value.role &&
                 apiConfig.value.support_continue_final_message
@@ -634,8 +699,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 await this.continueGenerating()
             } else {
                 this.pandaState.beforeOperation()
-                if (messageIndex >= 0 && messages.value.length) {
-                    const clampedIndex = Math.min(messageIndex, messages.value.length - 1)
+                if (resolvedMessageIndex >= 0 && messages.value.length) {
+                    const clampedIndex = Math.min(resolvedMessageIndex, messages.value.length - 1)
                     messages.value = messages.value.slice(0, clampedIndex + 1)
                 }
                 setGenerationTokens([])
@@ -643,7 +708,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                     operator: "generate_new",
                     is_new_generated: true,
                     on_policy: true,
-                    message_index: messageIndex,
+                    message_index: resolvedMessageIndex,
                 })
                 await this.startAgenticLoop()
             }
@@ -651,12 +716,14 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
         startNewRound = async (newRoundMessages = null) => {  // TODO remove auto write back's append operation
             const messagesToAppend = newRoundMessages ? newRoundMessages : [newRoundMessage.value]
-            var role = newRoundMessages ? 'user' : newRoundMessage.value.role
+            var role = newRoundMessage.value.role
             await toolManageState.buildRequestTools()
             this.pandaState.beforeOperation()
             messages.value = this.getNextMessages({ messagesToAppend })
             setGenerationTokens([])
-            newRoundMessage.value = { role: role, content: '' }
+            if (!newRoundMessages) {
+                newRoundMessage.value = { role: role, content: '' }
+            }
             this.pandaState.afterOperation({
                 operator: "start_new_round",
                 on_policy: true,
@@ -856,6 +923,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     const toolCallState = ToolCallStateClosure({
         toolManageState,
     })
+    const agenticLoopStatus = {
+        get running() {
+            return requestStatus.value.generating || toolCallState.toolCallStatus.value.calling
+        },
+    }
 
     const operationCenter = new OperationCenter()
     operationCenter.toolCallState = toolCallState
@@ -946,7 +1018,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }, { deep: true, immediate: true, flush: 'sync' })
     }
 
-    return {
+    const responseState = {
         pandaState,
         uploadedJson,
         onPandaContainerRef,
@@ -962,6 +1034,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         rawPromptLogprobsTokens,
         isPromptLogprobsState,
         requestStatus,
+        agenticLoopStatus,
         toolManageState,
         operationCenter,
         newRoundMessage,
@@ -973,4 +1046,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         // requestPromptLogprobs, // using operationCenter instead
         // requestLlmServer
     }
+    toolManageState.registeredResponseState.value = responseState
+    return responseState
 }

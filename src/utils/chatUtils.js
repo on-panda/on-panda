@@ -13,7 +13,7 @@ export {
 
 export function verifyUrlIsLlmApiCall(url) {
     // check is LLM api call by /models or /completions
-    return /(^|\/)(models|completions)(\/|$)/.test(url.pathname);
+    return /(^|\/)(models|completions|messages)(\/|$)/.test(url.pathname);
 }
 
 export function verifyUrlIsMcp(url) {
@@ -105,7 +105,6 @@ export function dialogDifferent(dialog1, dialog2, modelRoles = ['assistant',]) {
     }
     return { is_prompt_modified, is_response_modified, response_modified_type, common_prefix_length }
 }
-
 
 export function tokenToDisplayString(token, tokens = undefined) {
     const delta = token?.delta || {}
@@ -229,6 +228,9 @@ export function normalizeRequest(requestBody) {
             delete message.finish_reason
             delete message.comment
             delete message.description
+            if (!message.name) {
+                delete message.name  // delete name: null
+            }
         })
     }
     if (body.stop) {

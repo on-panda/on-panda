@@ -68,14 +68,19 @@ export default {
     waiting: '等待中...',
     copied: '已复制',
     copyFailed: '复制失败',
+    pasteManually: '读取剪贴板失败，请手动粘贴。',
     responseRefreshed: '响应概率已刷新',
     modelsRefreshed: '模型列表刷新完成',
     noPromptLogprobs: '响应中没有 prompt_logprobs，可能当前模型不支持刷新概率和候选',
-    dropJsonHere: '拖放JSON文件到这里！',
-    onlyOneJsonFile: '只能上传一个JSON文件',
+    dropFilesHere: '拖放 *.panda*.json、本地文件或文件夹到这里！',
+    localFilesUploadTip: '只有单个 *.panda*.json 会载入数据，其他文件和文件夹会共享给 browserAgent',
     openAnnotatorPanel: '打开标注面板',
     waitingForModel: '请求，正在等待模型响应：',
     clickSendButton: '➡️ 请点击生成按钮'
+  },
+  localMcp: {
+    safariUnsupportedTitle: '请使用桌面版 Chrome 连接本地 MCP',
+    safariUnsupportedMessage: 'Safari 和 iOS 浏览器会阻止 HTTPS 页面连接本地 HTTP MCP server。请使用桌面版 Chrome 或 Firefox 使用该功能。'
   },
   tooltips: {
     dialogKeyHint: `对话标签页说明：
@@ -90,11 +95,13 @@ export default {
     eraseDialog: '彻底删除当前对话',
     clearAndReset: '清空并重置整条数据',
     restoreDialog: '恢复当前对话',
-    uploadFile: '上传 *.panda.json 文件',
+    uploadFile: '上传本地文件',
     downloadFile: '下载为 panda.json 文件',
     cleanUI: '简洁界面（阅读模式）',
     continueGenerating: '继续生成',
     stopGenerating: '停止生成',
+    stopAgenticLoop: '运行中，要停吗？',
+    regenerate: '重新生成',
     modelTagClick: '1. 单击标签切换模型；双击标签切换模型并重新生成。\n2. 如果按住 `Ctrl` 键并点击或者用鼠标中键点击，将打开新窗口并用对应模型重新生成',
     continueGeneratingSupport: '此模型是否支持原生续写 assistant 消息？\n\n如果不支持，将使用提示工程(prompt engineering)进行续写：\n\n> ',
     refreshTokenProb: '更新词组概率和候选',
@@ -154,7 +161,7 @@ export default {
   toolManagePanel: {
     configs: '配置',
     candidate: '候选',
-    selected: '已选',
+    loaded: '已加载',
     empty: '空'
   },
   header: {

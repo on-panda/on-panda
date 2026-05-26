@@ -82,15 +82,16 @@ var isMobile = computed(() => globalStore.isMobile)
 const customInfoForUser = computed(() => props.customInfoForUser + globalStore.customInfoForUser)
 const defaultModelNameTags = {
   'on-panda': 'on-panda',
-  'step': 'step-tag',
-  'image': 'image-tag',
-  'GPT': 'gpt-tag',
-  // 'claude': 'claude-tag',
-  // 'audio': 'step1f-on-policy',
+  'step3.7': 'step-tag',
+  'kimi': 'kimi-tag',
   'DS': 'ds-tag',
-  // 'groq': 'groq-tag',
+  'GPT': 'gpt-tag',
+  'claude': 'claude-tag',
+  // 'image': 'image-tag',
+  // 'audio': 'step1f-on-policy',
   'test': 'test-tag',
   'fast': 'fast-tag',
+  // 'groq': 'groq-tag',
 }
 const modelNameTags = computed(() => {
   // only use defaultModelNameTags if both props.modelNameTags and globalStore.customModelNameTags is not set
@@ -112,7 +113,7 @@ const { responseState, controlParameterState, toolManageState } = dialogWithCont
 
 
 const tokens = responseState.tokens
-const requestStatus = responseState.requestStatus
+const agenticLoopStatus = responseState.agenticLoopStatus
 const operationCenter = responseState.operationCenter
 
 // Initialize with welcome messages
@@ -180,14 +181,13 @@ onMounted(async () => {
       // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
       // toolManageState.presetToolConfigsInput.value = toolManageState.presetToolConfigsInput.value.concat(deepCopy(TEST_TOOL_CONFIGS))
       // exampleToRun = operationCenter.generateNew
-      exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["tools"]
+      exampleToRun = () => {
+        modelName.value = "k2.6-instruct-wo-parser-tag"
+        onPandaExamplesRef.value.exampleNameToFunc["tools"](dialogWithControlState)
+      }
+      exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["🤖 browser-agent"]
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["js"]
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
-      var exampleToRun = () => {
-        onPandaExamplesRef.value.exampleNameToFunc["tools"]()
-        // modelName.value = "wo-parser-tag"
-        modelName.value = "k2.6-instruct-wo-parser-tag"
-      }
       var _exampleToRun = () => {
         var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
         var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
@@ -208,7 +208,7 @@ onMounted(async () => {
     await controlParameterState.apiUpdateCompletedPromise.value
     await toolManageState.presetToolReadyPromise.value.catch(responseState.warning)
     await sleep(5)
-    if (!requestStatus.value.generating && exampleToRun) {
+    if (!agenticLoopStatus.running && exampleToRun) {
       await exampleToRun(dialogWithControlState)
     }
     if (globalStore.debug) {

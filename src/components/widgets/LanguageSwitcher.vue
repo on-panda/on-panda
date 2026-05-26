@@ -25,17 +25,16 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { ArrowDown } from '@element-plus/icons-vue'
+import { useGlobalStore } from '../../stores/globalStore.js'
 
-const { locale } = useI18n()
+const globalStore = useGlobalStore()
 
 const currentLanguage = computed(() => {
-  return locale.value === 'zh-CN' ? '中文' : 'English'
+  return globalStore.currentLocale === 'zh-CN' ? '中文' : 'English'
 })
 
 const handleCommand = (command) => {
-  locale.value = command
-  localStorage.setItem('locale', command)
+  globalStore.setLocale(command)
 }
 </script>

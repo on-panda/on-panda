@@ -39,20 +39,20 @@ const candidateTools = computed(() => toolManageState.allTools.value
         index,
         key: `candidate-${index}-${getToolTagName(tool)}`,
         tool,
-        selectedIndex: toolManageState.matchedAllToSelectedIndex.value[index],
+        loadedIndex: toolManageState.matchedAllToLoadedIndex.value[index],
     }))
-    .filter(item => item.selectedIndex == null))
+    .filter(item => item.loadedIndex == null))
 
-const selectedTools = computed(() => toolManageState.currentDialogTools.value.map((tool, index) => ({
+const loadedTools = computed(() => toolManageState.currentDialogTools.value.map((tool, index) => ({
     index,
-    key: `selected-${index}-${getToolTagName(tool)}`,
+    key: `loaded-${index}-${getToolTagName(tool)}`,
     tool,
 })))
-const selectedToolCount = computed(() => selectedTools.value.length)
+const loadedToolCount = computed(() => loadedTools.value.length)
 const allToolCount = computed(() => toolManageState.allTools.value.length)
 
-watch(selectedToolCount, function watchSelectedToolCount(nextSelectedToolCount) {
-    if (hasPanelToggled.value || panelOpen.value || !nextSelectedToolCount) {
+watch(loadedToolCount, function watchLoadedToolCount(nextLoadedToolCount) {
+    if (hasPanelToggled.value || panelOpen.value || !nextLoadedToolCount) {
         return
     }
     panelOpen.value = true
@@ -82,10 +82,10 @@ async function appendTool(allToolIndex = -1) {
     }
 }
 
-async function removeTool(selectedToolIndex = -1) {
+async function removeTool(loadedToolIndex = -1) {
     pandaState.beforeOperation()
     try {
-        await toolManageState.removeSelectedTool(selectedToolIndex)
+        await toolManageState.removeLoadedTool(loadedToolIndex)
         pandaState.afterOperation({
             operator: 'edit_tools',
             on_policy: false,
@@ -116,7 +116,7 @@ function handleToolInfoVisibleChange(toolInfoKey, visible) {
         <summary class="tool-manage-summary">
             Tools
             <template v-if="allToolCount">
-                <code>{{ selectedToolCount }}/{{ allToolCount }}</code>
+                <code>{{ loadedToolCount }}/{{ allToolCount }}</code>
             </template>
         </summary>
         <div class="tool-manage-body">
@@ -160,22 +160,22 @@ function handleToolInfoVisibleChange(toolInfoKey, visible) {
             </div>
 
             <div class="tool-manage-section">
-                <div class="tool-manage-title">{{ t('toolManagePanel.selected') }}</div>
+                <div class="tool-manage-title">{{ t('toolManagePanel.loaded') }}</div>
                 <div class="tool-manage-tags">
-                    <el-popover v-for="selected in selectedTools" :key="selected.key" :trigger="toolInfoTrigger"
-                        :visible="toolInfoVisibleKey === selected.key" placement="bottom-start" enterable effect="light"
+                    <el-popover v-for="loaded in loadedTools" :key="loaded.key" :trigger="toolInfoTrigger"
+                        :visible="toolInfoVisibleKey === loaded.key" placement="bottom-start" enterable effect="light"
                         :show-after="500" :hide-after="500" :popper-style="toolInfoPopoverStyle"
-                        @update:visible="visible => handleToolInfoVisibleChange(selected.key, visible)">
+                        @update:visible="visible => handleToolInfoVisibleChange(loaded.key, visible)">
                         <template #reference>
                             <el-tag size="small" type="success" class="tool-manage-tag-clickable"
-                                @contextmenu.prevent="toolInfoVisibleKey = selected.key"
-                                @click="removeTool(selected.index)">
-                                {{ getToolTagName(selected.tool) }}
+                                @contextmenu.prevent="toolInfoVisibleKey = loaded.key"
+                                @click="removeTool(loaded.index)">
+                                {{ getToolTagName(loaded.tool) }}
                             </el-tag>
                         </template>
-                        <ToolInfo :title="getToolTagName(selected.tool)" :tool="selected.tool" />
+                        <ToolInfo :title="getToolTagName(loaded.tool)" :tool="loaded.tool" />
                     </el-popover>
-                    <span v-if="!selectedTools.length" class="tool-manage-empty">{{ t('toolManagePanel.empty') }}</span>
+                    <span v-if="!loadedTools.length" class="tool-manage-empty">{{ t('toolManagePanel.empty') }}</span>
                 </div>
             </div>
         </div>

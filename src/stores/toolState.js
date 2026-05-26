@@ -15,6 +15,8 @@ import {
     stripRuntime,
 } from '../utils/toolUtils.js'
 
+export const browserAgentMcpUrl = 'local-fetch://browser-agent-mcp'
+
 export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     // When constructed post-mount (e.g. from a computed during render), skip onMounted and treat as mounted.
     const instance = getCurrentInstance()
@@ -42,16 +44,58 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
 
     const presetToolConfigsInput = isRef(presetToolConfigs) ? presetToolConfigs : ref(deepCopy(presetToolConfigs || []))
     const registeredDialogCache = ref(null)
+    const registeredResponseState = ref(null)
     const runtimeVersion = ref(0)
     const runtimeEntryByHash = new Map()
     const presetConfigHashToIndex = ref({})
     const matchedDataToPresetIndex = ref({})
     const allTools = ref([])
-    const matchedAllToSelectedIndex = ref({})
+    const matchedAllToLoadedIndex = ref({})
+    const localMcpServers = {}
+    const localMcpServerLocks = {}
+    const browserAgentShared = {
+        get uiRootElement() {
+            return registeredResponseState.value.onPandaContainerRef
+        },
+        userLocalFiles: {},
+    }
+    async function registerBrowserAgentMcpServer(url) {
+        // Cross tool_calls storage needs to be initialized outside of buildBrowserAgent
+        const local = {}
+        function buildBrowserAgent({ callScope }) {
+            const browserAgent = {
+                name: "root",
+                path: "root",
+                send({ text }) {
+                    if (!registeredResponseState.value) {
+                        throw new Error('toolManageState.registeredResponseState.value not ready')
+                    }
+                    registeredResponseState.value.operationCenter.startNewRound([
+                        { role: 'user', content: `<|browser_agent_send_start|>\n${text}\n<|browser_agent_send_end|>` },
+                    ])
+                    callScope.console.log('browserAgent.send success')
+                },
+                local: local,  // store things that cross-tool_calls reuse for one agent
+                shared: browserAgentShared,   // share with all sub-agents
+            }
+            return browserAgent
+        }
+        const { BrowserAgentMcpClosure } = await import('../components/plugins/browserAgentMcp.js')
+        localMcpServers[url] = BrowserAgentMcpClosure({
+            buildBrowserAgent,
+            proxyPath: import.meta.env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH,
+        })
+    }
     const localFetches = {
-        'local-fetch://browser-js-mcp': async (resource, init) => {
-            const { localFetch } = await import('../components/plugins/browserJsMcp.js')
-            return await localFetch(resource, init)
+        [browserAgentMcpUrl]: async (resource, init) => {
+            const url = browserAgentMcpUrl
+            if (!localMcpServers[url]) {
+                if (!localMcpServerLocks[url]) {
+                    localMcpServerLocks[url] = registerBrowserAgentMcpServer(url)
+                }
+                await localMcpServerLocks[url]
+            }
+            return await localMcpServers[url].localFetch(resource, init)
         },
     }
 
@@ -196,11 +240,15 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                             } catch (error) {
                                 return `<|tool_call_error_start|>\nFunction arguments parse error:\n${error}\n<|tool_call_error_end|>`
                             }
-                            const result = await client.callTool({
-                                name: mcpTool.name,
-                                arguments: argumentsValue,
-                            })
-                            return mcpToolResultToContent(result)
+                            try {
+                                const result = await client.callTool({
+                                    name: mcpTool.name,
+                                    arguments: argumentsValue,
+                                }, undefined, { timeout: 5 * 60 * 1000 })
+                                return mcpToolResultToContent(result)
+                            } catch (error) {
+                                return `<|tool_call_error_start|>\nMCP tool call error:\n${error}\n<|tool_call_error_end|>`
+                            }
                         }
                     }
 
@@ -404,13 +452,13 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         setDialogTools(nextTools)
     }
 
-    async function removeSelectedTool(selectedToolIndex = -1) {
+    async function removeLoadedTool(loadedToolIndex = -1) {
         const dialogCache = getDialogCacheValue()
-        if (!dialogCache?.tools?.length || selectedToolIndex < 0 || selectedToolIndex >= dialogCache.tools.length) {
+        if (!dialogCache?.tools?.length || loadedToolIndex < 0 || loadedToolIndex >= dialogCache.tools.length) {
             return
         }
         const nextTools = deepCopy(dialogCache.tools)
-        nextTools.splice(selectedToolIndex, 1)
+        nextTools.splice(loadedToolIndex, 1)
         setDialogTools(nextTools)
     }
 
@@ -476,7 +524,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
             ; (async () => {
                 const matchedIndex = await matchTwoToolLists(allTools.value, currentDialogTools.value)
                 if (!expired) {
-                    matchedAllToSelectedIndex.value = matchedIndex
+                    matchedAllToLoadedIndex.value = matchedIndex
                 }
             })().catch(error => {
                 console.error(error)
@@ -526,14 +574,16 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         presetToolConfigsInput,
         presetToolReadyPromise,
         dataToolConfigs,
+        browserAgentShared,
         visibleToolConfigItems,
         allTools,
-        matchedAllToSelectedIndex,
+        matchedAllToLoadedIndex,
         currentDialogTools,
+        registeredResponseState,
         localFetches,
         registerDialogCache,
         appendToolToDialog,
-        removeSelectedTool,
+        removeLoadedTool,
         buildRequestTools,
         checkCallReady,
         checkRequireApproval,

@@ -3,21 +3,27 @@ import { Readable } from 'node:stream'
 import { withSafeProxyMiddleware } from './safeProxyMiddleware.js'
 import { verifyUrlIsLlmApiCall, verifyUrlIsMcp } from '../../src/utils/chatUtils.js'
 
-export function createBypassCorsProxyPlugin() {
-  const middleware = withSafeProxyMiddleware('Bypass CORS proxy', createBypassCorsProxyMiddleware())
+export function createBypassCorsProxyPlugin(browserAgentProxyPath = '') {
+  const corsMiddleware = withSafeProxyMiddleware('Bypass CORS proxy', createBypassCorsProxyMiddleware({
+    verifyUrl: targetUrl => verifyUrlIsLlmApiCall(targetUrl) || verifyUrlIsMcp(targetUrl),
+  }))
+  // Browser-agent proxy: forwards arbitrary URLs as a fallback for cors-internet.
+  const browserAgentMiddleware = browserAgentProxyPath
+    ? withSafeProxyMiddleware('Browser agent proxy', createBypassCorsProxyMiddleware())
+    : null
+  const register = (server) => {
+    server.middlewares.use('/bypass-CORS', corsMiddleware)
+    if (browserAgentMiddleware) server.middlewares.use(browserAgentProxyPath, browserAgentMiddleware)
+  }
 
   return {
     name: 'bypass-cors-proxy-middleware',
-    configureServer(server) {
-      server.middlewares.use('/bypass-CORS', middleware)
-    },
-    configurePreviewServer(server) {
-      server.middlewares.use('/bypass-CORS', middleware)
-    }
+    configureServer: register,
+    configurePreviewServer: register,
   }
 }
 
-function createBypassCorsProxyMiddleware() {
+function createBypassCorsProxyMiddleware({ verifyUrl } = {}) {
   return async (req, res) => {
     const abortController = new AbortController()
     try {
@@ -26,9 +32,9 @@ function createBypassCorsProxyMiddleware() {
         ? rawPath.replace(/^\/bypass-CORS\//, '')
         : rawPath.replace(/^\/+/, '')
       const targetUrl = new URL(decodeURIComponent(withoutPrefix))
-      if (!verifyUrlIsLlmApiCall(targetUrl) && !verifyUrlIsMcp(targetUrl)) {
+      if (verifyUrl && !verifyUrl(targetUrl)) {
         res.statusCode = 400
-        res.end(`Not a valid LLM API call or MCP endpoint: ${targetUrl}`)
+        res.end(`Not an allowed target URL: ${targetUrl}`)
         return
       }
 

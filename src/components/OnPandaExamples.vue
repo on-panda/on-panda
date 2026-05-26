@@ -10,10 +10,13 @@
 
 <script setup>
 import { computed, nextTick } from 'vue'
+import { ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { sleep } from '../utils/commonUtils.js'
 import { useGlobalStore } from '../stores/globalStore.js'
 
 const globalStore = useGlobalStore()
+const { t } = useI18n()
 
 const props = defineProps({
   dialogWithControlState: {
@@ -47,23 +50,6 @@ const messagesImageExample = [{
     }
   ]
 }]
-
-const messagesAudioExample = [
-  {
-    "role": "system",
-    "content": ""
-  },
-  {
-    "role": "user",
-    "content": [
-      { type: "text", text: "分两步:\n1. 把这段语音转换为文字\n2. 回答语音中的问题\n" },
-      {
-        "type": "audio_token",
-        "audio_token": "<audio_667><audio_667><audio_4390><audio_1326><audio_3886><audio_993><audio_689><audio_4171><audio_1367><audio_1349><audio_194><audio_853><audio_3690><audio_1044><audio_3123><audio_759><audio_776><audio_2449><audio_2502><audio_3738><audio_573><audio_573><audio_1226><audio_3270><audio_2377><audio_72><audio_35><audio_4106><audio_2267><audio_2930><audio_321><audio_321><audio_1155><audio_3274><audio_3450><audio_866><audio_54><audio_3317><audio_1535><audio_1484><audio_54><audio_925><audio_2264><audio_3593><audio_1089><audio_925><audio_133><audio_1484><audio_1768><audio_1146><audio_634><audio_634><audio_3074><audio_3311><audio_4329><audio_123><audio_936><audio_2265><audio_3172><audio_2317><audio_866><audio_72><audio_1048><audio_5080><audio_2377><audio_72><audio_936><audio_3211><audio_1795><audio_1039><audio_571><audio_431><audio_3186><audio_3186><audio_3186>"
-      }
-    ]
-  }
-]
 
 const messagesToolsExample = [
   { "role": "system", "content": "You are a weather inquiry agent." },
@@ -239,6 +225,37 @@ const templateToolConfigs = [
   }
 ]
 
+
+const isZh = computed(() => globalStore.currentLocale.toLowerCase().indexOf('zh-cn') != -1)
+function switchDefaultToAgentTag() {
+  const defaultModel = modelNameTags.value['on-panda'] || 'on-panda'
+  if (modelName.value.indexOf(defaultModel) != -1) {
+    modelName.value = modelNameTags.value['default-agent-tag'] || 'default-agent-tag'
+  }
+}
+
+function checkLocalhostMcpSupport() {
+  const userAgent = navigator.userAgent
+  const isIosWebKitBrowser = /CriOS|FxiOS|EdgiOS/.test(userAgent)
+  const isSafari = userAgent.includes('Safari')
+    && !/Chrome|Chromium|CriOS|FxiOS|Edg|EdgiOS|OPR|Opera/.test(userAgent)
+  if ((!isSafari && !isIosWebKitBrowser) || window.location.protocol !== 'https:') {
+    return
+  }
+  ElMessageBox.alert(
+    t('localMcp.safariUnsupportedMessage'),
+    t('localMcp.safariUnsupportedTitle'),
+    {
+      customClass: 'on-panda-local-mcp-message-box',
+      confirmButtonText: 'OK',
+      buttonSize: 'small',
+      showClose: true,
+      type: 'warning',
+    },
+  ).catch(() => { })
+  throw new Error(t('localMcp.safariUnsupportedTitle'))
+}
+
 // Define all example functions
 const defaultExampleNameToFunc = {
   "clear": () => {
@@ -250,17 +267,10 @@ const defaultExampleNameToFunc = {
     operationCenter.loadMessages(welcomeMessages)
     operationCenter.generateNew()
   },
-  "R in 🍓": () => {
-    operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }])
-    operationCenter.generateNew()
-  },
-  "image": () => {
-    if (modelNameTags.value['image']) {
-      modelName.value = modelNameTags.value['image']
-    }
-    operationCenter.loadMessages(messagesImageExample)
-    operationCenter.generateNew()
-  },
+  // "R in 🍓": () => {
+  //   operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }])
+  //   operationCenter.generateNew()
+  // },
   "tools": () => {
     operationCenter.loadMessages(messagesToolsExample)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [
@@ -294,31 +304,94 @@ const defaultExampleNameToFunc = {
     ]
     operationCenter.generateNew()
   },
-  "browser-agent": () => {
-    var JsExampleMessages = [{ role: "user", content: globalStore.currentLocale.indexOf('zh') == -1 ? "AI news in the past week." : "最近一周的 AI 新闻。" }]
+  "🤖 browser-agent": () => {
+    switchDefaultToAgentTag()
+    var JsExampleMessages = [{
+      role: "user", content: "AI news in the past week.", comment: `[Task Examples]
+- Search for information about the step-3.5-flash model, then build an Apple.com-style introduction page.
+- Use render_svg to draw an SVG image of "a panda riding a llama" and iterate 3 times.
+- What's the weather in Beijing? Build an animated weather card in the top-right corner.
+- View the screenshot of the paper's first page and evaluate the design and color palette of Figure 1: https://arxiv.org/pdf/2401.00036
+- Take a photo of me, then crop it while viewing the photo so my face is centered. Draw sunglasses that fit both eyes, then create a photo booth-style portrait for me to download.
+- Organize the PDF files in a folder by topic, move them into matching subfolders, and finally create index.html to summarize the information. (Requires the user to drag and drop the folder.)
+- Review the uncommitted changes in this repo and directly fix any bugs. (Requires the user to drag and drop the repo.)` }]
+    if (isZh.value) {
+      JsExampleMessages = [{
+        role: "user", content: "汇总最近一周的 AI 新闻。", comment: `【任务例子】
+- 搜索 step-3.5-flash 模型信息，然后实现一个苹果官网风格的介绍网页。
+- 用 render_svg 绘制："熊猫骑在羊驼上" 的 SVG 图像，并迭代 3 次。
+- 北京的天气如何？实现一个带动效的天气小卡片放在右上角。
+- 查看论文第一页的截图，评价图1的设计和配色: https://arxiv.org/pdf/2401.00036
+- 给我拍个照，然后你边看照片边裁剪，让头像居中，你再画一个贴合双眼的墨镜，做个大头贴下载给我。
+- 整理文件夹内的 PDF 文件，按照主题归类并移入对应的子文件夹，最后创建 index.html 来汇总信息（需用户拖拽分享文件夹）
+- review 这个 repo 未 commit 的改动，有 BUG 请直接修改（需用户拖拽分享 repo）` }]
+    }
     operationCenter.loadMessages(JsExampleMessages)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{
       type: 'mcp',
-      server_url: 'local-fetch://browser-js-mcp',
+      server_url: 'local-fetch://browser-agent-mcp',
+    }]
+    // operationCenter.generateNew()
+  },
+  "🐱 pet": () => {
+    switchDefaultToAgentTag()
+    var JsExampleMessages = [{ role: "user", content: "Create an interactive desktop pet placed in the bottom-right corner of the current page." }]
+    if (isZh.value) {
+      JsExampleMessages = [{ role: "user", content: "创建一个可交互的桌面宠物，放在当前页面右下角。" }]
+    }
+    operationCenter.loadMessages(JsExampleMessages)
+    operationCenter.pandaState.currentDialogData.value.tool_configs = [{
+      type: 'mcp',
+      server_url: 'local-fetch://browser-agent-mcp',
     }]
     operationCenter.generateNew()
   },
-  "pet": () => {
-    var JsExampleMessages = [{ role: "user", content: "Using tool `run_browser_js` to create an interactive desktop pet placed in the bottom-right corner of the current page." }]
-    JsExampleMessages[0].comment = "The `run_browser_js` tool executes code in the current page’s JavaScript runtime, so the agent can read and modify the page’s content. To restore the original layout, please refresh."
-    operationCenter.loadMessages(JsExampleMessages)
+  "codex/cc": () => {
+    switchDefaultToAgentTag()
+    var HarnessMessages = [
+      { role: "user", content: "1. List the current directory structure\n2. Read the key files\n3. Summarize and give suggestions", comment: "[onPanda + Local Harness]\n - Setup: pip3 install -U harness_to_mcp && harness_to_mcp codex # or claude/openclaw/opencode\n - Purpose: Expose the harness's internal tools as a standard MCP server and bridge them into onPanda\n - Details: https://github.com/on-panda/harness_to_mcp" },
+    ]
+    if (isZh.value) {
+      HarnessMessages = [
+        { role: "user", content: "1. 列出当前目录结构\n2. 阅读关键文件\n3. 汇总信息并给出建议", comment: "【onPanda 连接本地 Harness】\n - 部署命令: pip3 install -U harness_to_mcp && harness_to_mcp codex # or claude/openclaw/opencode\n - 作用: 将 harness 的内部 tools 暴露成标准 MCP server 并接入 onPanda\n - 详细信息: https://github.com/on-panda/harness_to_mcp" },
+      ]
+    }
+    operationCenter.loadMessages(HarnessMessages)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [{
       type: 'mcp',
-      server_url: 'local-fetch://browser-js-mcp',
+      server_url: 'http://127.0.0.1:9330/mcp',
     }]
-    operationCenter.generateNew()
+    checkLocalhostMcpSupport()
+    // operationCenter.generateNew()
+  },
+  "GUI-agent": () => {
+    switchDefaultToAgentTag()
+    // modelName.value = 'gui-tag'
+    var GuiMessages = [
+      { role: "system", content: "", comment: "[Simple Computer Use Agent]\n - Usage: requires a local MCP server at http://127.0.0.1:9300/mcp\n - Setup: pip3 install -U pyautogui_mcp_server && python3 -m pyautogui_mcp_server\n - Details: https://github.com/on-panda/pyautogui_mcp_server" },
+      { role: "user", content: "Get the news:\n1. Take a screenshot of the desktop to understand the current environment\n2. Open any news website in a browser and screenshot its homepage\n3. Extract 5 news headlines so I can pick which one to read in detail" },
+    ]
+    if (isZh.value) {
+      GuiMessages = [
+        { role: "system", content: "", comment: "【简易 Computer Use Agent】\n - 使用说明: 需要用户在本机的 http://127.0.0.1:9300/mcp 提供 MCP server\n - 部署命令: pip3 install -U pyautogui_mcp_server && python3 -m pyautogui_mcp_server\n - 详细信息: https://github.com/on-panda/pyautogui_mcp_server" },
+        { role: "user", content: "获取新闻：\n1. 先截图查看电脑屏幕，了解环境和情况\n2. 用浏览器随便打开一个国内的新闻网站，截图看其首页\n3. 提取 5 个新闻关键词，我再来选择看那一条的正文" },
+      ]
+    }
+    operationCenter.loadMessages(GuiMessages)
+    operationCenter.pandaState.currentDialogData.value.tool_configs = [{
+      type: 'mcp',
+      server_url: 'http://127.0.0.1:9300/mcp',
+      require_approval: 'always',
+    }]
+    checkLocalhostMcpSupport()
+    // operationCenter.generateNew()
   },
   // "svg": () => {
   //   var SvgExampleMessages = [{ role: "user", content: "Generate svg image and iterate 3 times, draw content: A panda is riding on a llama" }]
   //   operationCenter.loadMessages(SvgExampleMessages)
   //   operationCenter.pandaState.currentDialogData.value.tool_configs = [{
   //     type: 'mcp',
-  //     server_url: 'local-fetch://browser-js-mcp',
+  //     server_url: 'local-fetch://browser-agent-mcp',
   //   }]
   //   operationCenter.generateNew()
   // },
@@ -357,6 +430,11 @@ const defaultExampleNameToFunc = {
     operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "Real numbers $x$ and $y$ with $x,y>1$ satisfy $\log_x(y^x)=\log_y(x^{4y})=10.$ What is the value of $xy$?", description: "Answer is 25" }])
     operationCenter.generateNew()
   },
+  "image": () => {
+    modelName.value = "image-tag"
+    operationCenter.loadMessages(messagesImageExample)
+    operationCenter.generateNew()
+  },
   "continue": () => {
     operationCenter.loadMessages(messagesContinueExample)
     setTimeout(() => operationCenter.continueGenerating(), 2000)
@@ -387,3 +465,11 @@ defineExpose({
 })
 
 </script>
+
+<style>
+.on-panda-local-mcp-message-box {
+  max-width: min(420px, calc(100vw - 32px));
+  border-radius: 6px;
+  font-family: Arial, sans-serif;
+}
+</style>

@@ -68,14 +68,19 @@ export default {
     waiting: 'Waiting...',
     copied: 'Copied',
     copyFailed: 'Copy failed',
+    pasteManually: 'Clipboard read failed. Please paste manually.',
     responseRefreshed: 'Response probability refreshed',
     modelsRefreshed: 'Model list refresh completed',
     noPromptLogprobs: 'No prompt_logprobs in response, maybe the model does not support prompt_logprobs',
-    dropJsonHere: 'Drop JSON file here!',
-    onlyOneJsonFile: 'Only one JSON file can be uploaded',
+    dropFilesHere: 'Drop *.panda*.json, local files, or folders here!',
+    localFilesUploadTip: 'Only one *.panda*.json loads data; other files and folders are shared with browserAgent',
     openAnnotatorPanel: 'Open annotator panel',
     waitingForModel: 'request, waiting response from model:',
     clickSendButton: '➡️ Please click the send button.'
+  },
+  localMcp: {
+    safariUnsupportedTitle: 'Please use desktop Chrome to connect local MCP',
+    safariUnsupportedMessage: 'Safari and iOS browsers block HTTPS pages from connecting to local HTTP MCP servers. Please use desktop Chrome or Firefox for this feature.'
   },
   tooltips: {
     dialogKeyHint: `Dialog tab:
@@ -90,11 +95,13 @@ export default {
     eraseDialog: 'Erase current dialog',
     clearAndReset: 'Clear and reset this data',
     restoreDialog: 'Restore current dialog',
-    uploadFile: 'Upload *.panda.json file',
+    uploadFile: 'Upload local file',
     downloadFile: 'Download panda.json file',
     cleanUI: 'Clean UI (reading mode)',
     continueGenerating: 'Continue generating',
     stopGenerating: 'Stop generating',
+    stopAgenticLoop: 'Running, stop it?',
+    regenerate: 'Regenerate',
     modelTagClick: '1. Single-click the tag to switch model; double-click to switch and regenerate.\n2. If hold down the `Ctrl` key and click or use the middle mouse button, will open a new window and regenerate using the chosen model.',
     continueGeneratingSupport: 'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> ',
     refreshTokenProb: 'Refresh tokens\' probability. Or',
@@ -154,7 +161,7 @@ export default {
   toolManagePanel: {
     configs: 'configs',
     candidate: 'candidate',
-    selected: 'selected',
+    loaded: 'loaded',
     empty: 'empty'
   },
   header: {
