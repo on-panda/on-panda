@@ -173,7 +173,7 @@ function buildAnthropicMessagesRequest(openaiRequestBody) {
         // TODO: It may be better to automatically convert non-leading system/developer messages into a user message template.
         requestBody.system = systemMessages.map(message => message.content || '').join('\n\n')
     }
-    for (const key of ['temperature', 'top_p', 'top_k', 'stop_sequences']) {
+    for (const key of ['temperature', 'top_p', 'top_k', 'stop_sequences', 'thinking', 'output_config']) {
         if (body[key] != null) {
             requestBody[key] = body[key]
         }
@@ -184,14 +184,18 @@ function buildAnthropicMessagesRequest(openaiRequestBody) {
     if (body.tools?.length) {
         requestBody.tools = body.tools.map(convertTool)
     }
-    const modelName = `${body.model || ''}`.toLowerCase()
-    if (modelName.includes('claude-opus') || modelName.includes('claude-sonnet')) {
-        requestBody.thinking = { type: 'adaptive' }
-        requestBody.output_config = { effort: 'max' }
-    } else {
-        requestBody.thinking = {
-            type: 'enabled',
-            budget_tokens: maxTokens - 1,
+    if (!requestBody.thinking) {
+        const modelName = `${body.model || ''}`.toLowerCase()
+        if (modelName.includes('claude-opus') || modelName.includes('claude-sonnet')) {
+            requestBody.thinking = { type: 'adaptive' }
+            if (!requestBody.output_config) {
+                requestBody.output_config = { effort: 'max' }
+            }
+        } else {
+            requestBody.thinking = {
+                type: 'enabled',
+                budget_tokens: maxTokens - 1,
+            }
         }
     }
     return requestBody
