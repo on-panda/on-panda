@@ -184,9 +184,15 @@ function buildAnthropicMessagesRequest(openaiRequestBody) {
     if (body.tools?.length) {
         requestBody.tools = body.tools.map(convertTool)
     }
-    requestBody.thinking = {
-        type: 'enabled',
-        budget_tokens: maxTokens - 1,
+    const modelName = `${body.model || ''}`.toLowerCase()
+    if (modelName.includes('claude-opus') || modelName.includes('claude-sonnet')) {
+        requestBody.thinking = { type: 'adaptive' }
+        requestBody.output_config = { effort: 'max' }
+    } else {
+        requestBody.thinking = {
+            type: 'enabled',
+            budget_tokens: maxTokens - 1,
+        }
     }
     return requestBody
 }
