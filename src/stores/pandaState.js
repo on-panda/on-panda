@@ -362,6 +362,22 @@ export class PandaState {
             return obj
         }
 
+        const isChatCompletionsRequest = obj.messages && obj.messages.length && obj.messages[0].role
+        if (isChatCompletionsRequest) {
+            const dialog = {
+                messages: obj.messages.map(message => ({ ...message })),
+                annotate: { is_good: null }
+            }
+            if ('tools' in obj) {
+                dialog.tools = deepCopy(obj.tools)
+            }
+            return {
+                dialogs: {
+                    "1": dialog
+                }
+            }
+        }
+
         const isMessagesList = obj.length && obj[0].length && obj[0][0].role
         if (isMessagesList) {
             obj = obj[0]
