@@ -29,6 +29,74 @@ export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
     return merged
 }
 
+// const MATCH_FULL_DP_MAX_CELLS = 10 //_000_000
+const MATCH_FULL_DP_MAX_CELLS = 10_000_000
+
+export function matchPatchesToTextGreedy({ patchStrings, text }) {
+    const patchTextMapping = []
+    var patchCursor = patchStrings.length
+    var textCursor = text.length
+
+    while (patchCursor > 0 && textCursor > 0) {
+        const pendingPatchIndexes = []
+        var pendingPatchChars = 0
+        var matchedMapping = null
+
+        function findPatchByEndDistance(patchString, minDistance, maxDistance) {
+            maxDistance = Math.min(maxDistance, textCursor)
+            for (let textDistance = minDistance; textDistance <= maxDistance; textDistance++) {
+                const textEnd = textCursor - textDistance
+                const textStart = textEnd - patchString.length
+                if (textStart >= 0 && text.startsWith(patchString, textStart)) {
+                    return textStart
+                }
+            }
+            return -1
+        }
+
+        function tryMatch(patchIndex, minDistance, maxDistance) {
+            const patchString = patchStrings[patchIndex]
+            const textStart = findPatchByEndDistance(patchString, minDistance, maxDistance)
+            if (textStart !== -1) {
+                matchedMapping = {
+                    patchStart: patchIndex,
+                    patchEnd: patchIndex + 1,
+                    textStart,
+                    textEnd: textStart + patchString.length,
+                }
+            }
+        }
+
+        for (let patchIndex = patchCursor - 1; patchIndex >= 0 && !matchedMapping; patchIndex--) {
+            const previousPatchChars = pendingPatchChars
+            pendingPatchChars += patchStrings[patchIndex].length
+            pendingPatchIndexes.push(patchIndex)
+
+            tryMatch(patchIndex, 0, previousPatchChars || pendingPatchChars)
+
+            if (matchedMapping || !previousPatchChars) {
+                continue
+            }
+            for (const pendingPatchIndex of pendingPatchIndexes) {
+                tryMatch(pendingPatchIndex, previousPatchChars + 1, pendingPatchChars)
+                if (matchedMapping) {
+                    break
+                }
+            }
+        }
+
+        if (!matchedMapping) {
+            break
+        }
+        patchTextMapping.push(matchedMapping)
+        patchCursor = matchedMapping.patchStart
+        textCursor = matchedMapping.textStart
+    }
+
+    return patchTextMapping.reverse()
+}
+
+
 export function matchPatchesToTextFullDP({ patchStrings, text }) {
     const dp = Array.from(
         { length: patchStrings.length + 1 },
@@ -85,7 +153,9 @@ export function matchTokensToPrompt(logprobsTokens, templatedPrompt) {
     const patchStrings = patches.map(patch => patch.patch)
     // This is an interface, input array of string and text, output patchTextMapping, which can be replaced with other optimized versions of algorithms in the future
     // patchTextMapping should keep patch partition information and do not merge adjacent patches, which may lead big patch fail to match
-    const patchTextMapping = matchPatchesToTextFullDP({ patchStrings, text: templatedPrompt })
+    const patchTextMapping = patchStrings.length * templatedPrompt.length <= MATCH_FULL_DP_MAX_CELLS
+        ? matchPatchesToTextFullDP({ patchStrings, text: templatedPrompt })
+        : matchPatchesToTextGreedy({ patchStrings, text: templatedPrompt })
     return patchTextMapping.map(mapping => ({
         tokenStart: patches[mapping.patchStart].tokenStart,
         tokenEnd: patches[mapping.patchEnd - 1].tokenEnd,

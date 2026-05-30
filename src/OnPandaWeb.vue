@@ -181,22 +181,21 @@ onMounted(async () => {
       // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
       // toolManageState.presetToolConfigsInput.value = toolManageState.presetToolConfigsInput.value.concat(deepCopy(TEST_TOOL_CONFIGS))
       // exampleToRun = operationCenter.generateNew
-      exampleToRun = () => {
-        modelName.value = "k2.6-instruct-wo-parser-tag"
-        onPandaExamplesRef.value.exampleNameToFunc["tools"](dialogWithControlState)
-      }
-      exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["🤖 browser-agent"]
-      // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["js"]
+      // exampleToRun = () => {
+      //   modelName.value = "k2.6-instruct-wo-parser-tag"
+      //   onPandaExamplesRef.value.exampleNameToFunc["tools"](dialogWithControlState)
+      // }
+      // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["🤖 browser-agent"]
       // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
-      var _exampleToRun = () => {
+      var exampleToRun = () => {
         var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
-        var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent." }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
-        var debugMessages = [{ "role": "system", "content": "Any response must start from `I think`" }, { "role": "user", "content": "Screenshot and reply what you see within one word" }]
+        var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent. Add emojis in your response. Must to say something to user before tool_calls (words in content not in thinking)" }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
+        // var debugMessages = [{ "role": "system", "content": "Any response must start from `I think`" }, { "role": "user", "content": "Screenshot and reply what you see within one word" }]
         operationCenter.loadMessages(debugMessages, TEST_TOOL_CONFIGS)
         if (modelNameTags.value['test']) {
           modelName.value = modelNameTags.value['test']
         }
-        modelName.value = "doubao-tag"
+        // modelName.value = "doubao-tag"
         // controlParameterState.apiConfigControllable.value.chat_config.max_tool_message_assets = 1
         controlParameterState.apiConfigControllable.value.chat_config.tool_message_asset_keep_rounds = 2
         operationCenter.generateNew()
