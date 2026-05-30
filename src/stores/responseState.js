@@ -377,9 +377,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 return
             }
 
-            var lastMessageContent = messages[messages.length - 1].content
-            var lastMessageContent_ = ''
-            var tokensNew = []
             if (!json.prompt_logprobs_list) {
                 ElMessage({
                     showClose: true,
@@ -395,24 +392,31 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 logprobs: x,
                 model: tokens.value[0].model,
             }))
-            for (var i = promptLogprobsTokensNew.length - 1; i >= 0; i--) {
-                var token = promptLogprobsTokensNew[i]
-                var token_content = token.delta.content
-
-                if ((token_content + lastMessageContent_).length > lastMessageContent.length) {
-                    break
-                }
-                tokensNew.unshift(token)
-                lastMessageContent_ = token_content + lastMessageContent_
+            const messageForLogprobs = { ...finalMessage.value }
+            delete messageForLogprobs.finish_reason  // TODO: consider finish_reason token
+            const { templatedPrompt } = viewResponseTemplate.value.apply(messageForLogprobs)
+            const promptLogprobsTailCharLimit = Math.max(1024, Math.ceil(templatedPrompt.length * 1.5))
+            var promptLogprobsTailCharLength = 0
+            var promptLogprobsTokenStart = promptLogprobsTokensNew.length
+            while (promptLogprobsTokenStart > 0 && promptLogprobsTailCharLength < promptLogprobsTailCharLimit) {
+                promptLogprobsTokenStart--
+                promptLogprobsTailCharLength += promptLogprobsTokensNew[promptLogprobsTokenStart].delta.content.length
             }
+            const logprobsTokensForView = promptLogprobsTokensNew.slice(promptLogprobsTokenStart)
+            var tokensNew = buildViewTokens({
+                message: messageForLogprobs,
+                responseTemplate: viewResponseTemplate.value,
+                logprobsTokens: logprobsTokensForView,
+            })
+            const completionTokens = tokensNew.filter(token => typeof token.logprobs?.content?.[0]?.logprob === "number").length
             var decodeToken = json.choices[0]
             var prefillTokenLength = json.prompt_logprobs_list.length + 1 // prompt_logprobs's first token is null
             if (json.usage) {
                 prefillTokenLength = json.usage.prompt_tokens
             }
             var usage = {
-                prompt_tokens: prefillTokenLength - tokensNew.length,
-                completion_tokens: tokensNew.length,
+                prompt_tokens: prefillTokenLength - completionTokens,
+                completion_tokens: completionTokens,
             }
             if (decodeToken?.finish_reason == "stop") {  // if finish_reason is stop, add to tokensNew
                 const stopToken = {

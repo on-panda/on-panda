@@ -57,10 +57,13 @@ export function matchPatchesToTextFullDP({ patchStrings, text }) {
     var textIndex = 0
     while (patchIndex < patchStrings.length && textIndex <= text.length) {
         const patchString = patchStrings[patchIndex]
-        if (
+        const best = dp[patchIndex][textIndex]
+        if (textIndex < text.length && dp[patchIndex][textIndex + 1] === best) {
+            textIndex += 1
+        } else if (
             patchString &&
             text.startsWith(patchString, textIndex) &&
-            dp[patchIndex][textIndex] === 1 + dp[patchIndex + 1][textIndex + patchString.length]
+            best === 1 + dp[patchIndex + 1][textIndex + patchString.length]
         ) {
             patchTextMapping.push({
                 patchStart: patchIndex,
@@ -70,12 +73,8 @@ export function matchPatchesToTextFullDP({ patchStrings, text }) {
             })
             patchIndex += 1
             textIndex += patchString.length
-        } else if (
-            dp[patchIndex + 1][textIndex] >= (textIndex < text.length ? dp[patchIndex][textIndex + 1] : 0)
-        ) {
-            patchIndex += 1
         } else {
-            textIndex += 1
+            patchIndex += 1
         }
     }
     return patchTextMapping
