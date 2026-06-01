@@ -87,10 +87,11 @@ const defaultModelNameTags = {
   'DS': 'ds-tag',
   'GPT': 'gpt-tag',
   'claude': 'claude-tag',
+  'gemini': 'gemini-tag',
   // 'image': 'image-tag',
   // 'audio': 'step1f-on-policy',
   'test': 'test-tag',
-  'fast': 'fast-tag',
+  // 'fast': 'fast-tag',
   // 'groq': 'groq-tag',
 }
 const modelNameTags = computed(() => {
