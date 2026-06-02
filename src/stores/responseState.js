@@ -56,7 +56,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
         if (
             tokens.value === logprobsTokens.value &&
-            viewResponseTemplate.value.configMark === generationResponseTemplate.value.configMark
+            viewResponseTemplate.value.configMark === generationResponseTemplate.value.configMark &&
+            (
+                viewResponseTemplate.value.responseTemplateType !== "plain_text" ||
+                tokens.value.every(token => !token.delta.reasoning && !token.delta.tool_calls?.length)
+            )
         ) {
             return tokens.value
         }

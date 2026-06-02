@@ -345,6 +345,11 @@ export function ResponseTemplateClosure({ apiConfig } = {}) {
                     delta.sidecar = mergeTwoDeltas(delta.sidecar || {}, delta2.sidecar || {})
                     continue
                 }
+                if (key === "reasoning" && delta1.content?.length && !delta1.reasoning?.length) {
+                    // if delta1 has content and delta2 is reasoning, set old content as reasoning
+                    delta.reasoning = delta.content
+                    delete delta.content
+                }
                 delta[key] = (delta[key] || "") + (delta2[key] || "")
                 if (key === "role" && delta2.role) {
                     role = delta2.role
