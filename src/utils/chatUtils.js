@@ -38,6 +38,14 @@ export function getFinishReason(message, defaultFinishReason = null) {
 }
 
 export function splitToPromptResponse(messages, modelRoles = ['assistant',]) {
+    messages = messages.slice()
+    while (  // ignore empty messages in the end
+        messages.length &&
+        modelRoles.includes(messages[messages.length - 1].role) &&
+        !messageToSeq(messages[messages.length - 1], { includeFinishReason: false })
+    ) {
+        messages.pop()
+    }
     if (isFinalRoleModelRole(messages, modelRoles)) {
         var prompt = messages.slice(0, -1)
         var response = messages[messages.length - 1]
