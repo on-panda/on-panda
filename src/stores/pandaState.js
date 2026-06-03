@@ -250,10 +250,11 @@ export class PandaState {
         return false
     }
     switchDialogByIndex = (index) => {
-        var oldIndex = this.currentDialogIndex.value
+        var targetKey = this.dialogKeys.value[this.roundDialogIndex(index)]
+        var oldKey = this.currentDialogKey.value
         this.beforeOperation()
-        if (oldIndex != index) {
-            this.currentDialogIndex.value = this.roundDialogIndex(index)
+        if (oldKey != targetKey) {
+            this.currentDialogIndex.value = this.dialogKeys.value.indexOf(targetKey)
         }
     }
     roundDialogIndex = (index) => {
