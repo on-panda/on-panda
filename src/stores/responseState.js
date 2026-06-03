@@ -88,7 +88,8 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     })
 
     const messagesComputed = computed(() => {
-        if (finalMessage.value.content || finalMessage.value.role) {
+        // A role-only model message can be an intentional prefill; truly empty template output should parse to {}.
+        if (finalMessage.value.role || messageToSeq(finalMessage.value, { includeFinishReason: false })) {
             return messages.value.concat([finalMessage.value])
         } else {
             return messages.value
@@ -161,7 +162,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
         var body = JSON.parse(JSON.stringify(apiConfig.value.chat_config))
         if (continue_final_message) {
-            var lastMessageContent = messages[messages.length - 1].content
+            var lastMessageContent = messages[messages.length - 1].content || ""
             var prefillTokensNumber = tokens.value.filter(token => !token.pruned).length
             if (apiConfig.value.support_continue_final_message) {
                 body.add_generation_prompt = false
@@ -708,6 +709,7 @@ ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.cons
 
         generateNew = async ({ messageIndex = -1 } = {}) => {
             const resolvedMessageIndex = await this.buildRequestToolsAndResolveMessageIndex(messageIndex)
+            // Role-only model messages are valid prefill for continuation.
             const shouldContinueFinalMessage = (
                 resolvedMessageIndex === -1 &&
                 !messageToSeq(finalMessage.value, { includeFinishReason: false }) &&
@@ -715,7 +717,6 @@ ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.cons
                 apiConfig.value.support_continue_final_message
             )
             if (shouldContinueFinalMessage) {
-                // if only has role, try using continue generating
                 await this.continueGenerating()
             } else {
                 this.pandaState.beforeOperation()
