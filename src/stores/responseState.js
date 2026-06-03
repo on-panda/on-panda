@@ -117,6 +117,14 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         return newTokens
     }
 
+    function getFinalMessageFinishReason(message, defaultFinishReason = null) {
+        if (generationResponseTemplate.value.responseTemplateType === "plain_text") {
+            return message.finish_reason || defaultFinishReason
+        }
+        return getFinishReason(message, defaultFinishReason)
+    }
+
+
     function modifyRequest(requestBody) {
         var body = normalizeRequest(requestBody)
         dropStaleToolAsset(body)
@@ -546,7 +554,7 @@ ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.cons
             await toolManageState.buildRequestTools()
             toolCallState.setAutoApproveLoop(autoApproveRunNum)
             let lastMessage = messagesComputed.value[messagesComputed.value.length - 1]
-            let finishReason = getFinishReason(lastMessage, defaultFinishReason)
+            let finishReason = getFinalMessageFinishReason(lastMessage, defaultFinishReason)
             let loopIdx = 0
             while (true) {
                 if (finishReason === "tool_calls") {
@@ -1047,6 +1055,7 @@ ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.cons
         operationCenter,
         newRoundMessage,
         finalMessage,
+        getFinalMessageFinishReason,
         messagesComputed,
         ...warningState,
         registerInResponseText,

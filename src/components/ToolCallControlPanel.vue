@@ -4,7 +4,7 @@ import { CaretRight, Close, CloseBold, Loading, RefreshRight } from '@element-pl
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../stores/globalStore.js'
 import { closeFloatPanelMeta, hashObjectSHA256Base64, sleep } from '../utils/commonUtils.js'
-import { messageToSeq, getFinishReason } from '../utils/chatUtils'
+import { messageToSeq } from '../utils/chatUtils'
 import ElTooltipWithKeepOpen from './widgets/ElTooltipWithKeepOpen.vue'
 
 function useToolCallsRejectedGuidance(toolCalls) {
@@ -226,7 +226,7 @@ const isToolCallsNotInFinalMessage = computed(() => {
 })
 
 const showToolCallControlPanel = computed(() => {
-    if (!responseState.requestStatus.value.generating && (getFinishReason(finalMessage) === "tool_calls" || isToolCallsNotInFinalMessage.value)) {
+    if (!responseState.requestStatus.value.generating && (responseState.getFinalMessageFinishReason(finalMessage.value) === "tool_calls" || isToolCallsNotInFinalMessage.value)) {
         return true
     }
     return false
