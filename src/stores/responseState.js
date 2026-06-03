@@ -2,7 +2,7 @@ import { ref, computed, toValue, watch, isRef, unref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepEqual, ObjctKeyToCamelCaseNaming, deepCopy, buildMockObject, safeArrayExtend } from '../utils/commonUtils.js'
 import { getFinishReason, normalizeRequest, recordAsRejectedToken, filterEmptyMessage, MESSAGE_KEYS_IN_CONTEXT, MESSAGE_OUTPUT_KEYS, getMessageOutput, messageToSeq } from '../utils/chatUtils.js'
-import { ResponseTemplateClosure, buildViewTokens } from '../utils/responseTemplateUtils.js'
+import { buildResponseTemplate, buildViewTokens } from '../utils/responseTemplateUtils.js'
 import { OpenAI } from '../utils/fetchOpenaiApi.js'
 import { createChatCompletionsStream } from '../utils/apiProtocols/index.js'
 import { applyImageDetailLevel, assertNoLegacyChatConfigTools, dropStaleToolAsset } from '../utils/requestUtils.js'
@@ -41,9 +41,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     const tokens = ref([])  // aka generationTokens, the source of truth for generated tokens, will be parsed as finalMessage
     const logprobsTokens = ref([])  // only provide logprobs info
 
-    var generationResponseTemplate = ref(ResponseTemplateClosure({ apiConfig: apiConfig.value }))
+    var generationResponseTemplate = ref(buildResponseTemplate({ apiConfig: apiConfig.value }))
 
-    const viewResponseTemplate = computed(() => ResponseTemplateClosure({ apiConfig: apiConfig.value }))
+    const viewResponseTemplate = computed(() => buildResponseTemplate({ apiConfig: apiConfig.value }))
 
     const finalMessage = computed(() => {
         return generationResponseTemplate.value.parse(tokens.value)
@@ -129,7 +129,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         return getFinishReason(message, defaultFinishReason)
     }
 
-
     function modifyRequest(requestBody) {
         var body = normalizeRequest(requestBody)
         dropStaleToolAsset(body)
@@ -162,6 +161,12 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
         var body = JSON.parse(JSON.stringify(apiConfig.value.chat_config))
         if (continue_final_message) {
+            if (generationResponseTemplate.value.responseTemplateType === "plain_text") {
+                messages[messages.length - 1] = {
+                    role: messages[messages.length - 1].role || "assistant",
+                    content: generationResponseTemplate.value.apply(messages[messages.length - 1]).templatedPrompt,
+                }
+            }
             var lastMessageContent = messages[messages.length - 1].content || ""
             var prefillTokensNumber = tokens.value.filter(token => !token.pruned).length
             if (apiConfig.value.support_continue_final_message) {

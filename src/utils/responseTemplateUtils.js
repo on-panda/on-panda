@@ -1,5 +1,6 @@
 import { deepCopy } from './commonUtils.js'
 import { tokenToDisplayString, tokensToPatches } from './chatUtils.js'
+import { buildMatchedResponseTemplate } from './responseTemplates/index.js'
 
 export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
     // Merge two deltas
@@ -259,11 +260,19 @@ export function pieceStructureViewTokens({ message, logprobsTokens = [], templat
 }
 
 export function buildViewTokens({ message, responseTemplate, logprobsTokens = [] } = {}) {
-    responseTemplate = responseTemplate || ResponseTemplateClosure()
+    responseTemplate = responseTemplate || buildResponseTemplate()
     const { templatedPrompt, keyPathPromptMapping } = responseTemplate.apply(message)
     const patchTextMapping = logprobsTokens.length ? matchTokensToPrompt(logprobsTokens, templatedPrompt) : []
     if (responseTemplate.responseTemplateType === "plain_text") {
-        return pieceViewTokens({ logprobsTokens, text: templatedPrompt, patchTextMapping })
+        const tokens = pieceViewTokens({ logprobsTokens, text: templatedPrompt, patchTextMapping })
+        if (message.finish_reason) {
+            tokens.push({
+                delta: { content: "" },
+                tokenIndex: tokens.length,
+                finish_reason: message.finish_reason,
+            })
+        }
+        return tokens
     }
     return pieceStructureViewTokens({
         logprobsTokens,
@@ -274,10 +283,17 @@ export function buildViewTokens({ message, responseTemplate, logprobsTokens = []
     })
 }
 
-export function ResponseTemplateClosure({ apiConfig } = {}) {
-    const configMark = JSON.stringify((apiConfig?.value || apiConfig || {}).response_template ?? null)
+export function buildResponseTemplate({ apiConfig } = {}) {
+    return buildMatchedResponseTemplate({ apiConfig }) || new DefaultResponseTemplate({ apiConfig })
+}
 
-    function apply(message = {}) {
+export class DefaultResponseTemplate {
+    constructor({ apiConfig } = {}) {
+        this.responseTemplateType = "default"
+        this.configMark = JSON.stringify((apiConfig?.value || apiConfig || {}).response_template ?? null)
+    }
+
+    apply(message = {}) {
         var templatedPrompt = ""
         var textCursor = 0
         const keyPathPromptMapping = []
@@ -305,7 +321,7 @@ export function ResponseTemplateClosure({ apiConfig } = {}) {
         return { templatedPrompt, keyPathPromptMapping }
     }
 
-    function parse(tokens = []) {
+    parse(tokens = []) {
         if (typeof tokens === "string") {
             return { role: "assistant", content: tokens }
         }
@@ -385,12 +401,5 @@ export function ResponseTemplateClosure({ apiConfig } = {}) {
             mergedMessage.finish_reason = finish_reason
         }
         return mergedMessage
-    }
-
-    return {
-        apply,
-        parse,
-        responseTemplateType: "default",
-        configMark,
     }
 }
