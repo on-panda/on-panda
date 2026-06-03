@@ -164,6 +164,19 @@ function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
     return merged
 }
 
+function mergeToolCalls(toolCalls1 = [], toolCalls2 = []) {
+    const toolCalls = toolCalls1.map(toolCall => deepCopy(toolCall))
+    for (const toolCall2 of toolCalls2) {
+        const index = toolCall2.index
+        if (toolCalls[index]) {
+            toolCalls[index] = mergeTwoDeltas(toolCalls[index], toolCall2, ['type', 'id', 'name'])
+        } else {
+            toolCalls[index] = deepCopy(toolCall2)
+        }
+    }
+    return toolCalls
+}
+
 function parseStructuredTokens(tokens = []) {
     var role = null
     var finish_reason
@@ -188,7 +201,7 @@ function parseStructuredTokens(tokens = []) {
                     toolCalls.push(toolCall2)
                 } else {
                     var toolCall1 = toolCalls[toolCall2.index]
-                    toolCalls[toolCall2.index] = mergeTwoDeltas(toolCall1, toolCall2, ['type', 'id'])
+                    toolCalls[toolCall2.index] = mergeTwoDeltas(toolCall1, toolCall2, ['type', 'id', 'name'])
                 }
                 delta.tool_calls = toolCalls
                 continue
@@ -199,8 +212,23 @@ function parseStructuredTokens(tokens = []) {
             }
             if (key === 'reasoning' && delta1.content?.length && !delta1.reasoning?.length) {
                 // Plain-text continuation sends the response prefix as content, but some servers still resume by streaming reasoning deltas.
-                delta.reasoning = delta.content
-                delete delta.content
+                const parsedPrefix = parseKimiK2ResponseText(delta.content)
+                if (parsedPrefix.reasoning || parsedPrefix.tool_calls?.length) {
+                    if (parsedPrefix.reasoning) {
+                        delta.reasoning = parsedPrefix.reasoning
+                    }
+                    if (parsedPrefix.content) {
+                        delta.content = parsedPrefix.content
+                    } else {
+                        delete delta.content
+                    }
+                    if (parsedPrefix.tool_calls?.length) {
+                        delta.tool_calls = mergeToolCalls(parsedPrefix.tool_calls, delta.tool_calls || [])
+                    }
+                } else {
+                    delta.reasoning = stripRepeatedThinkBegin(delta.content)
+                    delete delta.content
+                }
             }
             delta[key] = (delta[key] || '') + (delta2[key] || '')
             if (key === 'role' && delta2.role) {
@@ -254,8 +282,8 @@ function normalizePlainTextInStructuredMessage(message) {
             : parsedTextMessage.reasoning
     }
     message.content = parsedTextMessage.content
-    if (parsedTextMessage.tool_calls?.length && !message.tool_calls?.length) {
-        message.tool_calls = parsedTextMessage.tool_calls
+    if (parsedTextMessage.tool_calls?.length) {
+        message.tool_calls = mergeToolCalls(parsedTextMessage.tool_calls, message.tool_calls || [])
     }
     return message
 }

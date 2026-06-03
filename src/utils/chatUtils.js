@@ -1,6 +1,6 @@
 import { unref } from 'vue'
 import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils'
-import { formatMessageAsText, formatSimpleContentAsText } from './messageTextCodec.js'
+import { formatMessageAsText, formatSimpleContentAsText, MESSAGE_CONTEXT_SECTION_MARKERS } from './messageTextCodec.js'
 import { stripRuntime } from './toolUtils.js'
 
 export {
@@ -70,8 +70,8 @@ export function dialogDifferent(dialog1, dialog2, modelRoles = ['assistant',]) {
     // if response is null, response is different
     var is_response_modified = true
     if (response1 && response2) {
-        var seq1 = messageToSeq(response1)
-        var seq2 = messageToSeq(response2)
+        var seq1 = messageToSeq(response1, { rawToolCallArguments: true })
+        var seq2 = messageToSeq(response2, { rawToolCallArguments: true })
         function findCommonPrefix(str1, str2) {
             let i = 0;
             while (i < str1.length && i < str2.length && str1[i] === str2[i]) {
@@ -216,11 +216,27 @@ export function tokensToSeq(tokens) {
     return tokens.map(token => tokenToDisplayString(token) + ((token.finish_reason && token.finish_reason !== 'length') ? ('<|' + token.finish_reason + '|>') : '')).join('')
 }
 
-export function messageToSeq(message, { includeFinishReason = true } = {}) {
+export function messageToSeq(message, { includeFinishReason = true, rawToolCallArguments = false } = {}) {
     message = message || {}
-    var seq = formatMessageAsText(message, {
-        formatContentAsText: formatSimpleContentAsText,
-    })
+    var seq = ''
+    if (rawToolCallArguments) {
+        if (message.reasoning) {
+            seq += `${MESSAGE_CONTEXT_SECTION_MARKERS.reasoning}${message.reasoning}`
+        }
+        const contentText = formatSimpleContentAsText(message.content)
+        if (contentText) {
+            seq += `${MESSAGE_CONTEXT_SECTION_MARKERS.content}${contentText}`
+        }
+        for (const toolCall of message.tool_calls || []) {
+            const toolCallHeader = { ...toolCall, function: { ...toolCall.function } }
+            delete toolCallHeader.function.arguments
+            seq += `${MESSAGE_CONTEXT_SECTION_MARKERS.tool_calls}${JSON.stringify(toolCallHeader)}${toolCall.function.arguments ?? ''}`
+        }
+    } else {
+        seq = formatMessageAsText(message, {
+            formatContentAsText: formatSimpleContentAsText,
+        })
+    }
 
     if (includeFinishReason && message.finish_reason && message.finish_reason !== 'length') {
         seq += `<|${message.finish_reason}|>`
