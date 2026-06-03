@@ -54,17 +54,21 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         if (!tokens.value.length) {
             return tokens.value
         }
+        const canReuseTokens =
+            viewResponseTemplate.value.responseTemplateType !== "plain_text" ||
+            tokens.value.every(token => !token.delta.reasoning && !token.delta.tool_calls?.length)
         if (
+            canReuseTokens &&
             tokens.value === logprobsTokens.value &&
-            viewResponseTemplate.value.configMark === generationResponseTemplate.value.configMark &&
-            (
-                viewResponseTemplate.value.responseTemplateType !== "plain_text" ||
-                tokens.value.every(token => !token.delta.reasoning && !token.delta.tool_calls?.length)
-            )
+            viewResponseTemplate.value.configMark === generationResponseTemplate.value.configMark
         ) {
             return tokens.value
         }
+        const canReuseLogprobsTokens =
+            viewResponseTemplate.value.responseTemplateType !== "plain_text" ||
+            logprobsTokens.value.every(token => !token.delta.reasoning && !token.delta.tool_calls?.length)
         if (
+            canReuseLogprobsTokens &&
             logprobsTokens.value.length
         ) {
             try {
