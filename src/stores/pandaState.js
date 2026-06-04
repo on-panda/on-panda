@@ -1,6 +1,6 @@
 import { ref, computed, watch } from 'vue'
-import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '../utils/commonUtils'
-import { dialogDifferent, isFinalRoleModelRole, clearTokenObject } from '../utils/chatUtils'
+import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '../utils/commonUtils.js'
+import { dialogDifferent, isFinalRoleModelRole, clearTokenObject } from '../utils/chatUtils.js'
 import { stripRuntime } from '../utils/toolUtils.js'
 import { useGlobalStore } from './globalStore.js'
 import LZString from 'lz-string'

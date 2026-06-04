@@ -11,7 +11,7 @@ export { default as OnPandaResponseText } from './components/OnPandaResponseText
 export { default as OnPandaResponsePanel } from './components/OnPandaResponsePanel.vue'
 export { default as OnPandaDialogPanel } from './components/OnPandaDialogPanel.vue'
 
-export { ControlParameterStateClosure, defaultChatConfig, defaultApiConfig } from './stores/controlParameterState'
+export { ControlParameterStateClosure, defaultChatConfig, defaultApiConfig } from './stores/controlParameterState.js'
 export { default as ControlParameterPanel } from './components/ControlParameterPanel.vue'
 export { default as DataControlPanel } from './components/DataControlPanel.vue'
 
@@ -20,7 +20,7 @@ export { default as MarkdownRender } from './components/widgets/MarkdownRender.v
 export { default as CheckboxWidgetSupportNull } from './components/widgets/CheckboxWidgetSupportNull.vue'
 
 
-import { i18n } from './i18n';
+import { i18n } from './i18n/index.js';
 import ElementPlus from 'element-plus'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import en from 'element-plus/es/locale/lang/en'

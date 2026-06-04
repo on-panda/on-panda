@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed, defineAsyncComponent, markRaw } from 'vue'
-import { useEventListener } from '../utils/commonUtils'
+import { useEventListener } from '../utils/commonUtils.js'
 import { useI18n } from 'vue-i18n'
-import { i18n } from '../i18n'
+import { i18n } from '../i18n/index.js'
 
 export const useGlobalStore = defineStore('onPandaGlobal', () => {
     const debug = ref((window.location.href.includes('http://localhost') || window.location.href.includes('http://127.0.0.1') || window.location.origin.includes("debug")) && document.title.endsWith("onPanda"))

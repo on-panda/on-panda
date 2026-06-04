@@ -4,7 +4,7 @@ import markdownItCodeCopy from 'markdown-it-code-copy'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 import 'katex/dist/katex.css'
-import { i18n } from '../i18n'
+import { i18n } from '../i18n/index.js'
 
 // for fancy copy button
 const copyFeedbackTimers = new WeakMap()

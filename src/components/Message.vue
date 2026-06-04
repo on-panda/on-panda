@@ -80,7 +80,7 @@ import { useI18n } from 'vue-i18n'
 import { convertImageUrlToBase64, deepCopy, mockObject, sleep, TaskQueue } from '../utils/commonUtils.js'
 import { Close, Delete, Edit } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { getContentTypes, messageToSeq } from '../utils/chatUtils'
+import { getContentTypes, messageToSeq } from '../utils/chatUtils.js'
 import {
   MESSAGE_KEYS_IN_CONTEXT,
   formatContentAsText,

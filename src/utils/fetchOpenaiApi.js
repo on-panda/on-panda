@@ -1,4 +1,4 @@
-import { useGlobalStore } from '../stores/globalStore'
+import { useGlobalStore } from '../stores/globalStore.js'
 import { ElMessage } from 'element-plus'
 import { retryWithSchedule, parseSseJsonStream } from './apiProtocols/utils.js'
 

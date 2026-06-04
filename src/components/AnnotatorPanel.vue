@@ -80,7 +80,7 @@ import CheckboxWidgetSupportNull from './widgets/CheckboxWidgetSupportNull.vue'
 import ObjectViewerInDetails from './widgets/ObjectViewerInDetails.vue';
 
 import { ref, watch } from 'vue'
-import { dateStringNow } from '../utils/commonUtils'
+import { dateStringNow } from '../utils/commonUtils.js'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()

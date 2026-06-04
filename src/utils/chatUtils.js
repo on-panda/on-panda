@@ -1,5 +1,5 @@
 import { unref } from 'vue'
-import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils'
+import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils.js'
 import { formatMessageAsText, formatSimpleContentAsText } from './messageTextCodec.js'
 import { stripRuntime } from './toolUtils.js'
 

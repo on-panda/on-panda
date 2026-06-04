@@ -4,7 +4,7 @@ import { CaretRight, Close, CloseBold, Loading, RefreshRight } from '@element-pl
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../stores/globalStore.js'
 import { closeFloatPanelMeta, hashObjectSHA256Base64, sleep } from '../utils/commonUtils.js'
-import { messageToSeq } from '../utils/chatUtils'
+import { messageToSeq } from '../utils/chatUtils.js'
 import ElTooltipWithKeepOpen from './widgets/ElTooltipWithKeepOpen.vue'
 
 function useToolCallsRejectedGuidance(toolCalls) {

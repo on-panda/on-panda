@@ -1,10 +1,10 @@
 import { ref, computed, toValue, watch, isRef, onMounted } from 'vue'
 import JSON5 from 'json5'
-import { OpenAI } from '../utils/fetchOpenaiApi'
+import { OpenAI } from '../utils/fetchOpenaiApi.js'
 import { ElMessage } from 'element-plus'
-import { deepCopy } from '../utils/commonUtils'
-import { useGlobalStore } from './globalStore'
-import { ObjctKeyToCamelCaseNaming } from '../utils/commonUtils'
+import { deepCopy } from '../utils/commonUtils.js'
+import { useGlobalStore } from './globalStore.js'
+import { ObjctKeyToCamelCaseNaming } from '../utils/commonUtils.js'
 
 export const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
 

@@ -58,7 +58,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useGlobalStore } from '../stores/globalStore'
+import { useGlobalStore } from '../stores/globalStore.js'
 import LanguageSwitcher from './widgets/LanguageSwitcher.vue'
 import MarkdownRender from './widgets/MarkdownRender.vue'
 

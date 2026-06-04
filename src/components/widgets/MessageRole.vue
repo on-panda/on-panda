@@ -15,7 +15,7 @@
 </template>
 <script setup>
 import { ref, inject } from 'vue'
-import { mockObject } from '../../utils/commonUtils'
+import { mockObject } from '../../utils/commonUtils.js'
 
 const roleNameInput = ref(null)
 const operationCenterEditRole = inject('operationCenter.editRole', mockObject)

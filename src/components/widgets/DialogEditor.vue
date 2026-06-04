@@ -22,7 +22,7 @@ import { ref, watch, computed } from 'vue'
 import MarkdownRender from './MarkdownRender.vue'
 import { ElDialog, ElInput, ElButton } from 'element-plus'
 import { useI18n } from 'vue-i18n'
-import { useGlobalStore } from '../../stores/globalStore'
+import { useGlobalStore } from '../../stores/globalStore.js'
 
 const { t } = useI18n()
 const globalStore = useGlobalStore()

@@ -1,15 +1,15 @@
 <script setup>
 import { ref, computed, getCurrentInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { deepCopy } from '../utils/commonUtils'
+import { deepCopy } from '../utils/commonUtils.js'
 import JSON5 from 'json5'
 import { InfoFilled, RefreshRight, Edit } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { useGlobalStore } from '../stores/globalStore'
+import { useGlobalStore } from '../stores/globalStore.js'
 import MarkdownRender from './widgets/MarkdownRender.vue'
 import CustomAnnotatorTool from './widgets/CustomAnnotatorTool.vue'
-import { openDialogEditor } from '../utils/dialogEditor'
-import { CONTINUE_PROMPT, parseApiConfigsJson5 } from '../stores/controlParameterState'
+import { openDialogEditor } from '../utils/dialogEditor.js'
+import { CONTINUE_PROMPT, parseApiConfigsJson5 } from '../stores/controlParameterState.js'
 import ObjectViewerInDetails from './widgets/ObjectViewerInDetails.vue'
 
 const globalStore = useGlobalStore()
