@@ -1,6 +1,10 @@
-import { deepCopy } from './commonUtils.js'
-import { tokenToDisplayString, tokensToPatches } from './chatUtils.js'
-import { buildMatchedResponseTemplate } from './responseTemplates/index.js'
+import { deepCopy } from '../commonUtils.js'
+import { tokenToDisplayString, tokensToPatches } from '../chatUtils.js'
+import { KimiK2ResponseTemplate } from './kimiK2ResponseTemplate.js'
+
+const RESPONSE_TEMPLATE_CLASSES = [
+    KimiK2ResponseTemplate,
+]
 
 export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
     // Merge two deltas
@@ -284,7 +288,13 @@ export function buildViewTokens({ message, responseTemplate, logprobsTokens = []
 }
 
 export function buildResponseTemplate({ apiConfig } = {}) {
-    return buildMatchedResponseTemplate({ apiConfig }) || new DefaultResponseTemplate({ apiConfig })
+    const responseTemplateConfig = (apiConfig?.value || apiConfig || {}).response_template
+    for (const ResponseTemplateClass of RESPONSE_TEMPLATE_CLASSES) {
+        if (ResponseTemplateClass.match({ responseTemplateConfig })) {
+            return new ResponseTemplateClass({ apiConfig })
+        }
+    }
+    return new DefaultResponseTemplate({ apiConfig })
 }
 
 export class DefaultResponseTemplate {
