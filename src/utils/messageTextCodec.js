@@ -12,6 +12,14 @@ export const MESSAGE_CONTEXT_SECTION_MARKERS = {
     content: '<|ON_PANDA_CONTENT|>',
     tool_calls: '<|ON_PANDA_TOOL_CALLS|>',
 }
+const TOOL_CALL_RECORD_MARKERS = {
+    calls_begin: '<|ON_PANDA_CALLS_BEGIN|>',
+    calls_end: '<|ON_PANDA_CALLS_END|>',
+    type: '<|ON_PANDA_CALL_TYPE|>',
+    id: '<|ON_PANDA_CALL_ID|>',
+    name: '<|ON_PANDA_CALL_NAME|>',
+    arguments: '<|ON_PANDA_CALL_ARGUMENTS|>',
+}
 
 export function getMessageOutput(message) {
     return Object.fromEntries(MESSAGE_OUTPUT_KEYS.map(key => [key, message?.[key]]))
@@ -189,6 +197,96 @@ function parseJsonSection(sectionMarker, value) {
     }
 }
 
+function formatToolCallsAsText(message) {
+    const rows = [TOOL_CALL_RECORD_MARKERS.calls_begin]
+    for (const toolCall of message.tool_calls) {
+        if (toolCall.type) {
+            rows.push(`${TOOL_CALL_RECORD_MARKERS.type}${toolCall.type}`)
+        }
+        if (toolCall.id) {
+            rows.push(`${TOOL_CALL_RECORD_MARKERS.id}${toolCall.id}`)
+        }
+        if (toolCall.function.name) {
+            rows.push(`${TOOL_CALL_RECORD_MARKERS.name}${toolCall.function.name}`)
+        }
+        if (toolCall.function.arguments) {
+            rows.push(`${TOOL_CALL_RECORD_MARKERS.arguments}${toolCall.function.arguments}`)
+        }
+    }
+    if (['tool_calls', 'stop'].includes(message.finish_reason)) {
+        rows.push(TOOL_CALL_RECORD_MARKERS.calls_end)
+    }
+    return rows.join('\n')
+}
+
+function parseToolCallRecordValue(recordText, marker) {
+    const markerIndex = recordText.startsWith(marker) ? 0 : recordText.indexOf(`\n${marker}`)
+    if (markerIndex === -1) {
+        return ''
+    }
+    const valueStart = markerIndex + marker.length + (markerIndex === 0 ? 0 : 1)
+    const valueEnd = recordText.indexOf('\n', valueStart)
+    return (valueEnd === -1 ? recordText.slice(valueStart) : recordText.slice(valueStart, valueEnd)).trimEnd()
+}
+
+function parseToolCallArgumentsRecordValue(recordText) {
+    const markerIndex = recordText.indexOf(TOOL_CALL_RECORD_MARKERS.arguments)
+    return markerIndex === -1
+        ? ''
+        : recordText.slice(markerIndex + TOOL_CALL_RECORD_MARKERS.arguments.length).trimEnd()
+}
+
+function parseToolCallsAsText(value) {
+    var text = value
+    const firstLineEnd = text.indexOf('\n')
+    const firstLine = firstLineEnd === -1 ? text : text.slice(0, firstLineEnd)
+    if (
+        firstLine.startsWith(TOOL_CALL_RECORD_MARKERS.calls_begin) &&
+        firstLine.slice(TOOL_CALL_RECORD_MARKERS.calls_begin.length).trim() === ''
+    ) {
+        text = firstLineEnd === -1 ? '' : text.slice(firstLineEnd + 1)
+    } else {
+        throw new Error(`${MESSAGE_CONTEXT_SECTION_MARKERS.tool_calls} should start with ${TOOL_CALL_RECORD_MARKERS.calls_begin}.`)
+    }
+    const callsEndLine = `\n${TOOL_CALL_RECORD_MARKERS.calls_end}`
+    const callsEndLineIndex = text.lastIndexOf(callsEndLine)
+    if (
+        callsEndLineIndex !== -1 &&
+        text.slice(callsEndLineIndex + callsEndLine.length).trim() === ''
+    ) {
+        text = text.slice(0, callsEndLineIndex)
+    } else if (
+        text.startsWith(TOOL_CALL_RECORD_MARKERS.calls_end) &&
+        text.slice(TOOL_CALL_RECORD_MARKERS.calls_end.length).trim() === ''
+    ) {
+        text = ''
+    }
+
+    return text.split(`\n${TOOL_CALL_RECORD_MARKERS.type}`).filter(Boolean).map((recordText, index) => {
+        if (index > 0) {
+            recordText = TOOL_CALL_RECORD_MARKERS.type + recordText
+        }
+        const argumentsMarkerIndex = recordText.indexOf(TOOL_CALL_RECORD_MARKERS.arguments)
+        const metaText = argumentsMarkerIndex === -1 ? recordText : recordText.slice(0, argumentsMarkerIndex)
+        const toolCall = {
+            index,
+            function: {
+                name: parseToolCallRecordValue(metaText, TOOL_CALL_RECORD_MARKERS.name),
+                arguments: parseToolCallArgumentsRecordValue(recordText),
+            },
+        }
+        const type = parseToolCallRecordValue(metaText, TOOL_CALL_RECORD_MARKERS.type)
+        if (type) {
+            toolCall.type = type
+        }
+        const id = parseToolCallRecordValue(metaText, TOOL_CALL_RECORD_MARKERS.id)
+        if (id) {
+            toolCall.id = id
+        }
+        return toolCall
+    })
+}
+
 export function replaceMessageContext(message, messageDelta) {
     for (const key of MESSAGE_KEYS_IN_CONTEXT) {
         delete message[key]
@@ -211,7 +309,7 @@ export function replaceMessageContext(message, messageDelta) {
     }
 }
 
-export function formatMessageAsText(message, { formatContentAsText = formatSimpleContentAsText } = {}) {
+export function formatMessageAsText(message, { formatContentAsText = formatSimpleContentAsText, collapseSingleContentSection = true } = {}) {
     message = message || {}
     const sections = []
 
@@ -253,13 +351,12 @@ export function formatMessageAsText(message, { formatContentAsText = formatSimpl
             key: 'tool_calls',
             text: serializeMessageSection(
                 MESSAGE_CONTEXT_SECTION_MARKERS.tool_calls,
-                JSON.stringify(message.tool_calls, null, 2),
-                { isJson: true },
+                formatToolCallsAsText(message),
             )
         })
     }
 
-    if (sections.length === 1 && sections[0].key === 'content') {
+    if (collapseSingleContentSection && sections.length === 1 && sections[0].key === 'content') {
         return sections[0].rawText
     }
     return sections.map(section => section.text).filter(Boolean).join('\n')
@@ -305,13 +402,7 @@ export function parseMessageAsText(value, { parseContentAsText = x => x } = {}) 
     }
 
     if (MESSAGE_CONTEXT_SECTION_MARKERS.tool_calls in sections) {
-        const toolCalls = parseJsonSection(
-            MESSAGE_CONTEXT_SECTION_MARKERS.tool_calls,
-            sections[MESSAGE_CONTEXT_SECTION_MARKERS.tool_calls],
-        )
-        if (!Array.isArray(toolCalls)) {
-            throw new Error(`${MESSAGE_CONTEXT_SECTION_MARKERS.tool_calls} should be a JSON array.`)
-        }
+        const toolCalls = parseToolCallsAsText(sections[MESSAGE_CONTEXT_SECTION_MARKERS.tool_calls])
         if (toolCalls.length > 0) {
             nextMessage.tool_calls = toolCalls
         }
