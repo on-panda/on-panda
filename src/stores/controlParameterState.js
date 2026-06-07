@@ -27,12 +27,12 @@ export const defaultApiConfig = {
     "endpoint_name": "endpoint-name",
     "model_roles": ["assistant"],
     "client_config": {
-        base_url: "https://vllm-test-api.diyer22.com/v1",
-        api_key: "ak-onPandaTestKey",
-        dangerouslyAllowBrowser: true
+        base_url: import.meta.env.VITE_ON_PANDA_DEFAULT_BASE_URL || "http://localhost:8000/v1",
+        api_key: import.meta.env.VITE_ON_PANDA_DEFAULT_API_KEY || "ak-onPandaTestKey",
+        // dangerouslyAllowBrowser: true
     },
     "chat_config": {
-        model: "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
+        model: import.meta.env.VITE_ON_PANDA_DEFAULT_MODEL || "Qwen/Qwen3.6-35B-A3B",
         ...deepCopy(defaultChatConfig),
     },
 }
