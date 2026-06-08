@@ -1,6 +1,7 @@
 import { useGlobalStore } from '../stores/globalStore.js'
 import { ElMessage } from 'element-plus'
 import { retryWithSchedule, parseSseJsonStream } from './apiProtocols/utils.js'
+import { mergeTwoDeltas } from './responseTemplates/index.js'
 
 const promptLogprobsToTopLogprobs = (promptLogprob, chosenTokenId) => {
   // list of {tokenId: obj} => same as top_logprobs, TokenId are string
@@ -216,14 +217,37 @@ async function* removeTokenPrefixSpaceForWandbAPI({ stream, apiConfig } = {}) {
         }
       }
     }
-    const toolCall = choice?.delta?.tool_calls?.[0]
-    const argumentsText = toolCall?.function?.arguments
-    if (typeof argumentsText === 'string' && argumentsText.startsWith(' ')) {
-      const trimmed = argumentsText.slice(1)
-      if (trimmed.length > 0 && trimmed === logprobToken) {
-        toolCall.function.arguments = trimmed
+    for (const toolCall of choice?.delta?.tool_calls || []) {
+      const argumentsText = toolCall.function?.arguments
+      if (typeof argumentsText === 'string' && argumentsText.startsWith(' ')) {
+        const trimmed = argumentsText.slice(1)
+        if (trimmed.length > 0 && trimmed === logprobToken) {
+          toolCall.function.arguments = trimmed
+        }
       }
     }
+    yield chunk
+  }
+}
+
+async function* mergeMultiToolCallsInOneChunk(stream) {
+  // Some APIs (e.g. kimi on wandb) pack the tool name and the first argument fragment
+  // as two array entries sharing the same index within a single chunk. Merge same-index
+  // entries so downstream parsers can keep assuming one entry per index per delta.
+  for await (const chunk of stream) {
+    const toolCalls = chunk?.choices?.[0]?.delta?.tool_calls
+    if (!toolCalls || toolCalls.length <= 1) {
+      yield chunk
+      continue
+    }
+    const mergedByIndex = []
+    for (const toolCall of toolCalls) {
+      const existing = mergedByIndex[toolCall.index]
+      mergedByIndex[toolCall.index] = existing
+        ? mergeTwoDeltas(existing, toolCall, ['type', 'id', 'name'])
+        : toolCall
+    }
+    chunk.choices[0].delta.tool_calls = mergedByIndex.filter(Boolean)
     yield chunk
   }
 }
@@ -258,6 +282,7 @@ export async function* normalizeStream({ stream, requestBody, apiConfig } = {}) 
   stream = normalizeReasoningField(stream)
   stream = splitMultiTokensChunk(stream)
   stream = removeTokenPrefixSpaceForWandbAPI({ stream, apiConfig })
+  stream = mergeMultiToolCallsInOneChunk(stream)
   stream = repairStrippedFirstContinueToken({ stream, requestBody })
   yield* stream
 }
