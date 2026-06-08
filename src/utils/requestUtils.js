@@ -27,13 +27,13 @@ export function assertNoLegacyChatConfigTools(chatConfig = {}) {
 }
 
 export function dropStaleToolAsset(body = {}) {
-    const maxToolMessageAssets = Math.max(0, Number(body.max_tool_message_assets) || 0)
-    const toolMessageAssetKeepRounds = Math.max(0, Number(body.tool_message_asset_keep_rounds) || 0)
+    const maxToolAssets = Math.max(0, Number(body.max_tool_assets) || 0)
+    const toolAssetKeepRounds = Math.max(0, Number(body.tool_asset_keep_rounds) || 0)
 
-    delete body.max_tool_message_assets
-    delete body.tool_message_asset_keep_rounds
+    delete body.max_tool_assets
+    delete body.tool_asset_keep_rounds
 
-    if (!maxToolMessageAssets && !toolMessageAssetKeepRounds) {
+    if (!maxToolAssets && !toolAssetKeepRounds) {
         return body
     }
 
@@ -72,13 +72,13 @@ export function dropStaleToolAsset(body = {}) {
     }
 
     const keepAssetIndexes = new Set()
-    if (maxToolMessageAssets > 0) {
-        for (const record of assetRecords.slice(-maxToolMessageAssets)) {
+    if (maxToolAssets > 0) {
+        for (const record of assetRecords.slice(-maxToolAssets)) {
             keepAssetIndexes.add(record.assetIndex)
         }
     }
-    if (toolMessageAssetKeepRounds > 0) {
-        const minRoundIndexToKeep = currentRoundIndex - toolMessageAssetKeepRounds + 1
+    if (toolAssetKeepRounds > 0) {
+        const minRoundIndexToKeep = currentRoundIndex - toolAssetKeepRounds + 1
         for (const record of assetRecords) {
             if (record.roundIndex >= minRoundIndexToKeep) {
                 keepAssetIndexes.add(record.assetIndex)

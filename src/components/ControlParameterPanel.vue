@@ -44,21 +44,21 @@ function updateApiConfigControlChatValue(key, value) {
     apiConfigControllable.value.chat_config[key] = value
 }
 
-const maxToolMessageAssets = computed({
+const maxToolAssets = computed({
     get() {
-        return apiConfig.value.chat_config.max_tool_message_assets
+        return apiConfig.value.chat_config.max_tool_assets
     },
     set(value) {
-        updateApiConfigControlChatValue('max_tool_message_assets', value)
+        updateApiConfigControlChatValue('max_tool_assets', value)
     }
 })
 
-const toolMessageAssetKeepRounds = computed({
+const toolAssetKeepRounds = computed({
     get() {
-        return apiConfig.value.chat_config.tool_message_asset_keep_rounds
+        return apiConfig.value.chat_config.tool_asset_keep_rounds
     },
     set(value) {
-        updateApiConfigControlChatValue('tool_message_asset_keep_rounds', value)
+        updateApiConfigControlChatValue('tool_asset_keep_rounds', value)
     }
 })
 
@@ -299,7 +299,7 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                     @updateSingleChoice="(v) => { updateApiConfigControlChatValue('image_detail_level', v) }"
                     size="small" />
                 <el-form-item label="max tool assets">
-                    <el-input-number v-model="maxToolMessageAssets" :min="0" :max="1048576" :step="1" size="small" />
+                    <el-input-number v-model="maxToolAssets" :min="0" :max="1048576" :step="1" size="small" />
                     <small>
                         &nbsp; &nbsp;
                         <el-tooltip class="" effect="light" placement="top" raw-content>
@@ -313,7 +313,7 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                     </small>
                 </el-form-item>
                 <el-form-item label="tool assets round">
-                    <el-input-number v-model="toolMessageAssetKeepRounds" :min="0" :max="1048576" :step="1"
+                    <el-input-number v-model="toolAssetKeepRounds" :min="0" :max="1048576" :step="1"
                         size="small" />
                     <small>
                         &nbsp; &nbsp;

@@ -200,7 +200,7 @@ async function* normalizeReasoningField(stream) {
 async function* removeTokenPrefixSpaceForWandbAPI({ stream, apiConfig } = {}) {
   // Workaround for bug in wandb API like:
   // `"delta":{"content":" Hi"},"logprobs":{"content":[{"token":"Hi","logprob":-0.0835`
-  if (!apiConfig.client_config.base_url.includes('api.inference.wandb.ai')) {
+  if (!apiConfig.client_config.base_url.includes('wandb.ai') && !apiConfig?.chat_config?.model?.includes('wandb')) {
     yield* stream
     return
   }
