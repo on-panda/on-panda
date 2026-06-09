@@ -31,7 +31,7 @@ const operationCenter = responseState.operationCenter
 const pandaState = responseState.pandaState
 
 const modelName = controlParameterState.modelName
-const modelNameTags = controlParameterState.modelNameTagsComputed
+const modelNameTagsComputed = controlParameterState.modelNameTagsComputed
 // Example message templates
 const welcomeMessages = [{ role: "system", content: "" }, { role: "user", content: '🍓草莓的英文单词有几个 "R" ?' }]
 
@@ -228,9 +228,9 @@ const templateToolConfigs = [
 
 const isZh = computed(() => globalStore.currentLocale.toLowerCase().indexOf('zh-cn') != -1)
 function switchDefaultToAgentTag() {
-  const defaultModel = modelNameTags.value['on-panda'] || 'on-panda'
+  const defaultModel = modelNameTagsComputed.value['on-panda'] || 'on-panda'
   if (modelName.value.indexOf(defaultModel) != -1) {
-    modelName.value = modelNameTags.value['default-agent-tag'] || 'default-agent-tag'
+    modelName.value = modelNameTagsComputed.value['default-agent-tag'] || 'default-agent-tag'
   }
 }
 
@@ -263,7 +263,7 @@ const defaultExampleNameToFunc = {
     pandaState.setEmpty()
   },
   "default": () => {
-    modelName.value = modelNameTags.value['on-panda'] || 'on-panda'
+    modelName.value = modelNameTagsComputed.value['on-panda'] || 'on-panda'
     operationCenter.loadMessages(welcomeMessages)
     operationCenter.generateNew()
   },

@@ -94,7 +94,7 @@ const defaultModelNameTags = {
   // 'fast': 'fast-tag',
   // 'groq': 'groq-tag',
 }
-const modelNameTags = computed(() => {
+const modelNameTagsInput = computed(() => {
   // only use defaultModelNameTags if both props.modelNameTags and globalStore.customModelNameTags is not set
   if (props.modelNameTags) {
     var modelNameTags = { ...props.modelNameTags, ...globalStore.customModelNameTags }
@@ -108,7 +108,7 @@ const apiConfigs = computed(() => [defaultApiConfig, ...props.apiConfigs, ...glo
 const dialogWithControlState = DialogWithControlStateClosure({
   apiConfigs: apiConfigs,
   presetToolConfigs: props.presetToolConfigs,
-  modelNameTags: modelNameTags,
+  modelNameTags: modelNameTagsInput,
 })
 const { responseState, controlParameterState, toolManageState } = dialogWithControlState
 
@@ -130,6 +130,7 @@ if (globalStore.isOldUser) {
 
 
 const modelName = controlParameterState.modelName
+const modelNameTagsComputed = controlParameterState.modelNameTagsComputed
 
 watch(modelName, async function watchModelName(newValue) {  // set modelName to page title
   if (document.title.endsWith("onPanda")) {
@@ -174,7 +175,7 @@ onMounted(async () => {
   } else {
     if (!globalStore.isOldUser) {
       // Set default model for new users
-      modelName.value = modelNameTags.value['on-panda'] || 'on-panda'
+      modelName.value = modelNameTagsComputed.value['on-panda'] || 'on-panda'
       exampleToRun = operationCenter.generateNew
     }
     if (globalStore.debug) {
@@ -193,8 +194,8 @@ onMounted(async () => {
         var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent. Add emojis in your response. Must to say something to user before tool_calls (words in content not in thinking)" }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
         // var debugMessages = [{ "role": "system", "content": "Any response must start from `I think`" }, { "role": "user", "content": "Screenshot and reply what you see within one word" }]
         operationCenter.loadMessages(debugMessages, TEST_TOOL_CONFIGS)
-        if (modelNameTags.value['test']) {
-          modelName.value = modelNameTags.value['test']
+        if (modelNameTagsComputed.value['test']) {
+          modelName.value = modelNameTagsComputed.value['test']
         }
         modelName.value = "kimi-tag"
         // modelName.value = "doubao-tag"
