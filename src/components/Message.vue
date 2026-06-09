@@ -523,7 +523,7 @@ onBeforeUnmount(() => {
   padding: 5px;
   font-size: 0.75em;
   border-radius: 7px;
-  border: 1px solid var(--el-input-border-color, var(--el-border-color))
+  border: 1px solid #dcdfe6;
 }
 
 .messageRenderContent {
@@ -531,7 +531,7 @@ onBeforeUnmount(() => {
   margin-bottom: 0px;
   color: #555;
   border-radius: 5px;
-  border: 1px solid var(--el-input-border-color, var(--el-border-color));
+  border: 1px solid #dcdfe6;
   padding: 7px;
   box-sizing: border-box;
   line-height: 1.5;
