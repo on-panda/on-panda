@@ -136,7 +136,7 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         return { ...getModelNameTags(apiConfigsComputed.value.filter(apiConfig => !apiConfig.low_priority)), ...modelNameTagsInput.value, ...getModelNameTags(apiConfigsComputed.value.filter(apiConfig => apiConfig.low_priority)) }
     })
 
-    var modelName = isRef(modelName) ? modelName : ref(modelName || Object.keys(modelNameTagsComputed.value)[0] || 'on-panda')   // using first tag as default model
+    var modelName = isRef(modelName) ? modelName : ref(modelName || Object.values(modelNameTagsComputed.value)[0] || 'on-panda')   // using first tag target as default model
 
     const apiConfigControllableRaw = { chat_config: deepCopy(defaultChatConfig) }
     const chatConfigControllableRaw = apiConfigControllableRaw.chat_config
