@@ -308,7 +308,7 @@ const defaultExampleNameToFunc = {
     switchDefaultToAgentTag()
     var JsExampleMessages = [{
       role: "user", content: "AI news in the past week.", comment: `[Task Examples]
-- Search for information about the step-3.5-flash model, then build an Apple.com-style introduction page.
+- Search for information about the step-3.7-flash model, then build an Apple.com-style introduction page.
 - Use render_svg to draw an SVG image of "a panda riding a llama" and iterate 3 times.
 - What's the weather in Beijing? Build an animated weather card in the top-right corner.
 - View the screenshot of the paper's first page and evaluate the design and color palette of Figure 1: https://arxiv.org/pdf/2401.00036
@@ -318,7 +318,7 @@ const defaultExampleNameToFunc = {
     if (isZh.value) {
       JsExampleMessages = [{
         role: "user", content: "汇总最近一周的 AI 新闻。", comment: `【任务例子】
-- 搜索 step-3.5-flash 模型信息，然后实现一个苹果官网风格的介绍网页。
+- 搜索 step-3.7-flash 模型信息，然后实现一个苹果官网风格的介绍网页。
 - 用 render_svg 绘制："熊猫骑在羊驼上" 的 SVG 图像，并迭代 3 次。
 - 北京的天气如何？实现一个带动效的天气小卡片放在右上角。
 - 查看论文第一页的截图，评价图1的设计和配色: https://arxiv.org/pdf/2401.00036

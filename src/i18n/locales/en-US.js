@@ -33,18 +33,18 @@ export default {
 - Connect your own custom APIs to onPanda
 - Supports JSON5 (a more relaxed JSON format)
 - The outer structure must be an array
-- Copy-paste runnable example:
+- Example config:
 \`\`\`js
 [
     { // openAI chat completion API format
       "client_config": {
-          "base_url": "https://vllm-test-api.diyer22.com/v1",
-          "api_key": "ak-onPandaTestKey",  // API key
+          "base_url": "https://api.inference.wandb.ai/v1",
+          "api_key": "wandb_v1_your_api_key",  // API key
       },
       "chat_config": {  // chat completion request parameters
           // If no model is specified, /models will be called automatically to fetch the list
-          "model": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
-          "top_logprobs": 5,  // number of candidates; set to 0 to disable logprobs
+          "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+          "top_logprobs": 20,  // number of candidates; set to 0 to disable logprobs
           // ... supports any other chat parameters
       },
       // Optional fields below:

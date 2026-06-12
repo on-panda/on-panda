@@ -33,18 +33,18 @@ export default {
 - 将您自己的自定义 API 接入 onPanda
 - 支持 JSON5 格式（一种宽泛的 JSON 格式）
 - 外层必须是数组
-- 复制粘贴就能跑的例子：
+- 示例配置：
 \`\`\`js
 [
     { // openAI chat completion API 格式
       "client_config": {
-          "base_url": "https://vllm-test-api.diyer22.com/v1",
-          "api_key": "ak-onPandaTestKey",  // API 密钥
+          "base_url": "https://api.inference.wandb.ai/v1",
+          "api_key": "wandb_v1_your_api_key",  // API 密钥
       },
       "chat_config": {  // chat completion 请求的参数
           // 若未指定 model，则会自动访问 /models 接口获取模型列表
-          "model": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
-          "top_logprobs": 5,  // 候选词数量，为 0 则关闭 logprobs 功能
+          "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+          "top_logprobs": 20,  // 候选词数量，为 0 则关闭 logprobs 功能
           // ... 支持其他任何 chat 参数
       },
       // 以下为非必填项：
