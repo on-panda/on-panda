@@ -3,6 +3,7 @@ import { deepCopy } from '../commonUtils.js'
 
 const THINK_BEGIN = '<think>'
 const THINK_END = '</think>'
+const REASONING_END = 'reasoning_end'
 const TOOL_CALLS_SECTION_BEGIN = '<|tool_calls_section_begin|>'
 const TOOL_CALLS_SECTION_END = '<|tool_calls_section_end|>'
 const TOOL_CALL_BEGIN = '<|tool_call_begin|>'
@@ -88,6 +89,7 @@ function parseToolCalls(toolCallsText) {
 function parseKimiK2ResponseText(text) {
     const message = { role: 'assistant' }
     var remainingText = text
+    var reasoningClosed = false
 
     if (remainingText.startsWith(THINK_BEGIN)) {
         const reasoningStart = THINK_BEGIN.length
@@ -100,7 +102,6 @@ function parseKimiK2ResponseText(text) {
                 if (maybeContentText) {
                     message.reasoning = maybeContentText
                 }
-                message.content = ''
                 return message
             }
         } else {
@@ -109,12 +110,16 @@ function parseKimiK2ResponseText(text) {
                 message.reasoning = reasoning
             }
             remainingText = remainingText.slice(reasoningEnd + THINK_END.length)
+            reasoningClosed = true
         }
     }
 
     const toolCallsSectionBegin = remainingText.indexOf(TOOL_CALLS_SECTION_BEGIN)
     if (toolCallsSectionBegin === -1) {
         message.content = remainingText
+        if (reasoningClosed && !remainingText) {
+            message.finish_reason = REASONING_END
+        }
         return message
     }
 
@@ -193,6 +198,9 @@ function parseStructuredTokens(tokens = []) {
         const delta = { ...delta1 }
         for (var key in delta2) {
             if (key === 'tool_calls' && delta2.tool_calls?.length) {
+                if (delta.finish_reason === REASONING_END) {
+                    delete delta.finish_reason
+                }
                 var toolCalls = delta.tool_calls || []
                 var toolCall2 = delta2.tool_calls[0]
                 console.assert(delta2.tool_calls.length === 1)
@@ -206,6 +214,11 @@ function parseStructuredTokens(tokens = []) {
                 delta.tool_calls = toolCalls
                 continue
             }
+            if (key === 'content' && delta2.content) {
+                if (delta.finish_reason === REASONING_END) {
+                    delete delta.finish_reason
+                }
+            }
             if (key === 'sidecar') {
                 delta.sidecar = mergeTwoDeltas(delta.sidecar || {}, delta2.sidecar || {})
                 continue
@@ -217,7 +230,10 @@ function parseStructuredTokens(tokens = []) {
                     if (parsedPrefix.reasoning) {
                         delta.reasoning = parsedPrefix.reasoning
                     }
-                    if (parsedPrefix.content) {
+                    if (parsedPrefix.finish_reason === REASONING_END) {
+                        delta.finish_reason = REASONING_END
+                        delta.content = ''
+                    } else if (parsedPrefix.content) {
                         delta.content = parsedPrefix.content
                     } else {
                         delete delta.content
@@ -251,7 +267,7 @@ function parseStructuredTokens(tokens = []) {
     } else if (tokens.length) {
         message.role = 'assistant'
     }
-    if (role && !message.content) {
+    if (role && !message.content && !message.reasoning && !message.tool_calls?.length) {
         message.content = ''
     }
     if (finish_reason) {
@@ -281,7 +297,16 @@ function normalizePlainTextInStructuredMessage(message) {
             ? message.reasoning + parsedTextMessage.reasoning
             : parsedTextMessage.reasoning
     }
-    message.content = parsedTextMessage.content
+    if (parsedTextMessage.finish_reason === REASONING_END && !message.tool_calls?.length) {
+        message.finish_reason = REASONING_END
+        message.content = ''
+    } else if (parsedTextMessage.finish_reason === REASONING_END) {
+        message.content = ''
+    } else if (parsedTextMessage.content) {
+        message.content = parsedTextMessage.content
+    } else {
+        delete message.content
+    }
     if (parsedTextMessage.tool_calls?.length) {
         message.tool_calls = mergeToolCalls(parsedTextMessage.tool_calls, message.tool_calls || [])
     }
@@ -301,7 +326,7 @@ export class KimiK2ResponseTemplate {
     apply(message = {}) {
         const isPartial = !['stop', 'tool_calls'].includes(message.finish_reason)
         const reasoning = message.reasoning ? stripRepeatedThinkBegin(message.reasoning) : ''
-        const isPureReasoningPartial = isPartial && reasoning && !message.content && !message.tool_calls?.length
+        const isPureReasoningPartial = isPartial && reasoning && message.finish_reason !== REASONING_END && !message.content && !message.tool_calls?.length
         var templatedPrompt = ''
         var textCursor = 0
         const keyPathPromptMapping = []
