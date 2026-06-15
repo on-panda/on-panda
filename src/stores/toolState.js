@@ -233,7 +233,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                             },
                         }
                         await registerTool(tool, mcpTool.name, entry.requireApproval)
-                        nextToolNameToCall[formattedToolName] = async (toolCall) => {
+                        nextToolNameToCall[formattedToolName] = async function callMcpTool({ toolCall, signal } = {}) {
                             let argumentsValue
                             try {
                                 argumentsValue = JSON.parse(toolCall.function.arguments || '{}')
@@ -244,7 +244,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                                 const result = await client.callTool({
                                     name: mcpTool.name,
                                     arguments: argumentsValue,
-                                }, undefined, { timeout: 5 * 60 * 1000 })
+                                }, undefined, { timeout: 5 * 60 * 1000, signal })
                                 return mcpToolResultToContent(result)
                             } catch (error) {
                                 return `<|tool_call_error_start|>\nMCP tool call error:\n${error}\n<|tool_call_error_end|>`
@@ -555,12 +555,12 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         }
     }
 
-    async function call(toolCalls = []) {
+    async function call({ toolCalls = [], signal } = {}) {
         await buildRequestTools()
         const toolNameToCall = getToolNameToCall()
         return await Promise.all(toolCalls.map(async (toolCall) => ({
             role: 'tool',
-            content: await toolNameToCall[toolCall.function.name](toolCall),
+            content: await toolNameToCall[toolCall.function.name]({ toolCall, signal }),
             tool_call_id: toolCall.id,
             name: toolCall.function.name,
         })))
@@ -595,6 +595,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
 export function ToolCallStateClosure({
     toolManageState,
 } = {}) {
+    let toolCallAbortController = null
     const toolCallStatus = ref({
         callTimes: 0,
         calling: false,
@@ -634,11 +635,16 @@ export function ToolCallStateClosure({
         if (approvalStatus.needApproval) {
             toolCallStatus.value.approvedRunCount++
         }
+        const abortController = new AbortController()
+        toolCallAbortController = abortController
         toolCallStatus.value.calling = true
         toolCallStatus.value.callTimes++
         const toolCallID = toolCallStatus.value.callTimes
         try {
-            const toolMessages = await toolManageState.call(toolCalls)
+            const toolMessages = await toolManageState.call({
+                toolCalls,
+                signal: abortController.signal,
+            })
             const discardReason = getToolCallDiscardReason({
                 toolCallStatus: toolCallStatus.value,
                 toolCallID,
@@ -676,10 +682,18 @@ export function ToolCallStateClosure({
                 toolMessages: null,
                 info: error
             }
+        } finally {
+            if (toolCallAbortController === abortController) {
+                toolCallAbortController = null
+            }
         }
     }
 
     function stopToolCalls() {
+        if (toolCallAbortController) {
+            toolCallAbortController.abort('OnPanda tool calls stopped')
+            toolCallAbortController = null
+        }
         toolCallStatus.value.calling = false
     }
 
