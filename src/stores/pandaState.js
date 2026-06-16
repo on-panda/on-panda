@@ -621,7 +621,7 @@ export class PandaState {
         return this.previousOperation.value?.on_policy
     })
 
-    setCurrentIsGood = (value, onlyReplaceNull, skipEmptyAnnotate) => {
+    setCurrentIsGood = ({ value, onlyReplaceNull = false, skipEmptyAnnotate = false } = {}) => {
         if (onlyReplaceNull && this.dialogCache.value?.annotate?.is_good !== null) {
             return
         }

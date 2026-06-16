@@ -18,7 +18,7 @@
                     </template>
                     <CheckboxWidgetSupportNull
                         :checkboxValue="pandaState.dialogCache.value?.annotate?.is_good === null ? pandaState.dialogMaxIndexRemain.value === pandaState.currentDialogIndex.value : pandaState.dialogCache.value?.annotate?.is_good"
-                        @updateCheckboxValue="(x) => pandaState.setCurrentIsGood(x)">
+                        @updateCheckboxValue="(x) => pandaState.setCurrentIsGood({ value: x })">
                     </CheckboxWidgetSupportNull>
                     <small style="color: #606266" v-if="pandaState.dialogCache.value?.annotate?.is_good === null">
                         &nbsp; ({{ t('annotator.noChoiceMade') }},

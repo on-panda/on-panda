@@ -568,21 +568,20 @@ ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.cons
             let loopIdx = 0
             while (true) {
                 if (finishReason === "tool_calls") {
-                    const result = await toolCallState.maybeAutoCallToolCalls(lastMessage.tool_calls)
-                    const isToolCallsBelongFinalMessage = Boolean(tokens.value.length)
-                    if (isToolCallsBelongFinalMessage) {
+                    const callResult = await toolCallState.maybeAutoCallToolCalls(lastMessage.tool_calls)
+                    // Existing tokens mean these tool calls belong to the current final assistant message.
+                    const isFinalMessageToolCalls = Boolean(tokens.value.length)
+                    if (isFinalMessageToolCalls) {
                         if (!loopIdx) {
                             this.pandaState.beforeOperation()
                         }
                         // run with approval will auto set is_good with onlyReplaceNull=true
-                        result.consumedApproval && this.pandaState.setCurrentIsGood(true, true)
+                        callResult.consumedApproval && this.pandaState.setCurrentIsGood({ value: true, onlyReplaceNull: true })
                     }
-                    if (!result.toolMessages?.length) {
-                        // AgenticLoop stoped at tool_calls
-                        // console.log("[stop tool calls info]:", result.info)
+                    if (!callResult.toolMessages?.length) {
                         break
                     }
-                    messages.value = messagesComputed.value.concat(deepCopy(result.toolMessages))
+                    messages.value = messagesComputed.value.concat(deepCopy(callResult.toolMessages))
                     setGenerationTokens([])
                     this.pandaState.afterOperation({
                         operator: "run_tool_calls",
@@ -630,7 +629,7 @@ ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.cons
             }
             messages.value = this.getNextMessages({ messagesToAppend: rejectedToolMessages, messageIndex: resolvedMessageIndex })
             setGenerationTokens([])
-            this.pandaState.setCurrentIsGood(false, true)
+            this.pandaState.setCurrentIsGood({ value: false, onlyReplaceNull: true })
             this.pandaState.afterOperation({
                 operator: "reject_tool_calls",
                 on_policy: true,
