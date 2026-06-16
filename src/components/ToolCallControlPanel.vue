@@ -240,7 +240,10 @@ const toolCalls = computed(() => {
 const toolCallNames = computed(() => toolCalls.value.map(toolCall => toolCall.function.name))
 const readyStatus = computed(() => toolManageState.checkCallReady(toolCalls.value))
 const approvalStatus = computed(() => toolManageState.checkRequireApproval(toolCalls.value))
-const canRun = computed(() => toolCalls.value.length > 0 && readyStatus.value.allReady)
+const canRun = computed(() => (
+    toolCalls.value.length > 0 &&
+    (readyStatus.value.allReady || !toolManageState.allDataConfigsLoaded.value)
+))
 const isMobileByUserAgent = computed(() => globalStore.isMobileByUserAgent)
 const autoApproveRunNum = ref(1)
 const runConfigTooltipTrigger = computed(() => isMobileByUserAgent.value ? 'manual' : 'hover')
@@ -271,7 +274,7 @@ const {
     shouldIgnoreRunClick,
 } = useToolCallRunConfigTooltip({ canRun, isMobileByUserAgent })
 const runTooltip = computed(() => {
-    if (readyStatus.value.allReady || !readyStatus.value.unreadyToolNames.length) {
+    if (readyStatus.value.allReady || !toolManageState.allDataConfigsLoaded.value || !readyStatus.value.unreadyToolNames.length) {
         return ''
     }
     return `${t('toolCallControl.unreadyTools')}: ${readyStatus.value.unreadyToolNames.join(', ')}`

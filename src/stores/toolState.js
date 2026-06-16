@@ -109,6 +109,22 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         ...presetToolConfigsInput.value.map((toolConfig, index) => ({ toolConfig, index, source: 'preset' })),
     ])
     const currentDialogTools = computed(() => registeredDialogCache.value?.value?.tools || [])
+    // runtimeVersion tracks non-reactive runtimeEntryByHash.loaded changes.
+    const allDataConfigsLoaded = computed(() => {
+        const hasUnloadedDataConfig = dataToolConfigs.value.some((toolConfig, toolConfigIndex) => {
+            if (toolConfig.type !== 'mcp') {
+                return false
+            }
+            const matchedPresetIndex = matchedDataToPresetIndex.value[toolConfigIndex]
+            const sourceToolConfig = matchedPresetIndex != null
+                ? presetToolConfigsInput.value[matchedPresetIndex]
+                : toolConfig
+            const configHash = getToolRuntime(sourceToolConfig).hash
+            const entry = configHash ? runtimeEntryByHash.get(configHash) : null
+            return !entry || !entry.loaded
+        })
+        return runtimeVersion.value >= 0 && !hasUnloadedDataConfig
+    })
 
     function getDialogCacheValue() {
         return registeredDialogCache.value?.value || null
@@ -160,7 +176,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     }
 
     async function ensureMcpToolsLoaded({ entry, toolConfig = {}, toolConfigIndex = 0 } = {}) {
-        if (entry.tools.length) {
+        if (entry.loaded) {
             return entry
         }
         if (!entry.initPromise) {
@@ -256,6 +272,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                     entry.toolNameToCall = nextToolNameToCall
                     entry.toolNameToRequireApproval = nextToolNameToRequireApproval
                     entry.closers = nextClosers
+                    entry.loaded = true
                     runtimeVersion.value++
                     return entry
                 } catch (error) {
@@ -287,6 +304,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                 toolNameToRequireApproval: {},
                 closers: [],
                 initPromise: null,
+                loaded: toolConfig.type === 'function',
             }
             runtimeEntryByHash.set(configHash, entry)
         }
@@ -306,12 +324,12 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         return entry
     }
 
-    async function buildToolsFromToolConfigs(toolConfigs = []) {
-        const matchedDataToPresetIndex = await matchTwoToolLists(toolConfigs, presetToolConfigsInput.value)
+    async function buildToolsFromToolConfigs() {
+        const localMatchedDataToPresetIndex = await matchTwoToolLists(dataToolConfigs.value, presetToolConfigsInput.value)
         const nextTools = []
         const nextMcpSystemMessages = []
-        for (const [toolConfigIndex, toolConfig] of toolConfigs.entries()) {
-            const matchedPresetIndex = matchedDataToPresetIndex[toolConfigIndex]
+        for (const [toolConfigIndex, toolConfig] of dataToolConfigs.value.entries()) {
+            const matchedPresetIndex = localMatchedDataToPresetIndex[toolConfigIndex]
             const sourceToolConfig = matchedPresetIndex != null
                 ? presetToolConfigsInput.value[matchedPresetIndex]
                 : toolConfig
@@ -338,6 +356,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         }
     }
 
+    // Safe to call repeatedly
     async function buildRequestTools() {
         if (!getDialogCacheValue()) {
             return []
@@ -425,7 +444,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         if (!dialogCache?.tool_configs?.length || 'tools' in dialogCache) {
             return
         }
-        const { tools, mcpSystemMessages } = await buildToolsFromToolConfigs(dialogCache.tool_configs)
+        const { tools, mcpSystemMessages } = await buildToolsFromToolConfigs()
         if ('tools' in (getDialogCacheValue() || {})) {
             return
         }
@@ -557,6 +576,9 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
 
     async function call({ toolCalls = [], signal } = {}) {
         await buildRequestTools()
+        if (!allDataConfigsLoaded.value) {
+            await buildToolsFromToolConfigs()
+        }
         const toolNameToCall = getToolNameToCall()
         return await Promise.all(toolCalls.map(async (toolCall) => ({
             role: 'tool',
@@ -574,6 +596,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         presetToolConfigsInput,
         presetToolReadyPromise,
         dataToolConfigs,
+        allDataConfigsLoaded,
         browserAgentShared,
         visibleToolConfigItems,
         allTools,
@@ -585,6 +608,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
         appendToolToDialog,
         removeLoadedTool,
         buildRequestTools,
+        buildToolsFromToolConfigs,
         checkCallReady,
         checkRequireApproval,
         call,
@@ -612,6 +636,9 @@ export function ToolCallStateClosure({
 
     async function maybeAutoCallToolCalls(toolCalls = []) {
         await toolManageState.buildRequestTools()
+        if (!toolManageState.allDataConfigsLoaded.value) {
+            await toolManageState.buildToolsFromToolConfigs()
+        }
         const readyStatus = toolManageState.checkCallReady(toolCalls)
         if (!readyStatus.allReady) {
             return {
