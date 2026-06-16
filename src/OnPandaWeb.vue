@@ -170,7 +170,7 @@ onMounted(async () => {
     if (localStorage.getItem('modelNameForDuplicateWindow')) {
       modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
       localStorage.removeItem('modelNameForDuplicateWindow')
-      exampleToRun = operationCenter.generateNew
+      exampleToRun = () => operationCenter.generateNew({ fromUser: true })
     }
   } else {
     if (!globalStore.isOldUser) {

@@ -711,11 +711,21 @@ ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.cons
             await this.startAgenticLoop()
         }
 
-        generateNew = async ({ messageIndex = -1 } = {}) => {
-            const resolvedMessageIndex = await this.buildRequestToolsAndResolveMessageIndex(messageIndex)
+        generateNew = async ({ messageIndex = -1, fromUser = false } = {}) => {
+            var resolvedMessageIndex = await this.buildRequestToolsAndResolveMessageIndex(messageIndex)
+            if (fromUser) {
+                var searchIndex = resolvedMessageIndex === -1 ? messages.value.length - 1 : Math.min(resolvedMessageIndex, messages.value.length - 1)
+                for (var i = searchIndex; i >= 0; i--) {
+                    if (messages.value[i].role === "user") {
+                        resolvedMessageIndex = i
+                        break
+                    }
+                }
+            }
             // Role-only model messages are valid prefill for continuation.
             const shouldContinueFinalMessage = (
                 resolvedMessageIndex === -1 &&
+                !fromUser &&
                 !messageToSeq(finalMessage.value, { includeFinishReason: false }) &&
                 finalMessage.value.role &&
                 apiConfig.value.support_continue_final_message
