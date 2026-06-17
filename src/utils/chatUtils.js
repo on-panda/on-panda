@@ -223,8 +223,13 @@ export function messageToSeq(message, { includeFinishReason = true, collapseSing
         collapseSingleContentSection,
     })
 
-    if (includeFinishReason && message.finish_reason && message.finish_reason !== 'length') {
-        seq += `<|${message.finish_reason}|>`
+    if (includeFinishReason && message.finish_reason) {
+        if (message.finish_reason === 'reasoning_end') {
+            // Keep the closed reasoning boundary prefix-stable with the next messageTextCodec section header.
+            seq += '\n#'
+        } else if (message.finish_reason !== 'length') {
+            seq += `<|${message.finish_reason}|>`
+        }
     }
     return seq
 }
