@@ -300,11 +300,18 @@ export function getContentTypes(input) {
     }
 }
 
-export function clearTokenObject(token) {
+export function clearTokenObject(token, { keepTopLogprobs = false } = {}) {
     // inplace clear items that are not needed in token object
-    // clear top_logprobs in cache tokens
+    // top_logprobs are usually too large; keep them only for branch evidence.
     if (token.logprobs?.content && token.logprobs.content[0]) {
-        delete token.logprobs.content[0].top_logprobs
+        if (!keepTopLogprobs) {
+            delete token.logprobs.content[0].top_logprobs
+        } else if (token.logprobs.content[0].top_logprobs) {
+            for (const topLogprob of token.logprobs.content[0].top_logprobs) {
+                delete topLogprob.bytes
+                delete topLogprob.token_piece
+            }
+        }
         delete token.logprobs.content[0].bytes
         delete token.logprobs.content[0].token_piece
     }
@@ -325,7 +332,7 @@ export function clearTokenObject(token) {
 export function recordAsRejectedToken(token, tokens) {
     // if provide tokens, record the rejected_token.unicode_start_index
     var rejected_token = deepCopy(token)
-    clearTokenObject(rejected_token)
+    clearTokenObject(rejected_token, { keepTopLogprobs: true })
     delete rejected_token.model
     delete rejected_token.usage
     delete rejected_token.index

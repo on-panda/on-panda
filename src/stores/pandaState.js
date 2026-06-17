@@ -14,7 +14,7 @@ function dumpCacheTree(cacheTree) {
             var tokenLen = logprobsTokens.length
             for (var tokenIndex = 0; tokenIndex < tokenLen; tokenIndex++) {
                 var token = logprobsTokens[tokenIndex]
-                clearTokenObject(token)
+                clearTokenObject(token, { keepTopLogprobs: token.bifurcationPoint })
                 if (![0, tokenLen - 1].includes(tokenIndex)) {
                     delete token.model
                     delete token.usage
