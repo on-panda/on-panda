@@ -1,6 +1,6 @@
 {
   "name": "@on-panda/on-panda",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "type": "module",
   "main": "./dist/on-panda.es.js",
   "module": "./dist/on-panda.es.js",
