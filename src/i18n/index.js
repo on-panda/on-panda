@@ -9,8 +9,8 @@ const messages = {
 
 export const i18n = createI18n({
   legacy: false,
-  locale: localStorage.getItem('locale') || navigator.language,
+  locale: globalThis.localStorage?.getItem('locale') || globalThis.navigator?.language || 'en-US',
   fallbackLocale: 'en-US',
   warnHtmlInMessage: 'off',
   messages
-}) 
+})

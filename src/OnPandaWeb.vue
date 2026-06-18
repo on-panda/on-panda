@@ -197,7 +197,7 @@ onMounted(async () => {
         if (modelNameTagsComputed.value['test']) {
           modelName.value = modelNameTagsComputed.value['test']
         }
-        modelName.value = "kimi-tag"
+        // modelName.value = "kimi-tag"
         // modelName.value = "doubao-tag"
         // controlParameterState.apiConfigControllable.value.chat_config.max_tool_assets = 1
         controlParameterState.apiConfigControllable.value.chat_config.tool_asset_keep_rounds = 2

@@ -201,6 +201,7 @@ async function* normalizeReasoningField(stream) {
 async function* removeTokenPrefixSpaceForWandbAPI({ stream, apiConfig } = {}) {
   // Workaround for bug in wandb API like:
   // `"delta":{"content":" Hi"},"logprobs":{"content":[{"token":"Hi","logprob":-0.0835`
+  // Sometimes wandb sends `"delta":{"content":" "}` for invisible special tokens like `<|tool_calls_section_begin|>`.
   if (!apiConfig.client_config.base_url.includes('wandb.ai') && !apiConfig?.chat_config?.model?.includes('wandb')) {
     yield* stream
     return
@@ -208,8 +209,13 @@ async function* removeTokenPrefixSpaceForWandbAPI({ stream, apiConfig } = {}) {
   for await (const chunk of stream) {
     const choice = chunk?.choices?.[0]
     const logprobToken = choice?.logprobs?.content?.[0]?.token
+    const isSpecialLogprobToken = typeof logprobToken === 'string' && logprobToken.startsWith('<|') && logprobToken.endsWith('|>')
     for (const field of ['content', 'reasoning']) {
       const text = choice?.delta?.[field]
+      if (text === ' ' && isSpecialLogprobToken) {
+        choice.delta[field] = ''
+        continue
+      }
       if (typeof text === 'string' && text.startsWith(' ')) {
         const trimmed = text.slice(1)
         if (trimmed.length > 0 && trimmed === logprobToken) {
@@ -219,6 +225,10 @@ async function* removeTokenPrefixSpaceForWandbAPI({ stream, apiConfig } = {}) {
     }
     for (const toolCall of choice?.delta?.tool_calls || []) {
       const argumentsText = toolCall.function?.arguments
+      if (argumentsText === ' ' && isSpecialLogprobToken) {
+        toolCall.function.arguments = ''
+        continue
+      }
       if (typeof argumentsText === 'string' && argumentsText.startsWith(' ')) {
         const trimmed = argumentsText.slice(1)
         if (trimmed.length > 0 && trimmed === logprobToken) {
