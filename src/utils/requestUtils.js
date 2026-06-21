@@ -7,12 +7,11 @@ export function applyImageDetailLevel(body = {}) {
     }
 
     for (const message of body.messages || []) {
-        if (typeof message.content !== 'object') {
-            continue
-        }
-        for (const chunk of message.content) {
-            if (chunk.type.indexOf('image') !== -1) {
-                chunk[chunk.type].detail = imageDetailLevel
+        if (Array.isArray(message?.content)) {
+            for (const chunk of message.content) {
+                if (chunk.type.indexOf('image') !== -1) {
+                    chunk[chunk.type].detail = imageDetailLevel
+                }
             }
         }
     }
