@@ -139,15 +139,15 @@ export function tokenToDisplayString(token, tokens = undefined) {
 
 export function probOfToken(token) {
     var logprob = token.logprobs?.content?.[0]?.logprob
-    var prob = Math.exp(logprob)
+    return Math.exp(logprob)
+}
 
-    if (typeof logprob !== 'number') {
-        if (token.tokenIndex === 0 && !(token.delta.content)) {
-            // if first role token has no prob and will in first patch
-            prob = 1
-        }
+export function probOfPatch(patchTokens) {
+    const probs = patchTokens.map(token => probOfToken(token))
+    if (probs.some(prob => !Number.isNaN(prob))) {
+        return probs.reduce((acc, prob) => acc * (Number.isNaN(prob) ? 1 : prob), 1)
     }
-    return prob
+    return NaN
 }
 
 export function tokensToPatches(tokens) {
@@ -180,7 +180,7 @@ export function tokensToPatches(tokens) {
             patches.push({
                 patch: currentSegmentString,
                 tokens: patchTokens,
-                prob: patchTokens.reduce((acc, currentToken) => acc * probOfToken(currentToken), 1),
+                prob: probOfPatch(patchTokens),
                 index: patches.length,
                 tokenStart: tokenStartIndex,
                 tokenEnd: tokenIndex + 1,
@@ -197,7 +197,7 @@ export function tokensToPatches(tokens) {
             patches.push({
                 patch: tokenToSegmentString,
                 tokens: patchTokens,
-                prob: patchTokens.reduce((acc, currentToken) => acc * probOfToken(currentToken), 1),
+                prob: probOfPatch(patchTokens),
                 index: patches.length,
                 tokenStart: tokenStartIndex,
                 tokenEnd: tokenIndex + 1,
