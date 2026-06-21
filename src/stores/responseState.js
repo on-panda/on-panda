@@ -978,24 +978,7 @@ ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.cons
 
     const newRoundMessage = ref({ role: 'user', content: '' })
 
-    function setDefaultNewRoundMessage() {
-        if (messageToSeq(getMessageOutput(newRoundMessage.value), { includeFinishReason: false })) {
-            return
-        }
-        var finishReason = finalMessage.value.finish_reason
-        if (["user", "tool"].includes(newRoundMessage.value.role)) {
-            newRoundMessage.value.role = finishReason == "tool_calls" ? "tool" : "user"
-        }
-        if (finishReason == "tool_calls") {
-            newRoundMessage.value.tool_call_id = finalMessage.value.tool_calls[0].id
-            newRoundMessage.value.name = finalMessage.value.tool_calls[0].function.name
-        } else {
-            delete newRoundMessage.value.tool_call_id
-            delete newRoundMessage.value.name
-        }
-    }
-
-    const dialogChangedHooks = [setDefaultNewRoundMessage]
+    const dialogChangedHooks = []
 
     function runDialogChangedHooks() {
         dialogChangedHooks.forEach(hook => hook())
