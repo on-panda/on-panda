@@ -310,6 +310,9 @@ function normalizePlainTextInStructuredMessage(message) {
     if (parsedTextMessage.tool_calls?.length) {
         message.tool_calls = mergeToolCalls(parsedTextMessage.tool_calls, message.tool_calls || [])
     }
+    if (message.finish_reason === 'stop' && message.tool_calls?.length) {
+        message.finish_reason = 'tool_calls'
+    }
     return message
 }
 

@@ -409,6 +409,9 @@ export class DefaultResponseTemplate {
         }
         if (finish_reason) {
             mergedMessage.finish_reason = finish_reason
+            if (mergedMessage.finish_reason === "stop" && mergedMessage.tool_calls?.length) {
+                mergedMessage.finish_reason = "tool_calls"
+            }
         }
         return mergedMessage
     }
