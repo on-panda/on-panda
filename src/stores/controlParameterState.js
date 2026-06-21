@@ -20,6 +20,7 @@ export const defaultChatConfig = {
     stream_options: {
         include_usage: true,
     },
+    spaces_between_special_tokens: false,  // In vLLM and Transformers it's default true, which may case additional leading space before first token or special tokens
 }
 
 export const defaultApiConfig = {
