@@ -364,6 +364,16 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         var messages = messagesComputed.value
         messages = filterEmptyMessage(messages)
         console.assert(messages[messages.length - 1].role == "assistant", "last message should be assistant", messages)
+        const messageForLogprobs = { ...messages[messages.length - 1] }
+        delete messageForLogprobs.finish_reason
+        const responseTemplate = viewResponseTemplate.value
+        const { templatedPrompt } = responseTemplate.apply(messageForLogprobs)
+        if (responseTemplate.responseTemplateType === "plain_text") {
+            messages = messages.slice(0, -1).concat([{
+                role: messageForLogprobs.role,
+                content: templatedPrompt,
+            }])
+        }
 
         var body = JSON.parse(JSON.stringify(apiConfig.value.chat_config))
         delete body.stream
@@ -414,9 +424,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 logprobs: x,
                 model: tokens.value[0].model,
             }))
-            const messageForLogprobs = { ...finalMessage.value }
-            delete messageForLogprobs.finish_reason  // TODO: consider finish_reason token
-            const { templatedPrompt } = viewResponseTemplate.value.apply(messageForLogprobs)
             const promptLogprobsTailCharLimit = Math.max(1024, Math.ceil(templatedPrompt.length * 1.5))
             var promptLogprobsTailCharLength = 0
             var promptLogprobsTokenStart = promptLogprobsTokensNew.length
@@ -427,7 +434,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             const logprobsTokensForView = promptLogprobsTokensNew.slice(promptLogprobsTokenStart)
             var tokensNew = buildViewTokens({
                 message: messageForLogprobs,
-                responseTemplate: viewResponseTemplate.value,
+                responseTemplate,
                 logprobsTokens: logprobsTokensForView,
             })
             const completionTokens = tokensNew.filter(token => typeof token.logprobs?.content?.[0]?.logprob === "number").length
