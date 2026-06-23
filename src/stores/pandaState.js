@@ -37,31 +37,63 @@ function dumpCacheTree(cacheTree) {
     }
 }
 
-var HASH_MAP_LENGTH = 16000
+var MIN_LENGTH_FOR_HASH_MAP = 8096
 var HASH_TEMPLATE_PREFIX = '<|hash|>'
 var HASH_TEMPLATE_REGEX = /^<\|hash\|>([A-Za-z0-9+\/=]+)$/
 
 async function usingHashMapRemoveRedundancy(dumped) {
-    // if message's content length or chunk's content length > HASH_MAP_LENGTH, using hash map to remove redundancy
+    var hashRecords = {}
+
+    async function collect(value, keyPath) {
+        var hash = await hashObjectSHA256Base64(value)
+        if (!(hash in hashRecords)) {
+            hashRecords[hash] = {
+                value: value,
+                keyPaths: [],
+                singleLength: typeof value === 'string' ? value.length : JSON.stringify(value).length,
+            }
+        }
+        hashRecords[hash].keyPaths.push(keyPath)
+    }
+
     for (var dialogKey in dumped.dialogs) {
         var dialog = dumped.dialogs[dialogKey]
-        for (var message of dialog.messages) {
-            if (typeof message.content === 'string' && message.content.length > HASH_MAP_LENGTH) {
-                var hash = await hashObjectSHA256Base64(message.content)
-                dumped.hash_map[hash] = message.content
-                message.content = HASH_TEMPLATE_PREFIX + hash
-
+        for (var [messageIndex, message] of dialog.messages.entries()) {
+            var messagePath = ['dialogs', dialogKey, 'messages', messageIndex]
+            if (typeof message.content === 'string') {
+                await collect(message.content, [...messagePath, 'content'])
             } else if (Array.isArray(message.content)) {
-                for (var chunk of message.content) {
-                    var chunkContent = chunk[chunk.type]
-                    if (JSON.stringify(chunkContent).length > HASH_MAP_LENGTH) {
-                        var hash = await hashObjectSHA256Base64(chunkContent)
-                        dumped.hash_map[hash] = chunkContent
-                        chunk[chunk.type] = HASH_TEMPLATE_PREFIX + hash
-                    }
-                    // TODO mv out
+                for (var [chunkIndex, chunk] of message.content.entries()) {
                     delete chunk.blob_url
+                    await collect(chunk[chunk.type], [...messagePath, 'content', chunkIndex, chunk.type])
                 }
+            }
+            if (typeof message.reasoning === 'string') {
+                await collect(message.reasoning, [...messagePath, 'reasoning'])
+            }
+            if (Array.isArray(message.tool_calls)) {
+                await collect(message.tool_calls, [...messagePath, 'tool_calls'])
+            }
+        }
+        for (var toolListKey of ['tool_configs', 'tools']) {
+            if (Array.isArray(dialog[toolListKey])) {
+                for (var [toolIndex, tool] of dialog[toolListKey].entries()) {
+                    await collect(tool, ['dialogs', dialogKey, toolListKey, toolIndex])
+                }
+            }
+        }
+    }
+
+    for (var hash in hashRecords) {
+        var record = hashRecords[hash]
+        if (record.keyPaths.length >= 2 && record.singleLength * record.keyPaths.length > MIN_LENGTH_FOR_HASH_MAP) {
+            dumped.hash_map[hash] = record.value
+            for (var keyPath of record.keyPaths) {
+                var target = dumped
+                for (var i = 0; i < keyPath.length - 1; i++) {
+                    target = target[keyPath[i]]
+                }
+                target[keyPath[keyPath.length - 1]] = HASH_TEMPLATE_PREFIX + hash
             }
         }
     }
@@ -403,7 +435,6 @@ export class PandaState {
     load = (obj) => {
         var pandaTree = this.asPandaTree(obj)
         pandaTree = this.setDefaultToPandaTree(pandaTree)
-        pandaTree = recoverHashMap(pandaTree)
         this.clearCache()
         useGlobalStore().loadPandaTree(pandaTree)
         if (pandaTree.cache_tree) {
@@ -436,6 +467,7 @@ export class PandaState {
                 pandaTree[key] = defaultPandaTree[key]
             }
         }
+        pandaTree = recoverHashMap(pandaTree)
         delete pandaTree.tool_configs
 
         for (var dialogsKey of ['dialogs', 'deleted_dialogs']) {
