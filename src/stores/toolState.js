@@ -260,7 +260,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
                                 const result = await client.callTool({
                                     name: mcpTool.name,
                                     arguments: argumentsValue,
-                                }, undefined, { timeout: 5 * 60 * 1000, signal })
+                                }, undefined, { timeout: 20 * 60 * 1000, signal })
                                 return mcpToolResultToContent(result)
                             } catch (error) {
                                 return `<|tool_call_error_start|>\nMCP tool call error:\n${error}\n<|tool_call_error_end|>`
