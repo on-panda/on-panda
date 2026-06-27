@@ -25,17 +25,11 @@ function parseFunctionNameFromToolCallId(toolCallId) {
     return indexSeparator === -1 ? namePart : namePart.slice(0, indexSeparator)
 }
 
-function parseToolCallIndex(toolCallId, fallbackIndex) {
-    const indexMatch = toolCallId.match(/:(\d+)$/)
-    return indexMatch ? Number(indexMatch[1]) : fallbackIndex
-}
-
 function buildToolCallFromText({ toolCallId, argumentsText, fallbackIndex } = {}) {
-    const index = parseToolCallIndex(toolCallId, fallbackIndex)
     return {
         id: toolCallId,
         type: 'function',
-        index,
+        index: fallbackIndex,
         function: {
             name: parseFunctionNameFromToolCallId(toolCallId),
             arguments: argumentsText,
@@ -316,6 +310,17 @@ function normalizePlainTextInStructuredMessage(message) {
     return message
 }
 
+function normalizeMessageToolCallIndexes(message) {
+    if (!message.tool_calls?.length) {
+        return message
+    }
+    message.tool_calls = message.tool_calls.filter(Boolean)
+    for (const [toolCallIndex, toolCall] of message.tool_calls.entries()) {
+        toolCall.index = toolCallIndex
+    }
+    return message
+}
+
 export class KimiK2ResponseTemplate {
     static match({ responseTemplateConfig } = {}) {
         return /^moonshotai\/kimi-k2/i.test(responseTemplateConfig?.name_or_path || '')
@@ -356,10 +361,10 @@ export class KimiK2ResponseTemplate {
         if (message.tool_calls?.length) {
             appendRawText(TOOL_CALLS_SECTION_BEGIN)
             for (const [toolCallPosition, toolCall] of message.tool_calls.entries()) {
-                const toolCallId = toolCall.id || `functions.${toolCall.function.name}:${toolCall.index}`
+                const toolCallId = toolCall.id || `functions.${toolCall.function.name}:${toolCallPosition}`
                 appendRawText(`${TOOL_CALL_BEGIN}${toolCallId}${TOOL_CALL_ARGUMENT_BEGIN}`)
                 appendMappedText(
-                    ['tool_calls', toolCall.index, 'function', 'arguments'],
+                    ['tool_calls', toolCallPosition, 'function', 'arguments'],
                     toolCall.function.arguments,
                 )
                 if (!isPartial || toolCallPosition < message.tool_calls.length - 1) {
@@ -379,7 +384,7 @@ export class KimiK2ResponseTemplate {
         }
         if (typeof tokens !== 'string' && hasStructuredDelta(tokens)) {
             // Kimi/vLLM continuation can stream the plain-text reasoning prefix in content, then structured tool_calls.
-            return normalizePlainTextInStructuredMessage(parseStructuredTokens(tokens))
+            return normalizeMessageToolCallIndexes(normalizePlainTextInStructuredMessage(parseStructuredTokens(tokens)))
         }
         const responseText = tokensToResponseText(tokens)
         if (!responseText) {
@@ -396,6 +401,6 @@ export class KimiK2ResponseTemplate {
                 }
             }
         }
-        return message
+        return normalizeMessageToolCallIndexes(message)
     }
 }

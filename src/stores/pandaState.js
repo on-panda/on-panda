@@ -1,4 +1,5 @@
 import { ref, computed, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import { deepCopy, hashObjectSHA256Base64, dateStringNow } from '../utils/commonUtils.js'
 import { dialogDifferent, isFinalRoleModelRole, clearTokenObject } from '../utils/chatUtils.js'
 import { stripRuntime } from '../utils/toolUtils.js'
@@ -115,6 +116,42 @@ function recoverHashMap(dumped) {
     recover(dumped.dialogs)
     dumped.hash_map = {}
     return dumped
+}
+
+function normalizeToolCallIndexes(pandaTree) {
+    const changedToolCalls = []
+    for (var dialogsKey of ['dialogs', 'deleted_dialogs']) {
+        for (var dialogKey in pandaTree[dialogsKey]) {
+            var dialog = pandaTree[dialogsKey][dialogKey]
+            for (var [messageIndex, message] of dialog.messages.entries()) {
+                if (!message.tool_calls) {
+                    continue
+                }
+                for (var [toolCallIndex, toolCall] of message.tool_calls.entries()) {
+                    if (toolCall.index !== toolCallIndex) {
+                        changedToolCalls.push({
+                            dialogsKey,
+                            dialogKey,
+                            messageIndex,
+                            indexFrom: toolCall.index,
+                            indexTo: toolCallIndex,
+                        })
+                        toolCall.index = toolCallIndex
+                    }
+                }
+            }
+        }
+    }
+    if (changedToolCalls.length) {
+        console.warn('Normalized non-sequential tool_calls indexes in panda json.', changedToolCalls)
+        setTimeout(() => {
+            ElMessage.warning({
+                showClose: true,
+                duration: 10000,
+                message: `Normalized ${changedToolCalls.length} non-sequential tool_calls index${changedToolCalls.length > 1 ? 'es' : ''} in loaded panda json.`,
+            })
+        })
+    }
 }
 
 const messagesExample = [{ role: "system", content: "" }, { role: "user", content: "give a random float, no other words" }, { role: "assistant", content: "1.27364382", finish_reason: "length" }]
@@ -499,6 +536,7 @@ export class PandaState {
                 }
             }
         }
+        normalizeToolCallIndexes(pandaTree)
         return pandaTree
     }
 
