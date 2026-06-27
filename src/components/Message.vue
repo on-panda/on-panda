@@ -370,6 +370,7 @@ async function handlePrimaryAction() {
     return
   }
   await handleSend()
+  localStorage.setItem('onPandaIsOldUser', 'true')
 }
 
 
