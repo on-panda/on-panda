@@ -36,26 +36,90 @@ const promptLogprobsToTopLogprobs = (promptLogprob, chosenTokenId) => {
 }
 
 function splitTextByLogprobs(text, logprobsContent) {
+  const splitTexts = Array.from({ length: logprobsContent.length }, () => '')
+  const tokenTextAt = (index) => logprobsContent[index]?.token ?? ''
+  const canSplitFrom = (logprobIndex, textOffset) => {
+    if (logprobIndex >= logprobsContent.length) {
+      return textOffset === text.length
+    }
+    const tokenText = tokenTextAt(logprobIndex)
+    if (tokenText) {
+      return text.startsWith(tokenText, textOffset) && canSplitFrom(logprobIndex + 1, textOffset + tokenText.length)
+    }
+
+    let nextLogprobIndex = logprobIndex + 1
+    while (nextLogprobIndex < logprobsContent.length && !tokenTextAt(nextLogprobIndex)) {
+      nextLogprobIndex++
+    }
+    if (nextLogprobIndex >= logprobsContent.length) {
+      return true
+    }
+
+    const nextTokenText = tokenTextAt(nextLogprobIndex)
+    for (let offset = textOffset; offset <= text.length - nextTokenText.length; offset++) {
+      if (text.startsWith(nextTokenText, offset) && canSplitFrom(nextLogprobIndex + 1, offset + nextTokenText.length)) {
+        return true
+      }
+    }
+    return false
+  }
+
   let offset = 0
-  return logprobsContent.map((logprobItem, index) => {
-    const tokenText = logprobItem?.token ?? ''
+  for (let index = 0; index < logprobsContent.length; index++) {
+    const tokenText = tokenTextAt(index)
     const remaining = text.slice(offset)
     if (!remaining) {
-      return ''
+      continue
     }
     if (tokenText && remaining.startsWith(tokenText)) {
       offset += tokenText.length
-      return tokenText
+      splitTexts[index] = tokenText
+      continue
+    }
+    if (!tokenText) {
+      let nextLogprobIndex = index + 1
+      while (nextLogprobIndex < logprobsContent.length && !tokenTextAt(nextLogprobIndex)) {
+        nextLogprobIndex++
+      }
+      let hiddenEnd = text.length
+      if (nextLogprobIndex < logprobsContent.length) {
+        hiddenEnd = offset
+        const nextTokenText = tokenTextAt(nextLogprobIndex)
+        for (let nextOffset = offset; nextOffset <= text.length - nextTokenText.length; nextOffset++) {
+          if (text.startsWith(nextTokenText, nextOffset) && canSplitFrom(nextLogprobIndex + 1, nextOffset + nextTokenText.length)) {
+            hiddenEnd = nextOffset
+            break
+          }
+        }
+      }
+      splitTexts[nextLogprobIndex - 1] = text.slice(offset, hiddenEnd)
+      offset = hiddenEnd
+      index = nextLogprobIndex - 1
+      continue
     }
     if (index === logprobsContent.length - 1) {
       offset = text.length
-      return remaining
+      splitTexts[index] = remaining
     }
-    return ''
-  })
+  }
+  if (offset < text.length && splitTexts.length) {
+    splitTexts[splitTexts.length - 1] += text.slice(offset)
+  }
+  return splitTexts
 }
 
 async function* splitMultiTokensChunk(stream) {
+  // split one stream chunk with multi deltaFields and mullti tokens
+  // TODO: figure out splitMultiTokensChunk logic and organize code
+  // reproduce bug using step-3.7-flash with this prompt:
+  /* 
+Repeat only once, no other words:
+```
+Flash) ⭐ 250
+Flash) ⭐ 250
+Flash) ⭐ 250
+```
+  */
   for await (const chunk of stream) {
     const choices = chunk?.choices
     if (!Array.isArray(choices) || choices.length !== 1) {
@@ -74,7 +138,7 @@ async function* splitMultiTokensChunk(stream) {
     if (delta.content === null) {
       delete delta.content
     }
-    if (typeof delta.reasoning_content === 'string' || typeof delta.reasoning === 'string' && delta.content === "") {
+    if ((typeof delta.reasoning_content === 'string' || typeof delta.reasoning === 'string') && delta.content === "") {
       // sometimes, reasoning_content or reasoning is string and content is empty string
       delete delta.content
     }
@@ -115,6 +179,18 @@ async function* splitMultiTokensChunk(stream) {
           delete splitDelta[field]
         }
         const tokenText = logprobItem?.token ?? ''
+        if (!tokenText && fieldIndex < deltaFields.length) {
+          const field = deltaFields[fieldIndex]
+          const fieldText = delta[field]
+          const fieldRemaining = fieldText.slice(fieldOffset)
+          const splitTokenText = splitTextByLogprobs(fieldRemaining, logprobsContent.slice(i))[0]
+          splitDelta[field] = splitTokenText
+          fieldOffset += splitTokenText.length
+          if (fieldOffset === fieldText.length) {
+            fieldIndex++
+            fieldOffset = 0
+          }
+        }
         let tokenOffset = 0
         while (tokenOffset < tokenText.length && fieldIndex < deltaFields.length) {
           const field = deltaFields[fieldIndex]
