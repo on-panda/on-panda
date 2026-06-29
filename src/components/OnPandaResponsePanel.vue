@@ -222,9 +222,9 @@ watch(() => globalStore.cleanMode, async function watchCleanMode(cleanMode) {
                 </el-tooltip>
                 <el-tooltip placement="top-end" effect="light">
                     <template #content>
-                        Click to copy response, <br>Or double-click to <br>
+                        {{ t('tooltips.copyResponse') }}, <br>{{ t('tooltips.orDoubleClickTo') }} <br>
                         <el-button size="small" @click="duplicateWindow(pandaState)">
-                            Duplicate Window
+                            {{ t('tooltips.duplicateWindow') }}
                         </el-button>
                     </template>
                     <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"

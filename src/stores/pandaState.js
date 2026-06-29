@@ -7,7 +7,7 @@ import { useGlobalStore } from './globalStore.js'
 import LZString from 'lz-string'
 
 
-function dumpCacheTree(cacheTree) {
+function dumpCacheTree(cacheTree, { keepTopLogprobs = false } = {}) {
     cacheTree = deepCopy(cacheTree)
     for (var dialogKey in cacheTree) {
         if (cacheTree[dialogKey].tokens) {
@@ -15,7 +15,7 @@ function dumpCacheTree(cacheTree) {
             var tokenLen = logprobsTokens.length
             for (var tokenIndex = 0; tokenIndex < tokenLen; tokenIndex++) {
                 var token = logprobsTokens[tokenIndex]
-                clearTokenObject(token, { keepTopLogprobs: token.bifurcationPoint })
+                clearTokenObject(token, { keepTopLogprobs: keepTopLogprobs || token.bifurcationPoint })
                 if (![0, tokenLen - 1].includes(tokenIndex)) {
                     delete token.model
                     delete token.usage
@@ -412,7 +412,7 @@ export class PandaState {
     }
     redo = () => {
     }
-    dump = async ({ includeCache = true, beforeOperation = true } = {}) => {
+    dump = async ({ includeCache = true, beforeOperation = true, keepTopLogprobs = false } = {}) => {
         if (beforeOperation) {
             this.beforeOperation()
         }
@@ -421,7 +421,7 @@ export class PandaState {
         dumped = stripRuntime(dumped)
         dumped = await usingHashMapRemoveRedundancy(dumped)
         if (includeCache) {
-            dumped.cache_tree = dumpCacheTree(this.cacheTree)
+            dumped.cache_tree = dumpCacheTree(this.cacheTree, { keepTopLogprobs })
         }
         // TODO: delete items can be recomputed "is_prompt_modified" "is_response_modified" response_modified_type?
         return dumped

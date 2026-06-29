@@ -97,6 +97,7 @@ export default {
     restoreDialog: '恢复当前对话',
     uploadFile: '上传本地文件',
     downloadFile: '下载为 panda.json 文件',
+    downloadWithCandidates: '包含候选',
     cleanUI: '简洁界面（阅读模式）',
     continueGenerating: '继续生成',
     stopGenerating: '停止生成',
@@ -106,7 +107,10 @@ export default {
     continueGeneratingSupport: '此模型是否支持原生续写 assistant 消息？\n\n如果不支持，将使用提示工程(prompt engineering)进行续写：\n\n> ',
     refreshTokenProb: '更新词组概率和候选',
     dblclickToPasteAndRefresh: '或双击',
-    pasteAndRefresh: '粘贴并更新'
+    pasteAndRefresh: '粘贴并更新',
+    copyResponse: '点击复制',
+    orDoubleClickTo: '或双击',
+    duplicateWindow: '复制窗口'
   },
   toolCallControl: {
     title: '工具调用控制',

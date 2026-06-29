@@ -56,8 +56,14 @@
                 <el-button :icon="UploadFilled" size="small" @click="uploadFile"
                     :style="isDragged ? { backgroundColor: 'rgb(158, 218, 255)' } : {}" />
             </el-tooltip>
-            <el-tooltip :content="t('tooltips.downloadFile')" raw-content placement="bottom">
-                <el-button :icon="Download" size="small" @click="clickToDownload" />
+            <el-tooltip placement="bottom" effect="light">
+                <template #content>
+                    {{ t('tooltips.downloadFile') }} <br>
+                    <el-button size="small" @click="clickToDownload({ keepTopLogprobs: true })">
+                        {{ t('tooltips.downloadWithCandidates') }}
+                    </el-button>
+                </template>
+                <el-button :icon="Download" size="small" @click="clickToDownload({})" />
             </el-tooltip>
             <el-tooltip :content="t('userMessages.openAnnotatorPanel')" raw-content placement="bottom"
                 v-if="!('is_good' in (pandaState.currentDialogData.value?.annotate || {}))">
@@ -191,15 +197,15 @@ const handleDropJson = async (uploadFile) => {
     await loadPandaJsonFile(file)
 };
 
-const clickToDownload = async () => {
+const clickToDownload = async ({ keepTopLogprobs = false } = {}) => {
     var name = null
     if (uploadedJson.value) {
-        var name = uploadedJson.value.name
+        name = uploadedJson.value.name
         if (!name.includes('.panda.json')) {
             name = name.replace('.json', '.panda.json')
         }
     }
-    downloadJsonFile(await pandaState.dump({ includeCache: true }), name)
+    downloadJsonFile(await pandaState.dump({ includeCache: true, keepTopLogprobs }), name)
 }
 
 

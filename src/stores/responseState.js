@@ -927,8 +927,8 @@ ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.cons
             this.pandaState.load(pandaJson)
         }
 
-        dumpPandaJson = async () => {
-            return await this.pandaState.dump({})
+        dumpPandaJson = async (dumpOptions = {}) => {
+            return await this.pandaState.dump(dumpOptions)
         }
     }
 

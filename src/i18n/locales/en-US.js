@@ -97,6 +97,7 @@ export default {
     restoreDialog: 'Restore current dialog',
     uploadFile: 'Upload local file',
     downloadFile: 'Download panda.json file',
+    downloadWithCandidates: 'Include candidates',
     cleanUI: 'Clean UI (reading mode)',
     continueGenerating: 'Continue generating',
     stopGenerating: 'Stop generating',
@@ -106,7 +107,10 @@ export default {
     continueGeneratingSupport: 'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> ',
     refreshTokenProb: 'Refresh tokens\' probability. Or',
     dblclickToPasteAndRefresh: 'double-click to',
-    pasteAndRefresh: 'Paste & Refresh'
+    pasteAndRefresh: 'Paste & Refresh',
+    copyResponse: 'Click to copy',
+    orDoubleClickTo: 'Or double-click to',
+    duplicateWindow: 'Duplicate Window'
   },
   toolCallControl: {
     title: 'Tool Call Control',
