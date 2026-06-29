@@ -248,7 +248,7 @@ export async function copyToClipboard(string) {
 export async function duplicateWindow(pandaState) {
   // dump pandaState to loaclStorage
   // and open a new window with the same url
-  const stateJson = await pandaState.dump({ beforeOperation: false, includeCache: true })
+  const stateJson = await pandaState.dump({ beforeOperation: false, includeCache: true, keepTopLogprobs: true })
   localStorage.setItem('pandaStateDumpedForDuplicateWindow', JSON.stringify({ pandaState: stateJson }))
   window.open(window.location.href)
 }
