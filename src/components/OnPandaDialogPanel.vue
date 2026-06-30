@@ -33,15 +33,11 @@ const promptLogprobsText = computed(() => {
 
 function setPromptLogprobsResponseState() {
     if (responseState.promptLogprobsTokens.value.length) {
-        // Make chatML compatible with chat API (now only for Qwen tokenizer)
-        // TODO: Compatible special tokens with other models, maybe by special_tokens config?
-        var endOfText = "<|im_end|>\n<|endoftext|>"
         const promptLogprobsResponseState = ResponseStateClosure({
-            messages: [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }],
+            messages: [{ role: "system", content: "You are a helpful assistant." }],
             apiConfig: responseState.apiConfig,
         })
-        const prefixTokens = { delta: { role: "assistant", content: "Hi!" + endOfText } }
-        const promptTokens = [prefixTokens, ...responseState.promptLogprobsTokens.value].map((token, tokenIndex) => {
+        const promptTokens = responseState.promptLogprobsTokens.value.map((token, tokenIndex) => {
             token.tokenIndex = tokenIndex
             return token
         })
