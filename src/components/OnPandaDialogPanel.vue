@@ -34,7 +34,14 @@ const promptLogprobsText = computed(() => {
 function setPromptLogprobsResponseState() {
     if (responseState.promptLogprobsTokens.value.length) {
         const promptLogprobsResponseState = ResponseStateClosure({
-            messages: [{ role: "system", content: "You are a helpful assistant." }],
+            messages: [
+                { role: "user", content: "Say hi" },
+                {
+                    "role": "assistant",
+                    "reasoning": "The user said \"Say hi\". This is a simple request for a greeting. I should respond with a friendly \"Hi\" or similar greeting.",
+                    "content": "Hi! How can I help you today?",
+                    "finish_reason": "stop"
+                }],
             apiConfig: responseState.apiConfig,
         })
         const promptTokens = responseState.promptLogprobsTokens.value.map((token, tokenIndex) => {
