@@ -42,7 +42,7 @@ const messagesContinueExample = [{ role: "user", content: "Tell me a common sayi
 // VLM
 const messagesImageExample = [{
   role: "user", content: [
-    { type: "text", text: '图中左侧的 "v" 是由什么形状构成？\n' },
+    { type: "text", text: 'What shapes make up the "v" on the left side of the image? \n' },
     {
       type: "image_url", image_url: {
         url: "https://docs.vllm.ai/en/latest/assets/logos/vllm-logo-text-light.png"
@@ -410,14 +410,6 @@ const defaultExampleNameToFunc = {
   //   operationCenter.loadMessages([{ role: "user", content: "just output a random float128 number without any words, no code" }])
   //   operationCenter.generateNew()
   // },
-  "笑话": () => {
-    operationCenter.loadMessages([{ role: "user", content: "讲一个关于西游记的笑话, 100字左右" }])
-    operationCenter.generateNew()
-  },
-  "诗": () => {
-    operationCenter.loadMessages([{ role: "user", content: "写藏头诗：\n人工智能，大有可为" }])
-    operationCenter.generateNew()
-  },
   // "计算": () => {
   //   operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "已知小王 2024年30岁，本来预计60岁退休。但现在中央每五年开一次会，每开一次会决定退休年龄延迟3年，求老王的真正退休年龄。" }])
   //   operationCenter.generateNew()
@@ -431,9 +423,9 @@ const defaultExampleNameToFunc = {
     operationCenter.generateNew()
   },
   "image": () => {
-    modelName.value = "image-tag"
+    // modelName.value = "image-tag"
     operationCenter.loadMessages(messagesImageExample)
-    operationCenter.generateNew()
+    // operationCenter.generateNew()
   },
   "continue": () => {
     operationCenter.loadMessages(messagesContinueExample)
