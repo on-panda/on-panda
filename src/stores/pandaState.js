@@ -514,6 +514,7 @@ export class PandaState {
                 if (!dialog.operations) {
                     dialog.operations = []
                 }
+                dialog.annotate = {}
                 // set is_good default when has annotate
                 if (dialog.annotate && !('is_good' in dialog.annotate)) {
                     dialog.annotate.is_good = null
