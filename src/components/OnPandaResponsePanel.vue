@@ -5,7 +5,7 @@ import { ElMessage } from 'element-plus'
 
 import { useI18n } from 'vue-i18n'
 import { useGlobalStore } from '../stores/globalStore.js'
-import { probOfToken, messageToSeq } from '../utils/chatUtils.js'
+import { messageToSeq } from '../utils/chatUtils.js'
 import { duplicateWindow, copyToClipboard } from '../utils/commonUtils.js'
 import { useScrollSwitchSync } from '../utils/userInterfaceUtils.js'
 import MessageRole from '../components/widgets/MessageRole.vue'
@@ -36,7 +36,7 @@ const operationCenter = responseState.operationCenter
 const finalMessage = responseState.finalMessage
 const finalMessageAsText = computed(() => messageToSeq(finalMessage.value, { includeFinishReason: false }))
 
-const bitsTooltipHtml = 'bits = - &sum;<sub>i</sub> log<sub>2</sub>(p<sub>i</sub>)'
+const perplexityTooltipHtml = 'perplexity = exp(-&sum;<sub>i</sub> log(p<sub>i</sub>) / N)'
 
 const waitingInfoProps = computed(() => ({
     generating: requestStatus.value.generating,
@@ -45,11 +45,20 @@ const waitingInfoProps = computed(() => ({
 }))
 
 
-var bitTokens = computed(() => tokens.value.filter(token => typeof token.logprobs?.content?.[0]?.logprob === "number"))
+const getTokenLogprob = (token) => token.logprobs?.content?.[0]?.logprob
 
-var bitTotal = computed(
-    () => bitTokens.value.reduce((sum, token) => sum + - Math.log2(probOfToken(token)), 0)
+var perplexityTokens = computed(() => tokens.value.filter(token => typeof getTokenLogprob(token) === "number"))
+
+var negativeLogprobTotal = computed(
+    () => perplexityTokens.value.reduce((sum, token) => sum - getTokenLogprob(token), 0)
 )
+
+var responsePerplexity = computed(() => {
+    const tokenCount = perplexityTokens.value.length
+    return tokenCount ? Math.exp(negativeLogprobTotal.value / tokenCount) : NaN
+})
+
+var perplexityLabel = computed(() => responseState.isPromptLogprobsState.value ? 'prompt perplexity' : 'perplexity')
 
 const tokensModelNames = computed(() => {
     var tokensModelNames = []
@@ -246,15 +255,13 @@ watch(() => globalStore.cleanMode, async function watchCleanMode(cleanMode) {
                         {{ tokens[tokens.length - 1]?.usage?.prompt_tokens }} +
                         {{ tokens[tokens.length - 1]?.usage?.completion_tokens }}
                     </span>
-                    <span v-else-if="bitTokens.length <= 1"> ｜ tokens: {{ tokens.length }} </span>
+                    <span v-else-if="perplexityTokens.length <= 1"> ｜ tokens: {{ tokens.length }} </span>
                 </span>
-                <span v-if="bitTokens.length > 1"> ｜
-                    <el-tooltip class="" effect="light" placement="left" raw-content :content="bitsTooltipHtml">
-                        bits
+                <span v-if="perplexityTokens.length > 1"> ｜
+                    <el-tooltip class="" effect="light" placement="left" raw-content :content="perplexityTooltipHtml">
+                        {{ perplexityLabel }}
                     </el-tooltip>
-                    / tokens: {{ bitTotal.toFixed(1) }} ÷ {{ bitTokens.length }} = {{ (bitTotal /
-                        bitTokens.length).toFixed(2)
-                    }}
+                    : {{ responsePerplexity.toFixed(2) }}
                 </span>
 
 
