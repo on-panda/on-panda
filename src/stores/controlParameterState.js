@@ -15,8 +15,6 @@ export const defaultChatConfig = {
     // top_k: 2,
     // image_detail_level: 'auto',
     max_tokens: null,
-    temperature: 0.5,
-    top_p: 0.95,
     stream_options: {
         include_usage: true,
     },
@@ -145,7 +143,7 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     const chatConfigControllable = ref(chatConfigControllableRaw)
     const chatConfigControllableKeys = Object.keys(chatConfigControllable.value)
 
-    const extraChatParametersString = ref("")
+    const extraChatParametersString = ref('{"chat_template_kwargs": {"enable_thinking": false}} ')
     const extraChatParameters = computed(() => {
         try {
             return extraChatParametersString.value ? JSON5.parse(extraChatParametersString.value) : {}

@@ -81,7 +81,7 @@ const globalStore = useGlobalStore()
 var isMobile = computed(() => globalStore.isMobile)
 const customInfoForUser = computed(() => props.customInfoForUser + globalStore.customInfoForUser)
 const defaultModelNameTags = {
-  'on-panda': 'on-panda',
+  'on-panda': 'Qwen/Qwen3.5-35B-A3B',
   'step3.7': 'step-tag',
   'kimi': 'kimi-tag',
   'DS': 'ds-tag',
