@@ -17,6 +17,7 @@ import { useGlobalStore } from '../stores/globalStore.js'
 
 const globalStore = useGlobalStore()
 const { t } = useI18n()
+const isZh = computed(() => globalStore.currentLocale.toLowerCase().indexOf('zh-cn') != -1)
 
 const props = defineProps({
   dialogWithControlState: {
@@ -33,23 +34,39 @@ const pandaState = responseState.pandaState
 const modelName = controlParameterState.modelName
 const modelNameTagsComputed = controlParameterState.modelNameTagsComputed
 // Example message templates
-const welcomeMessages = [{ role: "system", content: "" }, { role: "user", content: '🍓草莓的英文单词有几个 "R" ?' }]
+const welcomeMessages = computed(() => [
+  { role: "system", content: "" },
+  {
+    role: "user",
+    content: isZh.value
+      ? '🍍菠萝的英文单词有几个 "P" ?'
+      : "How many 'P's are there in the English word for 🍍?"
+  }
+])
+function loadWelcomeMessages() {
+  operationCenter.loadMessages(welcomeMessages.value)
+}
 
 const messagesTokenizerExample = [{ role: "user", content: "Repeat only once, no other words:\n```\n<|磊|>🧎🏿‍♂️‍➡️\\n<hr>\n蘒    𝒀𝒆𝒔पत्नी\n// Test repeated emojis\ntest ⭐ 1024\ntest ⭐ 1024\ntest ⭐ 1024\n```" }]
 
 const messagesContinueExample = [{ role: "user", content: "Tell me a common saying" }, { "role": "assistant", "content": '"An apple a day, keeps', "finish_reason": "stop" }]
 
 // VLM
-const messagesImageExample = [{
+const messagesImageExample = computed(() => [{
   role: "user", content: [
-    { type: "text", text: '图中左侧的 "v" 是由什么形状构成？\n' },
+    {
+      type: "text",
+      text: isZh.value
+        ? '图中左侧的 "v" 是由什么形状构成？\n'
+        : 'What shapes make up the "v" on the left side of the image?\n'
+    },
     {
       type: "image_url", image_url: {
         url: "https://docs.vllm.ai/en/latest/assets/logos/vllm-logo-text-light.png"
       },
     }
   ]
-}]
+}])
 
 const messagesToolsExample = [
   { "role": "system", "content": "You are a weather inquiry agent." },
@@ -226,7 +243,6 @@ const templateToolConfigs = [
 ]
 
 
-const isZh = computed(() => globalStore.currentLocale.toLowerCase().indexOf('zh-cn') != -1)
 function switchDefaultToAgentTag() {
   const defaultModel = modelNameTagsComputed.value['on-panda'] || 'on-panda'
   if (modelName.value.indexOf(defaultModel) != -1) {
@@ -264,7 +280,7 @@ const defaultExampleNameToFunc = {
   },
   "default": () => {
     modelName.value = modelNameTagsComputed.value['on-panda'] || 'on-panda'
-    operationCenter.loadMessages(welcomeMessages)
+    loadWelcomeMessages()
     operationCenter.generateNew()
   },
   // "R in 🍓": () => {
@@ -410,12 +426,22 @@ const defaultExampleNameToFunc = {
   //   operationCenter.loadMessages([{ role: "user", content: "just output a random float128 number without any words, no code" }])
   //   operationCenter.generateNew()
   // },
-  "笑话": () => {
-    operationCenter.loadMessages([{ role: "user", content: "讲一个关于西游记的笑话, 100字左右" }])
+  "joke": () => {
+    operationCenter.loadMessages([{
+      role: "user",
+      content: isZh.value
+        ? "讲一个关于西游记的笑话, 100字左右"
+        : "Tell a joke about robot, around 50 words long."
+    }])
     operationCenter.generateNew()
   },
-  "诗": () => {
-    operationCenter.loadMessages([{ role: "user", content: "写藏头诗：\n人工智能，大有可为" }])
+  "poem": () => {
+    operationCenter.loadMessages([{
+      role: "user",
+      content: isZh.value
+        ? "写藏头诗：\n人工智能，大有可为"
+        : "Write a lipogrammatic acrostic poem about \"onPanda\":\n- Restriction 1: the first letters vertically form the name \"onPanda\"\n- Restriction 2: entire text strictly omits the letter \"e\" (or \"E\")\n- Background: `onPanda: Efficient Annotation of On-Policy Alignment Data for LLMs and Agents via Token-Level Correction`"
+    }])
     operationCenter.generateNew()
   },
   // "计算": () => {
@@ -432,7 +458,7 @@ const defaultExampleNameToFunc = {
   },
   "image": () => {
     modelName.value = "image-tag"
-    operationCenter.loadMessages(messagesImageExample)
+    operationCenter.loadMessages(messagesImageExample.value)
     operationCenter.generateNew()
   },
   "continue": () => {
@@ -461,7 +487,8 @@ const exampleNameToFunc = computed(() => {
 })
 
 defineExpose({
-  exampleNameToFunc
+  exampleNameToFunc,
+  loadWelcomeMessages
 })
 
 </script>

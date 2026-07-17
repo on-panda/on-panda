@@ -117,14 +117,10 @@ const tokens = responseState.tokens
 const agenticLoopStatus = responseState.agenticLoopStatus
 const operationCenter = responseState.operationCenter
 
-// Initialize with welcome messages
 const onPandaExamplesRef = ref(null)
 
 if (globalStore.isOldUser) {
   operationCenter.loadMessages(defaultMessages, toolManageState.presetToolConfigsInput)
-} else {
-  const welcomeMessages = [{ role: "system", content: "" }, { role: "user", content: '🍓草莓的英文单词有几个 "R" ?' }]
-  operationCenter.loadMessages(welcomeMessages)
 }
 
 
@@ -142,6 +138,9 @@ watch(modelName, async function watchModelName(newValue) {  // set modelName to 
 const onPandaContainerRef = ref(null)
 
 onMounted(async () => {
+  if (!globalStore.isOldUser) {
+    onPandaExamplesRef.value.loadWelcomeMessages()
+  }
   async function loadRuntimeImport() {
     const runtimeImport = import.meta.env.VITE_ON_PANDA_WEB_RUNTIME_IMPORT
     if (!runtimeImport) {
