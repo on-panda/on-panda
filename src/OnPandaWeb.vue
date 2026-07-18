@@ -80,28 +80,11 @@ const { t } = useI18n()
 const globalStore = useGlobalStore()
 var isMobile = computed(() => globalStore.isMobile)
 const customInfoForUser = computed(() => props.customInfoForUser + globalStore.customInfoForUser)
-const defaultModelNameTags = {
-  'on-panda': 'on-panda',
-  'step3.7': 'step-tag',
-  'kimi': 'kimi-tag',
-  'DS': 'ds-tag',
-  'GPT': 'gpt-tag',
-  'claude': 'claude-tag',
-  'gemini': 'gemini-tag',
-  // 'image': 'image-tag',
-  // 'audio': 'step1f-on-policy',
-  'test': 'test-tag',
-  // 'fast': 'fast-tag',
-  // 'groq': 'groq-tag',
-}
 const modelNameTagsInput = computed(() => {
-  // only use defaultModelNameTags if both props.modelNameTags and globalStore.customModelNameTags is not set
   if (props.modelNameTags) {
-    var modelNameTags = { ...props.modelNameTags, ...globalStore.customModelNameTags }
-  } else {
-    var modelNameTags = Object.keys(globalStore.customModelNameTags).length ? globalStore.customModelNameTags : defaultModelNameTags
+    return { ...props.modelNameTags, ...globalStore.customModelNameTags }
   }
-  return modelNameTags
+  return globalStore.customModelNameTags
 })
 
 const apiConfigs = computed(() => [defaultApiConfig, ...props.apiConfigs, ...globalStore.customApiConfigs])
