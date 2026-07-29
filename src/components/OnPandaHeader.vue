@@ -28,7 +28,7 @@
     </details>
 
     <div style="text-align: center;">
-        <img width="128" src="/img/on-panda-logo-256x256.png"
+        <img width="128" :src="'/img/on-panda-logo-256x256.png'"
             @error.once="$event.currentTarget.src = 'https://on-panda.github.io/img/on-panda-logo-256x256.png'"
             :style="{ transform: _isLogoRotated ? 'rotate(360deg)' : 'rotate(0deg)', transition: 'transform 3s' }"
             @click="_isLogoRotated = !_isLogoRotated" />
