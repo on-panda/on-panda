@@ -29,6 +29,7 @@
 
     <div style="text-align: center;">
         <img width="128" src="/img/on-panda-logo-256x256.png"
+            @error.once="$event.currentTarget.src = 'https://on-panda.github.io/img/on-panda-logo-256x256.png'"
             :style="{ transform: _isLogoRotated ? 'rotate(360deg)' : 'rotate(0deg)', transition: 'transform 3s' }"
             @click="_isLogoRotated = !_isLogoRotated" />
         <br>
@@ -37,14 +38,14 @@
         <br>
     </div>
 
-    <details>
+    <details @toggle="_onUsageToggle">
         <summary>
             <small style="color: #888;">{{ t('header.usage') }}:</small>
         </summary>
         <br>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <video controls loading="lazy"
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <video ref="_usageVideo" controls preload="metadata"
+            @error.once="$event.currentTarget.src = 'https://on-panda.github.io/img/on-panda-demo-candidate-continue-generating-cn.mp4'"
             style="box-shadow: 0 0px 8px rgba(0, 0, 0, 0.5);width: 406px;max-width: 90%;">
-            <source src="/img/on-panda-demo-candidate-continue-generating-cn.mp4" type="video/mp4">
         </video>
         <br>
         <br>
@@ -64,6 +65,13 @@ import MarkdownRender from './widgets/MarkdownRender.vue'
 
 const globalStore = useGlobalStore()
 const _isLogoRotated = ref(false)
+const _usageVideo = ref(null)
 
 const { t } = useI18n()
+
+function _onUsageToggle(event) {
+    if (event.currentTarget.open && !_usageVideo.value.getAttribute('src')) {
+        _usageVideo.value.src = '/img/on-panda-demo-candidate-continue-generating-cn.mp4'
+    }
+}
 </script>
