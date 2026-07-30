@@ -1,6 +1,6 @@
 {
   "name": "@on-panda/on-panda",
-  "version": "0.5.9",
+  "version": "0.5.10",
   "license": "MIT",
   "type": "module",
   "main": "./dist/on-panda.es.js",

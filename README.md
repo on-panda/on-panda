@@ -18,8 +18,8 @@ The token-level correction interface of onPanda
 <br>
 <div align="center">
 
-Build with human efforts <br>
-For humans to steer LLM
+Build with human efforts ❤️ <br>
+For humans to steer LLM 😎🕹️🤖
 
 </div>
 
