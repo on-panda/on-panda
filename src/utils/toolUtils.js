@@ -43,18 +43,11 @@ function mcpContentItemToMessageContent(item) {
     if (item.type === 'text') {
         return [{ type: 'text', text: item.text }]
     }
-    if (item.type === 'image') {
+    if (['image', 'audio', 'video'].includes(item.type)) {
+        const chunkType = `${item.type}_url`
         return [{
-            type: 'image_url',
-            image_url: {
-                url: `data:${item.mimeType};base64,${item.data}`,
-            },
-        }]
-    }
-    if (item.type === 'audio') {
-        return [{
-            type: 'audio_url',
-            audio_url: {
+            type: chunkType,
+            [chunkType]: {
                 url: `data:${item.mimeType};base64,${item.data}`,
             },
         }]

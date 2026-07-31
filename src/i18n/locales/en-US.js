@@ -187,7 +187,7 @@ export default {
 - Double-click to edit: double-click a chunk to modify it, then the model continues from your edit
 
 **Image Features**
-- You can paste images and audio directly into the input box
+- You can paste images, audio and video directly into the input box
 - Single-click an image to zoom in/out, double-click to open it
 - Note: only specific models support image inputs
 

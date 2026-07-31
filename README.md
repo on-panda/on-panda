@@ -27,7 +27,7 @@ For humans to steer LLM 😎🕹️🤖
 
 - Visualize probabilities and candidate tokens for model responses.
 - Continue from a candidate, or double-click a token to edit it and continue generation.
-- Support text, images, audio, and tool calls.
+- Support text, images, audio, video, and tool calls.
 - Import and export `.panda.json` annotation data.
 - Connect to OpenAI-compatible model APIs. API configurations and keys stay in browser local storage.
 

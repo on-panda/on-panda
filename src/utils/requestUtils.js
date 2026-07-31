@@ -53,7 +53,7 @@ export function dropStaleToolAsset(body = {}) {
             continue
         }
         for (const [chunkIndex, chunk] of message.content.entries()) {
-            if (chunk.type !== 'image_url' && chunk.type !== 'audio_url') {
+            if (!['image_url', 'audio_url', 'input_audio', 'video_url'].includes(chunk.type)) {
                 continue
             }
             assetRecords.push({

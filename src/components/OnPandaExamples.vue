@@ -68,6 +68,23 @@ const messagesImageExample = computed(() => [{
   ]
 }])
 
+const messagesVideoExample = computed(() => [{
+  role: "user", content: [
+    {
+      type: "text",
+      text: isZh.value
+        ? '这段录屏中鼠标点击了几次，以及每次点击发生的时间？\n'
+        : 'In this screen recording, how many times was the mouse clicked, and when did each click occur?\n'
+    },
+    {
+      type: "video_url", video_url: {
+        url: "https://on-panda.github.io/img/on-panda-demo-candidate-continue-generating-cn.mp4"
+      },
+    }
+  ],
+  description: "Answer is 2 (0:14, 0:27)"
+}])
+
 const messagesToolsExample = [
   { "role": "system", "content": "You are a weather inquiry agent." },
   {
@@ -459,6 +476,11 @@ const defaultExampleNameToFunc = {
   "image": () => {
     modelName.value = "image-tag"
     operationCenter.loadMessages(messagesImageExample.value)
+    operationCenter.generateNew()
+  },
+  "video": () => {
+    modelName.value = "image-tag"
+    operationCenter.loadMessages(messagesVideoExample.value)
     operationCenter.generateNew()
   },
   "continue": () => {

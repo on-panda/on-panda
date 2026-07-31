@@ -43,11 +43,8 @@ function contentPartToAnthropic(part) {
             },
         }
     }
-    if (part.type === 'input_audio' || part.type === 'audio_url') {
-        return {
-            type: 'text',
-            text: JSON.stringify(part),
-        }
+    if (part.type === 'input_audio' || part.type === 'audio_url' || part.type === 'video_url') {
+        throw new Error(`Anthropic messages does not support content part type: ${part.type}`)
     }
     return part
 }

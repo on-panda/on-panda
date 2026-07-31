@@ -381,13 +381,10 @@ function handlePasteMultimodal(event) {
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     // console.log('clipboardData.items',item, JSON.parse(JSON.stringify([item.type, item.getAsFile(), item.getAsFile()?.type, item.kind,])))
-    if (item.type.indexOf("image") !== -1 || item.type.indexOf("audio") !== -1) {
-      // console.log('type', item.type) // image/png
-      const file = item.getAsFile();
-      const blobUrl = URL.createObjectURL(file);
-      var chunkType = item.type.split("/")[0] + '_url'
-      var chunk = { type: chunkType, [chunkType]: { url: blobUrl } }
-      blobUrls[blobUrl] = chunk
+    var chunkType = item.type.split("/")[0] + '_url'  // image/png -> image_url
+    if (globalStore.multimodalPlugins[chunkType]) {
+      const blobUrl = URL.createObjectURL(item.getAsFile());
+      blobUrls[blobUrl] = { type: chunkType, [chunkType]: { url: blobUrl } }
     }
   }
   if (Object.keys(blobUrls).length) {
@@ -404,20 +401,19 @@ async function handlePaste(event) {
     }
     const markdownInsert = Object.keys(blobUrls).map(blobUrl => {
       var chunk = blobUrls[blobUrl]
-      if (chunk['type'].indexOf("image") !== -1) {
+      if (chunk['type'] === 'image_url') {
         return `![<|ON_PANDA_IMAGE|>](${blobUrl})`
-      } else if (chunk['type'].indexOf("audio") !== -1) {
-        if (chunk?.audio_url?.url && chunk.audio_url.url.startsWith('blob:')) {
-          chunk.audio_url.url = globalStore.blobUrlToBase64Cache[chunk.audio_url.url]
-        }
-        // convert audio_url to input_audio "data:image/png;base64,iVBO...
+      }
+      chunk[chunk['type']].url = globalStore.blobUrlToBase64Cache[blobUrl]
+      if (chunk['type'] === 'audio_url') {
+        // convert audio_url to input_audio "data:audio/mp3;base64,//NIx...
         var base64Split = chunk.audio_url.url.split(';base64,')
         var format = base64Split[0].split('/')[1]
         if (["mp3", "wav"].includes(format)) {  // input_audio of vLLM only support those formats, and gpt-4o-audio-preview only support input_audio
           chunk = { type: 'input_audio', input_audio: { data: base64Split[1], format: format } }
         }
-        return '<|ON_PANDA_OBJECT_START|>' + multimodalChunkObjectToMarkdown(chunk, getCodecContext()) + '<|ON_PANDA_OBJECT_END|>'
       }
+      return '<|ON_PANDA_OBJECT_START|>' + multimodalChunkObjectToMarkdown(chunk, getCodecContext()) + '<|ON_PANDA_OBJECT_END|>'
     }).join('\n')
     const cursorPosition = event.target.selectionStart
     const currentValue = messageDraft.value

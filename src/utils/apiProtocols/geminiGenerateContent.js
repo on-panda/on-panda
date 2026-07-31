@@ -11,25 +11,8 @@ function contentPartToGemini(part) {
     if (part.type === 'text') {
         return { text: part.text }
     }
-    if (part.type === 'image_url') {
-        const url = part.image_url.url
-        if (url.startsWith('data:')) {
-            const [mediaTypePart, data] = url.split(';base64,')
-            return {
-                inlineData: {
-                    mimeType: mediaTypePart.slice('data:'.length),
-                    data,
-                },
-            }
-        }
-        return {
-            fileData: {
-                fileUri: url,
-            },
-        }
-    }
-    if (part.type === 'audio_url') {
-        const url = part.audio_url.url
+    if (part.type === 'image_url' || part.type === 'audio_url' || part.type === 'video_url') {
+        const url = part[part.type].url
         if (url.startsWith('data:')) {
             const [mediaTypePart, data] = url.split(';base64,')
             return {

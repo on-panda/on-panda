@@ -47,6 +47,9 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
         input_audio: {
             component: defineAsyncComponent(() => import('../components/plugins/AudioPlugin.vue'))
         },
+        video_url: {
+            component: defineAsyncComponent(() => import('../components/plugins/VideoPlugin.vue'))
+        },
     })
 
     const uuid = ref(null)
