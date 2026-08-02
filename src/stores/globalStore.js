@@ -15,6 +15,8 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
 
     const customExampleNameToFunc = ref({}) // exampleFunc(dialogWithControlState)
 
+    const debugRun = ref(null) // debugRun(dialogWithControlState, exampleNameToFunc), takes priority over defaultDebugRun of debug mode
+
     const hooks = ref({ beforeCreateChatCompletion: [] })
 
     const cleanMode = ref(false)
@@ -64,7 +66,7 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
     }
     const { t } = useI18n()
 
-    return { debug, isOldUser, hooks, cleanMode, enableLocalStorageApiConfigs, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, customModelNameTags, customExampleNameToFunc, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins, uuid, loadPandaTree, t }
+    return { debug, isOldUser, hooks, cleanMode, enableLocalStorageApiConfigs, blobUrlToBase64Cache, messageIndexStatus, customApiConfigs, customModelNameTags, customExampleNameToFunc, debugRun, currentLocale, setLocale, ...widthRelatedStore, customInfoForUser, multimodalPlugins, uuid, loadPandaTree, t }
 }
 )
 

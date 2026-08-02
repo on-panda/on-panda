@@ -343,7 +343,7 @@ const defaultExampleNameToFunc = {
       role: "user", content: "AI news in the past week.", comment: `[Task Examples]
 - Search for information about the step-3.7-flash model, then build an Apple.com-style introduction page.
 - Use render_svg to draw an SVG image of "a panda riding a llama" and iterate 3 times.
-- What's the weather in Beijing? Build an animated weather card in the top-right corner.
+- What's the weather in New York City? Build an animated weather card in the top-right corner.
 - View the screenshot of the paper's first page and evaluate the design and color palette of Figure 1: https://arxiv.org/pdf/2401.00036
 - Take a photo of me, then crop it while viewing the photo so my face is centered. Draw sunglasses that fit both eyes, then create a photo booth-style portrait for me to download.
 - Organize the PDF files in a folder by topic, move them into matching subfolders, and finally create index.html to summarize the information. (Requires the user to drag and drop the folder.)

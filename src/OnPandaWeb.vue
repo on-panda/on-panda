@@ -38,12 +38,11 @@ import { ref, computed, watch } from 'vue'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import { deepCopy, p, tryLoadDuplicateWindow, sleep } from './utils/commonUtils.js'
+import { p, tryLoadDuplicateWindow, sleep } from './utils/commonUtils.js'
 import { useGlobalStore } from './stores/globalStore.js'
 import { defaultMessages } from './stores/responseState.js'
 import { defaultApiConfig } from './stores/controlParameterState.js'
 import { DialogWithControlStateClosure } from './stores/dialogWithControlState.js'
-import { TEST_TOOL_CONFIGS } from './utils/toolUtils.js'
 
 import MarkdownRender from './components/widgets/MarkdownRender.vue'
 import OnPandaHeader from './components/OnPandaHeader.vue'
@@ -120,6 +119,17 @@ watch(modelName, async function watchModelName(newValue) {  // set modelName to 
 // ref="responseState.onPandaContainerRef" does not work
 const onPandaContainerRef = ref(null)
 
+// Default debug run: the browser-agent weather card. require_approval 'always' keeps the agentic loop from running unattended.
+function defaultDebugRun({ responseState, controlParameterState }) {
+  const { operationCenter } = responseState
+  controlParameterState.modelName.value = controlParameterState.modelNameTagsComputed.value['default-agent-tag'] || 'default-agent-tag'
+  operationCenter.loadMessages(
+    [{ role: "user", content: "What's the weather in New York City? Build an animated weather card in the top-right corner." }],
+    [{ type: 'mcp', server_url: 'local-fetch://browser-agent-mcp', require_approval: 'always' }]
+  )
+  operationCenter.generateNew()
+}
+
 onMounted(async () => {
   if (!globalStore.isOldUser) {
     onPandaExamplesRef.value.loadWelcomeMessages()
@@ -146,54 +156,30 @@ onMounted(async () => {
     console.error('Failed to load custom.js:', error)
   }
 
-  var exampleToRun = () => { }
+  var onMountedRun = () => { }
 
   if (tryLoadDuplicateWindow(responseState.pandaState)) { // duplicate window has higher priority
     if (localStorage.getItem('modelNameForDuplicateWindow')) {
       modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
       localStorage.removeItem('modelNameForDuplicateWindow')
-      exampleToRun = () => operationCenter.generateNew({ fromUser: true })
+      onMountedRun = () => operationCenter.generateNew({ fromUser: true })
     }
   } else {
     if (!globalStore.isOldUser) {
       // Set default model for new users
       modelName.value = modelNameTagsComputed.value['on-panda'] || 'on-panda'
-      exampleToRun = operationCenter.generateNew
+      onMountedRun = operationCenter.generateNew
     }
     if (globalStore.debug) {
-      // Use the example via the operationCenter directly
-      // operationCenter.loadMessages([{ role: "user", content: "Tell a joke about AI, around 30 words" }])
-      // toolManageState.presetToolConfigsInput.value = toolManageState.presetToolConfigsInput.value.concat(deepCopy(TEST_TOOL_CONFIGS))
-      // exampleToRun = operationCenter.generateNew
-      // exampleToRun = () => {
-      //   modelName.value = "k2.6-instruct-wo-parser-tag"
-      //   onPandaExamplesRef.value.exampleNameToFunc["tools"](dialogWithControlState)
-      // }
-      // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["🤖 browser-agent"]
-      // exampleToRun = onPandaExamplesRef.value.exampleNameToFunc["GUI-agent"]
-      var exampleToRun = () => {
-        var debugMessages = [{ role: "system", content: "You are a helpful assistant." }, { role: "user", content: "Say hi" }, { role: "assistant", content: "Hello!" }]
-        var debugMessages = [{ "role": "system", "content": "You are a weather inquiry agent. Add emojis in your response. Must to say something to user before tool_calls (words in content not in thinking)" }, { "role": "user", "content": "call the tool to tell me the tomorrow temperatures(°C) in New York City and San Francisco?" }]
-        // var debugMessages = [{ "role": "system", "content": "Any response must start from `I think`" }, { "role": "user", "content": "Screenshot and reply what you see within one word" }]
-        operationCenter.loadMessages(debugMessages, TEST_TOOL_CONFIGS)
-        if (modelNameTagsComputed.value['test']) {
-          modelName.value = modelNameTagsComputed.value['test']
-        }
-        modelName.value = "kimi-tag"
-        // modelName.value = "doubao-tag"
-        // controlParameterState.apiConfigControllable.value.chat_config.max_tool_assets = 1
-        controlParameterState.apiConfigControllable.value.chat_config.tool_asset_keep_rounds = 2
-        operationCenter.generateNew()
-        // operationCenter.refreshResponseProbability()
-      }
+      onMountedRun = globalStore.debugRun || defaultDebugRun
     }
   }
   async function afterApiAndToolReady() {
     await controlParameterState.apiUpdateCompletedPromise.value
     await toolManageState.presetToolReadyPromise.value.catch(responseState.warning)
     await sleep(5)
-    if (!agenticLoopStatus.running && exampleToRun) {
-      await exampleToRun(dialogWithControlState)
+    if (!agenticLoopStatus.running && onMountedRun) {
+      await onMountedRun(dialogWithControlState, onPandaExamplesRef.value.exampleNameToFunc)
     }
     if (globalStore.debug) {
       p("tokens", tokens)
