@@ -1,14 +1,53 @@
 import { base64ToBlob } from "./commonUtils.js"
 
+// Some APIs require an explicit mimeType for a media URL, and it also tells which multimodal chunk type a URL is.
+const MIME_TYPE_BY_FILE_EXTENSION = {
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp',
+    heic: 'image/heic',
+    heif: 'image/heif',
+    wav: 'audio/wav',
+    mp3: 'audio/mp3',
+    aiff: 'audio/aiff',
+    aac: 'audio/aac',
+    ogg: 'audio/ogg',
+    flac: 'audio/flac',
+    mp4: 'video/mp4',
+    mpeg: 'video/mpeg',
+    mpg: 'video/mpg',
+    mov: 'video/mov',
+    avi: 'video/avi',
+    flv: 'video/x-flv',
+    webm: 'video/webm',
+    wmv: 'video/wmv',
+    '3gpp': 'video/3gpp',
+}
+
+export function multimodalUrlToMimeType(url) {
+    const mimeType = MIME_TYPE_BY_FILE_EXTENSION[new URL(url).pathname.split('.').pop().toLowerCase()]
+    if (!mimeType) {
+        throw new Error(`Can not infer the mimeType from the file extension of URL: ${url}`)
+    }
+    return mimeType
+}
+
 export function multimodalChunkStringToObject(objStr, chunkCache, strict = true) {
-    const m = objStr.match(/^\[([A-Za-z0-9-_]+)_(\d+)\]\(.*\)$/)
+    // `[image_url_1](blob:...)` reads the chunk from the cache, while `[video_url](https://...)` and
+    // `[](https://xxx.mp4)` keep the URL editable, the latter infers the type from the file extension.
+    const m = objStr.match(/^\[([A-Za-z0-9-_]*)\]\((.*)\)$/)
     if (m) {
-        const type = m[1]
-        const index = m[2]
-        const cacheIndex = `${type}_${index}`
-        var obj = chunkCache[cacheIndex]
-        if (!obj) {
-            console.error('Chunk not found in cache:', cacheIndex);
+        const label = m[1]
+        const url = m[2]
+        if (/_\d+$/.test(label)) {
+            var obj = chunkCache[label]
+            if (!obj) {
+                console.error('Chunk not found in cache:', label);
+            }
+        } else {
+            const type = label || `${multimodalUrlToMimeType(url).split('/')[0]}_url`
+            var obj = { type: type, [type]: { url: url } }
         }
     } else {
         try {

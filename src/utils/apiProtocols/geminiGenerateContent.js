@@ -1,35 +1,11 @@
 import { useGlobalStore } from '../../stores/globalStore.js'
 import { ObjctKeyToCamelCaseNaming, deepCopy } from '../commonUtils.js'
 import { normalizeStream } from '../fetchOpenaiApi.js'
+import { multimodalUrlToMimeType } from '../multimodalUtils.js'
 import { parseSseJsonStream, retryWithSchedule } from './utils.js'
 
 const DEFAULT_THINKING_CONFIG = {
     thinkingLevel: 'HIGH',
-}
-
-// Vertex rejects `fileData` without an explicit mimeType, so infer it from the file extension.
-const MIME_TYPE_BY_FILE_EXTENSION = {
-    png: 'image/png',
-    jpg: 'image/jpeg',
-    jpeg: 'image/jpeg',
-    webp: 'image/webp',
-    heic: 'image/heic',
-    heif: 'image/heif',
-    wav: 'audio/wav',
-    mp3: 'audio/mp3',
-    aiff: 'audio/aiff',
-    aac: 'audio/aac',
-    ogg: 'audio/ogg',
-    flac: 'audio/flac',
-    mp4: 'video/mp4',
-    mpeg: 'video/mpeg',
-    mpg: 'video/mpg',
-    mov: 'video/mov',
-    avi: 'video/avi',
-    flv: 'video/x-flv',
-    webm: 'video/webm',
-    wmv: 'video/wmv',
-    '3gpp': 'video/3gpp',
 }
 
 function contentPartToGemini(part) {
@@ -47,13 +23,10 @@ function contentPartToGemini(part) {
                 },
             }
         }
-        const mimeType = MIME_TYPE_BY_FILE_EXTENSION[new URL(url).pathname.split('.').pop().toLowerCase()]
-        if (!mimeType) {
-            throw new Error(`Gemini generateContent can not infer the mimeType of ${part.type}: ${url}`)
-        }
         return {
             fileData: {
-                mimeType,
+                // Vertex rejects fileData without an explicit mimeType.
+                mimeType: multimodalUrlToMimeType(url),
                 fileUri: url,
             },
         }

@@ -34,15 +34,16 @@ export function multimodalChunkObjectToMarkdown(chunk, { blobUrlToBase64Cache = 
     var hashToObjectString = blobUrlToBase64Cache[type]
     var hash = JSON.stringify(chunk[type])
     if (!(hash in hashToObjectString)) {
-        var typeNumInCache = Object.keys(hashToObjectString).length
-        var cacheIndex = `${type}_${typeNumInCache + 1}`
         var base64Object = multimodalChunkObjectToBase64(chunk)
-        if (base64Object) {
+        if (base64Object?.blob_url) {
+            var cacheIndex = `${type}_${Object.keys(hashToObjectString).length + 1}`
             blobUrlToBase64Cache[base64Object.blob_url] = base64Object.base64_url
+            blobUrlToBase64Cache[cacheIndex] = chunk
+            var objectString = `[${cacheIndex}](${base64Object.blob_url})`
+        } else {
+            // A plain URL needs no cache, keep it visible and editable in the message editor.
+            var objectString = `[${type}](${chunk[type].url})`
         }
-        var blob_url = base64Object?.blob_url || "NotImplemented"
-        blobUrlToBase64Cache[cacheIndex] = chunk
-        var objectString = `[${cacheIndex}](${blob_url})`
         hashToObjectString[hash] = objectString
     }
     return hashToObjectString[hash]
