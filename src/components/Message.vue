@@ -83,6 +83,7 @@ import { ElMessage } from 'element-plus'
 import { getContentTypes, messageToSeq } from '../utils/chatUtils.js'
 import {
   MESSAGE_KEYS_IN_CONTEXT,
+  CONTENT_CHUNK_MARKERS,
   formatContentAsText,
   getMessageOutput,
   parseContentAsText,
@@ -402,7 +403,7 @@ async function handlePaste(event) {
     const markdownInsert = Object.keys(blobUrls).map(blobUrl => {
       var chunk = blobUrls[blobUrl]
       if (chunk['type'] === 'image_url') {
-        return `![<|ON_PANDA_IMAGE|>](${blobUrl})`
+        return `![${CONTENT_CHUNK_MARKERS.image}](${blobUrl})`
       }
       chunk[chunk['type']].url = globalStore.blobUrlToBase64Cache[blobUrl]
       if (chunk['type'] === 'audio_url') {
@@ -413,7 +414,7 @@ async function handlePaste(event) {
           chunk = { type: 'input_audio', input_audio: { data: base64Split[1], format: format } }
         }
       }
-      return '<|ON_PANDA_OBJECT_START|>' + multimodalChunkObjectToMarkdown(chunk, getCodecContext()) + '<|ON_PANDA_OBJECT_END|>'
+      return CONTENT_CHUNK_MARKERS.object_start + multimodalChunkObjectToMarkdown(chunk, getCodecContext()) + CONTENT_CHUNK_MARKERS.object_end
     }).join('\n')
     const cursorPosition = event.target.selectionStart
     const currentValue = messageDraft.value

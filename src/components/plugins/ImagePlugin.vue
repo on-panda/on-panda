@@ -1,5 +1,5 @@
 <template>
-    <img class="on-panda-image-plugin" :src="imageUrl" alt="<|ON_PANDA_IMAGE|>" @click="handleClick"
+    <img class="on-panda-image-plugin" :src="imageUrl" alt="ON_PANDA_IMAGE" @click="handleClick"
         @dblclick="handleDoubleClick">
 </template>
 

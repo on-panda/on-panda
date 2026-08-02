@@ -6,19 +6,29 @@ import { multimodalChunkStringToObject, multimodalChunkObjectToBase64 } from './
 export const MESSAGE_KEYS_IN_CONTEXT = ['name', 'reasoning', 'content', 'tool_calls', 'tool_call_id']
 export const MESSAGE_OUTPUT_KEYS = ['reasoning', 'content', 'tool_calls']
 export const MESSAGE_META_KEYS = ['name', 'tool_call_id']
+
+function messageMarker(name) {
+    return ['<|', 'ON_', 'PANDA_', name, '|>'].join('')
+}
+
 export const MESSAGE_CONTEXT_SECTION_MARKERS = {
-    message_meta: '<|ON_PANDA_MESSAGE_META|>',
-    reasoning: '<|ON_PANDA_REASONING|>',
-    content: '<|ON_PANDA_CONTENT|>',
-    tool_calls: '<|ON_PANDA_TOOL_CALLS|>',
+    message_meta: messageMarker('MESSAGE_META'),
+    reasoning: messageMarker('REASONING'),
+    content: messageMarker('CONTENT'),
+    tool_calls: messageMarker('TOOL_CALLS'),
+}
+export const CONTENT_CHUNK_MARKERS = {
+    image: messageMarker('IMAGE'),
+    object_start: messageMarker('OBJECT_START'),
+    object_end: messageMarker('OBJECT_END'),
 }
 const TOOL_CALL_RECORD_MARKERS = {
-    calls_begin: '<|ON_PANDA_CALLS_BEGIN|>',
-    calls_end: '<|ON_PANDA_CALLS_END|>',
-    type: '<|ON_PANDA_CALL_TYPE|>',
-    id: '<|ON_PANDA_CALL_ID|>',
-    name: '<|ON_PANDA_CALL_NAME|>',
-    arguments: '<|ON_PANDA_CALL_ARGUMENTS|>',
+    calls_begin: messageMarker('CALLS_BEGIN'),
+    calls_end: messageMarker('CALLS_END'),
+    type: messageMarker('CALL_TYPE'),
+    id: messageMarker('CALL_ID'),
+    name: messageMarker('CALL_NAME'),
+    arguments: messageMarker('CALL_ARGUMENTS'),
 }
 
 export function getMessageOutput(message) {
@@ -69,11 +79,11 @@ export function formatContentAsText(content, codecContext = {}) {
                     }
                     imageUrlShow = chunk['blob_url']
                 }
-                str += `![<|ON_PANDA_IMAGE|>](${imageUrlShow})`
+                str += `![${CONTENT_CHUNK_MARKERS.image}](${imageUrlShow})`
             } else if (Object.keys(multimodalPlugins).includes(chunk['type'])) {
-                str += '<|ON_PANDA_OBJECT_START|>' + multimodalChunkObjectToMarkdown(chunk, codecContext) + '<|ON_PANDA_OBJECT_END|>'
+                str += CONTENT_CHUNK_MARKERS.object_start + multimodalChunkObjectToMarkdown(chunk, codecContext) + CONTENT_CHUNK_MARKERS.object_end
             } else {
-                str += '<|ON_PANDA_OBJECT_START|>' + JSON.stringify(chunk) + '<|ON_PANDA_OBJECT_END|>'
+                str += CONTENT_CHUNK_MARKERS.object_start + JSON.stringify(chunk) + CONTENT_CHUNK_MARKERS.object_end
             }
         }
     }
@@ -91,7 +101,7 @@ export function formatSimpleContentAsText(content) {
 }
 
 export function parseContentAsText(value, { blobUrlToBase64Cache = {} } = {}) {
-    if (value.includes('![<|ON_PANDA_IMAGE|>](') || value.includes('<|ON_PANDA_OBJECT_START|>')) {
+    if (value.includes(`![${CONTENT_CHUNK_MARKERS.image}](`) || value.includes(CONTENT_CHUNK_MARKERS.object_start)) {
         const content = []
         const regex = /(<\|ON_PANDA_OBJECT_START\|>(.*?)<\|ON_PANDA_OBJECT_END\|>)|(!\[<\|ON_PANDA_IMAGE\|>\]\((.*?)\))/gs
         let lastIndex = 0
