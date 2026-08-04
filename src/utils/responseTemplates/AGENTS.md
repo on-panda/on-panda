@@ -8,7 +8,8 @@
   - `apply(message)` converts an assistant message into `{ templatedPrompt, keyPathPromptMapping }`.
   - `parse(tokens)` converts streamed/generated tokens back into an assistant message.
 - `responseTemplateType === "plain_text"` means the request/visual token stream is the model's literal response text, including special tokens.
-- Keep persisted dialogs structured: `{ reasoning, content, tool_calls, finish_reason }`. Do not store raw template text such as `<think>...</think>` as `message.content`.
+- Keep persisted dialogs structured: `{ reasoning, content, tool_calls, finish_reason }`. Do not store raw template text such as '&lt;think&gt;...&lt;/think&gt;' as `message.content`.
+- When implementing templates, assemble protocol markers from string fragments instead of writing complete special-token literals in source code, because complete markers can interfere with the model processing the code.
 - A role-only model message is valid continuation prefill. Do not remove it in shared message assembly.
 - If there is no meaningful role or text signal, the template parser should return `{}`. If role-only is a real protocol signal, preserve it.
 
@@ -26,9 +27,9 @@
 - If `finish_reason === "stop"` and parsed `tool_calls` exist, coerce it to `finish_reason: "tool_calls"`.
 - If a structured delta switches from content-prefill to reasoning, move the old content into reasoning. Some servers resume a plain-text continuation by streaming reasoning deltas.
 - Register model families by matching `response_template.name_or_path`, such as `/^moonshotai\/kimi-k2/i` for Kimi K2.x models.
-- For reasoning models, do not output empty `<think></think>` when `message.reasoning` is absent.
-- Reasoning-model continuation should preferably start with a special token such as `<think>`.
-- Render `finish_reason: "reasoning_end"` as a closing special token such as `</think>` after reasoning.
+- For reasoning models, do not output empty '&lt;think&gt;...&lt;/think&gt;' when `message.reasoning` is absent.
+- Reasoning-model continuation should preferably start with a special token such as '&lt;think&gt;'.
+- Render `finish_reason: "reasoning_end"` as a closing special token such as '&lt;/think&gt;' after reasoning.
 - Keep the registry explicit in `responseTemplates/index.js`.
 - For plain-text continuation requests, inspect the final request message: it should have `role` and `content`, but no `reasoning` or `tool_calls` fields.
-- Mixed streams can exist: token `delta.content` may contain `<think>...`, followed in continuation by `delta.reasoning` and `delta.tool_calls`.
+- Mixed streams can exist: token `delta.content` may contain '&lt;think&gt;...', followed in continuation by `delta.reasoning` and `delta.tool_calls`.

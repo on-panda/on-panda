@@ -1,14 +1,15 @@
 import { tokenToDisplayString } from '../chatUtils.js'
 import { deepCopy } from '../commonUtils.js'
 
-const THINK_BEGIN = '<think>'
-const THINK_END = '</think>'
+const specialMarker = (name) => ['<|', name, '|>'].join('')
+const THINK_BEGIN = ['<', 'think>'].join('')
+const THINK_END = ['</', 'think>'].join('')
 const REASONING_END = 'reasoning_end'
-const TOOL_CALLS_SECTION_BEGIN = '<|tool_calls_section_begin|>'
-const TOOL_CALLS_SECTION_END = '<|tool_calls_section_end|>'
-const TOOL_CALL_BEGIN = '<|tool_call_begin|>'
-const TOOL_CALL_ARGUMENT_BEGIN = '<|tool_call_argument_begin|>'
-const TOOL_CALL_END = '<|tool_call_end|>'
+const TOOL_CALLS_SECTION_BEGIN = specialMarker('tool_calls_section_begin')
+const TOOL_CALLS_SECTION_END = specialMarker('tool_calls_section_end')
+const TOOL_CALL_BEGIN = specialMarker('tool_call_begin')
+const TOOL_CALL_ARGUMENT_BEGIN = specialMarker('tool_call_argument_begin')
+const TOOL_CALL_END = specialMarker('tool_call_end')
 
 function stripRepeatedThinkBegin(text) {
     while (text.startsWith(THINK_BEGIN)) {
