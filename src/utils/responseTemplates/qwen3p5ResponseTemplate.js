@@ -62,9 +62,19 @@ function parseArgumentsPrefix(argumentsText) {
         if (argumentsText.trim() === '{') {
             return { parameters: [], complete: false }
         }
-        const valuePending = /:\s*$/.test(argumentsText)
+        var inString = false
+        var escaped = false
+        for (const character of argumentsText) {
+            if (escaped) {
+                escaped = false
+            } else if (inString && character === '\\') {
+                escaped = true
+            } else if (character === '"') {
+                inString = !inString
+            }
+        }
         try {
-            argumentsObject = JSON.parse(argumentsText + (valuePending ? 'null}' : '"}'))
+            argumentsObject = JSON.parse(argumentsText + (inString ? '"}' : 'null}'))
         } catch {
             return null
         }
@@ -77,7 +87,7 @@ function parseArgumentsPrefix(argumentsText) {
             complete: true,
         }))
         parameters[parameters.length - 1].complete = false
-        if (valuePending) {
+        if (!inString) {
             parameters[parameters.length - 1].value = ''
         }
         return { parameters, complete: false }
