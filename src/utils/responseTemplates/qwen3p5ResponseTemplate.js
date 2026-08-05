@@ -1,5 +1,6 @@
 import { tokenToDisplayString } from '../chatUtils.js'
 import { deepCopy } from '../commonUtils.js'
+import { normalizeMessageToolCalls } from './responseTemplateUtils.js'
 
 const specialMarker = (name) => ['<|', name, '|>'].join('')
 const xmlMarker = (name, closing = false) => ['<', closing ? '/' : '', name, '>'].join('')
@@ -51,6 +52,55 @@ function argumentValueToText(value) {
     return String(value)
 }
 
+function parameterValueToJsonText({ value, schema } = {}) {
+    const stringValue = JSON.stringify(value)
+    if (!schema) {
+        return stringValue
+    }
+    const schemaTypes = Array.isArray(schema.type) ? schema.type : [schema.type]
+    if (schemaTypes.length !== 1 || typeof schemaTypes[0] !== 'string') {
+        return stringValue
+    }
+    const schemaType = schemaTypes[0]
+    if (schemaType === 'string') {
+        return stringValue
+    }
+    if (schemaType === 'boolean') {
+        if (value === 'True' || value === 'true') {
+            return 'true'
+        }
+        if (value === 'False' || value === 'false') {
+            return 'false'
+        }
+        return stringValue
+    }
+    if (schemaType === 'null') {
+        return value === 'None' || value === 'null' ? 'null' : stringValue
+    }
+
+    var parsedValue
+    try {
+        parsedValue = JSON.parse(value)
+    } catch {
+        return stringValue
+    }
+    if (schemaType === 'number') {
+        return typeof parsedValue === 'number' && Number.isFinite(parsedValue) ? value : stringValue
+    }
+    if (schemaType === 'integer') {
+        return typeof parsedValue === 'number' && Number.isInteger(parsedValue) ? value : stringValue
+    }
+    if (schemaType === 'array') {
+        return Array.isArray(parsedValue) ? value : stringValue
+    }
+    if (schemaType === 'object') {
+        return parsedValue && typeof parsedValue === 'object' && !Array.isArray(parsedValue)
+            ? value
+            : stringValue
+    }
+    return stringValue
+}
+
 function parseArgumentsPrefix(argumentsText) {
     if (!argumentsText) {
         return { parameters: [], complete: false }
@@ -73,8 +123,11 @@ function parseArgumentsPrefix(argumentsText) {
                 inString = !inString
             }
         }
+        const valuePending = /:\s*$/.test(argumentsText)
         try {
-            argumentsObject = JSON.parse(argumentsText + (inString ? '"}' : 'null}'))
+            argumentsObject = JSON.parse(argumentsText + (
+                inString ? '"}' : valuePending ? 'null}' : '}'
+            ))
         } catch {
             return null
         }
@@ -86,8 +139,10 @@ function parseArgumentsPrefix(argumentsText) {
             value: argumentValueToText(value),
             complete: true,
         }))
-        parameters[parameters.length - 1].complete = false
-        if (!inString) {
+        // A trailing number may still grow in the next delta; closed strings, containers, and literals cannot.
+        parameters[parameters.length - 1].complete = !inString && !valuePending &&
+            /(?:"|\]|\}|true|false|null)\s*$/.test(argumentsText)
+        if (valuePending) {
             parameters[parameters.length - 1].value = ''
         }
         return { parameters, complete: false }
@@ -105,9 +160,15 @@ function parseArgumentsPrefix(argumentsText) {
     }
 }
 
-function buildArgumentsPrefix(parameters, functionClosed) {
-    const argumentParts = parameters.map(parameter => {
-        var valueText = JSON.stringify(parameter.value)
+function buildArgumentsPrefix({ parameters, functionClosed, parametersSchema } = {}) {
+    const properties = parametersSchema?.properties || {}
+    const argumentParts = parameters.map((parameter, parameterIndex) => {
+        const canUseSchema = parameter.complete && (
+            functionClosed || parameterIndex < parameters.length - 1
+        )
+        var valueText = canUseSchema
+            ? parameterValueToJsonText({ value: parameter.value, schema: properties[parameter.name] })
+            : JSON.stringify(parameter.value)
         if (!parameter.complete) {
             valueText = valueText.slice(0, -1)
         }
@@ -116,7 +177,7 @@ function buildArgumentsPrefix(parameters, functionClosed) {
     return `{${argumentParts.join(', ')}${functionClosed ? '}' : ''}`
 }
 
-function parseXmlParameters(rawArguments, functionClosed) {
+function parseXmlParameters({ rawArguments, functionClosed, parametersSchema } = {}) {
     const parameters = []
     var cursor = 0
     while (cursor < rawArguments.length) {
@@ -166,19 +227,18 @@ function parseXmlParameters(rawArguments, functionClosed) {
     if (!parameters.length) {
         return functionClosed ? '{}' : ''
     }
-    return buildArgumentsPrefix(parameters, functionClosed)
+    return buildArgumentsPrefix({ parameters, functionClosed, parametersSchema })
 }
 
 function buildToolCall({ name, argumentsText, index } = {}) {
     return {
-        id: `functions.${name}:${index}`,
         type: 'function',
         index,
         function: { name, arguments: argumentsText },
     }
 }
 
-function parseToolCalls(toolCallsText) {
+function parseToolCalls(toolCallsText, tools = []) {
     const toolCalls = []
     var cursor = 0
     while (cursor < toolCallsText.length) {
@@ -199,6 +259,8 @@ function parseToolCalls(toolCallsText) {
             break
         }
 
+        const functionName = toolCallsText.slice(nameStart, nameEnd)
+        const tool = tools.find(tool => tool.function.name === functionName)
         const functionEnd = toolCallsText.indexOf(FUNCTION_END, nameEnd + 1)
         const nextToolCallBegin = toolCallsText.indexOf(TOOL_CALL_BEGIN, nameEnd + 1)
         const functionClosed = functionEnd !== -1 && (
@@ -208,7 +270,11 @@ function parseToolCalls(toolCallsText) {
             ? functionEnd
             : nextToolCallBegin === -1 ? toolCallsText.length : nextToolCallBegin
         const rawArguments = toolCallsText.slice(nameEnd + 1, rawArgumentsEnd)
-        const parsedArguments = parseXmlParameters(rawArguments, functionClosed)
+        const parsedArguments = parseXmlParameters({
+            rawArguments,
+            functionClosed,
+            parametersSchema: tool ? tool.function.parameters : null,
+        })
         var argumentsText = parsedArguments
         if (argumentsText === null) {
             argumentsText = rawArguments.startsWith('\n') ? rawArguments.slice(1) : rawArguments
@@ -217,7 +283,7 @@ function parseToolCalls(toolCallsText) {
             }
         }
         toolCalls.push(buildToolCall({
-            name: toolCallsText.slice(nameStart, nameEnd),
+            name: functionName,
             argumentsText,
             index: toolCalls.length,
         }))
@@ -238,7 +304,7 @@ function parseToolCalls(toolCallsText) {
     return toolCalls
 }
 
-function parseQwenResponseText(text) {
+function parseQwenResponseText(text, tools = []) {
     const message = { role: 'assistant' }
     var remainingText = text
     var hasAssistantBegin = false
@@ -294,7 +360,7 @@ function parseQwenResponseText(text) {
     if (toolCallBegin === -1) {
         message.content = remainingText
     } else {
-        const toolCalls = parseToolCalls(remainingText.slice(toolCallBegin))
+        const toolCalls = parseToolCalls(remainingText.slice(toolCallBegin), tools)
         if (toolCalls.length) {
             message.content = remainingText.slice(0, toolCallBegin).replace(/\n+$/, '')
             message.tool_calls = toolCalls
@@ -360,7 +426,7 @@ function mergeToolCalls(toolCalls1 = [], toolCalls2 = []) {
     return toolCalls
 }
 
-function parseStructuredTokens(tokens = []) {
+function parseStructuredTokens(tokens = [], tools = []) {
     var role = null
     var finishReason
     const message = tokens.filter(
@@ -388,7 +454,7 @@ function parseStructuredTokens(tokens = []) {
                 continue
             }
             if (key === 'reasoning' && delta1.content?.length && !delta1.reasoning?.length) {
-                const parsedPrefix = parseQwenResponseText(delta.content)
+                const parsedPrefix = parseQwenResponseText(delta.content, tools)
                 if (parsedPrefix.reasoning || parsedPrefix.tool_calls?.length) {
                     if (parsedPrefix.reasoning) {
                         delta.reasoning = parsedPrefix.reasoning
@@ -440,7 +506,7 @@ function parseStructuredTokens(tokens = []) {
     return message
 }
 
-function normalizePlainTextInStructuredMessage(message) {
+function normalizePlainTextInStructuredMessage(message, tools = []) {
     if (typeof message.content !== 'string') {
         return message
     }
@@ -451,7 +517,7 @@ function normalizePlainTextInStructuredMessage(message) {
         return message
     }
 
-    const parsedTextMessage = parseQwenResponseText(message.content)
+    const parsedTextMessage = parseQwenResponseText(message.content, tools)
     if (parsedTextMessage.reasoning) {
         message.reasoning = parsedTextMessage.reasoning + (message.reasoning || '')
     }
@@ -476,20 +542,6 @@ function normalizePlainTextInStructuredMessage(message) {
     }
     if (message.finish_reason === 'stop' && message.tool_calls?.length) {
         message.finish_reason = 'tool_calls'
-    }
-    return message
-}
-
-function normalizeMessageToolCallIndexes(message) {
-    if (!message.tool_calls?.length) {
-        return message
-    }
-    message.tool_calls = message.tool_calls.filter(Boolean)
-    for (const [toolCallIndex, toolCall] of message.tool_calls.entries()) {
-        toolCall.index = toolCallIndex
-        if (!toolCall.id) {
-            toolCall.id = `functions.${toolCall.function.name}:${toolCallIndex}`
-        }
     }
     return message
 }
@@ -587,20 +639,24 @@ export class Qwen3p5ResponseTemplate {
         return { templatedPrompt, keyPathPromptMapping }
     }
 
-    parse(tokens = []) {
+    parse({ tokens = [], messages = [], tools = [] } = {}) {
         if (typeof tokens !== 'string' && !tokens.some(token => !token.pruned)) {
             return {}
         }
         if (typeof tokens !== 'string' && hasStructuredDelta(tokens)) {
-            return normalizeMessageToolCallIndexes(
-                normalizePlainTextInStructuredMessage(parseStructuredTokens(tokens))
-            )
+            return normalizeMessageToolCalls({
+                message: normalizePlainTextInStructuredMessage(
+                    parseStructuredTokens(tokens, tools),
+                    tools,
+                ),
+                messages,
+            })
         }
         const responseText = tokensToResponseText(tokens)
         if (!responseText) {
             return {}
         }
-        const message = parseQwenResponseText(responseText)
+        const message = parseQwenResponseText(responseText, tools)
         if (typeof tokens !== 'string') {
             const finishReasonToken = tokens.filter(token => !token.pruned && token.finish_reason).at(-1)
             if (finishReasonToken) {
@@ -610,6 +666,6 @@ export class Qwen3p5ResponseTemplate {
                 }
             }
         }
-        return normalizeMessageToolCallIndexes(message)
+        return normalizeMessageToolCalls({ message, messages })
     }
 }

@@ -1,5 +1,6 @@
 import { tokenToDisplayString } from '../chatUtils.js'
 import { deepCopy } from '../commonUtils.js'
+import { normalizeMessageToolCalls } from './responseTemplateUtils.js'
 
 const specialMarker = (name) => ['<|', name, '|>'].join('')
 const THINK_BEGIN = ['<', 'think>'].join('')
@@ -311,17 +312,6 @@ function normalizePlainTextInStructuredMessage(message) {
     return message
 }
 
-function normalizeMessageToolCallIndexes(message) {
-    if (!message.tool_calls?.length) {
-        return message
-    }
-    message.tool_calls = message.tool_calls.filter(Boolean)
-    for (const [toolCallIndex, toolCall] of message.tool_calls.entries()) {
-        toolCall.index = toolCallIndex
-    }
-    return message
-}
-
 export class KimiK2ResponseTemplate {
     static match({ responseTemplateConfig } = {}) {
         return /^moonshotai\/kimi-k2/i.test(responseTemplateConfig?.name_or_path || '')
@@ -379,13 +369,16 @@ export class KimiK2ResponseTemplate {
         return { templatedPrompt, keyPathPromptMapping }
     }
 
-    parse(tokens = []) {
+    parse({ tokens = [], messages = [] } = {}) {
         if (typeof tokens !== 'string' && !tokens.some(token => !token.pruned)) {
             return {}
         }
         if (typeof tokens !== 'string' && hasStructuredDelta(tokens)) {
             // Kimi/vLLM continuation can stream the plain-text reasoning prefix in content, then structured tool_calls.
-            return normalizeMessageToolCallIndexes(normalizePlainTextInStructuredMessage(parseStructuredTokens(tokens)))
+            return normalizeMessageToolCalls({
+                message: normalizePlainTextInStructuredMessage(parseStructuredTokens(tokens)),
+                messages,
+            })
         }
         const responseText = tokensToResponseText(tokens)
         if (!responseText) {
@@ -402,6 +395,6 @@ export class KimiK2ResponseTemplate {
                 }
             }
         }
-        return normalizeMessageToolCallIndexes(message)
+        return normalizeMessageToolCalls({ message, messages })
     }
 }

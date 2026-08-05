@@ -178,6 +178,20 @@ const messagesTemplateExample = [
             [m('argument_name6')]: m('argument_enum3')
           })
         }
+      },
+      {
+        id: `functions.${m('function_name3')}:2`,
+        type: "function",
+        index: 2,
+        function: {
+          name: m('function_name3'),
+          arguments: JSON.stringify({
+            [m('argument_number')]: 3.14159,
+            [m('argument_integer')]: 42,
+            [m('argument_boolean')]: true,
+            [m('argument_null')]: null
+          })
+        }
       }
     ]
   },
@@ -192,6 +206,12 @@ const messagesTemplateExample = [
     content: m('tool_content2'),
     tool_call_id: `functions.${m('function_name2')}:1`,
     name: m('function_name2')
+  },
+  {
+    role: "tool",
+    content: m('tool_content3'),
+    tool_call_id: `functions.${m('function_name3')}:2`,
+    name: m('function_name3')
   },
   {
     role: "assistant",
@@ -254,6 +274,21 @@ const templateToolConfigs = [
           }
         },
         required: [m('argument_name3'), m('argument_name4')]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: m('function_name3'),
+      parameters: {
+        type: "object",
+        properties: {
+          [m('argument_number')]: { type: "number" },
+          [m('argument_integer')]: { type: "integer" },
+          [m('argument_boolean')]: { type: "boolean" },
+          [m('argument_null')]: { type: "null" }
+        }
       }
     }
   }

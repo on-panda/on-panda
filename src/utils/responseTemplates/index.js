@@ -333,7 +333,7 @@ export class DefaultResponseTemplate {
         return { templatedPrompt, keyPathPromptMapping }
     }
 
-    parse(tokens = []) {
+    parse({ tokens = [] } = {}) {
         if (typeof tokens === "string") {
             return { role: "assistant", content: tokens }
         }

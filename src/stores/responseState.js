@@ -46,7 +46,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
     const viewResponseTemplate = computed(() => buildResponseTemplate({ apiConfig: apiConfig.value }))
 
     const finalMessage = computed(() => {
-        return generationResponseTemplate.value.parse(tokens.value)
+        return generationResponseTemplate.value.parse({
+            tokens: tokens.value,
+            messages: messages.value,
+            tools: toolManageState.currentDialogTools.value,
+        })
     })
 
 
@@ -72,7 +76,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             logprobsTokens.value.length
         ) {
             try {
-                const parsedMessage = viewResponseTemplate.value.parse(logprobsTokens.value)
+                const parsedMessage = viewResponseTemplate.value.parse({
+                    tokens: logprobsTokens.value,
+                    messages: messages.value,
+                    tools: toolManageState.currentDialogTools.value,
+                })
                 if (deepEqual(parsedMessage, finalMessage.value)) {
                     return logprobsTokens.value
                 }

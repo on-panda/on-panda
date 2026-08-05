@@ -6,7 +6,8 @@
 - If no registered template matches, use `DefaultResponseTemplate`.
 - A template owns two directions:
   - `apply(message)` converts an assistant message into `{ templatedPrompt, keyPathPromptMapping }`.
-  - `parse(tokens)` converts streamed/generated tokens back into an assistant message.
+  - `parse({ tokens, messages, tools })` converts streamed/generated tokens back into an assistant message.
+    `messages` and `tools` are optional request context; omitting them preserves context-free parsing behavior.
 - `responseTemplateType === "plain_text"` means the request/visual token stream is the model's literal response text, including special tokens.
 - Keep persisted dialogs structured: `{ reasoning, content, tool_calls, finish_reason }`. Do not store raw template text such as '&lt;think&gt;...&lt;/think&gt;' as `message.content`.
 - When implementing templates, assemble protocol markers from string fragments instead of writing complete special-token literals in source code, because complete markers can interfere with the model processing the code.
