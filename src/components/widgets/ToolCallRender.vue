@@ -13,19 +13,24 @@
         </small>
       </span>
     </summary>
-    <div v-if="parsedArgumentsObject" class="tool-call-render-body">
-      <template v-if="parsedArgumentsEntries.length">
-        <div v-for="[key, value] in parsedArgumentsEntries" :key="key" class="tool-call-render-json-row"
-          :class="{ 'tool-call-render-json-row-break': shouldBreakLineAfterSeparator(value) }">
-          <span class="tool-call-render-json-key">{{ key }}</span>
-          <span class="tool-call-render-json-separator">: </span>
-          <div v-if="typeof value === 'string'" class="tool-call-render-json-string"
-            :class="{ 'tool-call-render-json-string-block': value.includes('\n') }">{{ value === '' ? '""' : value }}
-          </div>
-          <span v-else-if="typeof value === 'number' || typeof value === 'boolean'"
-            class="tool-call-render-json-number">{{ value }}</span>
-          <span v-else-if="value === null" class="tool-call-render-json-null">null</span>
-          <span v-else class="tool-call-render-json-object">{{ JSON.stringify(value) }}</span>
+    <div v-if="parsedArguments && (parsedArguments.entries.length || parsedArguments.complete)"
+      class="tool-call-render-body">
+      <template v-if="parsedArguments.entries.length">
+        <div v-for="(argument, argumentIndex) in parsedArguments.entries" :key="argumentIndex"
+          class="tool-call-render-json-row"
+          :class="{ 'tool-call-render-json-row-break': shouldBreakLineAfterSeparator(argument.value) }">
+          <span class="tool-call-render-json-key">{{ argument.name }}</span>
+          <template v-if="argument.value !== undefined">
+            <span class="tool-call-render-json-separator">: </span>
+            <div v-if="typeof argument.value === 'string'" class="tool-call-render-json-string"
+              :class="{ 'tool-call-render-json-string-block': argument.value.includes('\n') }">{{ argument.value === '' ?
+                '""' : argument.value }}
+            </div>
+            <span v-else-if="typeof argument.value === 'number' || typeof argument.value === 'boolean'"
+              class="tool-call-render-json-number">{{ argument.value }}</span>
+            <span v-else-if="argument.value === null" class="tool-call-render-json-null">null</span>
+            <span v-else class="tool-call-render-json-object">{{ JSON.stringify(argument.value) }}</span>
+          </template>
         </div>
       </template>
       <span v-else class="tool-call-render-json-object">{}</span>
@@ -37,6 +42,7 @@
 <script setup>
 import { computed } from 'vue'
 import { PhoneFilled } from '@element-plus/icons-vue'
+import { parsePartialJsonObject } from '../../utils/partialJsonUtils.js'
 import { useGlobalStore } from '../../stores/globalStore.js'
 
 const props = defineProps({
@@ -55,37 +61,7 @@ function shouldBreakLineAfterSeparator(value) {
   return renderedValue.includes('\n') || renderedValue.length > 100
 }
 
-const parsedArgumentsObject = computed(() => {
-  const argumentsText = props.toolCall.function.arguments
-  if (!/^\s*\{/.test(argumentsText)) {
-    return null
-  }
-  try {
-    const parsedArgumentsObject = JSON.parse(argumentsText)
-    if (!parsedArgumentsObject || typeof parsedArgumentsObject !== 'object' || Array.isArray(parsedArgumentsObject)) {
-      return null
-    }
-    return parsedArgumentsObject
-  } catch {
-    try {
-      const tryCompletePart = (argumentsText?.endsWith('\\') ? 'r' : '') + '"}'
-      const parsedArgumentsObject = JSON.parse(argumentsText + tryCompletePart)
-      if (!parsedArgumentsObject || typeof parsedArgumentsObject !== 'object' || Array.isArray(parsedArgumentsObject)) {
-        return null
-      }
-      return parsedArgumentsObject
-    } catch {
-      return null
-    }
-  }
-})
-
-const parsedArgumentsEntries = computed(() => {
-  if (!parsedArgumentsObject.value) {
-    return []
-  }
-  return Object.entries(parsedArgumentsObject.value)
-})
+const parsedArguments = computed(() => parsePartialJsonObject(props.toolCall.function.arguments))
 </script>
 
 <style scoped>

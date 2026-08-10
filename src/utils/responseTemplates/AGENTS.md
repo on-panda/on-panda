@@ -1,4 +1,4 @@
-# Response Template Notes
+# Response Template Implementation Rules
 
 ## Core Contract
 
@@ -21,6 +21,13 @@
 - `finish_reason: "reasoning_end"` means the reasoning/thinking channel emitted its closing special token, but the assistant response is still partial.
 - Do not include `reasoning`, `reasoning_content`, or `tool_calls` keys in the continuation request message.
 - `buildViewTokens()` should render plain-text templates from `apply(message)` and append the finish reason token for display.
+
+## Partial Tool Calls
+
+- Convert partial arguments JSON with `parsePartialJsonObject` from `utils/partialJsonUtils.js`. Never inline a raw JSON prefix into a template whose argument syntax is different, such as the Qwen XML parameter blocks.
+- A missing `function.arguments` key means the arguments channel has not started, so the function name is still open: Qwen has no closing '&gt;' yet and Kimi has no argument begin marker yet. `apply` must not write the marker that would close such a name.
+- Text-form templates own the ambiguity of unclosed values: keep an unclosed value as a JSON string prefix, and let the tool schema type it once the value is closed. While the function stays open, a closed value keeps its separator, otherwise a trailing number reads as still growing.
+- Every template file exports `testXxxResponseTemplate()` covering the common partial JSON forms. It throws on the first mismatch and checks `apply`, `parse`, and that re-applying the parsed message reproduces the same templated prompt.
 
 ## Parser Rules
 

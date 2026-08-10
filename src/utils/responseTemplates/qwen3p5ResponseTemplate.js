@@ -1,5 +1,6 @@
 import { tokenToDisplayString } from '../chatUtils.js'
 import { deepCopy } from '../commonUtils.js'
+import { parsePartialJsonObject } from '../partialJsonUtils.js'
 import { normalizeMessageToolCalls } from './responseTemplateUtils.js'
 
 const specialMarker = (name) => ['<|', name, '|>'].join('')
@@ -101,80 +102,24 @@ function parameterValueToJsonText({ value, schema } = {}) {
     return stringValue
 }
 
-function parseArgumentsPrefix(argumentsText) {
-    if (!argumentsText) {
-        return { parameters: [], complete: false }
-    }
-    var argumentsObject
-    try {
-        argumentsObject = JSON.parse(argumentsText)
-    } catch {
-        if (argumentsText.trim() === '{') {
-            return { parameters: [], complete: false }
-        }
-        var inString = false
-        var escaped = false
-        for (const character of argumentsText) {
-            if (escaped) {
-                escaped = false
-            } else if (inString && character === '\\') {
-                escaped = true
-            } else if (character === '"') {
-                inString = !inString
-            }
-        }
-        const valuePending = /:\s*$/.test(argumentsText)
-        try {
-            argumentsObject = JSON.parse(argumentsText + (
-                inString ? '"}' : valuePending ? 'null}' : '}'
-            ))
-        } catch {
-            return null
-        }
-        if (!argumentsObject || typeof argumentsObject !== 'object' || Array.isArray(argumentsObject)) {
-            return null
-        }
-        const parameters = Object.entries(argumentsObject).map(([name, value]) => ({
-            name,
-            value: argumentValueToText(value),
-            complete: true,
-        }))
-        // A trailing number may still grow in the next delta; closed strings, containers, and literals cannot.
-        parameters[parameters.length - 1].complete = !inString && !valuePending &&
-            /(?:"|\]|\}|true|false|null)\s*$/.test(argumentsText)
-        if (valuePending) {
-            parameters[parameters.length - 1].value = ''
-        }
-        return { parameters, complete: false }
-    }
-    if (!argumentsObject || typeof argumentsObject !== 'object' || Array.isArray(argumentsObject)) {
-        return null
-    }
-    return {
-        parameters: Object.entries(argumentsObject).map(([name, value]) => ({
-            name,
-            value: argumentValueToText(value),
-            complete: true,
-        })),
-        complete: true,
-    }
-}
-
 function buildArgumentsPrefix({ parameters, functionClosed, parametersSchema } = {}) {
     const properties = parametersSchema?.properties || {}
-    const argumentParts = parameters.map((parameter, parameterIndex) => {
-        const canUseSchema = parameter.complete && (
-            functionClosed || parameterIndex < parameters.length - 1
-        )
-        var valueText = canUseSchema
-            ? parameterValueToJsonText({ value: parameter.value, schema: properties[parameter.name] })
-            : JSON.stringify(parameter.value)
-        if (!parameter.complete) {
-            valueText = valueText.slice(0, -1)
+    const argumentParts = parameters.map(parameter => {
+        if (!parameter.nameComplete) {
+            // The parameter name is still open, so the JSON key quote stays open too.
+            return JSON.stringify(parameter.name).slice(0, -1)
         }
+        // An unclosed value may still grow, so its type is only known from the schema once closed.
+        const valueText = parameter.complete
+            ? parameterValueToJsonText({ value: parameter.value, schema: properties[parameter.name] })
+            : JSON.stringify(parameter.value).slice(0, -1)
         return `${JSON.stringify(parameter.name)}: ${valueText}`
     })
-    return `{${argumentParts.join(', ')}${functionClosed ? '}' : ''}`
+    if (functionClosed) {
+        return `{${argumentParts.join(', ')}}`
+    }
+    // An open function keeps the separator after a closed value, otherwise a trailing number would read as still growing.
+    return `{${argumentParts.join(', ')}${parameters[parameters.length - 1].complete ? ', ' : ''}`
 }
 
 function parseXmlParameters({ rawArguments, functionClosed, parametersSchema } = {}) {
@@ -194,7 +139,8 @@ function parseXmlParameters({ rawArguments, functionClosed, parametersSchema } =
         const nameStart = parameterBegin + PARAMETER_BEGIN.length
         const nameEnd = rawArguments.indexOf('>', nameStart)
         if (nameEnd === -1) {
-            return null
+            parameters.push({ name: rawArguments.slice(nameStart), nameComplete: false })
+            break
         }
         const valueStart = nameEnd + 1
         const parameterEnd = rawArguments.indexOf(PARAMETER_END, valueStart)
@@ -215,6 +161,7 @@ function parseXmlParameters({ rawArguments, functionClosed, parametersSchema } =
         }
         parameters.push({
             name: rawArguments.slice(nameStart, nameEnd),
+            nameComplete: true,
             value,
             complete: parameterComplete,
         })
@@ -231,11 +178,16 @@ function parseXmlParameters({ rawArguments, functionClosed, parametersSchema } =
 }
 
 function buildToolCall({ name, argumentsText, index } = {}) {
-    return {
+    const toolCall = {
         type: 'function',
         index,
-        function: { name, arguments: argumentsText },
+        function: { name },
     }
+    if (argumentsText !== undefined) {
+        // A missing arguments key means the arguments channel has not started: the function name is still open.
+        toolCall.function.arguments = argumentsText
+    }
+    return toolCall
 }
 
 function parseToolCalls(toolCallsText, tools = []) {
@@ -256,6 +208,10 @@ function parseToolCalls(toolCallsText, tools = []) {
         const nameStart = functionBegin + FUNCTION_BEGIN.length
         const nameEnd = toolCallsText.indexOf('>', nameStart)
         if (nameEnd === -1) {
+            toolCalls.push(buildToolCall({
+                name: toolCallsText.slice(nameStart),
+                index: toolCalls.length,
+            }))
             break
         }
 
@@ -603,17 +559,28 @@ export class Qwen3p5ResponseTemplate {
                 if (toolCallPosition) {
                     appendRawText('\n')
                 }
-                appendRawText(`${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}${toolCall.function.name}>\n`)
-                const parsedArguments = parseArgumentsPrefix(toolCall.function.arguments)
+                appendRawText(`${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}${toolCall.function.name}`)
+                if (toolCall.function.arguments === undefined) {
+                    continue
+                }
+                appendRawText('>\n')
+                const parsedArguments = parsePartialJsonObject(toolCall.function.arguments)
                 const isLastPartialToolCall = isPartial && toolCallPosition === message.tool_calls.length - 1
                 if (parsedArguments) {
-                    for (const parameter of parsedArguments.parameters) {
-                        appendRawText(`${PARAMETER_BEGIN}${parameter.name}>\n`)
+                    for (const parameter of parsedArguments.entries) {
+                        appendRawText(`${PARAMETER_BEGIN}${parameter.name}`)
+                        if (!parameter.nameComplete) {
+                            break
+                        }
+                        appendRawText('>\n')
+                        if (parameter.value === undefined) {
+                            break
+                        }
                         appendMappedText(
                             ['tool_calls', toolCallPosition, 'function', 'arguments'],
-                            parameter.value,
+                            parameter.complete ? argumentValueToText(parameter.value) : parameter.value,
                         )
-                        if (parameter.complete || !isLastPartialToolCall) {
+                        if (parameter.complete) {
                             appendRawText(`\n${PARAMETER_END}\n`)
                         }
                     }
@@ -668,4 +635,106 @@ export class Qwen3p5ResponseTemplate {
         }
         return normalizeMessageToolCalls({ message, messages })
     }
+}
+
+export function testQwen3p5ResponseTemplate() {
+    const template = new Qwen3p5ResponseTemplate()
+    const tools = [{
+        type: 'function',
+        function: {
+            name: 'read_file',
+            parameters: {
+                type: 'object',
+                properties: {
+                    path: { type: 'string' },
+                    text: { type: 'string' },
+                    limit: { type: 'integer' },
+                    flag: { type: 'boolean' },
+                    list: { type: 'array' },
+                    obj: { type: 'object' },
+                },
+            },
+        },
+    }]
+    const assertEqual = (actual, expected, label) => {
+        if (actual !== expected) {
+            throw new Error(`${label}\n  actual  : ${JSON.stringify(actual)}\n  expected: ${JSON.stringify(expected)}`)
+        }
+    }
+
+    // [partial arguments, parameters text following the function name, arguments parsed back from the templated prompt]
+    // An unclosed value stays a JSON string prefix, because only the schema of a closed value tells its real type.
+    const partialArgumentsCases = [
+        ['', '', ''],
+        ['{', '', ''],
+        ['{"', `${PARAMETER_BEGIN}`, '{"'],
+        ['{"pa', `${PARAMETER_BEGIN}pa`, '{"pa'],
+        ['{"path"', `${PARAMETER_BEGIN}path>\n`, '{"path": "'],
+        ['{"path":', `${PARAMETER_BEGIN}path>\n`, '{"path": "'],
+        ['{"path": "', `${PARAMETER_BEGIN}path>\n`, '{"path": "'],
+        ['{"path": "/tm', `${PARAMETER_BEGIN}path>\n/tm`, '{"path": "/tm'],
+        ['{"path": "/tmp"', `${PARAMETER_BEGIN}path>\n/tmp\n${PARAMETER_END}\n`, '{"path": "/tmp", '],
+        ['{"path": "/tmp",', `${PARAMETER_BEGIN}path>\n/tmp\n${PARAMETER_END}\n`, '{"path": "/tmp", '],
+        [
+            '{"path": "/tmp", "',
+            `${PARAMETER_BEGIN}path>\n/tmp\n${PARAMETER_END}\n${PARAMETER_BEGIN}`,
+            '{"path": "/tmp", "',
+        ],
+        [
+            '{"path": "/tmp", "limit": 1',
+            `${PARAMETER_BEGIN}path>\n/tmp\n${PARAMETER_END}\n${PARAMETER_BEGIN}limit>\n1`,
+            '{"path": "/tmp", "limit": "1',
+        ],
+        // A trailing number may still grow, so it stays unclosed while true, false and null cannot grow.
+        ['{"limit": 10', `${PARAMETER_BEGIN}limit>\n10`, '{"limit": "10'],
+        ['{"flag": tr', `${PARAMETER_BEGIN}flag>\ntr`, '{"flag": "tr'],
+        ['{"flag": true', `${PARAMETER_BEGIN}flag>\nTrue\n${PARAMETER_END}\n`, '{"flag": true, '],
+        ['{"list": [1, 2', `${PARAMETER_BEGIN}list>\n[1, 2`, '{"list": "[1, 2'],
+        ['{"list": [1, 2]', `${PARAMETER_BEGIN}list>\n[1, 2]\n${PARAMETER_END}\n`, '{"list": [1, 2], '],
+        ['{"obj": {"a"', `${PARAMETER_BEGIN}obj>\n{"a"`, '{"obj": "{\\"a\\"'],
+        ['{"obj": {"a": 1}', `${PARAMETER_BEGIN}obj>\n{"a": 1}\n${PARAMETER_END}\n`, '{"obj": {"a": 1}, '],
+        ['{"text": "say \\"hi', `${PARAMETER_BEGIN}text>\nsay "hi`, '{"text": "say \\"hi'],
+        ['{"text": "line1\\n', `${PARAMETER_BEGIN}text>\nline1\n`, '{"text": "line1\\n'],
+        ['{"text": "a\\\\', `${PARAMETER_BEGIN}text>\na\\`, '{"text": "a\\\\'],
+        ['{"limit": 10}', `${PARAMETER_BEGIN}limit>\n10\n${PARAMETER_END}\n${FUNCTION_END}`, '{"limit": 10}'],
+        ['{}', FUNCTION_END, '{}'],
+        // Arguments that are not a JSON object prefix stay verbatim in the function body.
+        ['{"text": "raw\nnewline', '{"text": "raw\nnewline', '{"text": "raw\nnewline'],
+        ['oops', 'oops', 'oops'],
+    ]
+    const toolCallPrefix = `${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}read_file>\n`
+    for (const [argumentsText, parametersText, parsedArgumentsText] of partialArgumentsCases) {
+        const message = {
+            role: 'assistant',
+            tool_calls: [{ index: 0, type: 'function', function: { name: 'read_file', arguments: argumentsText } }],
+        }
+        const templatedPrompt = template.apply(message).templatedPrompt
+        const caseLabel = `partial arguments ${JSON.stringify(argumentsText)}`
+        assertEqual(templatedPrompt, toolCallPrefix + parametersText, `apply ${caseLabel}`)
+        const parsedMessage = template.parse({ tokens: templatedPrompt, tools })
+        assertEqual(parsedMessage.tool_calls[0].function.arguments, parsedArgumentsText, `parse ${caseLabel}`)
+        assertEqual(template.apply(parsedMessage).templatedPrompt, templatedPrompt, `re-apply ${caseLabel}`)
+    }
+
+    // An unterminated function name means the arguments channel has not started yet.
+    const openNameText = `${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}read_fi`
+    const openNameMessage = template.parse({ tokens: openNameText, tools })
+    assertEqual(openNameMessage.tool_calls[0].function.name, 'read_fi', 'open function name')
+    assertEqual(openNameMessage.tool_calls[0].function.arguments, undefined, 'open function name arguments')
+    assertEqual(template.apply(openNameMessage).templatedPrompt, openNameText, 're-apply open function name')
+
+    const completeText = `${THINK_BEGIN}\nthinking\n${THINK_END}\n\nSome content\n\n` +
+        `${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}read_file>\n${PARAMETER_BEGIN}path>\n/tmp/a.txt\n${PARAMETER_END}\n` +
+        `${PARAMETER_BEGIN}limit>\n10\n${PARAMETER_END}\n${FUNCTION_END}\n${TOOL_CALL_END}`
+    const completeMessage = template.parse({
+        tokens: [{ delta: { content: completeText }, finish_reason: 'tool_calls' }],
+        tools,
+    })
+    assertEqual(
+        completeMessage.tool_calls[0].function.arguments,
+        '{"path": "/tmp/a.txt", "limit": 10}',
+        'complete arguments',
+    )
+    assertEqual(template.apply(completeMessage).templatedPrompt, completeText, 're-apply complete response')
+    return partialArgumentsCases.length + 2
 }

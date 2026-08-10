@@ -28,15 +28,19 @@ function parseFunctionNameFromToolCallId(toolCallId) {
 }
 
 function buildToolCallFromText({ toolCallId, argumentsText, fallbackIndex } = {}) {
-    return {
+    const toolCall = {
         id: toolCallId,
         type: 'function',
         index: fallbackIndex,
         function: {
             name: parseFunctionNameFromToolCallId(toolCallId),
-            arguments: argumentsText,
         },
     }
+    if (argumentsText !== undefined) {
+        // A missing arguments key means the arguments channel has not started: the tool call id is still open.
+        toolCall.function.arguments = argumentsText
+    }
+    return toolCall
 }
 
 function parseToolCalls(toolCallsText) {
@@ -54,7 +58,6 @@ function parseToolCalls(toolCallsText) {
             if (toolCallId) {
                 toolCalls.push(buildToolCallFromText({
                     toolCallId,
-                    argumentsText: '',
                     fallbackIndex: toolCalls.length,
                 }))
             }
@@ -353,7 +356,11 @@ export class KimiK2ResponseTemplate {
             appendRawText(TOOL_CALLS_SECTION_BEGIN)
             for (const [toolCallPosition, toolCall] of message.tool_calls.entries()) {
                 const toolCallId = toolCall.id || `functions.${toolCall.function.name}:${toolCallPosition}`
-                appendRawText(`${TOOL_CALL_BEGIN}${toolCallId}${TOOL_CALL_ARGUMENT_BEGIN}`)
+                appendRawText(`${TOOL_CALL_BEGIN}${toolCallId}`)
+                if (toolCall.function.arguments === undefined) {
+                    continue
+                }
+                appendRawText(TOOL_CALL_ARGUMENT_BEGIN)
                 appendMappedText(
                     ['tool_calls', toolCallPosition, 'function', 'arguments'],
                     toolCall.function.arguments,
@@ -397,4 +404,60 @@ export class KimiK2ResponseTemplate {
         }
         return normalizeMessageToolCalls({ message, messages })
     }
+}
+
+export function testKimiK2ResponseTemplate() {
+    const template = new KimiK2ResponseTemplate()
+    const assertEqual = (actual, expected, label) => {
+        if (actual !== expected) {
+            throw new Error(`${label}\n  actual  : ${JSON.stringify(actual)}\n  expected: ${JSON.stringify(expected)}`)
+        }
+    }
+
+    // Kimi arguments are already JSON, so every partial form is kept verbatim in both directions.
+    const partialArgumentsCases = [
+        '', '{', '{"', '{"pa', '{"path"', '{"path":', '{"path": "', '{"path": "/tm', '{"path": "/tmp"',
+        '{"path": "/tmp",', '{"path": "/tmp", "', '{"path": "/tmp", "limit": 1', '{"limit": 10',
+        '{"flag": tr', '{"flag": true', '{"list": [1, 2', '{"list": [1, 2]', '{"obj": {"a"',
+        '{"obj": {"a": 1}', '{"text": "say \\"hi', '{"text": "line1\\n', '{"text": "a\\\\',
+        '{"limit": 10}', '{}', '{"text": "raw\nnewline', 'oops',
+    ]
+    const toolCallPrefix = `${TOOL_CALLS_SECTION_BEGIN}${TOOL_CALL_BEGIN}functions.read_file:0${TOOL_CALL_ARGUMENT_BEGIN}`
+    for (const argumentsText of partialArgumentsCases) {
+        const message = {
+            role: 'assistant',
+            tool_calls: [{
+                id: 'functions.read_file:0',
+                index: 0,
+                type: 'function',
+                function: { name: 'read_file', arguments: argumentsText },
+            }],
+        }
+        const templatedPrompt = template.apply(message).templatedPrompt
+        const caseLabel = `partial arguments ${JSON.stringify(argumentsText)}`
+        assertEqual(templatedPrompt, toolCallPrefix + argumentsText, `apply ${caseLabel}`)
+        const parsedMessage = template.parse({ tokens: templatedPrompt })
+        assertEqual(parsedMessage.tool_calls[0].function.arguments, argumentsText, `parse ${caseLabel}`)
+        assertEqual(template.apply(parsedMessage).templatedPrompt, templatedPrompt, `re-apply ${caseLabel}`)
+    }
+
+    // An unterminated tool call id means the arguments channel has not started yet.
+    const openIdText = `${TOOL_CALLS_SECTION_BEGIN}${TOOL_CALL_BEGIN}functions.read_fi`
+    const openIdMessage = template.parse({ tokens: openIdText })
+    assertEqual(openIdMessage.tool_calls[0].function.name, 'read_fi', 'open tool call id')
+    assertEqual(openIdMessage.tool_calls[0].function.arguments, undefined, 'open tool call id arguments')
+    assertEqual(template.apply(openIdMessage).templatedPrompt, openIdText, 're-apply open tool call id')
+
+    const completeText = `${THINK_BEGIN}thinking${THINK_END}Some content${toolCallPrefix}` +
+        `{"path": "/tmp/a.txt", "limit": 10}${TOOL_CALL_END}${TOOL_CALLS_SECTION_END}`
+    const completeMessage = template.parse({
+        tokens: [{ delta: { content: completeText }, finish_reason: 'tool_calls' }],
+    })
+    assertEqual(
+        completeMessage.tool_calls[0].function.arguments,
+        '{"path": "/tmp/a.txt", "limit": 10}',
+        'complete arguments',
+    )
+    assertEqual(template.apply(completeMessage).templatedPrompt, completeText, 're-apply complete response')
+    return partialArgumentsCases.length + 2
 }
