@@ -2,7 +2,7 @@ import { useGlobalStore } from '../../stores/globalStore.js'
 import { ObjctKeyToCamelCaseNaming, deepCopy } from '../commonUtils.js'
 import { normalizeStream } from '../fetchOpenaiApi.js'
 import { multimodalUrlToMimeType } from '../multimodalUtils.js'
-import { parseSseJsonStream, retryWithSchedule } from './utils.js'
+import { mergeHeaders, parseSseJsonStream, retryWithSchedule } from './utils.js'
 
 const DEFAULT_THINKING_CONFIG = {
     thinkingLevel: 'HIGH',
@@ -518,10 +518,10 @@ export async function createGeminiGenerateContentStream({ requestBody, apiConfig
         model: requestBody.model,
     }), {
         method: 'POST',
-        headers: {
+        headers: mergeHeaders({
             'Content-Type': 'application/json',
             'x-goog-api-key': config.apiKey,
-        },
+        }, config.extraHeaders),
         body: JSON.stringify(body),
         signal,
     }), [5000, 30000])

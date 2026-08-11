@@ -1,6 +1,6 @@
 import { useGlobalStore } from '../../stores/globalStore.js'
 import { ObjctKeyToCamelCaseNaming, deepCopy } from '../commonUtils.js'
-import { parseSseJsonStream, retryWithSchedule, normalizeUsage } from './utils.js'
+import { mergeHeaders, parseSseJsonStream, retryWithSchedule, normalizeUsage } from './utils.js'
 
 const ANTHROPIC_VERSION = '2023-06-01'
 const TOOL_ID_CHAR_TO_TOKEN = {
@@ -347,6 +347,7 @@ export async function createAnthropicMessagesStream({ requestBody, apiConfig, si
         headers['anthropic-version'] = apiProtocol.anthropic_version || ANTHROPIC_VERSION
         headers['x-api-key'] = config.apiKey
     }
+    mergeHeaders(headers, config.extraHeaders)
     const response = await retryWithSchedule(() => fetch(`${config.baseURL}/messages`, {
         method: 'POST',
         headers,

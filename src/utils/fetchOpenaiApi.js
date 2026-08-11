@@ -1,6 +1,6 @@
 import { useGlobalStore } from '../stores/globalStore.js'
 import { ElMessage } from 'element-plus'
-import { retryWithSchedule, parseSseJsonStream } from './apiProtocols/utils.js'
+import { retryWithSchedule, parseSseJsonStream, mergeHeaders } from './apiProtocols/utils.js'
 import { mergeTwoDeltas } from './responseTemplates/index.js'
 
 const promptLogprobsToTopLogprobs = (promptLogprob, chosenTokenId) => {
@@ -379,6 +379,7 @@ export class OpenAI {
   constructor(config) {
     this.baseURL = config.baseURL || 'https://api.openai.com/v1';
     this.apiKey = config.apiKey;
+    this.extraHeaders = config.extraHeaders;
 
     // 创建 chat.completions API 结构
     this.chat = {
@@ -402,18 +403,20 @@ export class OpenAI {
     }
 
     options = options || {};
+    const { headers: optionsHeaders, ...fetchOptions } = options;
 
     const url = `${this.baseURL}/chat/completions`;
-    const headers = {
+    const headers = mergeHeaders({
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${this.apiKey}`
-    };
+    }, optionsHeaders);
+    mergeHeaders(headers, this.extraHeaders);
 
     const response = await retryWithSchedule(() => fetch(url, {
       method: 'POST',
       headers: headers,
       body: JSON.stringify(body),
-      ...options
+      ...fetchOptions
     }), [5000, 30000]);
 
     // 如果是流模式，我们要解析 EventStream 响应
@@ -488,10 +491,10 @@ export class OpenAI {
 
   async listModels() {
     const url = `${this.baseURL}/models`;
-    const headers = {
+    const headers = mergeHeaders({
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${this.apiKey}`
-    };
+    }, this.extraHeaders);
 
     const response = await fetch(url, {
       method: 'GET',

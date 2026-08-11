@@ -40,6 +40,7 @@ export default {
       "client_config": {
           "base_url": "https://api.inference.wandb.ai/v1",
           "api_key": "wandb_v1_your_api_key",  // API key
+          "extra_headers": {},  // optional custom request headers
       },
       "chat_config": {  // chat completion request parameters
           // If no model is specified, /models will be called automatically to fetch the list

@@ -40,6 +40,7 @@ export default {
       "client_config": {
           "base_url": "https://api.inference.wandb.ai/v1",
           "api_key": "wandb_v1_your_api_key",  // API 密钥
+          "extra_headers": {},  // 可选的自定义请求 headers
       },
       "chat_config": {  // chat completion 请求的参数
           // 若未指定 model，则会自动访问 /models 接口获取模型列表

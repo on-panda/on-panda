@@ -23,6 +23,17 @@ export async function retryWithSchedule(fn, schedule) {
   throw lastError
 }
 
+export function mergeHeaders(headers, extraHeaders = {}) {
+  for (const [extraHeaderName, value] of Object.entries(extraHeaders)) {
+    const existingHeaderName = Object.keys(headers).find(headerName => headerName.toLowerCase() === extraHeaderName.toLowerCase())
+    if (existingHeaderName) {
+      delete headers[existingHeaderName]
+    }
+    headers[extraHeaderName] = value
+  }
+  return headers
+}
+
 export async function* parseSseJsonStream(response, { onJsonParseError = null } = {}) {
   const reader = response.body.getReader()
   const decoder = new TextDecoder("utf-8")
