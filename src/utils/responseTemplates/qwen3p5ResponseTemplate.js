@@ -260,7 +260,7 @@ function parseToolCalls(toolCallsText, tools = []) {
     return toolCalls
 }
 
-function parseQwenResponseText(text, tools = []) {
+function parseQwenResponseText(text, tools = [], reasoningContentSeparator = '\n\n') {
     const message = { role: 'assistant' }
     var remainingText = text
     var hasAssistantBegin = false
@@ -305,8 +305,8 @@ function parseQwenResponseText(text, tools = []) {
                 message.reasoning = reasoning
             }
             remainingText = remainingText.slice(reasoningEnd + THINK_END.length)
-            if (remainingText.startsWith('\n\n')) {
-                remainingText = remainingText.slice(2)
+            if (remainingText.startsWith(reasoningContentSeparator)) {
+                remainingText = remainingText.slice(reasoningContentSeparator.length)
             }
             reasoningClosed = true
         }
@@ -317,20 +317,16 @@ function parseQwenResponseText(text, tools = []) {
         message.content = remainingText
     } else {
         const toolCalls = parseToolCalls(remainingText.slice(toolCallBegin), tools)
-        if (toolCalls.length) {
-            message.content = remainingText.slice(0, toolCallBegin).replace(/\n+$/, '')
-            message.tool_calls = toolCalls
-        } else {
-            message.content = remainingText
-        }
+        message.content = remainingText.slice(0, toolCallBegin).replace(/\n+$/, '')
+        message.tool_calls = toolCalls
     }
 
     if (hasImEnd) {
         message.finish_reason = message.tool_calls?.length ? 'tool_calls' : 'stop'
-    } else if (reasoningClosed && !message.content && !message.tool_calls?.length) {
+    } else if (reasoningClosed && !message.content && !('tool_calls' in message)) {
         message.finish_reason = REASONING_END
     }
-    if (hasAssistantBegin && !message.content && !message.reasoning && !message.tool_calls?.length) {
+    if (hasAssistantBegin && !message.content && !message.reasoning && !('tool_calls' in message)) {
         message.content = ''
     }
     return message
@@ -382,7 +378,7 @@ function mergeToolCalls(toolCalls1 = [], toolCalls2 = []) {
     return toolCalls
 }
 
-function parseStructuredTokens(tokens = [], tools = []) {
+function parseStructuredTokens(tokens = [], tools = [], reasoningContentSeparator = '\n\n') {
     var role = null
     var finishReason
     const message = tokens.filter(
@@ -410,7 +406,7 @@ function parseStructuredTokens(tokens = [], tools = []) {
                 continue
             }
             if (key === 'reasoning' && delta1.content?.length && !delta1.reasoning?.length) {
-                const parsedPrefix = parseQwenResponseText(delta.content, tools)
+                const parsedPrefix = parseQwenResponseText(delta.content, tools, reasoningContentSeparator)
                 if (parsedPrefix.reasoning || parsedPrefix.tool_calls?.length) {
                     if (parsedPrefix.reasoning) {
                         delta.reasoning = parsedPrefix.reasoning
@@ -462,7 +458,7 @@ function parseStructuredTokens(tokens = [], tools = []) {
     return message
 }
 
-function normalizePlainTextInStructuredMessage(message, tools = []) {
+function normalizePlainTextInStructuredMessage(message, tools = [], reasoningContentSeparator = '\n\n') {
     if (typeof message.content !== 'string') {
         return message
     }
@@ -473,7 +469,7 @@ function normalizePlainTextInStructuredMessage(message, tools = []) {
         return message
     }
 
-    const parsedTextMessage = parseQwenResponseText(message.content, tools)
+    const parsedTextMessage = parseQwenResponseText(message.content, tools, reasoningContentSeparator)
     if (parsedTextMessage.reasoning) {
         message.reasoning = parsedTextMessage.reasoning + (message.reasoning || '')
     }
@@ -487,7 +483,7 @@ function normalizePlainTextInStructuredMessage(message, tools = []) {
     } else {
         delete message.content
     }
-    if (parsedTextMessage.tool_calls?.length) {
+    if (parsedTextMessage.tool_calls) {
         const structuredToolCalls = message.tool_calls || []
         message.tool_calls = mergeToolCalls(parsedTextMessage.tool_calls, structuredToolCalls)
         for (const structuredToolCall of structuredToolCalls) {
@@ -514,16 +510,20 @@ export class Qwen3p5ResponseTemplate {
     constructor({ apiConfig } = {}) {
         this.responseTemplateType = 'plain_text'
         this.configMark = JSON.stringify((apiConfig?.value || apiConfig || {}).response_template ?? null)
+        this.reasoningContentSeparator = '\n\n'
+        this.contentToolCallsSeparator = '\n\n'
+        this.toolCallSeparator = '\n'
     }
 
     apply(message = {}) {
         const isPartial = !['stop', 'tool_calls'].includes(message.finish_reason)
         const reasoning = message.reasoning ? stripRepeatedThinkBegin(message.reasoning) : ''
-        const hasResponseBody = reasoning || message.content || message.tool_calls?.length
+        const hasToolCallsChannel = message.tool_calls != null
+        const hasResponseBody = reasoning || message.content || hasToolCallsChannel
         const isPureReasoningPartial = isPartial &&
             message.finish_reason !== REASONING_END &&
             !message.content &&
-            !message.tool_calls?.length
+            !hasToolCallsChannel
         var templatedPrompt = ''
         var textCursor = 0
         const keyPathPromptMapping = []
@@ -544,27 +544,31 @@ export class Qwen3p5ResponseTemplate {
             appendMappedText(['reasoning'], reasoning)
             if (!isPureReasoningPartial) {
                 appendRawText(`\n${THINK_END}`)
-                if (message.content || message.tool_calls?.length) {
-                    appendRawText('\n\n')
+                if (message.content || hasToolCallsChannel) {
+                    appendRawText(this.reasoningContentSeparator)
                 }
             }
         }
         appendMappedText(['content'], message.content)
 
-        if (message.tool_calls?.length) {
+        if (hasToolCallsChannel) {
             if (message.content) {
-                appendRawText('\n\n')
+                appendRawText(this.contentToolCallsSeparator)
+            }
+            if (!message.tool_calls.length) {
+                appendRawText(TOOL_CALL_BEGIN)
             }
             for (const [toolCallPosition, toolCall] of message.tool_calls.entries()) {
                 if (toolCallPosition) {
-                    appendRawText('\n')
+                    appendRawText(this.toolCallSeparator)
                 }
-                appendRawText(`${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}${toolCall.function.name}`)
-                if (toolCall.function.arguments === undefined) {
+                const toolCallFunction = toolCall.function || {}
+                appendRawText(`${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}${toolCallFunction.name || ''}`)
+                if (toolCallFunction.arguments === undefined) {
                     continue
                 }
                 appendRawText('>\n')
-                const parsedArguments = parsePartialJsonObject(toolCall.function.arguments)
+                const parsedArguments = parsePartialJsonObject(toolCallFunction.arguments)
                 const isLastPartialToolCall = isPartial && toolCallPosition === message.tool_calls.length - 1
                 if (parsedArguments) {
                     for (const parameter of parsedArguments.entries) {
@@ -587,13 +591,13 @@ export class Qwen3p5ResponseTemplate {
                 } else {
                     appendMappedText(
                         ['tool_calls', toolCallPosition, 'function', 'arguments'],
-                        toolCall.function.arguments,
+                        toolCallFunction.arguments,
                     )
                 }
 
                 const functionComplete = !isLastPartialToolCall || parsedArguments?.complete
                 if (functionComplete) {
-                    if (!parsedArguments && toolCall.function.arguments) {
+                    if (!parsedArguments && toolCallFunction.arguments) {
                         appendRawText('\n')
                     }
                     appendRawText(FUNCTION_END)
@@ -613,8 +617,9 @@ export class Qwen3p5ResponseTemplate {
         if (typeof tokens !== 'string' && hasStructuredDelta(tokens)) {
             return normalizeMessageToolCalls({
                 message: normalizePlainTextInStructuredMessage(
-                    parseStructuredTokens(tokens, tools),
+                    parseStructuredTokens(tokens, tools, this.reasoningContentSeparator),
                     tools,
+                    this.reasoningContentSeparator,
                 ),
                 messages,
             })
@@ -623,7 +628,7 @@ export class Qwen3p5ResponseTemplate {
         if (!responseText) {
             return {}
         }
-        const message = parseQwenResponseText(responseText, tools)
+        const message = parseQwenResponseText(responseText, tools, this.reasoningContentSeparator)
         if (typeof tokens !== 'string') {
             const finishReasonToken = tokens.filter(token => !token.pruned && token.finish_reason).at(-1)
             if (finishReasonToken) {
@@ -723,6 +728,30 @@ export function testQwen3p5ResponseTemplate() {
     assertEqual(openNameMessage.tool_calls[0].function.arguments, undefined, 'open function name arguments')
     assertEqual(template.apply(openNameMessage).templatedPrompt, openNameText, 're-apply open function name')
 
+    const emptyToolCallsMessage = { role: 'assistant', content: '', tool_calls: [] }
+    assertEqual(template.apply(emptyToolCallsMessage).templatedPrompt, TOOL_CALL_BEGIN, 'open tool calls channel')
+    const parsedEmptyToolCalls = template.parse({ tokens: TOOL_CALL_BEGIN })
+    assertEqual(parsedEmptyToolCalls.tool_calls.length, 0, 'parse open tool calls channel')
+    assertEqual(template.apply(parsedEmptyToolCalls).templatedPrompt, TOOL_CALL_BEGIN, 're-apply open tool calls channel')
+
+    const reasoningOpenToolCallsText = `${THINK_BEGIN}\nthinking\n${THINK_END}\n\n${TOOL_CALL_BEGIN}`
+    const parsedReasoningOpenToolCalls = template.parse({ tokens: reasoningOpenToolCallsText })
+    assertEqual(parsedReasoningOpenToolCalls.finish_reason, undefined, 'open tool calls finish reason')
+    assertEqual(
+        template.apply(parsedReasoningOpenToolCalls).templatedPrompt,
+        reasoningOpenToolCallsText,
+        're-apply reasoning and open tool calls',
+    )
+
+    const openToolCallText = `${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}`
+    const openToolCallMessage = { role: 'assistant', content: '', tool_calls: [{ index: 0, type: 'function' }] }
+    assertEqual(template.apply(openToolCallMessage).templatedPrompt, openToolCallText, 'open tool call')
+    assertEqual(
+        template.apply(template.parse({ tokens: openToolCallText })).templatedPrompt,
+        openToolCallText,
+        're-apply open tool call',
+    )
+
     const completeText = `${THINK_BEGIN}\nthinking\n${THINK_END}\n\nSome content\n\n` +
         `${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}read_file>\n${PARAMETER_BEGIN}path>\n/tmp/a.txt\n${PARAMETER_END}\n` +
         `${PARAMETER_BEGIN}limit>\n10\n${PARAMETER_END}\n${FUNCTION_END}\n${TOOL_CALL_END}`
@@ -736,5 +765,5 @@ export function testQwen3p5ResponseTemplate() {
         'complete arguments',
     )
     assertEqual(template.apply(completeMessage).templatedPrompt, completeText, 're-apply complete response')
-    return partialArgumentsCases.length + 2
+    return partialArgumentsCases.length + 5
 }

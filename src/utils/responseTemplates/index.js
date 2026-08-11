@@ -2,10 +2,12 @@ import { deepCopy } from '../commonUtils.js'
 import { tokenToDisplayString, tokensToPatches } from '../chatUtils.js'
 import { KimiK2ResponseTemplate } from './kimiK2ResponseTemplate.js'
 import { Qwen3p5ResponseTemplate } from './qwen3p5ResponseTemplate.js'
+import { Step3p5ResponseTemplate } from './step3p5ResponseTemplate.js'
 
 const RESPONSE_TEMPLATE_CLASSES = [
     KimiK2ResponseTemplate,
     Qwen3p5ResponseTemplate,
+    Step3p5ResponseTemplate,
 ]
 
 export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
