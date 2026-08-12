@@ -9,9 +9,9 @@
                 ...(patch.tokens.some(t => t.bifurcationPoint) ? { "background-color": "#e99" } : {}),
                 ...(patch.tokens.some(t => t.pruned) ? { "text-decoration": "line-through", "color": "#777" } : {}),
                 ...(patch.tokens.some(t => t.selected) ? { "background-color": "#3064ce", "color": "#fff" } : {}),
-                ...(patch.tokens.some(t => t.delta?.reasoning !== undefined) ? { "color": "#757575" } : {}),
-                // ...(patch.tokens.some(t => t.delta?.reasoning !== undefined) ? { "text-decoration": "underline dotted #999" } : {}),
-                // ...(patch.tokens.some(t => t.delta?.reasoning !== undefined) ? { "background": "linear-gradient(to bottom, transparent 85%, #09f5 85%)" } : {}),
+                ...(patch.tokens.some(t => t.delta?.reasoning) ? { "color": "#757575" } : {}),
+                // ...(patch.tokens.some(t => t.delta?.reasoning) ? { "text-decoration": "underline dotted #999" } : {}),
+                // ...(patch.tokens.some(t => t.delta?.reasoning) ? { "background": "linear-gradient(to bottom, transparent 85%, #09f5 85%)" } : {}),
                 // ...(patch.tokens.some(t => t.modifiedByEditSelection) ? { "border-bottom": "3px solid #09f" } : {}),
                 ...(patch.tokens.some(t => t.modifiedByEditSelection) ? { "background-color": "skyblue" } : {}),  // avoid conflict with probToColor
             }' :patch-index="patch.index" v-html="patchToSpanHTML(patch)" @mouseenter="handleMouseEnterPatchSpan"
