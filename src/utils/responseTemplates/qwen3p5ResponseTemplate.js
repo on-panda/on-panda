@@ -2,6 +2,7 @@ import { tokenToDisplayString } from '../chatUtils.js'
 import { deepCopy } from '../commonUtils.js'
 import { parsePartialJsonObject } from '../partialJsonUtils.js'
 import { normalizeMessageToolCalls } from './responseTemplateUtils.js'
+import { testPartialResponseTemplateRoundTrips } from './responseTemplateTestUtils.js'
 
 const specialMarker = (name) => ['<|', name, '|>'].join('')
 const xmlMarker = (name, closing = false) => ['<', closing ? '/' : '', name, '>'].join('')
@@ -318,11 +319,15 @@ function parseQwenResponseText(text, tools = [], reasoningContentSeparator = '\n
     } else {
         const toolCalls = parseToolCalls(remainingText.slice(toolCallBegin), tools)
         message.content = remainingText.slice(0, toolCallBegin).replace(/\n+$/, '')
-        message.tool_calls = toolCalls
+        message.tool_calls = toolCalls.length ? toolCalls : [{}]
     }
 
     if (hasImEnd) {
-        message.finish_reason = message.tool_calls?.length ? 'tool_calls' : 'stop'
+        const hasToolCall = message.tool_calls?.length &&
+            !(message.tool_calls.length === 1 && !Object.keys(message.tool_calls[0]).length)
+        message.finish_reason = hasToolCall
+            ? 'tool_calls'
+            : 'stop'
     } else if (reasoningClosed && !message.content && !('tool_calls' in message)) {
         message.finish_reason = REASONING_END
     }
@@ -555,10 +560,12 @@ export class Qwen3p5ResponseTemplate {
             if (message.content) {
                 appendRawText(this.contentToolCallsSeparator)
             }
-            if (!message.tool_calls.length) {
+            const isOpenToolCallsChannel = message.tool_calls.length === 1 &&
+                Object.keys(message.tool_calls[0]).length === 0
+            if (!message.tool_calls.length || isOpenToolCallsChannel) {
                 appendRawText(TOOL_CALL_BEGIN)
             }
-            for (const [toolCallPosition, toolCall] of message.tool_calls.entries()) {
+            for (const [toolCallPosition, toolCall] of (isOpenToolCallsChannel ? [] : message.tool_calls).entries()) {
                 if (toolCallPosition) {
                     appendRawText(this.toolCallSeparator)
                 }
@@ -644,6 +651,7 @@ export class Qwen3p5ResponseTemplate {
 
 export function testQwen3p5ResponseTemplate() {
     const template = new Qwen3p5ResponseTemplate()
+    const partialMessageTestCount = testPartialResponseTemplateRoundTrips({ template })
     const tools = [{
         type: 'function',
         function: {
@@ -731,7 +739,8 @@ export function testQwen3p5ResponseTemplate() {
     const emptyToolCallsMessage = { role: 'assistant', content: '', tool_calls: [] }
     assertEqual(template.apply(emptyToolCallsMessage).templatedPrompt, TOOL_CALL_BEGIN, 'open tool calls channel')
     const parsedEmptyToolCalls = template.parse({ tokens: TOOL_CALL_BEGIN })
-    assertEqual(parsedEmptyToolCalls.tool_calls.length, 0, 'parse open tool calls channel')
+    assertEqual(parsedEmptyToolCalls.tool_calls.length, 1, 'parse open tool calls channel')
+    assertEqual(Object.keys(parsedEmptyToolCalls.tool_calls[0]).length, 0, 'empty open tool call')
     assertEqual(template.apply(parsedEmptyToolCalls).templatedPrompt, TOOL_CALL_BEGIN, 're-apply open tool calls channel')
 
     const reasoningOpenToolCallsText = `${THINK_BEGIN}\nthinking\n${THINK_END}\n\n${TOOL_CALL_BEGIN}`
@@ -765,5 +774,5 @@ export function testQwen3p5ResponseTemplate() {
         'complete arguments',
     )
     assertEqual(template.apply(completeMessage).templatedPrompt, completeText, 're-apply complete response')
-    return partialArgumentsCases.length + 5
+    return partialMessageTestCount + partialArgumentsCases.length + 5
 }

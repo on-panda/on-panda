@@ -1,4 +1,5 @@
 import { Qwen3p5ResponseTemplate } from './qwen3p5ResponseTemplate.js'
+import { testPartialResponseTemplateRoundTrips } from './responseTemplateTestUtils.js'
 
 const xmlMarker = (name, closing = false) => ['<', closing ? '/' : '', name, '>'].join('')
 const xmlValueMarker = (name) => ['<', name, '='].join('')
@@ -26,6 +27,7 @@ export class Step3p5ResponseTemplate extends Qwen3p5ResponseTemplate {
 
 export function testStep3p5ResponseTemplate() {
     const template = new Step3p5ResponseTemplate()
+    const partialMessageTestCount = testPartialResponseTemplateRoundTrips({ template })
     const assertEqual = (actual, expected, label) => {
         if (actual !== expected) {
             throw new Error(`${label}\n  actual  : ${JSON.stringify(actual)}\n  expected: ${JSON.stringify(expected)}`)
@@ -111,7 +113,8 @@ export function testStep3p5ResponseTemplate() {
     const openToolCallsText = `${THINK_BEGIN}\nthink\n${THINK_END}\nanswer${TOOL_CALL_BEGIN}`
     assertEqual(template.apply(openToolCallsMessage).templatedPrompt, openToolCallsText, 'open tool calls channel')
     const parsedOpenToolCalls = template.parse({ tokens: openToolCallsText })
-    assertEqual(parsedOpenToolCalls.tool_calls.length, 0, 'parse open tool calls channel')
+    assertEqual(parsedOpenToolCalls.tool_calls.length, 1, 'parse open tool calls channel')
+    assertEqual(Object.keys(parsedOpenToolCalls.tool_calls[0]).length, 0, 'empty open tool call')
     assertEqual(template.apply(parsedOpenToolCalls).templatedPrompt, openToolCallsText, 'open tool calls round-trip')
 
     for (let version = 5; version <= 9; version++) {
@@ -125,5 +128,5 @@ export function testStep3p5ResponseTemplate() {
     assertEqual(Step3p5ResponseTemplate.match({
         responseTemplateConfig: { name_or_path: 'step3p7-mm-fp8-mtp3-it100' },
     }), false, 'internal checkpoint mismatch')
-    return 17
+    return partialMessageTestCount + 17
 }

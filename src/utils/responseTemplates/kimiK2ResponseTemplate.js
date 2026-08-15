@@ -1,6 +1,7 @@
 import { tokenToDisplayString } from '../chatUtils.js'
 import { deepCopy } from '../commonUtils.js'
 import { normalizeMessageToolCalls } from './responseTemplateUtils.js'
+import { testPartialResponseTemplateRoundTrips } from './responseTemplateTestUtils.js'
 
 const specialMarker = (name) => ['<|', name, '|>'].join('')
 const THINK_BEGIN = ['<', 'think>'].join('')
@@ -60,6 +61,8 @@ function parseToolCalls(toolCallsText) {
                     toolCallId,
                     fallbackIndex: toolCalls.length,
                 }))
+            } else {
+                toolCalls.push({})
             }
             break
         }
@@ -76,6 +79,8 @@ function parseToolCalls(toolCallsText) {
                 argumentsText,
                 fallbackIndex: toolCalls.length,
             }))
+        } else {
+            toolCalls.push({})
         }
         if (toolCallEnd === -1) {
             break
@@ -355,6 +360,10 @@ export class KimiK2ResponseTemplate {
         if (message.tool_calls?.length) {
             appendRawText(TOOL_CALLS_SECTION_BEGIN)
             for (const [toolCallPosition, toolCall] of message.tool_calls.entries()) {
+                if (!toolCall.function?.name) {
+                    appendRawText(TOOL_CALL_BEGIN)
+                    continue
+                }
                 const toolCallId = toolCall.id || `functions.${toolCall.function.name}:${toolCallPosition}`
                 appendRawText(`${TOOL_CALL_BEGIN}${toolCallId}`)
                 if (toolCall.function.arguments === undefined) {
@@ -408,6 +417,7 @@ export class KimiK2ResponseTemplate {
 
 export function testKimiK2ResponseTemplate() {
     const template = new KimiK2ResponseTemplate()
+    const partialMessageTestCount = testPartialResponseTemplateRoundTrips({ template })
     const assertEqual = (actual, expected, label) => {
         if (actual !== expected) {
             throw new Error(`${label}\n  actual  : ${JSON.stringify(actual)}\n  expected: ${JSON.stringify(expected)}`)
@@ -459,5 +469,5 @@ export function testKimiK2ResponseTemplate() {
         'complete arguments',
     )
     assertEqual(template.apply(completeMessage).templatedPrompt, completeText, 're-apply complete response')
-    return partialArgumentsCases.length + 2
+    return partialMessageTestCount + partialArgumentsCases.length + 2
 }
