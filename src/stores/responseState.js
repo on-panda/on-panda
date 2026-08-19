@@ -145,12 +145,13 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
             delete body.tools
         }
         for (let message of body.messages) {
-            if (message.reasoning) {
-                // TODO: workaround to be improved 
-                // if not set reasoning_key in chat_config, set reasoning_content for compatibility
-                message.reasoning_content = message.reasoning
+            if (message.reasoning && body.reasoning_key) {
+                var reasoning = message.reasoning
+                delete message.reasoning
+                message[body.reasoning_key] = reasoning
             }
         }
+        delete body.reasoning_key
         return body
     }
 
