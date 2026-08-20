@@ -287,7 +287,7 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                         <el-tooltip class="" effect="light" placement="top" raw-content>
                             <template #content>
                                 <MarkdownRender
-                                    :content='"JSON for [Extra Parameters](https://docs.vllm.ai/en/stable/serving/openai_compatible_server.html#chat-api_1), e.g.: \n`{\"stop\": \"\\n\", \"min_tokens\": 256}`\nFor Chrome user, using `F12 -> Network -> completions -> Payload` to check the real request parameters"' />
+                                    :content='"JSON for [Extra Parameters](https://docs.vllm.ai/en/stable/serving/online_serving/openai_compatible_server/#extra-parameters_2), e.g.: \n`{\"tool_choice\": \"none\", \"chat_template_kwargs\": {\"enable_thinking\": true}}`\nFor Chrome user, using `F12 -> Network -> completions -> Payload` to check the real request parameters"' />
                             </template>
                             <el-icon>
                                 <InfoFilled />
