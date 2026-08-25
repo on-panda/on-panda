@@ -11,6 +11,7 @@ import CustomAnnotatorTool from './widgets/CustomAnnotatorTool.vue'
 import { openDialogEditor } from '../utils/dialogEditor.js'
 import { CONTINUE_PROMPT, parseApiConfigsJson5 } from '../stores/controlParameterState.js'
 import ObjectViewerInDetails from './widgets/ObjectViewerInDetails.vue'
+import { testChatCompeletionsOnPandaCompatibility } from '../utils/testApiOnPandaCompatibility.js'
 
 const globalStore = useGlobalStore()
 const instance = getCurrentInstance()
@@ -34,7 +35,11 @@ const apiUpdateCompletedPromise = props.controlParameterState.apiUpdateCompleted
 const apiConfigControllable = props.controlParameterState.apiConfigControllable
 const chatConfig = props.controlParameterState.apiConfigControllable.value.chat_config
 const extraChatParametersString = props.controlParameterState.extraChatParametersString
+const extraChatParameters = props.controlParameterState.extraChatParameters
 const apiConfig = props.controlParameterState.apiConfig
+
+const compatibilityTestRunning = ref(false)
+const compatibilityTestResult = ref(null)
 
 function updateApiConfigControlChatValue(key, value) {
     if (value == null || value === '') {
@@ -148,6 +153,37 @@ function editLocalStorageApiConfigs() {
             refreshModelList()
         }
     })
+}
+
+async function testOnPandaCompatibility() {
+    if (compatibilityTestRunning.value) {
+        return
+    }
+    compatibilityTestRunning.value = true
+    compatibilityTestResult.value = null
+    const testedApiConfig = apiConfig.value
+    try {
+        compatibilityTestResult.value = {
+            title: 'onPanda compatibility test result',
+            base_url: testedApiConfig.client_config.base_url,
+            model: testedApiConfig.chat_config.model,
+            extra_parameters: extraChatParameters.value,
+        }
+        const result = await testChatCompeletionsOnPandaCompatibility({
+            chatCompeletionsUrl: `${testedApiConfig.client_config.base_url}/chat/completions`,
+            apiKey: testedApiConfig.client_config.api_key,
+            extraHeaders: testedApiConfig.client_config.extra_headers,
+            model: testedApiConfig.chat_config.model,
+            extraParameters: extraChatParameters.value,
+            log: console.log.bind(console)
+        })
+        compatibilityTestResult.value = {
+            ...compatibilityTestResult.value,
+            ...result
+        }
+    } finally {
+        compatibilityTestRunning.value = false
+    }
 }
 
 /* 
@@ -328,6 +364,21 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                         </el-tooltip>
                     </small>
                 </el-form-item>
+                <el-form-item label="API compatibility">
+                    <small>
+                        <el-tooltip effect="light" placement="top" raw-content>
+                            <template #content>
+                                <MarkdownRender :content="t('tooltips.testOnPandaCompatibility')" />
+                            </template>
+                            <el-button size="small" :loading="compatibilityTestRunning"
+                                @click="testOnPandaCompatibility"><b>test</b></el-button>
+                        </el-tooltip>
+                    </small>
+                </el-form-item>
+                <div v-if="compatibilityTestResult" class="compatibility-test-result">
+                    {{ JSON.stringify(compatibilityTestResult, null, 2) }}
+                </div>
+
                 <ObjectViewerInDetails :object="maskedKeyInApiConfig" summary="Current API config JSON"
                     style="max-width: 800px; margin-left: 20px" />
             </div>
@@ -343,5 +394,15 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
     cursor: pointer;
     margin-left: 5px;
     user-select: none;
+}
+
+.compatibility-test-result {
+    white-space: pre-wrap;
+    font-family: Monospace;
+    background-color: #fafafa;
+    margin: 10px;
+    padding: 10px;
+    overflow-x: scroll;
+    max-width: 780px;
 }
 </style>
