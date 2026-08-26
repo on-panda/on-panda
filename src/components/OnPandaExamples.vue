@@ -62,7 +62,7 @@ const messagesImageExample = computed(() => [{
     },
     {
       type: "image_url", image_url: {
-        url: "https://docs.vllm.ai/en/latest/assets/logos/vllm-logo-text-light.png"
+        url: "https://raw.githubusercontent.com/vllm-project/vllm/main/docs/assets/logos/vllm-logo-text-light.png"
       },
     }
   ]

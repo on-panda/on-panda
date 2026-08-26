@@ -39,7 +39,7 @@ function pretty(value) {
 }
 
 function getLogger(log) {
-  return log || globalThis.console?.log?.bind(globalThis.console) || (() => {})
+  return log || globalThis.console?.log?.bind(globalThis.console) || (() => { })
 }
 
 function parseCliArguments(argumentsList) {
@@ -102,7 +102,7 @@ function parseExtraParametersJson(value) {
   return extraParameters
 }
 
-async function requestChatCompletions({chatCompeletionsUrl, apiKey, extraHeaders, body, label, log}) {
+async function requestChatCompletions({ chatCompeletionsUrl, apiKey, extraHeaders, body, label, log }) {
   log(`[${label}] request:\n${pretty({ url: chatCompeletionsUrl, body })}`)
 
   let response
@@ -144,7 +144,7 @@ async function requestChatCompletions({chatCompeletionsUrl, apiKey, extraHeaders
   }
 }
 
-async function runCompatibilityTest({label, body, check, keyInfo, chatCompeletionsUrl, apiKey, extraHeaders, log}) {
+async function runCompatibilityTest({ label, body, check, keyInfo, chatCompeletionsUrl, apiKey, extraHeaders, log }) {
   try {
     const response = await requestChatCompletions({
       chatCompeletionsUrl,
@@ -163,7 +163,7 @@ async function runCompatibilityTest({label, body, check, keyInfo, chatCompeletio
   }
 }
 
-async function testCors({chatCompeletionsUrl, extraHeaders, log}) {
+async function testCors({ chatCompeletionsUrl, extraHeaders, log }) {
   const isBrowser = typeof window !== 'undefined'
   const origin = isBrowser ? window.location.origin : 'http://localhost:5173'
   const requestOptions = { method: 'OPTIONS' }
@@ -216,7 +216,7 @@ export async function testChatCompeletionsOnPandaCompatibility({
   log
 } = {}) {
   const logger = getLogger(log)
-  const commonParameters = { ...extraParameters, model }
+  const commonParameters = { model, ...extraParameters }
   const continueParameters = {
     messages: [
       {
@@ -237,7 +237,7 @@ export async function testChatCompeletionsOnPandaCompatibility({
 
   const continue_final_messages = await runCompatibilityTest({
     label: 'continue_final_message',
-    body: { ...commonParameters, ...continueParameters },
+    body: { ...continueParameters, ...commonParameters },
     check: response => {
       const message = response.choices[0].message
       return message.content?.includes('De')
@@ -260,7 +260,7 @@ export async function testChatCompeletionsOnPandaCompatibility({
 
   const top_logprobs = await runCompatibilityTest({
     label: 'top_logprobs',
-    body: { ...commonParameters, ...continueParameters, top_logprobs: 5 },
+    body: { ...continueParameters, top_logprobs: 5, ...commonParameters },
     check: response => response.choices[0].logprobs.content[0].top_logprobs.length >= 5,
     keyInfo: response => ({
       topLogprobsCount: response.choices[0].logprobs.content[0].top_logprobs.length
@@ -274,7 +274,6 @@ export async function testChatCompeletionsOnPandaCompatibility({
   const tool_choice = await runCompatibilityTest({
     label: 'tool_choice',
     body: {
-      ...commonParameters,
       temperature: 0,
       tool_choice: 'none',
       skip_special_tokens: false,
@@ -282,7 +281,8 @@ export async function testChatCompeletionsOnPandaCompatibility({
         role: 'user',
         content: 'call the tool to tell me the °C in New York City?'
       }],
-      tools: [weatherTool]
+      tools: [weatherTool],
+      ...commonParameters
     },
     check: response => {
       const content = response.choices[0].message.content
@@ -298,7 +298,6 @@ export async function testChatCompeletionsOnPandaCompatibility({
   const prompt_logprobs = await runCompatibilityTest({
     label: 'prompt_logprobs',
     body: {
-      ...commonParameters,
       messages: [
         { role: 'user', content: '1 + 1 = ?' },
         { content: '1 + 1 = 3', role: 'assistant' }
@@ -306,7 +305,8 @@ export async function testChatCompeletionsOnPandaCompatibility({
       max_tokens: 1,
       prompt_logprobs: 2,
       add_generation_prompt: false,
-      continue_final_message: true
+      continue_final_message: true,
+      ...commonParameters
     },
     check: response => Array.isArray(response.prompt_logprobs)
       ? response.prompt_logprobs.length > 0
