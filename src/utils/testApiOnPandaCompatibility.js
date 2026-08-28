@@ -231,7 +231,6 @@ export async function testChatCompeletionsOnPandaCompatibility({
     add_generation_prompt: false,
     continue_final_message: true,
     logprobs: true,
-    temperature: 0,
     max_tokens: 1
   }
 
@@ -274,7 +273,6 @@ export async function testChatCompeletionsOnPandaCompatibility({
   const tool_choice = await runCompatibilityTest({
     label: 'tool_choice',
     body: {
-      temperature: 0,
       tool_choice: 'none',
       skip_special_tokens: false,
       messages: [{
@@ -282,6 +280,7 @@ export async function testChatCompeletionsOnPandaCompatibility({
         content: 'call the tool to tell me the °C in New York City?'
       }],
       tools: [weatherTool],
+      max_tokens: 4096,
       ...commonParameters
     },
     check: response => {
