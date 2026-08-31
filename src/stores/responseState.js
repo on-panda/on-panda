@@ -265,8 +265,9 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                     setGenerationTokens(tokens.value.filter(token => !token.pruned))
                     tokensValuePtr = tokens.value
                     tokenIndex = tokens.value.length
-                    if (!chunk?.choices[0]?.delta?.content) {
-                        continue  // if first chunk only not has content, no more role for continue_final_message
+                    const firstDelta = chunk?.choices?.[0]?.delta
+                    if (!firstDelta?.content && !firstDelta?.reasoning && !firstDelta?.tool_calls?.length) {
+                        continue  // ignore empty first continuation chunks
                     }
                 }
                 if (!chunk?.choices?.length) {  // set usage and model if only in last token
