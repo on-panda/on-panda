@@ -402,6 +402,8 @@ function parseStructuredTokens(tokens = [], tools = []) {
     const activeTokens = tokens.filter(token => !token.pruned)
     var hasToolCalls = false
     var toolCallContent = ''
+    // Some continuation APIs put post-think text in the reasoning channel.
+    var reasoningContinuationIsContent = false
     var finishReasonTokenIndex = -1
     const message = activeTokens.map((token, tokenIndex) => {
         if (token.finish_reason) {
@@ -446,18 +448,24 @@ function parseStructuredTokens(tokens = [], tools = []) {
                 delta.sidecar = mergeTwoDeltas(delta.sidecar || {}, delta2.sidecar || {})
                 continue
             }
-            if (key === 'reasoning' && delta1.content?.length && !delta1.reasoning?.length) {
+            if (key === 'reasoning' && !reasoningContinuationIsContent &&
+                delta1.content?.length && !delta1.reasoning?.length) {
                 const parsedPrefix = parseGLM5ResponseText(delta.content, tools)
-                if (parsedPrefix.reasoning || parsedPrefix.tool_calls?.length) {
+                reasoningContinuationIsContent =
+                    parsedPrefix.finish_reason === REASONING_END ||
+                    delta.content.includes(THINK_END) ||
+                    parsedPrefix.tool_calls?.length > 0
+                if (parsedPrefix.reasoning || parsedPrefix.tool_calls?.length || reasoningContinuationIsContent) {
                     if (parsedPrefix.reasoning) {
                         delta.reasoning = parsedPrefix.reasoning
                     }
-                    if (parsedPrefix.content) {
+                    if (parsedPrefix.content !== undefined) {
                         delta.content = parsedPrefix.content
                     } else {
                         delete delta.content
                     }
                     if (parsedPrefix.tool_calls?.length) {
+                        hasToolCalls = true
                         delta.tool_calls = mergeToolCalls(parsedPrefix.tool_calls, delta.tool_calls || [])
                     }
                 } else if (delta.content.startsWith(THINK_BEGIN) ||
@@ -468,6 +476,14 @@ function parseStructuredTokens(tokens = [], tools = []) {
                     delta.reasoning = stripRepeatedThinkBegin(delta.content)
                     delete delta.content
                 }
+            }
+            if (key === 'reasoning' && reasoningContinuationIsContent) {
+                if (delta.tool_calls?.length || hasToolCallsInDelta) {
+                    toolCallContent += delta2.reasoning || ''
+                } else {
+                    delta.content = (delta.content || '') + (delta2.reasoning || '')
+                }
+                continue
             }
             if (key === 'role' && delta2.role) {
                 role = delta2.role
@@ -1092,12 +1108,64 @@ export function testGLM5ResponseTemplate() {
 
     const resumedAfterReasoningEnd = template.parse({
         tokens: [
-            { delta: { content: `${THINK_BEGIN}old${THINK_END}` }, finish_reason: REASONING_END },
+            { delta: { content: `${THINK_BEGIN}old${THINK_END}answer` }, finish_reason: REASONING_END },
+            { delta: { reasoning: '' } },
             { delta: { reasoning: 'continued' } },
+            { delta: { reasoning: ' more' } },
         ],
     })
-    assertEqual(resumedAfterReasoningEnd.reasoning, 'oldcontinued', 'resume after reasoning end')
+    assertEqual(resumedAfterReasoningEnd.reasoning, 'old', 'resume after reasoning end')
+    assertEqual(resumedAfterReasoningEnd.content, 'answercontinued more', 'resume content after reasoning end')
+    assertEqual(
+        template.apply(resumedAfterReasoningEnd).templatedPrompt,
+        `${THINK_BEGIN}old${THINK_END}answercontinued more`,
+        'resume content after reasoning end round-trip',
+    )
     assertEqual(resumedAfterReasoningEnd.finish_reason, undefined, 'resume clears reasoning end')
+
+    const resumedWithoutReasoning = template.parse({
+        tokens: [
+            { delta: { content: THINK_END }, finish_reason: REASONING_END },
+            { delta: { reasoning: '' } },
+            { delta: { reasoning: 'continued' } },
+            { delta: { reasoning: ' more' } },
+        ],
+    })
+    assertEqual(resumedWithoutReasoning.reasoning, undefined, 'resume without reasoning')
+    assertEqual(resumedWithoutReasoning.content, 'continued more', 'resume without reasoning content')
+
+    const toolContinuationPrefix = template.apply({
+        role: 'assistant',
+        reasoning: 'old',
+        content: 'Sure!',
+        tool_calls: [{
+            index: 0,
+            type: 'function',
+            function: { name: 'get_weather', arguments: '{"location": "San' },
+        }],
+    }).templatedPrompt
+    const resumedToolCall = template.parse({
+        tokens: [
+            { delta: { content: toolContinuationPrefix }, finish_reason: REASONING_END },
+            { delta: { reasoning: '' } },
+            { delta: { reasoning: ' Francisco' } },
+            { delta: { reasoning: `${ARG_VALUE_END}${TOOL_CALL_END}` } },
+            { delta: {}, finish_reason: 'tool_calls' },
+        ],
+        tools,
+    })
+    assertEqual(resumedToolCall.reasoning, 'old', 'resume tool call reasoning')
+    assertEqual(resumedToolCall.content, 'Sure!', 'resume tool call content')
+    assertEqual(
+        resumedToolCall.tool_calls[0].function.arguments,
+        '{"location": "San Francisco"}',
+        'resume tool call arguments',
+    )
+    assertEqual(
+        template.apply(resumedToolCall).templatedPrompt,
+        toolContinuationPrefix + ` Francisco${ARG_VALUE_END}${TOOL_CALL_END}`,
+        'resume tool call round-trip',
+    )
 
     const emptyStructuredToolCallsMessage = template.parse({
         tokens: [
@@ -1129,5 +1197,5 @@ export function testGLM5ResponseTemplate() {
     assertEqual(GLM5ResponseTemplate.match({
         responseTemplateConfig: { name_or_path: 'glm5p2-b300-dp8-1m-self' },
     }), false, 'internal checkpoint mismatch')
-    return partialMessageTestCount + partialArgumentsCases.length + 21
+    return partialMessageTestCount + partialArgumentsCases.length + 23
 }
