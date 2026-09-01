@@ -203,8 +203,17 @@ function parseToolCalls(toolCallsText, tools = []) {
             FUNCTION_BEGIN,
             toolCallBegin + TOOL_CALL_BEGIN.length,
         )
-        if (functionBegin === -1) {
-            break
+        const nextToolCallBegin = toolCallsText.indexOf(TOOL_CALL_BEGIN, toolCallBegin + TOOL_CALL_BEGIN.length)
+        if (
+            functionBegin === -1 ||
+            (nextToolCallBegin !== -1 && nextToolCallBegin < functionBegin)
+        ) {
+            toolCalls.push({})
+            if (nextToolCallBegin === -1) {
+                break
+            }
+            cursor = nextToolCallBegin
+            continue
         }
         const nameStart = functionBegin + FUNCTION_BEGIN.length
         const nameEnd = toolCallsText.indexOf('>', nameStart)
@@ -219,13 +228,13 @@ function parseToolCalls(toolCallsText, tools = []) {
         const functionName = toolCallsText.slice(nameStart, nameEnd)
         const tool = tools.find(tool => tool.function.name === functionName)
         const functionEnd = toolCallsText.indexOf(FUNCTION_END, nameEnd + 1)
-        const nextToolCallBegin = toolCallsText.indexOf(TOOL_CALL_BEGIN, nameEnd + 1)
+        const nextToolCallBeginAfterName = toolCallsText.indexOf(TOOL_CALL_BEGIN, nameEnd + 1)
         const functionClosed = functionEnd !== -1 && (
-            nextToolCallBegin === -1 || functionEnd < nextToolCallBegin
+            nextToolCallBeginAfterName === -1 || functionEnd < nextToolCallBeginAfterName
         )
         const rawArgumentsEnd = functionClosed
             ? functionEnd
-            : nextToolCallBegin === -1 ? toolCallsText.length : nextToolCallBegin
+            : nextToolCallBeginAfterName === -1 ? toolCallsText.length : nextToolCallBeginAfterName
         const rawArguments = toolCallsText.slice(nameEnd + 1, rawArgumentsEnd)
         const parsedArguments = parseXmlParameters({
             rawArguments,
@@ -245,8 +254,8 @@ function parseToolCalls(toolCallsText, tools = []) {
             index: toolCalls.length,
         }))
 
-        if (nextToolCallBegin !== -1 && (!functionClosed || nextToolCallBegin < functionEnd)) {
-            cursor = nextToolCallBegin
+        if (nextToolCallBeginAfterName !== -1 && (!functionClosed || nextToolCallBeginAfterName < functionEnd)) {
+            cursor = nextToolCallBeginAfterName
             continue
         }
         if (!functionClosed) {
@@ -383,9 +392,83 @@ function mergeToolCalls(toolCalls1 = [], toolCalls2 = []) {
     return toolCalls
 }
 
-function parseStructuredTokens(tokens = [], tools = [], reasoningContentSeparator = '\n\n') {
+function isOpenToolCall(toolCall = {}) {
+    return !toolCall.type && !toolCall.id && !toolCall.function
+}
+
+function hasOpenToolCallText(text = '') {
+    return text.lastIndexOf(TOOL_CALL_BEGIN) > text.lastIndexOf(TOOL_CALL_END)
+}
+
+function hasTextToolCallBoundary(tokens = []) {
+    var text = ''
+    for (const token of tokens.filter(token => !token.pruned)) {
+        const delta = token.delta || {}
+        const deltaText = [delta.content, delta.reasoning]
+            .filter(text => typeof text === 'string')
+            .join('')
+        const logprobsText = (token.logprobs?.content || [])
+            .map(logprob => logprob.token || '')
+            .join('')
+        text += deltaText
+        const hasAdditionalMarker = (
+            logprobsText.includes(TOOL_CALL_BEGIN) && !deltaText.includes(TOOL_CALL_BEGIN)
+        ) || (
+            logprobsText.includes(TOOL_CALL_END) && !deltaText.includes(TOOL_CALL_END)
+        )
+        if (!deltaText || hasAdditionalMarker) {
+            text += logprobsText
+        }
+        if (delta.tool_calls?.length) {
+            break
+        }
+    }
+    const firstToolCallEnd = text.indexOf(TOOL_CALL_END)
+    return firstToolCallEnd !== -1 &&
+        text.indexOf(TOOL_CALL_BEGIN, firstToolCallEnd + TOOL_CALL_END.length) !== -1
+}
+
+// Some providers restart structured tool-call indexes after text-form calls.
+function mergeTextAndStructuredToolCalls({
+    textToolCalls = [],
+    structuredToolCalls = [],
+    text = '',
+    structuredToolCallsFollowText = false,
+} = {}) {
+    const toolCalls = textToolCalls.map(toolCall => deepCopy(toolCall))
+    if (!structuredToolCalls.length) {
+        return toolCalls
+    }
+
+    const lastToolCall = toolCalls.at(-1)
+    const hasOpenTextSlot = hasOpenToolCallText(text) ||
+        lastToolCall && isOpenToolCall(lastToolCall)
+    const firstStructuredIndex = structuredToolCallsFollowText
+        ? hasOpenTextSlot ? Math.max(0, toolCalls.length - 1) : toolCalls.length
+        : hasOpenTextSlot ? Math.max(0, toolCalls.length - 1) : null
+    const remappedToolCalls = structuredToolCalls.map((toolCall, position) => ({
+        ...deepCopy(toolCall),
+        index: firstStructuredIndex === null ? toolCall.index : firstStructuredIndex + position,
+    }))
+    const mergedToolCalls = mergeToolCalls(toolCalls, remappedToolCalls)
+    for (const toolCall of remappedToolCalls) {
+        if (toolCall.id && mergedToolCalls[toolCall.index]) {
+            mergedToolCalls[toolCall.index].id = toolCall.id
+        }
+    }
+    return mergedToolCalls
+}
+
+function parseStructuredTokens({
+    tokens = [],
+    tools = [],
+    reasoningContentSeparator = '\n\n',
+    structuredToolCallsFollowText = false,
+} = {}) {
     var role = null
     var finishReason
+    var parsedTextToolCalls
+    var parsedTextContent
     const message = tokens.filter(
         token => !token.pruned
     ).map(token => {
@@ -396,6 +479,9 @@ function parseStructuredTokens(tokens = [], tools = [], reasoningContentSeparato
     }).reduce((delta1, delta2) => {
         const delta = { ...delta1 }
         for (const key in delta2) {
+            if (key === 'tool_calls' && !delta2.tool_calls?.length) {
+                continue
+            }
             if (key === 'tool_calls' && delta2.tool_calls?.length) {
                 if (delta.finish_reason === REASONING_END) {
                     delete delta.finish_reason
@@ -411,7 +497,8 @@ function parseStructuredTokens(tokens = [], tools = [], reasoningContentSeparato
                 continue
             }
             if (key === 'reasoning' && delta1.content?.length && !delta1.reasoning?.length) {
-                const parsedPrefix = parseQwenResponseText(delta.content, tools, reasoningContentSeparator)
+                const structuredContent = delta.content
+                const parsedPrefix = parseQwenResponseText(structuredContent, tools, reasoningContentSeparator)
                 if (parsedPrefix.reasoning || parsedPrefix.tool_calls?.length) {
                     if (parsedPrefix.reasoning) {
                         delta.reasoning = parsedPrefix.reasoning
@@ -422,7 +509,8 @@ function parseStructuredTokens(tokens = [], tools = [], reasoningContentSeparato
                         delete delta.content
                     }
                     if (parsedPrefix.tool_calls?.length) {
-                        delta.tool_calls = mergeToolCalls(parsedPrefix.tool_calls, delta.tool_calls || [])
+                        parsedTextToolCalls = parsedPrefix.tool_calls
+                        parsedTextContent = structuredContent
                     }
                 } else {
                     delta.reasoning = stripRepeatedThinkBegin(delta.content)
@@ -446,6 +534,14 @@ function parseStructuredTokens(tokens = [], tools = [], reasoningContentSeparato
     if (message.tool_calls?.length && message.content) {
         message.content = message.content.replace(/\n+$/, '')
     }
+    if (parsedTextToolCalls) {
+        message.tool_calls = mergeTextAndStructuredToolCalls({
+            textToolCalls: parsedTextToolCalls,
+            structuredToolCalls: message.tool_calls || [],
+            text: parsedTextContent,
+            structuredToolCallsFollowText,
+        })
+    }
     if (role) {
         message.role = role
     } else if (tokens.length) {
@@ -463,7 +559,12 @@ function parseStructuredTokens(tokens = [], tools = [], reasoningContentSeparato
     return message
 }
 
-function normalizePlainTextInStructuredMessage(message, tools = [], reasoningContentSeparator = '\n\n') {
+function normalizePlainTextInStructuredMessage({
+    message,
+    tools = [],
+    reasoningContentSeparator = '\n\n',
+    structuredToolCallsFollowText = false,
+} = {}) {
     if (typeof message.content !== 'string') {
         return message
     }
@@ -474,7 +575,8 @@ function normalizePlainTextInStructuredMessage(message, tools = [], reasoningCon
         return message
     }
 
-    const parsedTextMessage = parseQwenResponseText(message.content, tools, reasoningContentSeparator)
+    const structuredContent = message.content
+    const parsedTextMessage = parseQwenResponseText(structuredContent, tools, reasoningContentSeparator)
     if (parsedTextMessage.reasoning) {
         message.reasoning = parsedTextMessage.reasoning + (message.reasoning || '')
     }
@@ -490,12 +592,12 @@ function normalizePlainTextInStructuredMessage(message, tools = [], reasoningCon
     }
     if (parsedTextMessage.tool_calls) {
         const structuredToolCalls = message.tool_calls || []
-        message.tool_calls = mergeToolCalls(parsedTextMessage.tool_calls, structuredToolCalls)
-        for (const structuredToolCall of structuredToolCalls) {
-            if (structuredToolCall.id) {
-                message.tool_calls[structuredToolCall.index].id = structuredToolCall.id
-            }
-        }
+        message.tool_calls = mergeTextAndStructuredToolCalls({
+            textToolCalls: parsedTextMessage.tool_calls,
+            structuredToolCalls,
+            text: structuredContent,
+            structuredToolCallsFollowText,
+        })
     }
     if (message.finish_reason === 'stop' && message.tool_calls?.length) {
         message.finish_reason = 'tool_calls'
@@ -560,14 +662,16 @@ export class Qwen3p5ResponseTemplate {
             if (message.content) {
                 appendRawText(this.contentToolCallsSeparator)
             }
-            const isOpenToolCallsChannel = message.tool_calls.length === 1 &&
-                Object.keys(message.tool_calls[0]).length === 0
-            if (!message.tool_calls.length || isOpenToolCallsChannel) {
+            if (!message.tool_calls.length) {
                 appendRawText(TOOL_CALL_BEGIN)
             }
-            for (const [toolCallPosition, toolCall] of (isOpenToolCallsChannel ? [] : message.tool_calls).entries()) {
+            for (const [toolCallPosition, toolCall] of message.tool_calls.entries()) {
                 if (toolCallPosition) {
                     appendRawText(this.toolCallSeparator)
+                }
+                if (isOpenToolCall(toolCall)) {
+                    appendRawText(TOOL_CALL_BEGIN)
+                    continue
                 }
                 const toolCallFunction = toolCall.function || {}
                 appendRawText(`${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}${toolCallFunction.name || ''}`)
@@ -622,11 +726,20 @@ export class Qwen3p5ResponseTemplate {
             return {}
         }
         if (typeof tokens !== 'string' && hasStructuredDelta(tokens)) {
+            const structuredToolCallsFollowText = hasTextToolCallBoundary(tokens)
             return normalizeMessageToolCalls({
                 message: normalizePlainTextInStructuredMessage(
-                    parseStructuredTokens(tokens, tools, this.reasoningContentSeparator),
-                    tools,
-                    this.reasoningContentSeparator,
+                    {
+                        message: parseStructuredTokens({
+                            tokens,
+                            tools,
+                            reasoningContentSeparator: this.reasoningContentSeparator,
+                            structuredToolCallsFollowText,
+                        }),
+                        tools,
+                        reasoningContentSeparator: this.reasoningContentSeparator,
+                        structuredToolCallsFollowText,
+                    },
                 ),
                 messages,
             })
@@ -774,5 +887,65 @@ export function testQwen3p5ResponseTemplate() {
         'complete arguments',
     )
     assertEqual(template.apply(completeMessage).templatedPrompt, completeText, 're-apply complete response')
-    return partialMessageTestCount + partialArgumentsCases.length + 5
+
+    const completeToolText = `${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}read_file>\n` +
+        `${PARAMETER_BEGIN}path>\n/tmp/a.txt\n${PARAMETER_END}\n${FUNCTION_END}\n${TOOL_CALL_END}`
+    const parsedTrailingToolCall = template.parse({
+        tokens: `${completeToolText}\n${TOOL_CALL_BEGIN}`,
+        tools,
+    })
+    assertEqual(parsedTrailingToolCall.tool_calls.length, 2, 'trailing open tool call')
+    assertEqual(
+        parsedTrailingToolCall.tool_calls[0].function.arguments,
+        '{"path": "/tmp/a.txt"}',
+        'trailing open tool call first arguments',
+    )
+    assertEqual(parsedTrailingToolCall.tool_calls[1].function, undefined, 'trailing open tool call placeholder')
+    assertEqual(
+        template.apply(parsedTrailingToolCall).templatedPrompt,
+        `${completeToolText}\n${TOOL_CALL_BEGIN}`,
+        're-apply trailing open tool call',
+    )
+
+    const secondToolArguments = '{"path": "/tmp/b.txt"}'
+    const mixedToolTokens = [
+        { delta: { role: 'assistant', content: '' } },
+        { delta: { content: `${completeToolText}\n`, tool_calls: [] } },
+        // Together can emit the next XML marker only in logprobs before switching to tool_calls.
+        { delta: { content: '' }, logprobs: { content: [{ token: TOOL_CALL_BEGIN }] } },
+        { delta: { content: '\n' } },
+        { delta: { tool_calls: [{
+            id: 'together-tool-1',
+            type: 'function',
+            index: 0,
+            function: { name: 'read_file' },
+        }] } },
+        { delta: { tool_calls: [{ index: 0, function: { arguments: secondToolArguments } }] } },
+        { delta: {}, finish_reason: 'tool_calls' },
+    ]
+    const mixedToolMessage = template.parse({ tokens: mixedToolTokens, tools })
+    assertEqual(mixedToolMessage.tool_calls.length, 2, 'mixed tool call count')
+    assertEqual(
+        mixedToolMessage.tool_calls[0].function.arguments,
+        '{"path": "/tmp/a.txt"}',
+        'mixed first tool arguments',
+    )
+    assertEqual(
+        mixedToolMessage.tool_calls[1].function.arguments,
+        secondToolArguments,
+        'mixed second tool arguments',
+    )
+    assertEqual(mixedToolMessage.tool_calls[1].id, 'together-tool-1', 'mixed second tool id')
+    JSON.parse(mixedToolMessage.tool_calls[0].function.arguments)
+    JSON.parse(mixedToolMessage.tool_calls[1].function.arguments)
+    assertEqual(
+        template.apply(mixedToolMessage).templatedPrompt,
+        `${completeToolText}\n${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}read_file>\n` +
+            `${PARAMETER_BEGIN}path>\n/tmp/b.txt\n${PARAMETER_END}\n${FUNCTION_END}\n${TOOL_CALL_END}`,
+        're-apply mixed tool calls',
+    )
+    assertEqual(Qwen3p5ResponseTemplate.match({
+        responseTemplateConfig: { name_or_path: 'Qwen/Qwen3.8-2.4T-A95B' },
+    }), true, 'Qwen3.8 template match')
+    return partialMessageTestCount + partialArgumentsCases.length + 8
 }
