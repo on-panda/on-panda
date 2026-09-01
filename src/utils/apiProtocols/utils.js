@@ -34,6 +34,10 @@ export function mergeHeaders(headers, extraHeaders = {}) {
   return headers
 }
 
+export function omitNullRequestFields(requestBody) {
+  return Object.fromEntries(Object.entries(requestBody).filter(([, value]) => value !== null))
+}
+
 export async function* parseSseJsonStream(response, { onJsonParseError = null } = {}) {
   const reader = response.body.getReader()
   const decoder = new TextDecoder("utf-8")

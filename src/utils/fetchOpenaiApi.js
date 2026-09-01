@@ -1,6 +1,6 @@
 import { useGlobalStore } from '../stores/globalStore.js'
 import { ElMessage } from 'element-plus'
-import { retryWithSchedule, parseSseJsonStream, mergeHeaders } from './apiProtocols/utils.js'
+import { retryWithSchedule, parseSseJsonStream, mergeHeaders, omitNullRequestFields } from './apiProtocols/utils.js'
 import { mergeTwoDeltas } from './responseTemplates/index.js'
 
 const promptLogprobsToTopLogprobs = (promptLogprob, chosenTokenId) => {
@@ -401,6 +401,7 @@ export class OpenAI {
         body = await hook(body)
       }
     }
+    body = omitNullRequestFields(body)
 
     options = options || {};
     const { headers: optionsHeaders, ...fetchOptions } = options;
@@ -506,6 +507,7 @@ export class OpenAI {
     }
 
     const json = await response.json();
-    return json.data;
+    const modelList = (Array.isArray(json) && !json.data)? json : json.data
+    return modelList;
   }
 }

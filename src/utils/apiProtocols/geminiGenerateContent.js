@@ -2,7 +2,7 @@ import { useGlobalStore } from '../../stores/globalStore.js'
 import { ObjctKeyToCamelCaseNaming, deepCopy } from '../commonUtils.js'
 import { normalizeStream } from '../fetchOpenaiApi.js'
 import { multimodalUrlToMimeType } from '../multimodalUtils.js'
-import { mergeHeaders, parseSseJsonStream, retryWithSchedule } from './utils.js'
+import { mergeHeaders, parseSseJsonStream, retryWithSchedule, omitNullRequestFields } from './utils.js'
 
 const DEFAULT_THINKING_CONFIG = {
     thinkingLevel: 'HIGH',
@@ -510,7 +510,7 @@ export async function createGeminiGenerateContentStream({ requestBody, apiConfig
             body = await hook(body)
         }
     }
-    body = buildGeminiGenerateContentRequest(body)
+    body = omitNullRequestFields(buildGeminiGenerateContentRequest(body))
 
     const config = ObjctKeyToCamelCaseNaming(apiConfig.client_config)
     const response = await retryWithSchedule(() => fetch(buildGeminiStreamUrl({

@@ -1,6 +1,6 @@
 import { useGlobalStore } from '../../stores/globalStore.js'
 import { ObjctKeyToCamelCaseNaming, deepCopy } from '../commonUtils.js'
-import { mergeHeaders, parseSseJsonStream, retryWithSchedule, normalizeUsage } from './utils.js'
+import { mergeHeaders, parseSseJsonStream, retryWithSchedule, normalizeUsage, omitNullRequestFields } from './utils.js'
 
 const ANTHROPIC_VERSION = '2023-06-01'
 const TOOL_ID_CHAR_TO_TOKEN = {
@@ -334,7 +334,7 @@ export async function createAnthropicMessagesStream({ requestBody, apiConfig, si
             body = await hook(body)
         }
     }
-    body = buildAnthropicMessagesRequest(body)
+    body = omitNullRequestFields(buildAnthropicMessagesRequest(body))
 
     const config = ObjctKeyToCamelCaseNaming(apiConfig.client_config)
     const apiProtocol = apiConfig.api_protocol || {}
