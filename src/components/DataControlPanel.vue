@@ -178,7 +178,7 @@ function loadPandaJsonFile(file) {
                 ElMessage.success('JSON file uploaded successfully.');
                 jumpToLatestUserIfNeeded()
             } catch (error) {
-                ElMessage.error('Invalid JSON file!');
+                ElMessage.error(`Invalid panda JSON file: ${error.message}`);
                 console.error(error);
             }
             resolve()

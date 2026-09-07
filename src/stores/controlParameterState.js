@@ -10,6 +10,9 @@ export const CONTINUE_PROMPT = "continue(do not repeat the last few words of you
 
 export const defaultChatConfig = {
     stream: true,
+    stream_options: {
+        include_usage: true,
+    },
     logprobs: true,
     top_logprobs: 20,
     // top_k: 2,
@@ -17,9 +20,6 @@ export const defaultChatConfig = {
     max_tokens: null,
     temperature: 0.5,
     top_p: 0.95,
-    stream_options: {
-        include_usage: true,
-    },
     spaces_between_special_tokens: false,  // In vLLM and Transformers it's default true, which may case additional leading space before first token or special tokens
 }
 

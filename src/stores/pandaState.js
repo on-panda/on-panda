@@ -518,6 +518,16 @@ export class PandaState {
                 if (dialog.annotate && !('is_good' in dialog.annotate)) {
                     dialog.annotate.is_good = null
                 }
+                if (dialog.tool_configs) {
+                    for (var [toolConfigIndex, toolConfig] of dialog.tool_configs.entries()) {
+                        if (!['mcp', 'function'].includes(toolConfig.type)) {
+                            throw new Error(`Invalid tool config at dialog ${key}, tool_configs[${toolConfigIndex}]: expected type "mcp" or "function", got ${toolConfig.type}`)
+                        }
+                        if (toolConfig.type === 'function' && !toolConfig.function?.name) {
+                            throw new Error(`Invalid function tool config at dialog ${key}, tool_configs[${toolConfigIndex}]: missing function.name`)
+                        }
+                    }
+                }
                 for (var message of dialog.messages) {
                     if (typeof message.reasoning_content === 'string' && !('reasoning' in message)) {
                         message.reasoning = message.reasoning_content
