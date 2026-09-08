@@ -338,25 +338,32 @@ async function* mergeMultiToolCallsInOneChunk(stream) {
   }
 }
 
-async function* repairStrippedFirstContinueToken({ stream, requestBody } = {}) {
-  // Workaround for doubao-seed series: under continue_final_message, the first
-  // continue token's `delta.content` is left-stripped, while
-  // `logprobs.content[0].token` preserves the original.
-  // e.g. `delta.content`="the" vs `logprobs.content[0].token`=" the"
+async function* repairFirstContinueChunk({ stream, requestBody } = {}) {
   if (!requestBody.continue_final_message) {
     yield* stream
     return
   }
+  const lastMessageContent = requestBody.messages[requestBody.messages.length - 1].content
   let needCheck = true
   for await (const chunk of stream) {
     if (needCheck) {
       const choice = chunk?.choices?.[0]
-      const token = choice?.logprobs?.content?.[0]?.token
-      if (typeof token === 'string') {
-        const stripped = token.trimStart()
-        if (stripped.length > 0 && stripped !== token && stripped === choice?.delta?.content) {
-          choice.delta.content = token
+      const logprobsContent = choice?.logprobs?.content
+      if (logprobsContent?.length) {
+        const tokenText = logprobsContent.map(item => item.token).join('')
+        // Ollama echoes the final message prefix in the first continuation delta even with echo: false,
+        // while logprobs only describe newly generated tokens. Remove the echo before splitting the chunk.
+        if (lastMessageContent && choice.delta.content === lastMessageContent + tokenText) {
+          choice.delta.content = tokenText
         }
+        // Workaround for doubao-seed: the first continuation delta is left-stripped,
+        // while logprobs preserve the original, e.g. delta.content="the" vs token=" the".
+        const stripped = tokenText.trimStart()
+        if (stripped.length > 0 && stripped !== tokenText && stripped === choice.delta.content) {
+          choice.delta.content = tokenText
+        }
+        needCheck = false
+      } else if (choice?.delta?.content || choice?.delta?.reasoning || choice?.delta?.tool_calls?.length) {
         needCheck = false
       }
     }
@@ -366,10 +373,10 @@ async function* repairStrippedFirstContinueToken({ stream, requestBody } = {}) {
 
 export async function* normalizeStream({ stream, requestBody, apiConfig } = {}) {
   stream = normalizeReasoningField(stream)
+  stream = repairFirstContinueChunk({ stream, requestBody })
   stream = splitMultiTokensChunk(stream)
   stream = removeTokenPrefixSpaceForWandbAPI({ stream, apiConfig })
   stream = mergeMultiToolCallsInOneChunk(stream)
-  stream = repairStrippedFirstContinueToken({ stream, requestBody })
   yield* stream
 }
 
