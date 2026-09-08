@@ -467,6 +467,7 @@ function parseStructuredTokens({
 } = {}) {
     var role = null
     var finishReason
+    var reasoningContinuationIsContent = false
     var parsedTextToolCalls
     var parsedTextContent
     const message = tokens.filter(
@@ -496,26 +497,37 @@ function parseStructuredTokens({
                 delta.sidecar = mergeTwoDeltas(delta.sidecar || {}, delta2.sidecar || {})
                 continue
             }
-            if (key === 'reasoning' && delta1.content?.length && !delta1.reasoning?.length) {
-                const structuredContent = delta.content
-                const parsedPrefix = parseQwenResponseText(structuredContent, tools, reasoningContentSeparator)
-                if (parsedPrefix.reasoning || parsedPrefix.tool_calls?.length) {
-                    if (parsedPrefix.reasoning) {
-                        delta.reasoning = parsedPrefix.reasoning
-                    }
-                    if (parsedPrefix.content) {
-                        delta.content = parsedPrefix.content
-                    } else {
-                        delete delta.content
-                    }
-                    if (parsedPrefix.tool_calls?.length) {
-                        parsedTextToolCalls = parsedPrefix.tool_calls
-                        parsedTextContent = structuredContent
+            if (key === 'reasoning' && !reasoningContinuationIsContent && !delta1.reasoning?.length &&
+                (delta1.content?.length || delta1.tool_calls?.length)) {
+                if (delta1.content?.length) {
+                    const structuredContent = delta.content
+                    const parsedPrefix = parseQwenResponseText(structuredContent, tools, reasoningContentSeparator)
+                    reasoningContinuationIsContent =
+                        parsedPrefix.finish_reason === REASONING_END ||
+                        structuredContent.includes(THINK_END) ||
+                        parsedPrefix.tool_calls?.length > 0 ||
+                        !parsedPrefix.reasoning
+                    if (parsedPrefix.reasoning || parsedPrefix.tool_calls?.length || reasoningContinuationIsContent) {
+                        if (parsedPrefix.reasoning) {
+                            delta.reasoning = parsedPrefix.reasoning
+                        }
+                        if (parsedPrefix.content !== undefined) {
+                            delta.content = parsedPrefix.content
+                        } else {
+                            delete delta.content
+                        }
+                        if (parsedPrefix.tool_calls?.length) {
+                            parsedTextToolCalls = parsedPrefix.tool_calls
+                            parsedTextContent = structuredContent
+                        }
                     }
                 } else {
-                    delta.reasoning = stripRepeatedThinkBegin(delta.content)
-                    delete delta.content
+                    reasoningContinuationIsContent = true
                 }
+            }
+            if (key === 'reasoning' && reasoningContinuationIsContent) {
+                delta.content = (delta.content || '') + (delta2.reasoning || '')
+                continue
             }
             delta[key] = (delta[key] || '') + (delta2[key] || '')
             if (key === 'role' && delta2.role) {
@@ -888,6 +900,22 @@ export function testQwen3p5ResponseTemplate() {
     )
     assertEqual(template.apply(completeMessage).templatedPrompt, completeText, 're-apply complete response')
 
+    const resumedAfterReasoningEnd = template.parse({
+        tokens: [
+            { delta: { content: `${THINK_BEGIN}\nold\n${THINK_END}\n\nanswer` } },
+            { delta: { reasoning: '' } },
+            { delta: { reasoning: 'continued' } },
+            { delta: { reasoning: ' more' } },
+        ],
+    })
+    assertEqual(resumedAfterReasoningEnd.reasoning, 'old', 'resume reasoning continuation reasoning')
+    assertEqual(resumedAfterReasoningEnd.content, 'answercontinued more', 'resume reasoning continuation content')
+    assertEqual(
+        template.apply(resumedAfterReasoningEnd).templatedPrompt,
+        `${THINK_BEGIN}\nold\n${THINK_END}\n\nanswercontinued more`,
+        'resume reasoning continuation round-trip',
+    )
+
     const completeToolText = `${TOOL_CALL_BEGIN}\n${FUNCTION_BEGIN}read_file>\n` +
         `${PARAMETER_BEGIN}path>\n/tmp/a.txt\n${PARAMETER_END}\n${FUNCTION_END}\n${TOOL_CALL_END}`
     const parsedTrailingToolCall = template.parse({
@@ -947,5 +975,5 @@ export function testQwen3p5ResponseTemplate() {
     assertEqual(Qwen3p5ResponseTemplate.match({
         responseTemplateConfig: { name_or_path: 'Qwen/Qwen3.8-2.4T-A95B' },
     }), true, 'Qwen3.8 template match')
-    return partialMessageTestCount + partialArgumentsCases.length + 8
+    return partialMessageTestCount + partialArgumentsCases.length + 9
 }

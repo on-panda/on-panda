@@ -189,6 +189,7 @@ function mergeToolCalls(toolCalls1 = [], toolCalls2 = []) {
 function parseStructuredTokens(tokens = []) {
     var role = null
     var finish_reason
+    var reasoningContinuationIsContent = false
     const message = tokens.filter(
         token => !token.pruned
     ).map(
@@ -227,28 +228,39 @@ function parseStructuredTokens(tokens = []) {
                 delta.sidecar = mergeTwoDeltas(delta.sidecar || {}, delta2.sidecar || {})
                 continue
             }
-            if (key === 'reasoning' && delta1.content?.length && !delta1.reasoning?.length) {
-                // Plain-text continuation sends the response prefix as content, but some servers still resume by streaming reasoning deltas.
-                const parsedPrefix = parseKimiK2ResponseText(delta.content)
-                if (parsedPrefix.reasoning || parsedPrefix.tool_calls?.length) {
-                    if (parsedPrefix.reasoning) {
-                        delta.reasoning = parsedPrefix.reasoning
-                    }
-                    if (parsedPrefix.finish_reason === REASONING_END) {
-                        delta.finish_reason = REASONING_END
-                        delta.content = ''
-                    } else if (parsedPrefix.content) {
-                        delta.content = parsedPrefix.content
-                    } else {
-                        delete delta.content
-                    }
-                    if (parsedPrefix.tool_calls?.length) {
-                        delta.tool_calls = mergeToolCalls(parsedPrefix.tool_calls, delta.tool_calls || [])
+            if (key === 'reasoning' && !reasoningContinuationIsContent && !delta1.reasoning?.length &&
+                (delta1.content?.length || delta1.tool_calls?.length)) {
+                // Plain-text continuation can resume a content or tool-call prefix in the reasoning channel.
+                if (delta1.content?.length) {
+                    const parsedPrefix = parseKimiK2ResponseText(delta.content)
+                    reasoningContinuationIsContent =
+                        parsedPrefix.finish_reason === REASONING_END ||
+                        delta.content.includes(THINK_END) ||
+                        parsedPrefix.tool_calls?.length > 0 ||
+                        !parsedPrefix.reasoning
+                    if (parsedPrefix.reasoning || parsedPrefix.tool_calls?.length || reasoningContinuationIsContent) {
+                        if (parsedPrefix.reasoning) {
+                            delta.reasoning = parsedPrefix.reasoning
+                        }
+                        if (parsedPrefix.finish_reason === REASONING_END) {
+                            delta.finish_reason = REASONING_END
+                            delta.content = ''
+                        } else if (parsedPrefix.content !== undefined) {
+                            delta.content = parsedPrefix.content
+                        } else {
+                            delete delta.content
+                        }
+                        if (parsedPrefix.tool_calls?.length) {
+                            delta.tool_calls = mergeToolCalls(parsedPrefix.tool_calls, delta.tool_calls || [])
+                        }
                     }
                 } else {
-                    delta.reasoning = stripRepeatedThinkBegin(delta.content)
-                    delete delta.content
+                    reasoningContinuationIsContent = true
                 }
+            }
+            if (key === 'reasoning' && reasoningContinuationIsContent) {
+                delta.content = (delta.content || '') + (delta2.reasoning || '')
+                continue
             }
             delta[key] = (delta[key] || '') + (delta2[key] || '')
             if (key === 'role' && delta2.role) {
@@ -469,5 +481,21 @@ export function testKimiK2ResponseTemplate() {
         'complete arguments',
     )
     assertEqual(template.apply(completeMessage).templatedPrompt, completeText, 're-apply complete response')
-    return partialMessageTestCount + partialArgumentsCases.length + 2
+
+    const resumedAfterReasoningEnd = template.parse({
+        tokens: [
+            { delta: { content: `${THINK_BEGIN}old${THINK_END}answer` } },
+            { delta: { reasoning: '' } },
+            { delta: { reasoning: 'continued' } },
+            { delta: { reasoning: ' more' } },
+        ],
+    })
+    assertEqual(resumedAfterReasoningEnd.reasoning, 'old', 'resume reasoning continuation reasoning')
+    assertEqual(resumedAfterReasoningEnd.content, 'answercontinued more', 'resume reasoning continuation content')
+    assertEqual(
+        template.apply(resumedAfterReasoningEnd).templatedPrompt,
+        `${THINK_BEGIN}old${THINK_END}answercontinued more`,
+        'resume reasoning continuation round-trip',
+    )
+    return partialMessageTestCount + partialArgumentsCases.length + 3
 }
