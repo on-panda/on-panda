@@ -217,10 +217,10 @@ function formatToolCallsAsText(message) {
         if (toolCall.id) {
             rows.push(`${TOOL_CALL_RECORD_MARKERS.id}${toolCall.id}`)
         }
-        if (toolCall.function.name) {
+        if (toolCall.function?.name) {
             rows.push(`${TOOL_CALL_RECORD_MARKERS.name}${toolCall.function.name}`)
         }
-        if (toolCall.function.arguments) {
+        if (toolCall.function?.arguments) {
             rows.push(`${TOOL_CALL_RECORD_MARKERS.arguments}${toolCall.function.arguments}`)
         }
     }

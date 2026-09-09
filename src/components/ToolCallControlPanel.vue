@@ -235,7 +235,7 @@ const showToolCallControlPanel = computed(() => {
 const toolCalls = computed(() => {
     const msgs = responseState.messages.value
     const toolCalls = isToolCallsNotInFinalMessage.value ? msgs[msgs.length - 1].tool_calls : finalMessage.value.tool_calls
-    return toolCalls || []
+    return toolCalls?.every(toolCall => toolCall.function) ? toolCalls : []
 })
 const toolCallNames = computed(() => toolCalls.value.map(toolCall => toolCall.function.name))
 const readyStatus = computed(() => toolManageState.checkCallReady(toolCalls.value))
