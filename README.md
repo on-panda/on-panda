@@ -58,14 +58,12 @@ Paste a JSON5 configuration in **Custom API Config**, for example:
       model: 'your-model-name',
       top_logprobs: 20,
     },
-    support_continue_final_message: true,
   },
 ]
 ```
 
 - If `chat_config.model` is omitted, onPanda fetches the model list from the endpoint's `/models` API.
 - `top_logprobs` controls the number of candidate tokens. Set it to `0` to disable probabilities and candidates.
-- Set `support_continue_final_message` to `false` for APIs that do not support native continuation of assistant messages.
 - Requests are sent directly from the browser to the model API, so the server must allow CORS. Do not commit API keys to the repository.
 
 ## Build and Customize

@@ -9,7 +9,7 @@ import { useGlobalStore } from '../stores/globalStore.js'
 import MarkdownRender from './widgets/MarkdownRender.vue'
 import CustomAnnotatorTool from './widgets/CustomAnnotatorTool.vue'
 import { openDialogEditor } from '../utils/dialogEditor.js'
-import { CONTINUE_PROMPT, parseApiConfigsJson5 } from '../stores/controlParameterState.js'
+import { parseApiConfigsJson5 } from '../stores/controlParameterState.js'
 import ObjectViewerInDetails from './widgets/ObjectViewerInDetails.vue'
 import { testChatCompeletionsOnPandaCompatibility } from '../utils/testApiOnPandaCompatibility.js'
 
@@ -164,7 +164,7 @@ async function testOnPandaCompatibility() {
     const testedApiConfig = apiConfig.value
     try {
         compatibilityTestResult.value = {
-            title: 'onPanda compatibility test result',
+            title: t('controlParameter.compatibilityTestResult'),
             base_url: testedApiConfig.client_config.base_url,
             model: testedApiConfig.chat_config.model,
             extra_parameters: extraChatParameters.value,
@@ -283,16 +283,14 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
             <el-input-number v-model="chatConfig.top_logprobs" :min="0" :max="50" :step="1" size="small" />
         </el-form-item>
 
-        <el-form-item :label="t('controlParameter.continueGenerating')">
+        <el-form-item :label="t('controlParameter.apiCompatibility')">
             <small>
-                <el-tag :type="apiConfig.support_continue_final_message ? 'success' : 'danger'">
-                    {{ t(apiConfig.support_continue_final_message ? 'controlParameter.native' :
-                        'controlParameter.promptEngineering') }}
-                </el-tag>
+                <el-button size="small" :loading="compatibilityTestRunning"
+                    @click="testOnPandaCompatibility">{{ t('controlParameter.test') }}</el-button>
                 &nbsp;
                 <el-tooltip class="" effect="light" placement="top" raw-content>
                     <template #content>
-                        <MarkdownRender :content="t('tooltips.continueGeneratingSupport') + CONTINUE_PROMPT" />
+                        <MarkdownRender :content="t('tooltips.testOnPandaCompatibility')" />
                     </template>
                     <el-icon>
                         <InfoFilled />
@@ -300,6 +298,9 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                 </el-tooltip>
             </small>
         </el-form-item>
+        <div v-if="compatibilityTestResult" class="compatibility-test-result">
+            {{ JSON.stringify(compatibilityTestResult, null, 2) }}
+        </div>
         <details style="margin-top: -10px;margin-bottom: 10px;">
             <summary>
                 <small style="color: #bbb;"><b>{{ t('common.advancedControl') }}</b></small>
@@ -364,21 +365,6 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                         </el-tooltip>
                     </small>
                 </el-form-item>
-                <el-form-item label="API compatibility">
-                    <small>
-                        <el-tooltip effect="light" placement="top" raw-content>
-                            <template #content>
-                                <MarkdownRender :content="t('tooltips.testOnPandaCompatibility')" />
-                            </template>
-                            <el-button size="small" :loading="compatibilityTestRunning"
-                                @click="testOnPandaCompatibility"><b>test</b></el-button>
-                        </el-tooltip>
-                    </small>
-                </el-form-item>
-                <div v-if="compatibilityTestResult" class="compatibility-test-result">
-                    {{ JSON.stringify(compatibilityTestResult, null, 2) }}
-                </div>
-
                 <ObjectViewerInDetails :object="maskedKeyInApiConfig" summary="Current API config JSON"
                     style="max-width: 800px; margin-left: 20px" />
             </div>
@@ -399,10 +385,13 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
 .compatibility-test-result {
     white-space: pre-wrap;
     font-family: Monospace;
-    background-color: #fafafa;
+    background-color: #e4e4e4;
+    border-radius: 7px;
     margin: 10px;
     padding: 10px;
     overflow-x: scroll;
     max-width: 780px;
+    margin-bottom: 30px;
+    margin-top: -15px;
 }
 </style>

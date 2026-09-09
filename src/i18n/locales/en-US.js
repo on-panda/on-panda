@@ -24,9 +24,9 @@ export default {
     temperature: 'temperature',
     maxTokens: 'max_tokens',
     topLogprobs: 'top_logprobs',
-    continueGenerating: 'continue generating',
-    native: 'native',
-    promptEngineering: 'prompt engineering',
+    apiCompatibility: 'API compatibility',
+    test: 'test',
+    compatibilityTestResult: 'onPanda API compatibility test result',
     refreshModelList: 'Refresh model list',
     editLocalStorageApiConfigs: 'Edit custom API configs',
     editLocalStorageApiConfigsInstructions: `
@@ -49,8 +49,6 @@ export default {
           // ... supports any other chat parameters
       },
       // Optional fields below:
-      // Whether native assistant continuation is supported (e.g., open-source models and Claude support it, OpenAI does not). Default true
-      "support_continue_final_message": true,
       "endpoint_name": "example",  // API alias
       "tag_name": "custom",  // Quick model tag shown in the onPanda UI
       "low_priority": false,  // Whether low priority. Will be placed at the end of the model list, and the matching priority is also the lowest
@@ -105,8 +103,7 @@ export default {
     stopAgenticLoop: 'Running, stop it?',
     regenerate: 'Regenerate',
     modelTagClick: '1. Single-click the tag to switch model; double-click to switch and regenerate.\n2. If hold down the `Ctrl` key and click or use the middle mouse button, will open a new window and regenerate using the chosen model.',
-    continueGeneratingSupport: 'Is this model support continue final message natively?\n\nIf not, the engineering prompt will be used for continue generating: \n\n> ',
-    testOnPandaCompatibility: 'Check the compatibility of the current API and model with the features required by onPanda:\n\tcontinue_final_message, top_logprobs, tool_choice, prompt_logprobs, and CORS.\nOpen F12 and check the Console logs for each request.',
+    testOnPandaCompatibility: 'Check the compatibility of the current API and model with the features required by onPanda:\n\tcontinue_final_message, top_logprobs, tool_choice, prompt_logprobs, and CORS.\nOpen F12 and check the Console logs for test requests.',
     refreshTokenProb: 'Refresh tokens\' probability. Or',
     dblclickToPasteAndRefresh: 'double-click to',
     pasteAndRefresh: 'Paste & Refresh',

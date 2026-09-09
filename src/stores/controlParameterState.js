@@ -6,8 +6,6 @@ import { deepCopy } from '../utils/commonUtils.js'
 import { useGlobalStore } from './globalStore.js'
 import { ObjctKeyToCamelCaseNaming } from '../utils/commonUtils.js'
 
-export const CONTINUE_PROMPT = "continue(do not repeat the last few words of your previous reply)"
-
 export const defaultChatConfig = {
     stream: true,
     stream_options: {
@@ -24,7 +22,6 @@ export const defaultChatConfig = {
 }
 
 export const defaultApiConfig = {
-    "support_continue_final_message": true,
     "endpoint_name": "endpoint-name",
     "model_roles": ["assistant"],
     "client_config": {

@@ -61,14 +61,12 @@ pnpm install && pnpm dev
       model: 'your-model-name',
       top_logprobs: 20,
     },
-    support_continue_final_message: true,
   },
 ]
 ```
 
 - 不填写 `chat_config.model` 时，onPanda 会请求接口的 `/models` 获取模型列表。
 - `top_logprobs` 决定候选 token 数量；设为 `0` 会关闭概率和候选功能。
-- 不支持原生续写 assistant 消息的接口，将 `support_continue_final_message` 设为 `false`。
 - 请求由浏览器直接发送到模型 API，服务端需要允许 CORS。请勿将密钥提交到仓库。
 
 

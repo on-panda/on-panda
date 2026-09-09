@@ -55,7 +55,7 @@ const props = defineProps({
     default: [],
     description: `API configurations, if not set 'chat_config.model', will get model list by endpoint/models.
 e.g.:
-[{'support_continue_final_message': true, 'endpoint_name': 'on-panda', 'client_config': {'base_url': 'http://127.0.0.1:8000/v1'}, 'chat_config': {'model': 'meta-llama/Meta-Llama-3-8B-Instruct'}},]`,
+[{'endpoint_name': 'on-panda', 'client_config': {'base_url': 'http://127.0.0.1:8000/v1'}, 'chat_config': {'model': 'meta-llama/Meta-Llama-3-8B-Instruct'}},]`,
   },
   presetToolConfigs: {
     type: Object,

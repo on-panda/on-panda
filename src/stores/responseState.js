@@ -11,7 +11,7 @@ import { buildRejectedToolMessages } from '../utils/toolUtils.js'
 import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
 import { WarningState } from './warningState.js'
-import { defaultApiConfig, CONTINUE_PROMPT } from './controlParameterState.js'
+import { defaultApiConfig } from './controlParameterState.js'
 import { ToolManageStateClosure, ToolCallStateClosure, browserAgentMcpUrl } from './toolState.js'
 
 export const defaultMessages = [{ role: "system", content: "" }, { role: "user", content: "" }]
@@ -177,33 +177,16 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 }
             }
             var lastMessageContent = messages[messages.length - 1].content || ""
-            var prefillTokensNumber = tokens.value.filter(token => !token.pruned).length
-            if (apiConfig.value.support_continue_final_message) {
-                body.add_generation_prompt = false
-                // body['chat_template_kwargs'] = { continue_final_message: continue_final_message }
-                body['continue_final_message'] = continue_final_message
-                body['echo'] = false
-                const modelName = apiConfig.value.chat_config.model.toLowerCase()
-                if (modelName.indexOf("kimi") != -1 || modelName.indexOf("qwen") != -1) {
-                    messages[messages.length - 1]['partial'] = true
-                }
-                if (modelName.indexOf("deepseek") != -1) {
-                    messages[messages.length - 1]['prefix'] = true
-                }
-            } else {
-                if (lastMessageContent.length < 20000000) {
-                    messages = messages.concat([
-                        { role: "user", content: CONTINUE_PROMPT },
-                    ])
-                } else {  // not using
-                    var middleIndex = Math.floor(lastMessageContent.length / 2)
-                    messages = messages.slice(0, messages.length - 1).concat([
-                        { role: "assistant", content: lastMessageContent.slice(0, middleIndex) },
-                        { role: "user", content: CONTINUE_PROMPT },
-                        { role: "assistant", content: lastMessageContent.slice(middleIndex) },
-                        { role: "user", content: CONTINUE_PROMPT },
-                    ])
-                }
+            body.add_generation_prompt = false
+            // body['chat_template_kwargs'] = { continue_final_message: continue_final_message }
+            body['continue_final_message'] = continue_final_message
+            body['echo'] = false
+            const modelName = apiConfig.value.chat_config.model.toLowerCase()
+            if (modelName.indexOf("kimi") != -1 || modelName.indexOf("qwen") != -1) {
+                messages[messages.length - 1]['partial'] = true
+            }
+            if (modelName.indexOf("deepseek") != -1) {
+                messages[messages.length - 1]['prefix'] = true
             }
         }
         body.messages = messages
@@ -233,7 +216,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
             var tokenIndex = 0
             var streamIndex = -1
-            var generatedContent = ""
             var tokensValuePtr = tokens.value
 
             var tokenBatch = []
@@ -335,21 +317,6 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                         }, Math.min(1000, 1000 * (tokensValuePtr.length || 0) / 8192))
                     }
 
-                    // try remove duplicated prefill tokens for API not support continue_final_message
-                    generatedContent += token?.delta?.content || ""
-                    if (continue_final_message && !apiConfig.value.support_continue_final_message) {
-                        if (generatedContent === lastMessageContent) {
-                            warning("API not support continue_final_message, remove duplicated prefill tokens")
-                            generatedContent = ""
-                            tokenIndex = 0
-                            if (tokens.value === tokensValuePtr) {
-                                setGenerationTokens(tokens.value.slice(0, prefillTokensNumber))
-                                tokensValuePtr = tokens.value
-                            } else {
-                                tokensValuePtr = tokens.value.slice(0, prefillTokensNumber)
-                            }
-                        }
-                    }
                     // p(token.delta?.content, token)
                 }
             }
@@ -744,8 +711,7 @@ ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.cons
                 resolvedMessageIndex === -1 &&
                 !fromUser &&
                 !messageToSeq(finalMessage.value, { includeFinishReason: false }) &&
-                finalMessage.value.role &&
-                apiConfig.value.support_continue_final_message
+                finalMessage.value.role
             )
             if (shouldContinueFinalMessage) {
                 await this.continueGenerating()

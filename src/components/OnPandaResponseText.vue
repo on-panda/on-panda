@@ -19,8 +19,8 @@
             @dblclick.prevent="setFloatInputPatch($event, patch)">
         </span>
         <el-tooltip
-            v-if="apiConfig.support_continue_final_message && tokens.length && tokens[tokens.length - 1].finish_reason == 'length'"
-            content="native continue generating" placement="bottom">
+            v-if="tokens.length && tokens[tokens.length - 1].finish_reason == 'length'"
+            :content="t('tooltips.continueGenerating')" placement="bottom">
             <el-button :icon="DArrowRight" size="small" @click="operationCenter.continueGenerating()"
                 style="margin-left: 10px;height: 16px" />
         </el-tooltip>
@@ -124,7 +124,6 @@ const responseState = props.responseState
 const pandaState = responseState.pandaState
 const tokens = responseState.viewTokens
 const operationCenter = responseState.operationCenter
-const apiConfig = responseState.apiConfig
 
 const globalStore = useGlobalStore()
 var isMobile = computed(() => globalStore.isMobile)

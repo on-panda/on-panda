@@ -24,9 +24,9 @@ export default {
     temperature: '采样温度',
     maxTokens: '最大生成长度',
     topLogprobs: '候选词数量',
-    continueGenerating: '续写方案',
-    native: '原生',
-    promptEngineering: '提示工程',
+    apiCompatibility: 'API 兼容性',
+    test: '测试',
+    compatibilityTestResult: 'onPanda API 兼容性测试结果',
     refreshModelList: '刷新模型列表',
     editLocalStorageApiConfigs: '自定义 API 配置',
     editLocalStorageApiConfigsInstructions: `
@@ -49,8 +49,6 @@ export default {
           // ... 支持其他任何 chat 参数
       },
       // 以下为非必填项：
-      // 是否支持原生续写 assistant 消息（比如：开源模型、Claude 支持、OpenAI 不支持），默认 true
-      "support_continue_final_message": true,
       "endpoint_name": "example",  // API 别名
       "tag_name": "custom",  // 在 onPanda UI 上添加模型快捷标签
       "low_priority": false,  // 是否为低优先级。将排在模型列表中最后，被匹配的优先级也最低
@@ -105,8 +103,7 @@ export default {
     stopAgenticLoop: '运行中，要停吗？',
     regenerate: '重新生成',
     modelTagClick: '1. 单击标签切换模型；双击标签切换模型并重新生成。\n2. 如果按住 `Ctrl` 键并点击或者用鼠标中键点击，将打开新窗口并用对应模型重新生成',
-    continueGeneratingSupport: '此模型是否支持原生续写 assistant 消息？\n\n如果不支持，将使用提示工程(prompt engineering)进行续写：\n\n> ',
-    testOnPandaCompatibility: '检查当前 API 及模型与 onPanda 所需特性的兼容性：\n\tcontinue_final_message、top_logprobs、tool_choice、prompt_logprobs 和 CORS。\n推荐打开 F12，在 Console 中查看每次请求及日志。',
+    testOnPandaCompatibility: '检查当前 API 及模型与 onPanda 所需特性的兼容性：\n\tcontinue_final_message、top_logprobs、tool_choice、prompt_logprobs 和 CORS。\n推荐打开 F12，在 Console 中查看测试请求及日志。',
     refreshTokenProb: '更新词组概率和候选',
     dblclickToPasteAndRefresh: '或双击',
     pasteAndRefresh: '粘贴并更新',
