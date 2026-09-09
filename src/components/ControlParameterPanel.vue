@@ -174,7 +174,7 @@ async function testOnPandaCompatibility() {
             apiKey: testedApiConfig.client_config.api_key,
             extraHeaders: testedApiConfig.client_config.extra_headers,
             model: testedApiConfig.chat_config.model,
-            extraParameters: extraChatParameters.value,
+            extraParameters: { ...testedApiConfig.chat_config, ...extraChatParameters.value },
             log: console.log.bind(console)
         })
         compatibilityTestResult.value = {
@@ -324,7 +324,7 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                         <el-tooltip class="" effect="light" placement="top" raw-content>
                             <template #content>
                                 <MarkdownRender
-                                    :content='"JSON for [Extra Parameters](https://docs.vllm.ai/en/stable/serving/online_serving/openai_compatible_server/#extra-parameters_2), e.g.: \n`{\"tool_choice\": \"none\", \"chat_template_kwargs\": {\"enable_thinking\": true}}`\nFor Chrome user, using `F12 -> Network -> completions -> Payload` to check the real request parameters"' />
+                                    :content='"JSON for [Extra Parameters](https://docs.vllm.ai/en/stable/serving/online_serving/openai_compatible_server/#extra-parameters_2), e.g.: \n`{\"tool_choice\": \"none\", \"chat_template_kwargs\": {\"enable_thinking\": true}}`\nSupport setting to `{\"parameter_name\": null}` to disable a preset request parameter\nFor Chrome user, using `F12 -> Network -> completions -> Payload` to check the real request parameters"' />
                             </template>
                             <el-icon>
                                 <InfoFilled />

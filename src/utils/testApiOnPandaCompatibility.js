@@ -103,6 +103,7 @@ function parseExtraParametersJson(value) {
 }
 
 async function requestChatCompletions({ chatCompeletionsUrl, apiKey, extraHeaders, body, label, log }) {
+  body = Object.fromEntries(Object.entries(body).filter(([, value]) => value !== null))
   log(`[${label}] request:\n${pretty({ url: chatCompeletionsUrl, body })}`)
 
   let response
@@ -216,7 +217,9 @@ export async function testChatCompeletionsOnPandaCompatibility({
   log
 } = {}) {
   const logger = getLogger(log)
-  const commonParameters = { model, ...extraParameters }
+  // Compatibility checks parse JSON responses, so keep requests non-streaming.
+  const commonParameters = { model, ...extraParameters, stream: false }
+  delete commonParameters.stream_options
   const continueParameters = {
     messages: [
       {
@@ -230,13 +233,11 @@ export async function testChatCompeletionsOnPandaCompatibility({
     ],
     add_generation_prompt: false,
     continue_final_message: true,
-    logprobs: true,
-    max_tokens: 1
   }
 
   const continue_final_messages = await runCompatibilityTest({
     label: 'continue_final_message',
-    body: { ...continueParameters, ...commonParameters },
+    body: { ...continueParameters, ...commonParameters, max_tokens: 1 },
     check: response => {
       const message = response.choices[0].message
       return message.content?.includes('De')
@@ -256,11 +257,11 @@ export async function testChatCompeletionsOnPandaCompatibility({
     extraHeaders,
     log: logger
   })
-
+  const topLogprobsBody = { ...continueParameters, ...commonParameters, logprobs: true, top_logprobs: 5 }
   const top_logprobs = await runCompatibilityTest({
     label: 'top_logprobs',
-    body: { ...continueParameters, top_logprobs: 5, ...commonParameters },
-    check: response => response.choices[0].logprobs.content[0].top_logprobs.length >= 5,
+    body: topLogprobsBody,
+    check: response => topLogprobsBody.top_logprobs && response.choices[0].logprobs.content[0].top_logprobs.length >= topLogprobsBody.top_logprobs,
     keyInfo: response => ({
       topLogprobsCount: response.choices[0].logprobs.content[0].top_logprobs.length
     }),
@@ -280,8 +281,8 @@ export async function testChatCompeletionsOnPandaCompatibility({
         content: 'call the tool to tell me the °C in New York City?'
       }],
       tools: [weatherTool],
+      ...commonParameters,
       max_tokens: 4096,
-      ...commonParameters
     },
     check: response => {
       const content = response.choices[0].message.content
@@ -301,11 +302,12 @@ export async function testChatCompeletionsOnPandaCompatibility({
         { role: 'user', content: '1 + 1 = ?' },
         { content: '1 + 1 = 3', role: 'assistant' }
       ],
-      max_tokens: 1,
       prompt_logprobs: 2,
       add_generation_prompt: false,
       continue_final_message: true,
-      ...commonParameters
+      ...commonParameters,
+      max_tokens: 1,
+      logprobs: true,
     },
     check: response => Array.isArray(response.prompt_logprobs)
       ? response.prompt_logprobs.length > 0
