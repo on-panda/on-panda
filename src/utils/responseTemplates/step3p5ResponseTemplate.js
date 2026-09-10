@@ -79,6 +79,29 @@ export function testStep3p5ResponseTemplate() {
     parsedMessage.finish_reason = 'tool_calls'
     assertEqual(template.apply(parsedMessage).templatedPrompt, expected, 'complete response round-trip')
 
+    const prefillEnd = expected.indexOf('New York') + 3
+    const secondToolCallStart = expected.lastIndexOf(TOOL_CALL_BEGIN)
+    const mixedToolMessage = template.parse({
+        tokens: [
+            { delta: { content: expected.slice(0, prefillEnd) } },
+            { delta: { role: 'assistant', content: expected.slice(prefillEnd, secondToolCallStart) } },
+            // Step can return the next call only as structured data, with its index reset to zero.
+            { delta: { role: 'assistant', content: '', tool_calls: [{
+                ...message.tool_calls[1],
+                index: 0,
+                id: 'step-tool-1',
+            }] }, finish_reason: 'tool_calls' },
+        ],
+        tools,
+    })
+    assertEqual(mixedToolMessage.tool_calls.length, 2, 'mixed tool call count')
+    for (const [index, toolCall] of mixedToolMessage.tool_calls.entries()) {
+        assertEqual(toolCall.index, index, `mixed tool call index ${index}`)
+        assertEqual(toolCall.function.arguments, message.tool_calls[index].function.arguments, `mixed tool arguments ${index}`)
+    }
+    assertEqual(mixedToolMessage.tool_calls[1].id, 'step-tool-1', 'mixed second tool id')
+    assertEqual(template.apply(mixedToolMessage).templatedPrompt, expected, 'mixed tool calls round-trip')
+
     const contentText = `${THINK_BEGIN}\nthink\n${THINK_END}\nanswer`
     const parsedContent = template.parse({ tokens: contentText })
     assertEqual(parsedContent.reasoning, 'think', 'reasoning parse')
@@ -128,5 +151,5 @@ export function testStep3p5ResponseTemplate() {
     assertEqual(Step3p5ResponseTemplate.match({
         responseTemplateConfig: { name_or_path: 'step3p7-mm-fp8-mtp3-it100' },
     }), false, 'internal checkpoint mismatch')
-    return partialMessageTestCount + 17
+    return partialMessageTestCount + 24
 }

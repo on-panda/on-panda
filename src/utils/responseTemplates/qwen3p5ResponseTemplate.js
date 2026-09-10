@@ -423,9 +423,8 @@ function hasTextToolCallBoundary(tokens = []) {
             break
         }
     }
-    const firstToolCallEnd = text.indexOf(TOOL_CALL_END)
-    return firstToolCallEnd !== -1 &&
-        text.indexOf(TOOL_CALL_BEGIN, firstToolCallEnd + TOOL_CALL_END.length) !== -1
+    // The next call may switch to structured data without emitting another text opening marker.
+    return text.includes(TOOL_CALL_END)
 }
 
 // Some providers restart structured tool-call indexes after text-form calls.
