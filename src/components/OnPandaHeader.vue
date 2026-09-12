@@ -33,7 +33,7 @@
             :style="{ transform: _isLogoRotated ? 'rotate(360deg)' : 'rotate(0deg)', transition: 'transform 3s' }"
             @click="_isLogoRotated = !_isLogoRotated" />
         <br>
-        <b :style="globalStore.isMobile ? {} : { fontSize: '20px' }">onPanda: LLM-Native Interaction Design</b>
+        <b :style="globalStore.isMobile ? {} : { fontSize: '20px' }">onPanda: Token-Level Control for LLMs and Agents</b>
         <br>
         <br>
     </div>

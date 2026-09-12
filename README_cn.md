@@ -1,13 +1,8 @@
-# onPanda：on-Policy Alignment Data Annotator
+# 🐼 onPanda: Steer Your LLMs and Agents at the Token Level
 
-> Scaling up your data efficiency before scaling up your data.
-
-**onPanda**（**on**-**P**olicy **a**lig**n**ment **d**ata **a**nnotator）是一套面向 LLM 对齐数据（SFT 与 RL）的标注工具。它结合前端工程与 GPT 模型的特点，让标注者在模型辅助下高效生成 SFT 回复，同时产出在线策略的 token 级偏好数据。
-
-
+A web app for token visualization and control, model inspection, data annotation, and more.
 
 <div align="center">
-
 
 <a href="https://on-panda.github.io/img/fig1_UI-v4.png">
   <img src="https://on-panda.github.io/img/fig1_UI-v4.png" style="max-width:350px" loading="lazy">
@@ -17,14 +12,8 @@ The token-level correction interface of onPanda
 
 </div>
 
-<br>
-<br>
-<div align="center">
+<!-- **onPanda**（**on**-**P**olicy **a**lig**n**ment **d**ata **a**nnotator）是一套面向 LLM 对齐数据（SFT 与 RL）的标注工具。它结合前端工程与 GPT 模型的特点，让标注者在模型辅助下高效生成 SFT 回复，同时产出在线策略的 token 级偏好数据。 -->
 
-Build with human efforts ❤️ <br>
-For humans to steer LLM 😎🕹️🤖
-
-</div>
 
 ## 功能
 
@@ -32,7 +21,7 @@ For humans to steer LLM 😎🕹️🤖
 - 点击候选继续生成，或双击 token 后编辑并续写。
 - 支持文本、图片、音频、视频和工具调用。
 - 导入、导出 `.panda.json` 标注数据。
-- 接入 OpenAI 兼容的模型 API；配置和密钥仅保存在浏览器本地。
+- 可接入不同的 LLM API 协议；配置和密钥仅保存在浏览器本地。
 
 ## 快速启动
 
@@ -69,7 +58,6 @@ pnpm install && pnpm dev
 - `top_logprobs` 决定候选 token 数量；设为 `0` 会关闭概率和候选功能。
 - 请求由浏览器直接发送到模型 API，服务端需要允许 CORS。请勿将密钥提交到仓库。
 
-
 ## 构建与定制
 
 ```bash
@@ -89,3 +77,13 @@ WEB_IMPORT_CUSTOM_CODE=src/assets/secret/custom.js
 ## 许可
 
 [MIT](LICENSE)
+
+
+<br>
+<br>
+<div align="center">
+
+Build with human efforts ❤️ <br>
+For humans to steer LLM 😎🕹️🤖
+
+</div>

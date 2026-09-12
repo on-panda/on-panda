@@ -1,8 +1,7 @@
-# onPanda: on-Policy Alignment Data Annotator
+# 🐼 onPanda: Steer Your LLMs and Agents at the Token Level
 
-> Scaling up your data efficiency before scaling up your data.
+A web app for token visualization and control, model inspection, data annotation, and more.
 
-**onPanda** (**on**-**P**olicy **a**lig**n**ment **d**ata **a**nnotator) is a data annotation tool for LLM alignment data, including SFT and RL. By combining frontend engineering with GPT models, it helps annotators efficiently produce SFT responses with model assistance while creating on-policy, token-level preference data.
 
 <div align="center">
 
@@ -14,14 +13,7 @@ The token-level correction interface of onPanda
 
 </div>
 
-<br>
-<br>
-<div align="center">
-
-Build with human efforts ❤️ <br>
-For humans to steer LLM 😎🕹️🤖
-
-</div>
+<!-- **onPanda** (**on**-**P**olicy **a**lig**n**ment **d**ata **a**nnotator) is a data annotation tool for LLM alignment data, including SFT and RL. By combining frontend engineering with GPT models, it helps annotators efficiently produce SFT responses with model assistance while creating on-policy, token-level preference data. -->
 
 ## Features
 
@@ -29,7 +21,7 @@ For humans to steer LLM 😎🕹️🤖
 - Continue from a candidate, or double-click a token to edit it and continue generation.
 - Support text, images, audio, video, and tool calls.
 - Import and export `.panda.json` annotation data.
-- Connect to OpenAI-compatible model APIs. API configurations and keys stay in browser local storage.
+- Connect to different LLM API protocols. API configurations and keys stay in browser local storage.
 
 ## Quick Start
 
@@ -85,3 +77,13 @@ The web app, core component library, and root component library use `WEB_IMPORT_
 ## License
 
 [MIT](LICENSE)
+
+
+<br>
+<br>
+<div align="center">
+
+Build with human efforts ❤️ <br>
+For humans to steer LLM 😎🕹️🤖
+
+</div>
