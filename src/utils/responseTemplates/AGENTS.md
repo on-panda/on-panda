@@ -34,6 +34,7 @@
 
 - Partial parsing is expected. Return the best stable partial message for incomplete output instead of waiting for every closing marker.
 - If `finish_reason === "stop"` and parsed `tool_calls` exist, coerce it to `finish_reason: "tool_calls"`.
+- A continuation response may put the returned text in `delta.reasoning` even when it semantically continues `content` or `tool_calls`; route it according to the prefixed template state.
 - If a structured delta switches from a content or tool-call prefill to reasoning, parse the prefix and route subsequent reasoning deltas to content once the reasoning channel has closed. An unclosed reasoning prefix remains reasoning.
 - Register model families by matching `response_template.name_or_path`, such as `/^moonshotai\/kimi-k2/i` for Kimi K2.x models.
 - Do not output empty '&lt;think&gt;...&lt;/think&gt;' when `message.reasoning` is absent.
