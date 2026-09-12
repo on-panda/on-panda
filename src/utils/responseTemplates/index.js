@@ -4,12 +4,16 @@ import { KimiK2ResponseTemplate } from './kimiK2ResponseTemplate.js'
 import { Qwen3p5ResponseTemplate } from './qwen3p5ResponseTemplate.js'
 import { Step3p5ResponseTemplate } from './step3p5ResponseTemplate.js'
 import { GLM5ResponseTemplate } from './glm5ResponseTemplate.js'
+import { DeepSeekV4ResponseTemplate } from './deepSeekV4ResponseTemplate.js'
+import { DeepSeekV4p1ResponseTemplate } from './deepSeekV4p1ResponseTemplate.js'
 
 const RESPONSE_TEMPLATE_CLASSES = [
     KimiK2ResponseTemplate,
     Qwen3p5ResponseTemplate,
     Step3p5ResponseTemplate,
     GLM5ResponseTemplate,
+    DeepSeekV4p1ResponseTemplate,
+    DeepSeekV4ResponseTemplate,
 ]
 
 export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
