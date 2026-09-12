@@ -1,6 +1,7 @@
 import { deepCopy } from '../commonUtils.js'
 import { tokenToDisplayString, tokensToPatches } from '../chatUtils.js'
 import { KimiK2ResponseTemplate } from './kimiK2ResponseTemplate.js'
+import { KimiK3ResponseTemplate } from './kimiK3ResponseTemplate.js'
 import { Qwen3p5ResponseTemplate } from './qwen3p5ResponseTemplate.js'
 import { Step3p5ResponseTemplate } from './step3p5ResponseTemplate.js'
 import { GLM5ResponseTemplate } from './glm5ResponseTemplate.js'
@@ -8,6 +9,7 @@ import { DeepSeekV4ResponseTemplate } from './deepSeekV4ResponseTemplate.js'
 import { DeepSeekV4p1ResponseTemplate } from './deepSeekV4p1ResponseTemplate.js'
 
 const RESPONSE_TEMPLATE_CLASSES = [
+    KimiK3ResponseTemplate,
     KimiK2ResponseTemplate,
     Qwen3p5ResponseTemplate,
     Step3p5ResponseTemplate,
