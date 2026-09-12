@@ -14,7 +14,6 @@ export const defaultChatConfig = {
     logprobs: true,
     top_logprobs: 20,
     // top_k: 2,
-    // image_detail_level: 'auto',
     max_tokens: null,
     temperature: 0.5,
     top_p: 0.95,
@@ -33,6 +32,11 @@ export const defaultApiConfig = {
         model: import.meta.env.VITE_ON_PANDA_DEFAULT_MODEL || "Qwen/Qwen3.6-35B-A3B",
         ...deepCopy(defaultChatConfig),
     },
+    // onPanda-only options.
+    // image_detail_level: 'auto',
+    // max_tool_assets: 0,
+    // tool_asset_keep_rounds: 0,
+    // reasoning_key: 'reasoning_content',
 }
 
 const isEndpointModelMatchIgnoringIndex = (key, modelNameValue) => {
@@ -289,6 +293,15 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         apiConfig = { ...defaultApiConfig, ...apiConfigChosen.value, ...apiConfigControllable.value }
         apiConfig.client_config = { ...defaultApiConfig.client_config, ...apiConfigChosen.value.client_config }
         apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfigChosen.value.chat_config, ...chatConfigControllable.value, ...extraChatParameters.value }
+        // Deprecated: migrate only the legacy tool asset options from chat_config.
+        for (const key of ['max_tool_assets', 'tool_asset_keep_rounds']) {
+            if (!(key in apiConfig) && key in apiConfig.chat_config) {
+                apiConfig[key] = apiConfig.chat_config[key]
+            }
+        }
+        for (const key of ['image_detail_level', 'max_tool_assets', 'tool_asset_keep_rounds', 'reasoning_key']) {
+            delete apiConfig.chat_config[key]
+        }
         apiConfig.client_config.base_url = apiConfig.client_config.base_url.replace('${origin}', window.location.origin)
         return apiConfig
     })

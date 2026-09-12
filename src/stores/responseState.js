@@ -137,18 +137,19 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         return getFinishReason(message, defaultFinishReason)
     }
 
-    function modifyRequest(requestBody) {
+    function modifyRequest({ requestBody, apiConfig } = {}) {
         var body = normalizeRequest(requestBody)
-        dropStaleToolAsset(body)
-        applyImageDetailLevel(body)
+        dropStaleToolAsset({ body, apiConfig })
+        applyImageDetailLevel({ body, apiConfig })
         if (isPromptLogprobsState.value) {
             delete body.tools
         }
+        const reasoningKey = apiConfig.reasoning_key
         for (let message of body.messages) {
-            if (message.reasoning && body.reasoning_key) {
+            if (message.reasoning && reasoningKey) {
                 var reasoning = message.reasoning
                 delete message.reasoning
-                message[body.reasoning_key] = reasoning
+                message[reasoningKey] = reasoning
             }
         }
         delete body.reasoning_key
@@ -211,7 +212,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         var concatTokens = () => { }
 
         try {
-            var requestBody = modifyRequest(body)  // deepCopyed
+            var requestBody = modifyRequest({ requestBody: body, apiConfig: apiConfig.value })  // deepCopyed
             var stream = await createChatCompletionsStream({ requestBody, apiConfig: apiConfig.value, signal: fetchController.signal })
 
             var tokenIndex = 0
@@ -379,7 +380,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 return
             }
             const openai = new OpenAI(ObjctKeyToCamelCaseNaming(apiConfig.value.client_config))
-            var requestBody = modifyRequest(body)
+            var requestBody = modifyRequest({ requestBody: body, apiConfig: apiConfig.value })
             var json = await openai.chat.completions.create(requestBody)
             if (requestID !== requestStatus.value.requestTimes) {
                 console.log(new Error(`Request ID mismatch ${requestID} !== ${requestStatus.value.requestTimes}, stope request ID ${requestID}`))

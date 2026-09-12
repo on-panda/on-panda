@@ -1,5 +1,5 @@
-export function applyImageDetailLevel(body = {}) {
-    const imageDetailLevel = body.image_detail_level
+export function applyImageDetailLevel({ body = {}, apiConfig = {} } = {}) {
+    const imageDetailLevel = apiConfig.image_detail_level
     delete body.image_detail_level
 
     if (!imageDetailLevel) {
@@ -25,9 +25,9 @@ export function assertNoLegacyChatConfigTools(chatConfig = {}) {
     }
 }
 
-export function dropStaleToolAsset(body = {}) {
-    const maxToolAssets = Math.max(0, Number(body.max_tool_assets) || 0)
-    const toolAssetKeepRounds = Math.max(0, Number(body.tool_asset_keep_rounds) || 0)
+export function dropStaleToolAsset({ body = {}, apiConfig = {} } = {}) {
+    const maxToolAssets = Math.max(0, Number(apiConfig.max_tool_assets) || 0)
+    const toolAssetKeepRounds = Math.max(0, Number(apiConfig.tool_asset_keep_rounds) || 0)
 
     delete body.max_tool_assets
     delete body.tool_asset_keep_rounds

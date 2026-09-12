@@ -41,29 +41,29 @@ const apiConfig = props.controlParameterState.apiConfig
 const compatibilityTestRunning = ref(false)
 const compatibilityTestResult = ref(null)
 
-function updateApiConfigControlChatValue(key, value) {
+function updateApiConfigControlValue(key, value) {
     if (value == null || value === '') {
-        delete apiConfigControllable.value.chat_config[key]
+        delete apiConfigControllable.value[key]
         return
     }
-    apiConfigControllable.value.chat_config[key] = value
+    apiConfigControllable.value[key] = value
 }
 
 const maxToolAssets = computed({
     get() {
-        return apiConfig.value.chat_config.max_tool_assets
+        return apiConfig.value.max_tool_assets
     },
     set(value) {
-        updateApiConfigControlChatValue('max_tool_assets', value)
+        updateApiConfigControlValue('max_tool_assets', value)
     }
 })
 
 const toolAssetKeepRounds = computed({
     get() {
-        return apiConfig.value.chat_config.tool_asset_keep_rounds
+        return apiConfig.value.tool_asset_keep_rounds
     },
     set(value) {
-        updateApiConfigControlChatValue('tool_asset_keep_rounds', value)
+        updateApiConfigControlValue('tool_asset_keep_rounds', value)
     }
 })
 
@@ -82,7 +82,7 @@ function handleModelTagMousedown(event, modelName_) {
 }
 
 var requestImageDetail = computed(() => {
-    const image_detail_level = apiConfig.value.chat_config.image_detail_level
+    const image_detail_level = apiConfig.value.image_detail_level
     return {
         "name": "image_detail",
         "type": "single_choice",
@@ -333,7 +333,7 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                     </small>
                 </el-form-item>
                 <CustomAnnotatorTool :tool="requestImageDetail"
-                    @updateSingleChoice="(v) => { updateApiConfigControlChatValue('image_detail_level', v) }"
+                    @updateSingleChoice="(v) => { updateApiConfigControlValue('image_detail_level', v) }"
                     size="small" />
                 <el-form-item label="max tool assets">
                     <el-input-number v-model="maxToolAssets" :min="0" :max="1048576" :step="1" size="small" />
