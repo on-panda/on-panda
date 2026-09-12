@@ -420,12 +420,33 @@ export class OpenAI {
     }, optionsHeaders);
     mergeHeaders(headers, this.extraHeaders);
 
-    const response = await retryWithSchedule(() => fetch(url, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body),
-      ...fetchOptions
-    }), [5000, 30000]);
+    function fetchCompletion() {
+      return retryWithSchedule(() => fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(body),
+        ...fetchOptions
+      }), [5000, 30000]);
+    }
+
+    let response
+    try {
+      response = await fetchCompletion()
+    } catch (error) {
+      if (
+        body.logprobs &&
+        typeof error?.message === 'string' &&
+        error.message.includes('logprobs is not supported with tools + stream')
+      ) {
+        // Workaround for https://github.com/ggml-org/llama.cpp/issues/28478
+        body.n_probs = body.top_logprobs
+        delete body.logprobs
+        delete body.top_logprobs
+      } else {
+        throw error
+      }
+      response = await fetchCompletion()
+    }
 
     // 如果是流模式，我们要解析 EventStream 响应
     if (body.stream) {
