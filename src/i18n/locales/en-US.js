@@ -46,17 +46,20 @@ export default {
           // If no model is specified, /models will be called automatically to fetch the list
           "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
           "top_logprobs": 20,  // number of candidates; set to 0 to disable logprobs
-          // ... supports any other chat parameters
+          // ... supports any other request parameters
       },
       // Optional fields below:
       "endpoint_name": "example",  // API alias
       "tag_name": "custom",  // Quick model tag shown in the onPanda UI
       "low_priority": false,  // Whether low priority. Will be placed at the end of the model list, and the matching priority is also the lowest
+      // "response_template": { "name_or_path": "Qwen/Qwen3.6-35B-A3B" },  // optional response template for continue generation with reasoning and tool_calls
     },
     // { ... } another API config
 ]
 \`\`\`
 - You can view the current API configuration under \`Advanced Control\` → \`Current API config JSON\`.
+- The model families and matching rules currently supported by onPanda are maintained in [responseTemplates/index.js](https://github.com/on-panda/on-panda/blob/main/src/utils/responseTemplates/index.js) (you can include this link when asking an agent which models are supported).
+- If \`response_template\` is omitted and \`chat_config.model\` looks like a Hugging Face repository ID, onPanda tries to detect a supported template automatically.
 
 **Privacy notice:**
 - Custom API configs are stored locally in your browser (localStorage)

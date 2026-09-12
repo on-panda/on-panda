@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { deepCopy } from '../utils/commonUtils.js'
 import { useGlobalStore } from './globalStore.js'
 import { ObjctKeyToCamelCaseNaming } from '../utils/commonUtils.js'
+import { setDefaultResponseTemplate } from '../utils/responseTemplates/index.js'
 
 export const defaultChatConfig = {
     stream: true,
@@ -302,6 +303,7 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         for (const key of ['image_detail_level', 'max_tool_assets', 'tool_asset_keep_rounds', 'reasoning_key']) {
             delete apiConfig.chat_config[key]
         }
+        setDefaultResponseTemplate(apiConfig)
         apiConfig.client_config.base_url = apiConfig.client_config.base_url.replace('${origin}', window.location.origin)
         return apiConfig
     })

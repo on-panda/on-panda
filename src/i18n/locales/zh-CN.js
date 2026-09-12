@@ -46,17 +46,20 @@ export default {
           // 若未指定 model，则会自动访问 /models 接口获取模型列表
           "model": "Qwen/Qwen3-30B-A3B-Instruct-2507",
           "top_logprobs": 20,  // 候选词数量，为 0 则关闭 logprobs 功能
-          // ... 支持其他任何 chat 参数
+          // ... 支持其他任何请求参数
       },
       // 以下为非必填项：
       "endpoint_name": "example",  // API 别名
       "tag_name": "custom",  // 在 onPanda UI 上添加模型快捷标签
       "low_priority": false,  // 是否为低优先级。将排在模型列表中最后，被匹配的优先级也最低
+      // "response_template": { "name_or_path": "Qwen/Qwen3.6-35B-A3B" },  // 可选的响应模板以支持带 reasoning 和 tool_calls 的续写功能
     },
     // { ... } 另一个 API 配置
 ]
 \`\`\`
 - 可以从 \`高级控制\` -> \`Current API config JSON\` 中查看当前 API 的配置
+- onPanda 当前支持的模型族和匹配规则维护在 [responseTemplates/index.js](https://github.com/on-panda/on-panda/blob/main/src/utils/responseTemplates/index.js) （可以附上这个链接咨询 agent 支持哪些模型）
+- 如果没有配置 \`response_template\`，而 \`chat_config.model\` 看起来像 Hugging Face 仓库名，onPanda 会尝试自动匹配已支持的模板。
 
 **隐私声明：**
 - 自定义 API 配置文件存储在您的浏览器本地（localStorage）

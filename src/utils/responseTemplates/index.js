@@ -18,6 +18,26 @@ const RESPONSE_TEMPLATE_CLASSES = [
     DeepSeekV4ResponseTemplate,
 ]
 
+export function setDefaultResponseTemplate(apiConfig) {
+    // Preserve explicit templates and infer one only from the model identifier.
+    if ('response_template' in apiConfig) {
+        return
+    }
+    // Model names may include colon-separated aliases or provider suffixes.
+    for (const piece of apiConfig.chat_config.model.split(':')) {
+        const responseTemplateConfig = { name_or_path: piece }
+        for (const ResponseTemplateClass of RESPONSE_TEMPLATE_CLASSES) {
+            if (ResponseTemplateClass.match({ responseTemplateConfig })) {
+                apiConfig.response_template = {
+                    name_or_path: piece,
+                    __info__: 'Automatically detected from chat_config.model',
+                }
+                return
+            }
+        }
+    }
+}
+
 export function mergeTwoDeltas(delta1, delta2, unmergedKeys = []) {
     // Merge two deltas
     // 1. if delta1 not has one key, set deepCopy delta2
