@@ -408,10 +408,22 @@ function hasToolProtocolMarker(text, template) {
     ].some(marker => text.includes(marker))
 }
 
+function hasOpenToolCallText(text, template) {
+    const invokePrefix = dsmlInvokePrefix(template.toolCallTagName)
+    const invokeEnd = dsmlMarker(template.toolCallTagName, true)
+    const parameterPrefix = dsmlParameterPrefix(template.parameterTagName)
+    const parameterEnd = dsmlMarker(template.parameterTagName, true)
+    const hasOpenToolCallsSection = text.lastIndexOf(template.toolCallsBegin) >
+        text.lastIndexOf(template.toolCallsEnd)
+    const hasOpenInvoke = text.lastIndexOf(invokePrefix) > text.lastIndexOf(invokeEnd)
+    const hasOpenParameter = text.lastIndexOf(parameterPrefix) > text.lastIndexOf(parameterEnd)
+    return hasOpenToolCallsSection || hasOpenInvoke || hasOpenParameter
+}
+
 function parseStructuredTokens(tokens = [], template) {
     var role = null
     var finishReason
-    var reasoningContinuationIsContent = false
+    var reasoningContinuationTarget
     var text = ''
     var reasoning = ''
     var toolCalls = []
@@ -436,7 +448,8 @@ function parseStructuredTokens(tokens = [], template) {
         }
         const hadStructuredToolCalls = hasStructuredToolCalls
         if (typeof delta.content === 'string') {
-            if (hadStructuredToolCalls && hasToolProtocolMarker(delta.content, template)) {
+            if (reasoningContinuationTarget === 'tool_call' ||
+                hadStructuredToolCalls && hasToolProtocolMarker(delta.content, template)) {
                 toolCallContinuationText += delta.content
             } else {
                 text += delta.content
@@ -450,7 +463,8 @@ function parseStructuredTokens(tokens = [], template) {
             toolCalls = mergeToolCalls(toolCalls, delta.tool_calls)
         }
         if (typeof delta.reasoning === 'string') {
-            if (!reasoningContinuationIsContent && text && !reasoning) {
+            if (!reasoningContinuationTarget && text && !reasoning) {
+                const templatePrefix = text
                 const parsedPrefix = parseDeepSeekResponseText(text, template)
                 if (parsedPrefix.reasoning || parsedPrefix.finish_reason === REASONING_END ||
                     text.includes(THINK_END) || parsedPrefix.tool_calls?.length) {
@@ -464,15 +478,20 @@ function parseStructuredTokens(tokens = [], template) {
                     }
                     if (parsedPrefix.tool_calls?.length) {
                         toolCalls = overlayToolCalls(parsedPrefix.tool_calls, toolCalls)
+                        reasoningContinuationTarget = hasOpenToolCallText(templatePrefix, template)
+                            ? 'tool_call'
+                            : 'content'
+                    } else if (parsedPrefix.finish_reason === REASONING_END || parsedPrefix.content) {
+                        reasoningContinuationTarget = 'content'
                     }
-                    reasoningContinuationIsContent = parsedPrefix.finish_reason === REASONING_END ||
-                        Boolean(parsedPrefix.content) || Boolean(parsedPrefix.tool_calls?.length)
                 } else {
                     reasoning += delta.reasoning
                     continue
                 }
             }
-            if (reasoningContinuationIsContent) {
+            if (reasoningContinuationTarget === 'tool_call') {
+                toolCallContinuationText += delta.reasoning
+            } else if (reasoningContinuationTarget === 'content') {
                 text += delta.reasoning
             } else {
                 reasoning += delta.reasoning
@@ -738,6 +757,49 @@ export function testDeepSeekV4ResponseTemplate() {
     const parsedMessage = template.parse({ tokens: expected })
     parsedMessage.finish_reason = 'tool_calls'
     assertEqual(template.apply(parsedMessage).templatedPrompt, expected, 'complete response round-trip')
+    const continuationPrefix = template.apply({
+        role: 'assistant',
+        reasoning: 'thinking',
+        content: 'I will check.',
+        tool_calls: [{
+            index: 0,
+            type: 'function',
+            function: { name: 'get_weather', arguments: '{"location": "San' },
+        }],
+    }).templatedPrompt
+    const resumedToolCall = template.parse({
+        tokens: [
+            { delta: { role: 'assistant', content: continuationPrefix } },
+            { delta: { reasoning: ', Francisco' } },
+            { delta: { reasoning: `${dsmlMarker('parameter', true)}\n${dsmlMarker('invoke', true)}\n${template.toolCallsEnd}` } },
+            { delta: {}, finish_reason: 'stop' },
+        ],
+    })
+    assertEqual(resumedToolCall.content, 'I will check.', 'reasoning-channel tool continuation content')
+    assertEqual(
+        resumedToolCall.tool_calls[0].function.arguments,
+        '{"location": "San, Francisco"}',
+        'reasoning-channel tool continuation arguments',
+    )
+    const sectionContinuationPrefix = template.apply({
+        role: 'assistant',
+        reasoning: 'thinking',
+        content: 'Done.',
+        tool_calls: [{
+            index: 0,
+            type: 'function',
+            function: { name: 'get_weather', arguments: '{}' },
+        }],
+    }).templatedPrompt
+    const resumedToolCallsSection = template.parse({
+        tokens: [
+            { delta: { role: 'assistant', content: sectionContinuationPrefix } },
+            { delta: { reasoning: template.toolCallsEnd } },
+            { delta: {}, finish_reason: 'stop' },
+        ],
+    })
+    assertEqual(resumedToolCallsSection.content, 'Done.', 'reasoning-channel tool section content')
+    assertEqual(resumedToolCallsSection.finish_reason, 'tool_calls', 'reasoning-channel tool section finish reason')
     assertEqual(DeepSeekV4ResponseTemplate.match({
         responseTemplateConfig: { name_or_path: 'deepseek-ai/DeepSeek-V4-Flash' },
     }), true, 'V4-Flash match')
@@ -753,5 +815,5 @@ export function testDeepSeekV4ResponseTemplate() {
     assertEqual(DeepSeekV4ResponseTemplate.match({
         responseTemplateConfig: { name_or_path: 'deepseek-ai/DeepSeek-V4.1-Flash' },
     }), false, 'V4.1 mismatch')
-    return partialMessageTestCount + 5
+    return partialMessageTestCount + 9
 }
