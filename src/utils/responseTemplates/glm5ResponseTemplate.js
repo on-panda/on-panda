@@ -695,7 +695,7 @@ function buildGLM5Prompt(message = {}) {
     const isPartial = !['stop', 'tool_calls'].includes(message.finish_reason)
     const reasoning = message.reasoning ? stripRepeatedThinkBegin(message.reasoning).trim() : ''
     const content = typeof message.content === 'string' ? message.content.trim() : ''
-    const hasToolCallsChannel = message.tool_calls != null
+    const hasToolCallsChannel = message.tool_calls?.length > 0
     const hasResponseBody = reasoning || content || hasToolCallsChannel
     if (!message.role && !hasResponseBody) {
         return { templatedPrompt: '', keyPathPromptMapping: [] }

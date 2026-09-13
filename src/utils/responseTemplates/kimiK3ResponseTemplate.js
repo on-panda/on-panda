@@ -607,7 +607,7 @@ function buildKimiK3Prompt(message = {}) {
     const reasoning = message.reasoning ? stripRepeatedThinkBegin(message.reasoning) : ''
     const content = typeof message.content === 'string' ? message.content : ''
     const hasContentChannel = 'content' in message
-    const hasToolCallsChannel = message.tool_calls != null
+    const hasToolCallsChannel = message.tool_calls?.length > 0
     const isReasoningEnd = message.finish_reason === REASONING_END
     if (!message.role && !reasoning && !hasContentChannel && !hasToolCallsChannel && !message.finish_reason) {
         return { templatedPrompt: '', keyPathPromptMapping: [] }

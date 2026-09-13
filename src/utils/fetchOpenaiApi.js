@@ -409,6 +409,9 @@ export class OpenAI {
       }
     }
     body = omitNullRequestFields(body)
+    if (body.stream === false) {
+      delete body.stream_options
+    }
 
     options = options || {};
     const { headers: optionsHeaders, ...fetchOptions } = options;

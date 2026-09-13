@@ -28,7 +28,8 @@
             </div>
             <div v-if="props.tool.type == 'checkbox'">
                 <CheckboxWidgetSupportNull :checkboxValue="props.tool.checkbox"
-                    @updateCheckboxValue="(v) => { props.tool.checkbox = v }" :disabled="props.tool.disabled">
+                    @updateCheckboxValue="(v) => { props.tool.checkbox = v; emit('updateCheckbox', v) }"
+                    :disabled="props.tool.disabled">
                 </CheckboxWidgetSupportNull>
             </div>
             <div v-if="props.tool.type == 'text'">
@@ -46,7 +47,7 @@
 import CheckboxWidgetSupportNull from './CheckboxWidgetSupportNull.vue';
 import MarkdownRender from './MarkdownRender.vue';
 
-const emit = defineEmits(['updateSingleChoice'])
+const emit = defineEmits(['updateSingleChoice', 'updateCheckbox'])
 
 const props = defineProps({
     tool: {

@@ -636,7 +636,7 @@ export class Qwen3p5ResponseTemplate {
     apply(message = {}) {
         const isPartial = !['stop', 'tool_calls'].includes(message.finish_reason)
         const reasoning = message.reasoning ? stripRepeatedThinkBegin(message.reasoning) : ''
-        const hasToolCallsChannel = message.tool_calls != null
+        const hasToolCallsChannel = message.tool_calls?.length > 0
         const hasResponseBody = reasoning || message.content || hasToolCallsChannel
         const isPureReasoningPartial = isPartial &&
             message.finish_reason !== REASONING_END &&
@@ -860,12 +860,14 @@ export function testQwen3p5ResponseTemplate() {
     assertEqual(openNameMessage.tool_calls[0].function.arguments, undefined, 'open function name arguments')
     assertEqual(template.apply(openNameMessage).templatedPrompt, openNameText, 're-apply open function name')
 
-    const emptyToolCallsMessage = { role: 'assistant', content: '', tool_calls: [] }
-    assertEqual(template.apply(emptyToolCallsMessage).templatedPrompt, TOOL_CALL_BEGIN, 'open tool calls channel')
-    const parsedEmptyToolCalls = template.parse({ tokens: TOOL_CALL_BEGIN })
-    assertEqual(parsedEmptyToolCalls.tool_calls.length, 1, 'parse open tool calls channel')
-    assertEqual(Object.keys(parsedEmptyToolCalls.tool_calls[0]).length, 0, 'empty open tool call')
-    assertEqual(template.apply(parsedEmptyToolCalls).templatedPrompt, TOOL_CALL_BEGIN, 're-apply open tool calls channel')
+    const emptyToolCallsMessage = { role: 'assistant', content: 'answer', tool_calls: [] }
+    assertEqual(template.apply(emptyToolCallsMessage).templatedPrompt, 'answer', 'empty tool calls channel')
+    const openToolCallsMessage = { role: 'assistant', content: '', tool_calls: [{}] }
+    assertEqual(template.apply(openToolCallsMessage).templatedPrompt, TOOL_CALL_BEGIN, 'open tool calls channel')
+    const parsedOpenToolCalls = template.parse({ tokens: TOOL_CALL_BEGIN })
+    assertEqual(parsedOpenToolCalls.tool_calls.length, 1, 'parse open tool calls channel')
+    assertEqual(Object.keys(parsedOpenToolCalls.tool_calls[0]).length, 0, 'empty open tool call')
+    assertEqual(template.apply(parsedOpenToolCalls).templatedPrompt, TOOL_CALL_BEGIN, 're-apply open tool calls channel')
 
     const reasoningOpenToolCallsText = `${THINK_BEGIN}\nthinking\n${THINK_END}\n\n${TOOL_CALL_BEGIN}`
     const parsedReasoningOpenToolCalls = template.parse({ tokens: reasoningOpenToolCallsText })

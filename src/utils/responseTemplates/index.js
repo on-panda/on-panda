@@ -295,9 +295,25 @@ export function pieceStructureViewTokens({ message, logprobsTokens = [], templat
     return tokens
 }
 
-export function buildViewTokens({ message, responseTemplate, logprobsTokens = [] } = {}) {
+function trimContinuedMessagePrefix({ templatedPrompt, keyPathPromptMapping } = {}) {
+    const prefixLength = keyPathPromptMapping[0]?.textStart ?? 0
+    return {
+        templatedPrompt: templatedPrompt.slice(prefixLength),
+        keyPathPromptMapping: keyPathPromptMapping.map(mapping => ({
+            ...mapping,
+            textStart: mapping.textStart - prefixLength,
+            textEnd: mapping.textEnd - prefixLength,
+        })),
+    }
+}
+
+export function buildViewTokens({ message, responseTemplate, logprobsTokens = [], isContinuedMessage = false } = {}) {
     responseTemplate = responseTemplate || buildResponseTemplate()
-    const { templatedPrompt, keyPathPromptMapping } = responseTemplate.apply(message)
+    var responseTemplateResult = responseTemplate.apply(message)
+    if (isContinuedMessage) {
+        responseTemplateResult = trimContinuedMessagePrefix(responseTemplateResult)
+    }
+    const { templatedPrompt, keyPathPromptMapping } = responseTemplateResult
     const patchTextMapping = logprobsTokens.length ? matchTokensToPrompt(logprobsTokens, templatedPrompt) : []
     if (responseTemplate.responseTemplateType === "plain_text") {
         const tokens = pieceViewTokens({ logprobsTokens, text: templatedPrompt, patchTextMapping })

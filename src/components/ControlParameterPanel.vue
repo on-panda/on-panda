@@ -104,6 +104,12 @@ var requestImageDetail = computed(() => {
     }
 })
 
+const requestStream = computed(() => ({
+    name: 'stream',
+    type: 'checkbox',
+    checkbox: chatConfig.stream,
+}))
+
 function checkExtraChatParameters() {
     if (extraChatParametersString.value) {
         try {
@@ -285,8 +291,8 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
 
         <el-form-item :label="t('controlParameter.apiCompatibility')">
             <small>
-                <el-button size="small" :loading="compatibilityTestRunning"
-                    @click="testOnPandaCompatibility">{{ t('controlParameter.test') }}</el-button>
+                <el-button size="small" :loading="compatibilityTestRunning" @click="testOnPandaCompatibility">{{
+                    t('controlParameter.test') }}</el-button>
                 &nbsp;
                 <el-tooltip class="" effect="light" placement="top" raw-content>
                     <template #content>
@@ -311,10 +317,13 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                     <el-input-number v-model="chatConfig.top_p" :min="0" :max="1" :step="0.01" size="small" />
                 </el-form-item>
 
-                <el-form-item label="frequency_penalty">
+                <CustomAnnotatorTool :tool="requestStream" @updateCheckbox="(v) => { chatConfig.stream = v }"
+                    size="small" />
+
+                <!-- <el-form-item label="frequency_penalty">
                     <el-input-number v-model="chatConfig.frequency_penalty" :min="0" :max="10" :step="0.01"
                         size="small" />
-                </el-form-item>
+                </el-form-item> -->
 
                 <el-form-item label="extra_parameters">
                     <el-input type="textarea" :autosize="{ minRows: 1 }" v-model="extraChatParametersString"
@@ -350,8 +359,7 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                     </small>
                 </el-form-item>
                 <el-form-item label="tool assets round">
-                    <el-input-number v-model="toolAssetKeepRounds" :min="0" :max="1048576" :step="1"
-                        size="small" />
+                    <el-input-number v-model="toolAssetKeepRounds" :min="0" :max="1048576" :step="1" size="small" />
                     <small>
                         &nbsp; &nbsp;
                         <el-tooltip class="" effect="light" placement="top" raw-content>

@@ -131,7 +131,7 @@ export function testStep3p5ResponseTemplate() {
         role: 'assistant',
         reasoning: 'think',
         content: 'answer',
-        tool_calls: [],
+        tool_calls: [{}],
     }
     const openToolCallsText = `${THINK_BEGIN}\nthink\n${THINK_END}\nanswer${TOOL_CALL_BEGIN}`
     assertEqual(template.apply(openToolCallsMessage).templatedPrompt, openToolCallsText, 'open tool calls channel')
