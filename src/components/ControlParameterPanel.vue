@@ -108,6 +108,7 @@ const requestStream = computed(() => ({
     name: 'stream',
     type: 'checkbox',
     checkbox: chatConfig.stream,
+    tips: t('tooltips.stream'),
 }))
 
 function checkExtraChatParameters() {
