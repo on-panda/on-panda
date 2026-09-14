@@ -34,10 +34,11 @@ export const defaultApiConfig = {
         ...deepCopy(defaultChatConfig),
     },
     // onPanda-only options.
-    // image_detail_level: 'auto',
+    // force_require_approval: 'always',
     // max_tool_assets: 0,
     // tool_asset_keep_rounds: 0,
     // reasoning_key: 'reasoning_content',
+    // image_detail_level: 'auto',
 }
 
 const isEndpointModelMatchIgnoringIndex = (key, modelNameValue) => {

@@ -1,4 +1,4 @@
-import { computed, getCurrentInstance, isRef, onMounted, ref, watch } from 'vue'
+import { computed, getCurrentInstance, isRef, onMounted, ref, toValue, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepCopy } from '../utils/commonUtils.js'
 import {
@@ -17,7 +17,7 @@ import {
 
 export const browserAgentMcpUrl = 'local-fetch://browser-agent-mcp'
 
-export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
+export function ToolManageStateClosure({ presetToolConfigs = [], apiConfig = null } = {}) {
     // When constructed post-mount (e.g. from a computed during render), skip onMounted and treat as mounted.
     const instance = getCurrentInstance()
     const isMounted = ref(false)
@@ -564,9 +564,12 @@ export function ToolManageStateClosure({ presetToolConfigs = [] } = {}) {
     }
 
     function checkRequireApproval(toolCalls = []) {
+        const forceRequireApproval = toValue(apiConfig)?.force_require_approval
         const toolNameToRequireApproval = getToolNameToRequireApproval()
         const approvalToolNames = [...new Set(toolCalls
-            .filter(toolCall => toolNameToRequireApproval[toolCall.function.name] === 'always')
+            .filter(toolCall => forceRequireApproval === 'always' || (
+                (!forceRequireApproval || forceRequireApproval === 'null') && toolNameToRequireApproval[toolCall.function.name] === 'always'
+            ))
             .map(toolCall => toolCall.function.name))]
         return {
             needApproval: approvalToolNames.length > 0,

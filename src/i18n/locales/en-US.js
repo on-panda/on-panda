@@ -113,7 +113,8 @@ export default {
     pasteAndRefresh: 'Paste & Refresh',
     copyResponse: 'Click to copy',
     orDoubleClickTo: 'Or double-click to',
-    duplicateWindow: 'Duplicate Window'
+    duplicateWindow: 'Duplicate Window',
+    forceRequireApproval: 'Override each tool\'s require_approval setting: always asks for approval, never allows it automatically, and null keeps the tool\'s own setting.'
   },
   toolCallControl: {
     title: 'Tool Call Control',

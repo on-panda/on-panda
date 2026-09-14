@@ -31,7 +31,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
     var messages = isRef(messages) ? messages : ref(messages || deepCopy(defaultMessages))
     var apiConfig = isRef(apiConfig) ? apiConfig : ref(apiConfig || deepCopy(defaultApiConfig))
-    toolManageState = toolManageState || ToolManageStateClosure({ presetToolConfigs: [] })
+    toolManageState = toolManageState || ToolManageStateClosure({ presetToolConfigs: [], apiConfig })
 
     const pandaState = new PandaState()
     toolManageState.registerDialogCache(pandaState.dialogCache)

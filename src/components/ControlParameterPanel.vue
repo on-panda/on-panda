@@ -21,6 +21,10 @@ const props = defineProps({
     controlParameterState: {
         type: Object,
         required: true
+    },
+    responseState: {
+        type: Object,
+        default: null,
     }
 })
 
@@ -37,6 +41,8 @@ const chatConfig = props.controlParameterState.apiConfigControllable.value.chat_
 const extraChatParametersString = props.controlParameterState.extraChatParametersString
 const extraChatParameters = props.controlParameterState.extraChatParameters
 const apiConfig = props.controlParameterState.apiConfig
+const responseState = props.responseState
+const toolManageState = responseState?.toolManageState
 
 const compatibilityTestRunning = ref(false)
 const compatibilityTestResult = ref(null)
@@ -65,6 +71,22 @@ const toolAssetKeepRounds = computed({
     set(value) {
         updateApiConfigControlValue('tool_asset_keep_rounds', value)
     }
+})
+
+const hasTools = computed(() => Boolean(toolManageState && (
+    toolManageState.dataToolConfigs.value.length > 0 || toolManageState.currentDialogTools.value.length > 0
+)))
+
+const hasImageMessage = computed(() => {
+    if (!responseState) {
+        return false
+    }
+    return responseState.messagesComputed.value.concat([responseState.newRoundMessage.value]).some(message => {
+        const content = message.content
+        if (Array.isArray(content)) {
+            return content.some(chunk => chunk.type == "image_url")
+        }
+    })
 })
 
 function handleModelTagClick(event, newModelName) {
@@ -101,6 +123,29 @@ var requestImageDetail = computed(() => {
             }
         ],
         "tips": "image_detail parameter for vision language model. Only works when there is image in the prompt."
+    }
+})
+
+const requestForceRequireApproval = computed(() => {
+    const forceRequireApproval = apiConfig.value.force_require_approval
+    return {
+        name: "force_approval_policy",
+        type: 'single_choice',
+        single_choice: [
+            {
+                k: 'always',
+                v: forceRequireApproval && forceRequireApproval === 'always',
+            },
+            {
+                k: 'never',
+                v: forceRequireApproval && forceRequireApproval === 'never',
+            },
+            {
+                k: 'null',
+                v: forceRequireApproval && forceRequireApproval == 'null',
+            },
+        ],
+        tips: t('tooltips.forceRequireApproval'),
     }
 })
 
@@ -342,10 +387,10 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                         </el-tooltip>
                     </small>
                 </el-form-item>
-                <CustomAnnotatorTool :tool="requestImageDetail"
+                <CustomAnnotatorTool v-if="hasImageMessage" :tool="requestImageDetail"
                     @updateSingleChoice="(v) => { updateApiConfigControlValue('image_detail_level', v) }"
                     size="small" />
-                <el-form-item label="max tool assets">
+                <el-form-item v-if="hasTools" label="max tool assets">
                     <el-input-number v-model="maxToolAssets" :min="0" :max="1048576" :step="1" size="small" />
                     <small>
                         &nbsp; &nbsp;
@@ -359,7 +404,7 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                         </el-tooltip>
                     </small>
                 </el-form-item>
-                <el-form-item label="tool assets round">
+                <el-form-item v-if="hasTools" label="tool assets round">
                     <el-input-number v-model="toolAssetKeepRounds" :min="0" :max="1048576" :step="1" size="small" />
                     <small>
                         &nbsp; &nbsp;
@@ -374,6 +419,9 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                         </el-tooltip>
                     </small>
                 </el-form-item>
+                <CustomAnnotatorTool v-if="hasTools" :tool="requestForceRequireApproval"
+                    @updateSingleChoice="(v) => { updateApiConfigControlValue('force_require_approval', v) }"
+                    size="small" />
                 <ObjectViewerInDetails :object="maskedKeyInApiConfig" summary="Current API config JSON"
                     style="max-width: 800px; margin-left: 20px" />
             </div>

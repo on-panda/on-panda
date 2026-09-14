@@ -43,7 +43,7 @@ onMounted(() => {
         <el-divider content-position="left">
             <b>{{ t('common.controlParameter') }}:</b>
         </el-divider>
-        <ControlParameterPanel :controlParameterState="controlParameterState"
+        <ControlParameterPanel :controlParameterState="controlParameterState" :responseState="responseState"
             @dblclickModelTag="responseState.operationCenter.generateNew()"
             @duplicateWindowWithModelName="duplicateWindowWithModelName" />
     </div>

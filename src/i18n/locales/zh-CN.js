@@ -113,7 +113,8 @@ export default {
     pasteAndRefresh: '粘贴并更新',
     copyResponse: '点击复制',
     orDoubleClickTo: '或双击',
-    duplicateWindow: '复制窗口'
+    duplicateWindow: '复制窗口',
+    forceRequireApproval: '覆盖工具自身的 require_approval：always 要求每次审批，never 自动允许，null 使用工具原本的设置。'
   },
   toolCallControl: {
     title: '工具调用控制',

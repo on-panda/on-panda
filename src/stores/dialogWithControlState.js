@@ -9,7 +9,10 @@ export function DialogWithControlStateClosure({
     modelNameTags = null,
     modelName = null } = {}) {
     const controlParameterState = ControlParameterStateClosure({ apiConfigs, modelNameTags, modelName })
-    const toolManageState = ToolManageStateClosure({ presetToolConfigs })
+    const toolManageState = ToolManageStateClosure({
+        presetToolConfigs,
+        apiConfig: controlParameterState.apiConfig,
+    })
     const responseState = ResponseStateClosure({
         messages,
         apiConfig: controlParameterState.apiConfig,
