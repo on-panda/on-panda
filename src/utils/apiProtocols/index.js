@@ -25,13 +25,28 @@ function createNonStreamChatCompletionStream({ response, requestBody, apiConfig 
     }))
     const generatedText = logprobsContent.map(logprob => logprob.token).join('')
     const continuationPrefix = requestBody.messages.at(-1)?.content
-    if (
-        requestBody.continue_final_message &&
-        typeof continuationPrefix === 'string' &&
-        typeof message.content === 'string' &&
-        message.content === continuationPrefix + generatedText
-    ) {
-        message.content = generatedText
+    if (requestBody.continue_final_message) {
+        if (
+            typeof continuationPrefix === 'string' &&
+            typeof message.content === 'string' &&
+            message.content === continuationPrefix + generatedText
+        ) {
+            message.content = generatedText
+        }
+        if (logprobsContent.length && logprobsContent[0].token) {
+            // Some non-stream responses left-strip the continuation string, fix this by logprobs[0].token.
+            const firstTokenText = logprobsContent[0].token
+            const strippedFirstTokenText = firstTokenText.trimStart()
+            if (strippedFirstTokenText.length > 0 && strippedFirstTokenText !== firstTokenText) {
+                for (const field of ['reasoning', 'content']) {
+                    const fieldContent = message[field]
+                    if (typeof fieldContent === 'string' && fieldContent.startsWith(strippedFirstTokenText)) {
+                        message[field] = firstTokenText + fieldContent.slice(strippedFirstTokenText.length)
+                        break
+                    }
+                }
+            }
+        }
     }
 
     const tokens = buildViewTokens({

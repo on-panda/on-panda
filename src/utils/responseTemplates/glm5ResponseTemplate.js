@@ -693,8 +693,8 @@ function normalizeToolCallContentContinuation({ message, tools, contentStart = 0
 
 function buildGLM5Prompt(message = {}) {
     const isPartial = !['stop', 'tool_calls'].includes(message.finish_reason)
-    const reasoning = message.reasoning ? stripRepeatedThinkBegin(message.reasoning).trim() : ''
-    const content = typeof message.content === 'string' ? message.content.trim() : ''
+    const reasoning = message.reasoning ? stripRepeatedThinkBegin(message.reasoning) : ''
+    const content = typeof message.content === 'string' ? message.content : ''
     const hasToolCallsChannel = message.tool_calls?.length > 0
     const hasResponseBody = reasoning || content || hasToolCallsChannel
     if (!message.role && !hasResponseBody) {
@@ -896,6 +896,18 @@ export function testGLM5ResponseTemplate() {
     assertEqual(template.apply(message).templatedPrompt, expected, 'complete response')
     const parsedMessage = template.parse({ tokens: expected, tools })
     assertEqual(template.apply(parsedMessage).templatedPrompt, expected, 'complete response round-trip')
+
+    const boundaryWhitespaceMessage = {
+        role: 'assistant',
+        reasoning: ' thinking ',
+        content: ' leading ',
+        finish_reason: 'stop',
+    }
+    assertEqual(
+        template.apply(boundaryWhitespaceMessage).templatedPrompt,
+        `${THINK_BEGIN} thinking ${THINK_END} leading `,
+        'preserve response boundary whitespace',
+    )
 
     const partialArgumentsCases = [
         '', '{', '{"', '{"loc', '{"location"', '{"location":', '{"location": "New',
