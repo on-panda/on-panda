@@ -399,14 +399,14 @@ export class DefaultResponseTemplate {
             for (var key in delta2) {
                 if (key === "tool_calls" && delta2.tool_calls?.length) {
                     var toolCalls = delta.tool_calls || []
-                    var toolCall2 = delta2.tool_calls[0]
-                    console.assert(delta2.tool_calls.length === 1)
-                    console.assert(typeof toolCall2.index === "number")
-                    if (toolCall2.index === toolCalls.length) {
-                        toolCalls.push(toolCall2)
-                    } else {
-                        var toolCall1 = toolCalls[toolCall2.index]
-                        toolCalls[toolCall2.index] = mergeTwoDeltas(toolCall1, toolCall2, ["type", "id"])
+                    for (const toolCall2 of delta2.tool_calls) {
+                        console.assert(typeof toolCall2.index === "number")
+                        if (toolCall2.index === toolCalls.length) {
+                            toolCalls.push(toolCall2)
+                        } else {
+                            var toolCall1 = toolCalls[toolCall2.index]
+                            toolCalls[toolCall2.index] = mergeTwoDeltas(toolCall1, toolCall2, ["type", "id"])
+                        }
                     }
                     delta.tool_calls = toolCalls
                     continue

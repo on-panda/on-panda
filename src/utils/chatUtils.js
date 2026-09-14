@@ -123,16 +123,18 @@ export function tokenToDisplayString(token, tokens = undefined) {
     if (typeof reasoning === 'string' && reasoning !== '') {
         return reasoning
     }
-    const toolCall = delta.tool_calls?.[0]
-    if (toolCall) {
-        if (toolCall.function?.arguments) {
-            return toolCall.function.arguments
-        }
-        // new vLLM resends the tool_call wrapper on every chunk; skip filler chunks (no name) to avoid noisy JSON in display
-        if (!toolCall.function?.name) {
-            return ""
-        }
-        return JSON.stringify(toolCall, (k, v) => k === "arguments" && v === "" ? undefined : v)
+    const toolCalls = delta.tool_calls
+    if (toolCalls?.length) {
+        return toolCalls.map(toolCall => {
+            if (toolCall.function?.arguments) {
+                return toolCall.function.arguments
+            }
+            // new vLLM resends the tool_call wrapper on every chunk; skip filler chunks (no name) to avoid noisy JSON in display
+            if (!toolCall.function?.name) {
+                return ""
+            }
+            return JSON.stringify(toolCall, (k, v) => k === "arguments" && v === "" ? undefined : v)
+        }).join("")
     }
     return ""
 }
