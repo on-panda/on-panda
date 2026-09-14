@@ -162,6 +162,11 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         messages = toValue(messages)
         const modelRoles = apiConfig.value?.model_roles || ["assistant"]
         const continue_final_message = modelRoles.includes(messages[messages.length - 1].role)
+        // merge reasoning into content when continuing with default response template
+        const mergeReasoningIntoContent = (
+            continue_final_message &&
+            generationResponseTemplate.value.responseTemplateType === "default"
+        )
         if (continue_final_message) { // if continue_final_message, not filter the final message with role
             messages = filterEmptyMessage(messages.slice(0, messages.length - 1)).concat([
                 messages[messages.length - 1],
@@ -171,11 +176,28 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
         }
         var body = JSON.parse(JSON.stringify(apiConfig.value.chat_config))
         if (continue_final_message) {
+            if (mergeReasoningIntoContent) {
+                for (const token of tokens.value) {
+                    if (!('reasoning' in token.delta)) {
+                        continue
+                    }
+                    token.delta.content = (token.delta.reasoning || "") + (token.delta.content || "")
+                    delete token.delta.reasoning
+                }
+            }
             if (generationResponseTemplate.value.responseTemplateType === "plain_text") {
                 messages[messages.length - 1] = {
                     role: messages[messages.length - 1].role || "assistant",
                     content: generationResponseTemplate.value.apply(messages[messages.length - 1]).templatedPrompt,
                 }
+            } else if (mergeReasoningIntoContent && messages[messages.length - 1].reasoning) {
+                const lastMessage = { ...messages[messages.length - 1] }
+                delete lastMessage.reasoning
+                lastMessage.content = tokens.value
+                    .filter(token => !token.pruned)
+                    .map(token => token.delta.content || "")
+                    .join("")
+                messages[messages.length - 1] = lastMessage
             }
             var lastMessageContent = messages[messages.length - 1].content || ""
             body.add_generation_prompt = false
@@ -273,6 +295,10 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 var token = chunk.choices[0];
                 if (!token?.delta) {
                     continue
+                }
+                if (mergeReasoningIntoContent && 'reasoning' in token.delta) {
+                    token.delta.content = (token.delta.reasoning || "") + (token.delta.content || "")
+                    delete token.delta.reasoning
                 }
                 streamIndex++
                 if (streamIndex === 0) { // first token
@@ -923,6 +949,7 @@ ${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.cons
         if (finish_reason) {
             token.finish_reason = finish_reason
         }
+        delete token.delta.reasoning
         token.delta.content = continuePrefix
         token.bifurcationPoint = true
         token.pruned = false

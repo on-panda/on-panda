@@ -438,8 +438,7 @@ export class OpenAI {
     } catch (error) {
       if (
         body.logprobs &&
-        typeof error?.message === 'string' &&
-        error.message.includes('logprobs is not supported with tools + stream')
+        error.message.includes('"logprobs is not supported with tools + stream"')
       ) {
         // Workaround for https://github.com/ggml-org/llama.cpp/issues/28478
         body.n_probs = body.top_logprobs
