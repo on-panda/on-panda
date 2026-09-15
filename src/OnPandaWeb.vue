@@ -26,6 +26,12 @@
       <h3>Error Messages:</h3>
       <div v-html="responseState.warningContent.value"></div>
     </div>
+    <footer class="feedbackFooter">
+      <small>
+        {{ t('footer.feedback') }} ->
+        <a href="https://github.com/on-panda/on-panda" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </small>
+    </footer>
     <br v-for="_ in (isMobile ? 12 : 0)">
   </div>
 </template>
@@ -205,5 +211,20 @@ onBeforeUnmount(async () => {
 
 * {
   font-family: Arial, sans-serif;
+}
+
+.feedbackFooter {
+  margin-top: 1.5em;
+  color: #888;
+  text-align: center;
+}
+
+.feedbackFooter a {
+  color: inherit;
+}
+
+.feedbackFooter a:hover,
+.feedbackFooter a:focus-visible {
+  color: #555;
 }
 </style>

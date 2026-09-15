@@ -19,6 +19,9 @@ export default {
     errorMessages: '错误信息',
     advancedControl: '高级控制'
   },
+  footer: {
+    feedback: '发现问题或有建议？'
+  },
   controlParameter: {
     model: '模型',
     temperature: '采样温度',

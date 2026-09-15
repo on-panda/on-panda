@@ -19,6 +19,9 @@ export default {
     errorMessages: 'Error Messages',
     advancedControl: 'Advanced Control'
   },
+  footer: {
+    feedback: 'Bug or feedback?'
+  },
   controlParameter: {
     model: 'model',
     temperature: 'temperature',
