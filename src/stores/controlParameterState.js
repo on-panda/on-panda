@@ -149,13 +149,23 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
     const chatConfigControllableKeys = Object.keys(chatConfigControllable.value)
 
     const extraChatParametersString = ref("")
-    const extraChatParameters = computed(() => {
+    const parsedExtraParameters = computed(() => {
         try {
             return extraChatParametersString.value ? JSON5.parse(extraChatParametersString.value) : {}
         } catch (error) {
             return {}
         }
     })
+    const extraChatParameters = computed(() => {
+        const parameters = { ...parsedExtraParameters.value }
+        for (const key of Object.keys(parameters)) {
+            if (key.startsWith('..')) {
+                delete parameters[key]
+            }
+        }
+        return parameters
+    })
+    const apiConfigExtraParameterEntries = computed(() => Object.entries(parsedExtraParameters.value).filter(([key]) => key.startsWith('..')))
 
     const apiConfigReceived = ref([])
     const keyToApiConfigs = computed(() => {
@@ -291,10 +301,18 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
 
     const apiConfig = computed(() => {
         // update apiConfig with defaultApiConfig
-        var apiConfig = { ...apiConfigChosen.value }  // copy instead of reference
-        apiConfig = { ...defaultApiConfig, ...apiConfigChosen.value, ...apiConfigControllable.value }
-        apiConfig.client_config = { ...defaultApiConfig.client_config, ...apiConfigChosen.value.client_config }
-        apiConfig.chat_config = { ...defaultApiConfig.chat_config, ...apiConfigChosen.value.chat_config, ...chatConfigControllable.value, ...extraChatParameters.value }
+        var apiConfig = deepCopy({ ...defaultApiConfig, ...apiConfigChosen.value, ...apiConfigControllable.value })
+        apiConfig.client_config = deepCopy({ ...defaultApiConfig.client_config, ...apiConfigChosen.value.client_config })
+        apiConfig.chat_config = deepCopy({ ...defaultApiConfig.chat_config, ...apiConfigChosen.value.chat_config, ...chatConfigControllable.value, ...extraChatParameters.value })
+        for (const [key, value] of apiConfigExtraParameterEntries.value) {
+            const keyPath = key.slice(2).split('.')
+            let target = apiConfig
+            for (const pathKey of keyPath.slice(0, -1)) {
+                target[pathKey] ??= {}
+                target = target[pathKey]
+            }
+            target[keyPath.at(-1)] = value
+        }
         // Deprecated: migrate only the legacy tool asset options from chat_config.
         for (const key of ['max_tool_assets', 'tool_asset_keep_rounds']) {
             if (!(key in apiConfig) && key in apiConfig.chat_config) {
