@@ -37,6 +37,14 @@ Open the address shown in the terminal. By default, it is `http://localhost:5173
 
 Run `npx @on-panda/annotate --dir .` to annotate panda JSON files in a directory. See the [annotation server documentation](packages/annotate/README.md) for usage, the HTTP API, and save/delete backup behavior.
 
+## Deploy the Web App
+
+```bash
+npx @on-panda/serve --port 8080 --web_config config.json5
+```
+
+The optional JSON5 configuration is loaded by the standalone web app.
+
 ## Configure a Model API
 
 Paste a JSON5 configuration in **Custom API Config**, for example:
@@ -66,6 +74,7 @@ Paste a JSON5 configuration in **Custom API Config**, for example:
 
 ```bash
 pnpm build:web   # Build the web application
+pnpm build:serve # Build the web assets included in @on-panda/serve
 pnpm build       # Build the component library
 pnpm build:core  # Build the core component library
 ```

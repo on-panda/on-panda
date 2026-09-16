@@ -3,6 +3,8 @@ import { deepCopy, deepEqual, getUnicodeLength } from './commonUtils.js'
 import { formatMessageAsText, formatSimpleContentAsText } from './messageTextCodec.js'
 import { stripRuntime } from './toolUtils.js'
 
+export { verifyUrlIsLlmApiCall, verifyUrlIsMcp } from '../../packages/serve/server/urlVerification.js'
+
 export {
     MESSAGE_KEYS_IN_CONTEXT,
     MESSAGE_OUTPUT_KEYS,
@@ -10,15 +12,6 @@ export {
     MESSAGE_CONTEXT_SECTION_MARKERS,
     getMessageOutput,
 } from './messageTextCodec.js'
-
-export function verifyUrlIsLlmApiCall(url) {
-    // check is LLM api call by /models or /completions
-    return /(^|\/)(models|completions|messages)(\/|$)/.test(url.pathname);
-}
-
-export function verifyUrlIsMcp(url) {
-    return /(^|\/)mcp(\/|$)/.test(url.pathname)
-}
 
 export function isFinalRoleModelRole(messages, modelRoles = ['assistant',]) {
     return modelRoles.includes(messages[messages.length - 1].role)

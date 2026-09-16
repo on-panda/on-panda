@@ -4,16 +4,21 @@ import { defineConfig, loadEnv } from 'vite'
 import { visualizer } from 'rollup-plugin-visualizer'
 import vue from '@vitejs/plugin-vue'
 
-import { createBypassCorsProxyPlugin } from './bypassCorsProxyPlugin.js'
-import { createRuntimeImportPlugin } from './runtimeImportPlugin.js'
-import { createUsingServerProxyPlugin } from './usingServerProxyPlugin.js'
+import { createBypassCorsProxyPlugin } from './server/bypassCorsProxyPlugin.js'
+import { createRuntimeImportPlugin } from './server/runtimeImportPlugin.js'
+import { createUsingServerProxyPlugin } from './server/usingServerProxyPlugin.js'
+import { createWebConfigPlugin } from './server/webConfigPlugin.js'
+
+const packageDir = fileURLToPath(new URL('.', import.meta.url))
+const repoDir = path.resolve(packageDir, '../..')
+const webRoot = path.join(repoDir, 'apps/on-panda-web')
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const envDir = path.resolve(__dirname, '../../')
+  const envDir = repoDir
   const env = loadEnv(mode, envDir, '')
 
-  const defaultCustom = fileURLToPath(new URL('../../src/utils/defaultCustom.js', import.meta.url))
+  const defaultCustom = path.join(repoDir, 'src/utils/defaultCustom.js')
   const customModulePath = env.WEB_IMPORT_CUSTOM_CODE
   const resolvedCustomModule = customModulePath
   ? (path.isAbsolute(customModulePath) ? customModulePath : path.resolve(envDir, customModulePath))
@@ -26,13 +31,14 @@ export default defineConfig(({ mode }) => {
 
   return {
     envDir,
-    root: fileURLToPath(new URL('.', import.meta.url)),
-    publicDir: fileURLToPath(new URL('../../public', import.meta.url)),
+    root: webRoot,
+    publicDir: path.join(repoDir, 'public'),
     plugins: [
       vue(),
       createBypassCorsProxyPlugin(env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH),
       createRuntimeImportPlugin(resolvedRuntimeImport),
       createUsingServerProxyPlugin(),
+      createWebConfigPlugin(),
       mode === 'analyze' && visualizer({
         open: true,
         gzipSize: true,
@@ -41,12 +47,12 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        '@': path.join(webRoot, 'src'),
         './utils/defaultCustom.js': resolvedCustomModule,
       }
     },
     build: {
-      outDir: fileURLToPath(new URL('./dist', import.meta.url)),
+      outDir: path.join(packageDir, 'web'),
       emptyOutDir: true,
     },
     server: {

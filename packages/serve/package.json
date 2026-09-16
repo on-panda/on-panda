@@ -1,0 +1,24 @@
+{
+  "name": "@on-panda/serve",
+  "version": "0.6.0",
+  "description": "A production server for the onPanda web application",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "serve": "./bin/serve.js"
+  },
+  "files": [
+    "bin",
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "preview": "node bin/serve.js",
+    "prepack": "pnpm --dir ../.. build:serve"
+  },
+  "dependencies": {
+    "json5": "^2.x",
+    "undici": "^7.x",
+    "vite": "^5.3.1"
+  }
+}

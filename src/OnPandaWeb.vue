@@ -153,7 +153,24 @@ onMounted(async () => {
       console.warn(`Runtime config load failed (VITE_ON_PANDA_WEB_RUNTIME_IMPORT).`, error)
     }
   }
-  await loadRuntimeImport()
+  async function loadWebConfig() {
+    if (!window.isOnPandaWeb) {
+      return
+    }
+    try {
+      const response = await fetch('/on-panda-web/web_config.json5')
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status}`)
+      }
+      const config = await response.json()
+      if (Object.keys(config).length) {
+        dialogWithControlState.applyConfig(config)
+      }
+    } catch (error) {
+      console.warn('Web config load failed.', error)
+    }
+  }
+  await Promise.all([loadRuntimeImport(), loadWebConfig()])
   responseState.onPandaContainerRef.value = onPandaContainerRef.value
   try {
     await import('./utils/defaultCustom.js')  // important: './utils/defaultCustom.js' will be resolve by different vite.config.js according different env var, do not change it.

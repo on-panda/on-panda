@@ -37,6 +37,14 @@ pnpm install && pnpm dev
 
 使用 `npx @on-panda/annotate --dir .` 批量标注目录中的 panda JSON 文件。用法、HTTP 接口以及保存和删除时的备份逻辑见[标注服务文档](packages/annotate/README.md)。
 
+## 部署网页应用
+
+```bash
+npx @on-panda/serve --port 8080 --web_config config.json5
+```
+
+可选的 JSON5 配置会由独立网页应用加载。
+
 ## 配置模型 API
 
 在页面的“自定义 API 配置”中粘贴 JSON5 配置，例如：
@@ -66,6 +74,7 @@ pnpm install && pnpm dev
 
 ```bash
 pnpm build:web   # 构建网页应用
+pnpm build:serve # 构建 @on-panda/serve 内置的网页资源
 pnpm build       # 构建组件库
 pnpm build:core  # 构建核心组件库
 ```

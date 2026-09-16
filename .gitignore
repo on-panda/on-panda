@@ -15,6 +15,7 @@ node_modules
 .DS_Store
 dist
 packages/annotate/web
+packages/serve/web
 coverage
 *.local
 .pnpm-store
