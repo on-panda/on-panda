@@ -1,6 +1,6 @@
 {
   "name": "@on-panda/annotate",
-  "version": "0.5.11",
+  "version": "0.6.0",
   "description": "A small local server for annotating onPanda JSON files",
   "license": "MIT",
   "type": "module",

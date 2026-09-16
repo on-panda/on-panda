@@ -1,6 +1,6 @@
 {
   "name": "@on-panda/on-panda",
-  "version": "0.5.11",
+  "version": "0.6.0",
   "license": "MIT",
   "type": "module",
   "main": "./dist/on-panda.es.js",
@@ -21,7 +21,10 @@
     "build:annotate": "vite build --config apps/annotation-ui/vite.config.js",
     "annotate": "pnpm build:annotate && node packages/annotate/bin/annotate.js",
     "build:core": "pnpm --dir packages/on-panda-core build",
+    "install:all": "pnpm install && pnpm --dir packages/on-panda-core install && pnpm --dir packages/annotate install",
+    "build:all": "pnpm build && pnpm build:core && pnpm build:annotate",
     "publish:core": "pnpm --dir packages/on-panda-core build && pnpm --dir packages/on-panda-core publish",
+    "publish:all": "pnpm install:all && pnpm build:all && pnpm publish && pnpm --dir packages/on-panda-core publish && pnpm --dir packages/annotate publish",
     "install:core": "pnpm --dir packages/on-panda-core install",
     "analyze": "vite build --mode analyze",
     "analyze:web": "vite build --mode analyze --config apps/on-panda-web/vite.config.js",
