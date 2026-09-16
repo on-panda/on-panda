@@ -21,16 +21,19 @@ export const defaultChatConfig = {
     spaces_between_special_tokens: false,  // In vLLM and Transformers it's default true, which may case additional leading space before first token or special tokens
 }
 
+// public API test server for onPanda
+const PUBLIC_TEST_BASE_URL = ["https://vllm-test-api", "diyer22", "com/v1"].join('.')  
+
 export const defaultApiConfig = {
     "endpoint_name": "endpoint-name",
     "model_roles": ["assistant"],
     "client_config": {
-        base_url: import.meta.env.VITE_ON_PANDA_DEFAULT_BASE_URL || "http://localhost:8000/v1",
-        api_key: import.meta.env.VITE_ON_PANDA_DEFAULT_API_KEY || "ak-onPandaTestKey",
+        base_url: import.meta.env.VITE_ON_PANDA_DEFAULT_BASE_URL || PUBLIC_TEST_BASE_URL,
+        api_key: import.meta.env.VITE_ON_PANDA_DEFAULT_API_KEY || "no-api-key",
         // dangerouslyAllowBrowser: true
     },
     "chat_config": {
-        model: import.meta.env.VITE_ON_PANDA_DEFAULT_MODEL || "Qwen/Qwen3.6-35B-A3B",
+        model: import.meta.env.VITE_ON_PANDA_DEFAULT_MODEL || "tiny-model-for-api-test",
         ...deepCopy(defaultChatConfig),
     },
     // onPanda-only options.
