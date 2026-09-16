@@ -330,15 +330,24 @@ const defaultExampleNameToFunc = {
     operationCenter.pandaState = pandaState
     pandaState.setEmpty()
   },
-  "default": () => {
-    modelName.value = modelNameTagsComputed.value['on-panda'] || 'on-panda'
-    loadWelcomeMessages()
-    operationCenter.generateNew()
-  },
+  // "default": () => {
+  //   modelName.value = modelNameTagsComputed.value['on-panda'] || 'on-panda'
+  //   loadWelcomeMessages()
+  //   operationCenter.generateNew()
+  // },
   // "R in 🍓": () => {
   //   operationCenter.loadMessages([{ role: "system", content: "" }, { role: "user", content: "🍍菠萝的英文单词有几个 P ?", description: "answer is 3", comment: "`comment` is editable for annotator" }])
   //   operationCenter.generateNew()
   // },
+  "joke": () => {
+    operationCenter.loadMessages([{
+      role: "user",
+      content: isZh.value
+        ? "讲一个关于西游记的笑话, 100字以内"
+        : "Tell a joke about robots, within 50 words."
+    }])
+    operationCenter.generateNew()
+  },
   "tools": () => {
     operationCenter.loadMessages(messagesToolsExample)
     operationCenter.pandaState.currentDialogData.value.tool_configs = [
@@ -478,15 +487,6 @@ const defaultExampleNameToFunc = {
   //   operationCenter.loadMessages([{ role: "user", content: "just output a random float128 number without any words, no code" }])
   //   operationCenter.generateNew()
   // },
-  "joke": () => {
-    operationCenter.loadMessages([{
-      role: "user",
-      content: isZh.value
-        ? "讲一个关于西游记的笑话, 100字左右"
-        : "Tell a joke about robot, around 50 words long."
-    }])
-    operationCenter.generateNew()
-  },
   "poem": () => {
     operationCenter.loadMessages([{
       role: "user",
