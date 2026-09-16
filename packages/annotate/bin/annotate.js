@@ -28,7 +28,7 @@ function parseArgs(args) {
     } else if (arg === '--project_name') {
       options.projectName = args[++index]
     } else if (arg === '--help' || arg === '-h') {
-      console.log('Usage: annotate [--web_config config.json5] [--dir .] [--port 8000] [--project_name name]')
+      console.log('Usage: annotate [--web_config web_config.json5] [--dir .] [--port 8000] [--project_name name]')
       process.exit(0)
     }
   }
@@ -248,7 +248,7 @@ async function createServer(options) {
         return
       }
       const route = routePath(requestUrl.pathname)
-      if (route === 'config.json5' && ['GET', 'POST'].includes(req.method)) {
+      if (route === 'web_config.json5' && ['GET', 'POST'].includes(req.method)) {
         if (req.method === 'POST') {
           await readRequestBody(req)
         }

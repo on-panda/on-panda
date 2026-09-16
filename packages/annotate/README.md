@@ -35,7 +35,7 @@ Opening the page to annotate.
 
 ## Web configuration
 
-The configuration uses the parameter names from `DialogWithControlStateClosure`. For example, `config.json5` can contain apiConfigs:
+The configuration uses the parameter names from `DialogWithControlStateClosure`. For example, `web_config.json5` can contain apiConfigs:
 
 ```json
 {
@@ -62,7 +62,7 @@ The UI uses `/on-panda-annotate/` as the API prefix. For example, `get_json_list
 
 | Method | Endpoint | Request body | Success response |
 | --- | --- | --- | --- |
-| GET / POST | `config.json5` | None | The parsed configuration itself, without a `data` wrapper. Both methods read the configuration; POST does not modify it. |
+| GET / POST | `web_config.json5` | None | The parsed configuration itself, without a `data` wrapper. Both methods read the configuration; POST does not modify it. |
 | POST | `get_json_list` | None | `{"project_name":"my-data","data":[{"id":"xxxx/xx.panda.json"}]}` |
 | POST | `load_panda_json` | `{"id":"xxxx/xx.panda.json"}` | The panda JSON itself, without a `data` wrapper. |
 | POST | `delete_panda_json` | `{"id":"xxxx/xx.panda.json"}` | `{"data":{"id":"xxxx/xx.panda.json"}}` |

@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { DialogWithControlStateClosure } from './stores/dialogWithControlState.js'
@@ -34,16 +34,11 @@ import LanguageSwitcher from './components/widgets/LanguageSwitcher.vue'
 
 const { t } = useI18n()
 const rootUrl = '/on-panda-annotate/'
-const config = ref({})
 const jsonList = ref([])
 const currentId = ref('')
 const projectName = ref('')
 
-const apiConfigs = computed(() => Array.isArray(config.value) ? config.value : config.value.apiConfigs || [])
-const presetToolConfigs = computed(() => config.value.presetToolConfigs || [])
-const modelNameTags = computed(() => config.value.modelNameTags || {})
-const modelName = computed(() => config.value.modelName ?? 'on-panda')
-const dialogWithControlState = DialogWithControlStateClosure({ apiConfigs, presetToolConfigs, modelNameTags, modelName })
+const dialogWithControlState = DialogWithControlStateClosure()
 
 function apiUrl(path) {
   return `${rootUrl}${path}`
@@ -164,11 +159,8 @@ async function runAction(action) {
 }
 
 async function loadConfig() {
-  const result = await request('config.json5', { method: 'POST', body: '{}' })
-  config.value = result
-  if (!Array.isArray(result) && result.messages) {
-    dialogWithControlState.operationCenter.loadMessages(result.messages, result.presetToolConfigs)
-  }
+  const result = await request('web_config.json5', { method: 'POST', body: '{}' })
+  dialogWithControlState.applyConfig(result)
 }
 
 async function initialize() {
