@@ -175,6 +175,16 @@ export default {
     loaded: 'loaded',
     empty: 'empty'
   },
+  annotationUi: {
+    projectName: 'Project',
+    next: 'Next',
+    delete: 'Delete',
+    save: 'Save',
+    noFiles: 'No panda JSON files found',
+    missingFile: 'Panda JSON not found: {id}',
+    saveSuccess: 'Saved successfully',
+    deleteEmpty: 'Deleted successfully; no files remain'
+  },
   header: {
     usage: 'Usage',
     basicFeatures: 'Basic Features',

@@ -1,0 +1,20 @@
+{
+  "name": "@on-panda/annotate",
+  "version": "0.5.11",
+  "description": "A small local server for annotating onPanda JSON files",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "annotate": "./bin/annotate.js"
+  },
+  "files": [
+    "bin",
+    "web"
+  ],
+  "scripts": {
+    "prepack": "pnpm --dir ../.. build:annotate"
+  },
+  "dependencies": {
+    "json5": "^2.x"
+  }
+}

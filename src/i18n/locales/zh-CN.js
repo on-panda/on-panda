@@ -175,6 +175,16 @@ export default {
     loaded: '已加载',
     empty: '空'
   },
+  annotationUi: {
+    projectName: '项目',
+    next: '下一个',
+    delete: '删除',
+    save: '保存',
+    noFiles: '没有找到 panda JSON 文件',
+    missingFile: '不存在的 panda JSON：{id}',
+    saveSuccess: '保存成功',
+    deleteEmpty: '已删除，列表为空'
+  },
   header: {
     usage: '使用说明',
     basicFeatures: '基本功能',

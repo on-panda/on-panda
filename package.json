@@ -18,6 +18,8 @@
     "dev": "vite --config apps/on-panda-web/vite.config.js",
     "build": "vite build",
     "build:web": "vite build --config apps/on-panda-web/vite.config.js",
+    "build:annotate": "vite build --config apps/annotation-ui/vite.config.js",
+    "annotate": "pnpm build:annotate && node packages/annotate/bin/annotate.js",
     "build:core": "pnpm --dir packages/on-panda-core build",
     "publish:core": "pnpm --dir packages/on-panda-core build && pnpm --dir packages/on-panda-core publish",
     "install:core": "pnpm --dir packages/on-panda-core install",

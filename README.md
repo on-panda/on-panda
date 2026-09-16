@@ -33,6 +33,10 @@ pnpm install && pnpm dev
 
 Open the address shown in the terminal. By default, it is `http://localhost:5173`.
 
+## Batch Annotation
+
+Run `npx @on-panda/annotate --dir .` to annotate panda JSON files in a directory. See the [annotation server documentation](packages/annotate/README.md) for usage, the HTTP API, and save/delete backup behavior.
+
 ## Configure a Model API
 
 Paste a JSON5 configuration in **Custom API Config**, for example:

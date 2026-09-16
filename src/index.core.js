@@ -2,6 +2,7 @@
 import './style.css'
 
 export { default as OnPandaWeb } from './OnPandaWeb.vue';
+export { default as OnPandaAnnotate } from './OnPandaAnnotate.vue';
 
 export { DialogWithControlStateClosure } from './stores/dialogWithControlState.js'
 export { default as OnPandaDialogWithControl } from './components/OnPandaDialogWithControl.vue'

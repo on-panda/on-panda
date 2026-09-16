@@ -33,6 +33,10 @@ pnpm install && pnpm dev
 
 打开终端显示的地址，默认是 `http://localhost:5173`。
 
+## 批量标注
+
+使用 `npx @on-panda/annotate --dir .` 批量标注目录中的 panda JSON 文件。用法、HTTP 接口以及保存和删除时的备份逻辑见[标注服务文档](packages/annotate/README.md)。
+
 ## 配置模型 API
 
 在页面的“自定义 API 配置”中粘贴 JSON5 配置，例如：
