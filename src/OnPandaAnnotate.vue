@@ -160,7 +160,9 @@ async function runAction(action) {
 
 async function loadConfig() {
   const result = await request('web_config.json5', { method: 'POST', body: '{}' })
-  dialogWithControlState.applyConfig(result)
+  if (Object.keys(result).length) {
+    dialogWithControlState.applyConfig(result)
+  }
 }
 
 async function initialize() {

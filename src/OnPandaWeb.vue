@@ -117,7 +117,7 @@ const modelName = controlParameterState.modelName
 const modelNameTagsComputed = controlParameterState.modelNameTagsComputed
 
 watch(modelName, async function watchModelName(newValue) {  // set modelName to page title
-  if (document.title.endsWith("onPanda")) {
+  if (window.isOnPandaWeb) {
     document.title = newValue + " | onPanda"
   }
 })

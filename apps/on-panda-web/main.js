@@ -3,6 +3,8 @@ import { createPinia } from 'pinia'
 import OnPandaWeb from '../../src/OnPandaWeb.vue'
 import { onPandaPlugin } from '../../src/index.js'
 
+window.isOnPandaWeb = true
+
 const app = createApp(OnPandaWeb)
 const pinia = createPinia()
 
