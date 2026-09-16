@@ -10,7 +10,7 @@
         <code>{{ t('header.dataAnnotatorDesc') }}</code>
     </details>
 
-    <details>
+    <!-- <details>
         <summary>
             <small style="color: #888;">{{ t('header.asWritingTool') }}:</small>
         </summary>
@@ -25,7 +25,7 @@
         </summary>
         <h2>(WIP) Driving Mode: You are Secretly an Agentic Model</h2>
         <code>{{ t('header.drivingModeDesc') }}</code>
-    </details>
+    </details> -->
 
     <div style="text-align: center;">
         <img width="128" :src="'/img/on-panda-logo-256x256.png'"
@@ -33,6 +33,7 @@
             :style="{ transform: _isLogoRotated ? 'rotate(360deg)' : 'rotate(0deg)', transition: 'transform 3s' }"
             @click="_isLogoRotated = !_isLogoRotated" />
         <br>
+        <!-- <b :style="globalStore.isMobile ? {} : { fontSize: '20px' }">onPanda: LLM-Native Interaction Design</b> -->
         <b :style="globalStore.isMobile ? {} : { fontSize: '20px' }">onPanda: Token-Level Control for LLMs and Agents</b>
         <br>
         <br>
