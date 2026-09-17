@@ -1,6 +1,6 @@
 {
   "name": "@on-panda/serve",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "A production server for the onPanda web application",
   "license": "MIT",
   "type": "module",
