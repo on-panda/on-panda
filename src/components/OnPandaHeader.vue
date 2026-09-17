@@ -8,6 +8,9 @@
         </summary>
         <h2>onPanda: on-Policy Alignment Data Annotator</h2>
         <code>{{ t('header.dataAnnotatorDesc') }}</code>
+        [<a href="https://on-panda.github.io/research/" style="color: #888;" target="_blank"><small>Project Page</small></a>]
+        <br>
+        <br>
     </details>
 
     <!-- <details>
