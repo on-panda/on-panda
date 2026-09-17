@@ -76,7 +76,7 @@ export default {
     pasteManually: 'Clipboard read failed. Please paste manually.',
     responseRefreshed: 'Response probability refreshed',
     modelsRefreshed: 'Model list refresh completed',
-    noPromptLogprobs: 'No prompt_logprobs in response, maybe the model does not support prompt_logprobs',
+    noPromptLogprobs: 'The current model does not support prompt_logprobs. Please switch to another model.',
     dropFilesHere: 'Drop *.panda*.json, local files, or folders here!',
     localFilesUploadTip: 'Only one *.panda*.json loads data; other files and folders are shared with browserAgent',
     openAnnotatorPanel: 'Open annotator panel',

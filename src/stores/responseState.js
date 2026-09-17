@@ -361,6 +361,16 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
 
     async function requestPromptLogprobs() {
+        if (apiConfig.value.chat_config.prompt_logprobs === null) {
+            // prompt_logprobs may cause the server to hang up, set chat_config.prompt_logprobs to null to avoid this
+            ElMessage({
+                showClose: true,
+                message: t('userMessages.noPromptLogprobs'),
+                type: 'error',
+                duration: 10000,
+            })
+            return
+        }
         assertNoLegacyChatConfigTools(apiConfig.value.chat_config)
         // TODO auto run when chat_config is changed?
         // may delete the stop/<EOT> token

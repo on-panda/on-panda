@@ -76,7 +76,7 @@ export default {
     pasteManually: '读取剪贴板失败，请手动粘贴。',
     responseRefreshed: '响应概率已刷新',
     modelsRefreshed: '模型列表刷新完成',
-    noPromptLogprobs: '响应中没有 prompt_logprobs，可能当前模型不支持刷新概率和候选',
+    noPromptLogprobs: '当前模型不支持 prompt_logprobs，请更换其它模型',
     dropFilesHere: '拖放 *.panda*.json、本地文件或文件夹到这里！',
     localFilesUploadTip: '只有单个 *.panda*.json 会载入数据，其他文件和文件夹会共享给 browserAgent',
     openAnnotatorPanel: '打开标注面板',
