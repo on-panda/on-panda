@@ -14,7 +14,7 @@ const PARAMETER_END = xmlMarker('parameter', true)
 
 export class Step3p5ResponseTemplate extends Qwen3p5ResponseTemplate {
     static match({ responseTemplateConfig } = {}) {
-        return /^stepfun-ai\/Step-3\.[5-9]-Flash(-|$)/i.test(responseTemplateConfig?.name_or_path || '')
+        return /^(?:stepfun-ai\/)?Step-3\.[5-9]-Flash(-|$)/i.test(responseTemplateConfig?.name_or_path || '')
     }
 
     constructor(options = {}) {

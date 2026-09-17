@@ -334,7 +334,7 @@ function normalizePlainTextInStructuredMessage(message) {
 
 export class KimiK2ResponseTemplate {
     static match({ responseTemplateConfig } = {}) {
-        return /^moonshotai\/kimi-k2/i.test(responseTemplateConfig?.name_or_path || '')
+        return /^(?:moonshotai\/)?kimi-k2/i.test(responseTemplateConfig?.name_or_path || '')
     }
 
     constructor({ apiConfig } = {}) {

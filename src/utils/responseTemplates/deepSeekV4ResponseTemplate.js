@@ -671,7 +671,7 @@ function buildDeepSeekPrompt(message = {}, template) {
 
 export class DeepSeekV4ResponseTemplate {
     static match({ responseTemplateConfig } = {}) {
-        return /^deepseek-ai\/DeepSeek-V4(?:-Flash(?:-|$)|$)/i.test(responseTemplateConfig?.name_or_path || '')
+        return /^(?:deepseek-ai\/)?DeepSeek-V4(?:-Flash(?:-|$)|$)/i.test(responseTemplateConfig?.name_or_path || '')
     }
 
     constructor({ apiConfig } = {}) {

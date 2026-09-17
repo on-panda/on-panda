@@ -790,7 +790,7 @@ function buildGLM5Prompt(message = {}) {
 
 export class GLM5ResponseTemplate {
     static match({ responseTemplateConfig } = {}) {
-        return /^zai-org\/GLM-5(?:\.[0-4])?(?:-|$)/i.test(responseTemplateConfig?.name_or_path || '')
+        return /^(?:zai-org\/)?GLM-5(?:\.[0-4])?(?:-|$)/i.test(responseTemplateConfig?.name_or_path || '')
     }
 
     constructor({ apiConfig } = {}) {

@@ -3,7 +3,7 @@ import { testPartialResponseTemplateRoundTrips } from './responseTemplateTestUti
 
 export class DeepSeekV4p1ResponseTemplate extends DeepSeekV4ResponseTemplate {
     static match({ responseTemplateConfig } = {}) {
-        return /^deepseek-ai\/DeepSeek-V4\.1-Flash(?:-|$)/i.test(responseTemplateConfig?.name_or_path || '')
+        return /^(?:deepseek-ai\/)?DeepSeek-V4\.1-Flash(?:-|$)/i.test(responseTemplateConfig?.name_or_path || '')
     }
 
     constructor(options = {}) {

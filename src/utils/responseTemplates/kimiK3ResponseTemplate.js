@@ -711,7 +711,7 @@ function buildKimiK3Prompt(message = {}) {
 
 export class KimiK3ResponseTemplate {
     static match({ responseTemplateConfig } = {}) {
-        return /^moonshotai\/kimi-k3(?:\.[0-9]+)?(?:-|$)/i.test(responseTemplateConfig?.name_or_path || '')
+        return /^(?:moonshotai\/)?kimi-k3(?:\.[0-9]+)?(?:-|$)/i.test(responseTemplateConfig?.name_or_path || '')
     }
 
     constructor({ apiConfig } = {}) {

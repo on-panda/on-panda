@@ -648,7 +648,7 @@ function hasStructuredDelta(tokens = []) {
 
 export class Qwen3p5ResponseTemplate {
     static match({ responseTemplateConfig } = {}) {
-        return /^Qwen\/Qwen3\.[5-8](-|$)/i.test(responseTemplateConfig?.name_or_path || '')
+        return /^(?:Qwen\/)?Qwen3\.[5-8](-|$)/i.test(responseTemplateConfig?.name_or_path || '')
     }
 
     constructor({ apiConfig } = {}) {
