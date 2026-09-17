@@ -128,13 +128,19 @@ function convertTool(tool) {
     }
 }
 
+function isClaudeAdaptiveThinkingModel(model) {
+    const modelName = model.toLowerCase()
+    return /claude-(?:opus-(?:4[-.]8|5)|fable-5(?:[-.]1)?)/.test(modelName)
+}
+
 function buildAnthropicMessagesRequest(openaiRequestBody) {
     const body = deepCopy(openaiRequestBody)
     const { systemMessages, firstNonSystemIndex } = collectSystemMessages(body.messages || [])
     const messages = body.messages.slice(firstNonSystemIndex)
     assertNoMiddleSystemMessages(messages)
 
-    const maxTokens = body.max_tokens || body.max_completion_tokens || 1025
+    const maxTokens = body.max_tokens || body.max_completion_tokens || 32 * 1024
+    const adaptiveThinking = isClaudeAdaptiveThinkingModel(body.model)
     const requestBody = {
         model: body.model,
         stream: true,
@@ -170,7 +176,10 @@ function buildAnthropicMessagesRequest(openaiRequestBody) {
         // TODO: It may be better to automatically convert non-leading system/developer messages into a user message template.
         requestBody.system = systemMessages.map(message => message.content || '').join('\n\n')
     }
-    for (const key of ['temperature', 'top_p', 'top_k', 'stop_sequences', 'thinking', 'output_config']) {
+    const parameterKeys = adaptiveThinking
+        ? ['stop_sequences', 'thinking', 'output_config']
+        : ['temperature', 'top_p', 'top_k', 'stop_sequences', 'thinking', 'output_config']
+    for (const key of parameterKeys) {
         if (body[key] != null) {
             requestBody[key] = body[key]
         }
@@ -181,18 +190,19 @@ function buildAnthropicMessagesRequest(openaiRequestBody) {
     if (body.tools?.length) {
         requestBody.tools = body.tools.map(convertTool)
     }
-    if (!requestBody.thinking) {
-        const modelName = `${body.model || ''}`.toLowerCase()
-        if (modelName.includes('claude-opus') || modelName.includes('claude-sonnet')) {
-            requestBody.thinking = { type: 'adaptive' }
-            if (!requestBody.output_config) {
-                requestBody.output_config = { effort: 'max' }
-            }
-        } else {
-            requestBody.thinking = {
-                type: 'enabled',
-                budget_tokens: maxTokens - 1,
-            }
+    if (adaptiveThinking) {
+        requestBody.thinking = {
+            type: 'adaptive',
+            display: requestBody.thinking?.display || 'summarized',
+        }
+        requestBody.output_config = {
+            effort: 'high',
+            ...requestBody.output_config,
+        }
+    } else if (!requestBody.thinking) {
+        requestBody.thinking = {
+            type: 'enabled',
+            budget_tokens: maxTokens - 1,
         }
     }
     return requestBody
