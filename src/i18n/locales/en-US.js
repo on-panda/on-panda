@@ -33,7 +33,9 @@ export default {
     refreshModelList: 'Refresh model list',
     editLocalStorageApiConfigs: 'Edit custom API configs',
     editLocalStorageApiConfigsInstructions: `
-- Connect your own custom APIs to onPanda
+- Connect your own APIs to onPanda
+- We recommend clicking \`🤖 browser-agent\` in the examples and letting the agent help configure your API
+  - You can also give [onpanda-docs/SKILL.md](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/onpanda-docs/SKILL.md) and your requirements to another agent to help configure it
 - Supports JSON5 (a more relaxed JSON format)
 - The outer structure must be an array
 - Example config:
@@ -41,8 +43,8 @@ export default {
 [
     { // openAI chat completion API format
       "client_config": {
-          "base_url": "https://api.inference.wandb.ai/v1",
-          "api_key": "wandb_v1_your_api_key",  // API key
+          "base_url": "https://vllm-test-api.diyer22.com/v1",
+          "api_key": "your_api_key",
           "extra_headers": {},  // optional custom request headers
       },
       "chat_config": {  // chat completion request parameters
@@ -56,17 +58,23 @@ export default {
       "tag_name": "custom",  // Quick model tag shown in the onPanda UI
       "low_priority": false,  // Whether low priority. Will be placed at the end of the model list, and the matching priority is also the lowest
       // "response_template": { "name_or_path": "Qwen/Qwen3.6-35B-A3B" },  // optional response template for continue generation with reasoning and tool_calls
+      // "api_protocol": { "protocol": "anthropic", "endpoint": "messages" },  // onPanda also supports Claude and Gemini API protocols
     },
     // { ... } another API config
 ]
 \`\`\`
 - You can view the current API configuration under \`Advanced Control\` → \`Current API config JSON\`.
-- The model families and matching rules currently supported by onPanda are maintained in [responseTemplates/index.js](https://github.com/on-panda/on-panda/blob/main/src/utils/responseTemplates/index.js) (you can include this link when asking an agent which models are supported).
-- If \`response_template\` is omitted and \`chat_config.model\` looks like a Hugging Face repository ID, onPanda tries to detect a supported template automatically.
+    - Note: The configuration shown here is the final version after default values have been added.
 
 **Privacy notice:**
 - Custom API configs are stored locally in your browser (localStorage)
 - When you use a custom API, onPanda sends the request directly from your browser and never uploads anything to third-party servers
+
+**Additional for agent:**
+- The model families and matching rules currently supported by onPanda are maintained in [responseTemplates/index.js](https://github.com/on-panda/on-panda/blob/main/src/utils/responseTemplates/index.js) (you can include this link when asking an agent which models are supported).
+- If \`response_template\` is omitted and \`chat_config.model\` looks like an official model name or a Hugging Face repository ID, onPanda tries to detect a supported template automatically. Use Current API config JSON to determine whether a match was found.
+- Information about \`api_protocol\` is available in [apiProtocols/index.js](https://github.com/on-panda/on-panda/blob/main/src/utils/apiProtocols/index.js)
+
 `.replaceAll('{', '&#123;').replaceAll('}', '&#125;')
   },
   userMessages: {

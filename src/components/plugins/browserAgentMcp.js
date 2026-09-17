@@ -311,7 +311,7 @@ async function buildBrowserAgentMcpInstructions({ proxyPath = '' } = {}) {
         ? `\n    - Fallback: for critical resources that even cors-internet cannot reach, use the server-side proxy at \`${proxyPath}/{url}\`.`
         : ''
 
-    return `You are an agent running in a browser. You are operating in the JavaScript runtime of the current webpage, where the user interacts with you. Please make the appropriate adjustments for this browser JavaScript environment.
+    return `You are an agent running in a browser. You are operating in the JavaScript runtime of the current webpage, called onPanda, where the user interacts with you. Please make the appropriate adjustments for this browser JavaScript environment.
 
 ## Skills
 A skill is a set of instructions to follow that is stored in a \`SKILL.md\` file. Below is the list of skills that can be used. Each entry includes a name, description, and skillUrl so you can open the source for full instructions when using a specific skill.
@@ -319,6 +319,7 @@ A skill is a set of instructions to follow that is stored in a \`SKILL.md\` file
 - \`cors-internet\`: Skill for web search and information retrieval under CORS. Use when you need to access the internet. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/cors-internet/SKILL.md))${corsInternetSupplement}
 - \`interactive-webpage\`: Use when you need to create webpages or interactive artifacts, or modify the current UI. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/interactive-webpage/SKILL.md))
 - \`user-local-files\`: Use when the user shares local files, indicated by \`<|user_local_files\` in the context. Includes local filesystem read/write guidelines and common tools. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/user-local-files/SKILL.md))
+- \`onpanda-docs\`: Use when the user asks about onPanda or asks you to manage API configuration. This skill contains information about onPanda, its source code, and related resources. ([skillUrl](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/onpanda-docs/SKILL.md))
 ### How to load skills
 If the task clearly matches a skill's description shown above, using tool "run_browser_js" with this pattern code to load the skill:
 \`\`\`js

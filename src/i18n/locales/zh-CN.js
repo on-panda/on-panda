@@ -33,7 +33,9 @@ export default {
     refreshModelList: '刷新模型列表',
     editLocalStorageApiConfigs: '自定义 API 配置',
     editLocalStorageApiConfigsInstructions: `
-- 将您自己的自定义 API 接入 onPanda
+- 将您自己的 API 接入 onPanda
+- 推荐点击 example 中的 \`🤖 browser-agent\` 让 agent 来帮你配置 API
+  - 也可以把 [onpanda-docs/SKILL.md](https://raw.githubusercontent.com/on-panda/browser-agent-skills/main/skills/onpanda-docs/SKILL.md) 和您的需求丢给其它 agent 来帮忙配置
 - 支持 JSON5 格式（一种宽泛的 JSON 格式）
 - 外层必须是数组
 - 示例配置：
@@ -41,8 +43,8 @@ export default {
 [
     { // openAI chat completion API 格式
       "client_config": {
-          "base_url": "https://api.inference.wandb.ai/v1",
-          "api_key": "wandb_v1_your_api_key",  // API 密钥
+          "base_url": "https://vllm-test-api.diyer22.com/v1",
+          "api_key": "your_api_key",
           "extra_headers": {},  // 可选的自定义请求 headers
       },
       "chat_config": {  // chat completion 请求的参数
@@ -56,17 +58,24 @@ export default {
       "tag_name": "custom",  // 在 onPanda UI 上添加模型快捷标签
       "low_priority": false,  // 是否为低优先级。将排在模型列表中最后，被匹配的优先级也最低
       // "response_template": { "name_or_path": "Qwen/Qwen3.6-35B-A3B" },  // 可选的响应模板以支持带 reasoning 和 tool_calls 的续写功能
+      // "api_protocol": { "protocol": "anthropic", "endpoint": "messages" },  // onPanda 还支持 claude 和 gemni 的 API 协议
     },
     // { ... } 另一个 API 配置
 ]
 \`\`\`
 - 可以从 \`高级控制\` -> \`Current API config JSON\` 中查看当前 API 的配置
-- onPanda 当前支持的模型族和匹配规则维护在 [responseTemplates/index.js](https://github.com/on-panda/on-panda/blob/main/src/utils/responseTemplates/index.js) （可以附上这个链接咨询 agent 支持哪些模型）
-- 如果没有配置 \`response_template\`，而 \`chat_config.model\` 看起来像 Hugging Face 仓库名，onPanda 会尝试自动匹配已支持的模板。
+    - 注意：这里看到的配置是加入了默认配置后的最终版本
 
 **隐私声明：**
 - 自定义 API 配置文件存储在您的浏览器本地（localStorage）
 - 使用自定义 API 配置时，onPanda 会通过您的浏览器直接向 API 发起请求，不会上传到任何第三方服务器
+
+
+**补充信息 for agent:**
+- onPanda 当前支持的模型族和匹配规则维护在 [responseTemplates/index.js](https://github.com/on-panda/on-panda/blob/main/src/utils/responseTemplates/index.js) （可以附上这个链接咨询 agent 支持哪些模型）
+- 如果没有配置 \`response_template\`，而 \`chat_config.model\` 看起来像官方模型名或 Hugging Face 仓库名，onPanda 会尝试自动匹配已支持的模板。通过 Current API config JSON 来确定是否匹配上
+- api_protocol 相关的内容在 [apiProtocols/index.js](https://github.com/on-panda/on-panda/blob/main/src/utils/apiProtocols/index.js)
+
 `.replaceAll('{', '&#123;').replaceAll('}', '&#125;')
   },
   userMessages: {
