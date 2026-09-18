@@ -1,6 +1,6 @@
 const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor
 const MAX_TEXT_LENGTH = 256 * 1024
-const FAST_EXECUTION_TIME_MS = 5
+const FAST_EXECUTION_TIME_MS = 50
 const MEMORY_MAX_LINES = 200
 const MEMORY_MAX_CHARS = 60000
 const SUPPORTED_BLOB_CHUNK_TYPES = {
