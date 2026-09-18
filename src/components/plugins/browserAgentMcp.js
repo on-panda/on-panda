@@ -1,5 +1,6 @@
 const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor
 const MAX_TEXT_LENGTH = 256 * 1024
+const FAST_EXECUTION_TIME_MS = 5
 const MEMORY_MAX_LINES = 200
 const MEMORY_MAX_CHARS = 60000
 const SUPPORTED_BLOB_CHUNK_TYPES = {
@@ -172,8 +173,17 @@ async function runBrowserJs(code = '', buildBrowserAgent) {
         type: 'text',
         text: `<|execution_info_start|>\nCode execution time: ${executionTimeMs} ms\n<|execution_info_end|>`,
     }]
-    if (!entries.some(e => e.kind === 'log')) {
+    const hasLog = entries.some(entry => entry.kind === 'log')
+    if (!hasLog) {
         content.push({ type: 'text', text: '<|no_js_log|>' })
+        if (executionTimeMs < FAST_EXECUTION_TIME_MS) {
+            content.push({
+                type: 'text',
+                text: `<|system_reminder_start|>
+No console.log output was produced and the JavaScript execution completed very quickly. If output was expected, the code may have started asynchronous work without awaiting it, so the tool returned before the asynchronous callback could run. Await the promise or use top-level await, then call console.log.
+<|system_reminder_end|>`,
+            })
+        }
     }
 
     let textBuf = ''
