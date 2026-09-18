@@ -77,14 +77,6 @@ ${text.slice(0, prefixLength)}
 ${text.slice(text.length - suffixLength)}`
 }
 
-async function ensureBrowserAgentMemory() {
-    const root = await navigator.storage.getDirectory()
-    const browserAgentDir = await root.getDirectoryHandle('browser-agent', { create: true })
-    const memoryDir = await browserAgentDir.getDirectoryHandle('memory', { create: true })
-    const memoryFile = await memoryDir.getFileHandle('MEMORY.md', { create: true })
-    return await (await memoryFile.getFile()).text()
-}
-
 function truncateBrowserAgentMemory(memoryText = '') {
     const lines = memoryText.split('\n')
     const reasons = []
@@ -105,15 +97,15 @@ function truncateBrowserAgentMemory(memoryText = '') {
     return {
         text,
         truncationReason: reasons.length
-            ? `Truncated: ${reasons.join('; ')}. So, find an opportunity to organize the memory: clean up or archive outdated or unimportant information, move less important content out of the MEMORY.md into other files or folders under \`browser-agent/memory/\`, and keep only brief descriptions and references in the MEMORY.md so you can read the archived content later when needed.`
+            ? `Truncated: ${reasons.join('; ')}. So, find an opportunity to organize the memory: clean up or archive outdated or unimportant information, move less important content out of \`browser-agent/memory/MEMORY.md\` into other localStorage keys under \`browser-agent/memory/\`, and keep only brief descriptions and references in \`browser-agent/memory/MEMORY.md\` so you can read the archived content later when needed.`
             : '',
     }
 }
 
-async function buildBrowserAgentMemoryInstructions() {
+function buildBrowserAgentMemoryInstructions() {
     const overview = `## Persistent memory
-Persistent memory is stored in files or folders under \`browser-agent/memory/\` in the current origin's OPFS. Use \`run_browser_js\` and \`navigator.storage.getDirectory()\` to record, modify, and query memory when needed. \`browser-agent/memory/MEMORY.md\` is always loaded into your conversation context. Keep it concise; it is truncated after ${MEMORY_MAX_LINES} lines or ${MEMORY_MAX_CHARS} characters.`
-    const memoryText = await ensureBrowserAgentMemory()
+Persistent memory is stored in localStorage. Treat localStorage as a virtual filesystem: each localStorage key is a file path, and \`browser-agent/memory/\` is the memory directory. The primary memory file is \`browser-agent/memory/MEMORY.md\`, which is always loaded into your conversation context. Use \`run_browser_js\` with localStorage to record and modify it. Store other memory files under \`browser-agent/memory/\`; use \`Object.keys(localStorage).filter(key => key.startsWith('browser-agent/memory/'))\` to query available files. Keep \`browser-agent/memory/MEMORY.md\` concise; it is truncated after ${MEMORY_MAX_LINES} lines or ${MEMORY_MAX_CHARS} characters.`
+    const memoryText = localStorage.getItem('browser-agent/memory/MEMORY.md') || ''
     if (!memoryText.trim()) {
         return `${overview}
 The current \`browser-agent/memory/MEMORY.md\` is empty.`
@@ -122,7 +114,7 @@ The current \`browser-agent/memory/MEMORY.md\` is empty.`
     const { text, truncationReason } = truncateBrowserAgentMemory(memoryText)
 
     return `${overview}
-### the MEMORY.md
+### Content of primary MEMORY.md
 <|browser_agent_memory_start|>
 ${text}
 <|browser_agent_memory_end|>${truncationReason ? `\n${truncationReason}` : ''}`
@@ -316,7 +308,7 @@ async function handleJsonRpcMessage({ message = {}, instructions = '', buildBrow
     return buildJsonErrorResponse(message.id, -32601, `Method not found: ${message.method}`)
 }
 
-async function buildBrowserAgentMcpInstructions({ proxyPath = '' } = {}) {
+function buildBrowserAgentMcpInstructions({ proxyPath = '' } = {}) {
     const corsInternetSupplement = proxyPath
         ? `\n    - Fallback: for critical resources that even cors-internet cannot reach, use the server-side proxy at \`${proxyPath}/{url}\`.`
         : ''
@@ -336,7 +328,7 @@ If the task clearly matches a skill's description shown above, using tool "run_b
 await fetch(skillUrl).then(res => res.text()).then(console.log)
 \`\`\`
 
-${await buildBrowserAgentMemoryInstructions()}`
+${buildBrowserAgentMemoryInstructions()}`
 }
 
 export function BrowserAgentMcpClosure({ buildBrowserAgent, proxyPath = '' } = {}) {
@@ -348,7 +340,7 @@ export function BrowserAgentMcpClosure({ buildBrowserAgent, proxyPath = '' } = {
             const message = JSON.parse(init.body || '{}')
             return await handleJsonRpcMessage({
                 message,
-                instructions: message.method === 'initialize' ? await buildBrowserAgentMcpInstructions({ proxyPath }) : '',
+                instructions: message.method === 'initialize' ? buildBrowserAgentMcpInstructions({ proxyPath }) : '',
                 buildBrowserAgent,
             })
         },
