@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { i18n } from '../i18n/index.js'
 
 export const useGlobalStore = defineStore('onPandaGlobal', () => {
-    const debug = ref(window.isOnPandaWeb && (window.location.href.includes('http://localhost') || window.location.href.includes('http://127.0.0.1') || window.location.origin.includes("debug")))
+    const debug = ref(import.meta.env.DEV && window.isOnPandaWeb && (window.location.href.includes('http://localhost') || window.location.href.includes('http://127.0.0.1') || window.location.origin.includes("debug")))
 
     const isOldUser = ref(localStorage.getItem('onPandaIsOldUser') == 'true')
 
