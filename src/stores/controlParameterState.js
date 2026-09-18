@@ -1,4 +1,4 @@
-import { ref, computed, toValue, watch, isRef, onMounted } from 'vue'
+import { ref, computed, toValue, watch, isRef, isReadonly, onMounted } from 'vue'
 import JSON5 from 'json5'
 import { OpenAI } from '../utils/fetchOpenaiApi.js'
 import { ElMessage } from 'element-plus'
@@ -99,7 +99,14 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         isMounted.value = true
     })
 
-    const apiConfigsInput = isRef(apiConfigs) ? apiConfigs : ref(apiConfigs || [deepCopy(defaultApiConfig)])
+    const apiConfigsInput = isRef(apiConfigs) && !isReadonly(apiConfigs)
+        ? apiConfigs
+        : ref(toValue(apiConfigs) || [deepCopy(defaultApiConfig)])
+    if (isRef(apiConfigs) && isReadonly(apiConfigs)) {
+        watch(apiConfigs, value => {
+            apiConfigsInput.value = value
+        })
+    }
     const apiConfigsLocalStorage = ref([])
     function refreshApiConfigs() {
         var newLocalStorageApiConfigs = []
@@ -117,7 +124,14 @@ export function ControlParameterStateClosure({ apiConfigs = null, modelNameTags 
         // apply low_priority
         return [...apiConfigsLocalStorage.value.filter(apiConfig => !apiConfig.low_priority), ...apiConfigsInput.value.filter(apiConfig => !apiConfig.low_priority), ...apiConfigsLocalStorage.value.filter(apiConfig => apiConfig.low_priority), ...apiConfigsInput.value.filter(apiConfig => apiConfig.low_priority)]
     })
-    const modelNameTagsInput = isRef(modelNameTags) ? modelNameTags : ref(modelNameTags || {})
+    const modelNameTagsInput = isRef(modelNameTags) && !isReadonly(modelNameTags)
+        ? modelNameTags
+        : ref(toValue(modelNameTags) || {})
+    if (isRef(modelNameTags) && isReadonly(modelNameTags)) {
+        watch(modelNameTags, value => {
+            modelNameTagsInput.value = value
+        })
+    }
 
     function getModelNameTags(apiConfigs) {
         const modelNameTags = {}

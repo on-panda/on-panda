@@ -39,6 +39,7 @@ async function startServer(options) {
     : ''
   const server = await preview({
     root: packageDir,
+    configFile: false,
     appType: 'spa',
     plugins: [
       createBypassCorsProxyPlugin(process.env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH),
