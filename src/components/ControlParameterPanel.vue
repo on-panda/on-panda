@@ -271,7 +271,7 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
             }))" placeholder="Select model" style="width: 440px" size="small" :height='400'
                 :class="{ 'mobile-select-model-input': isMobile }" />
         </el-form-item>
-        <div v-if="Object.keys(modelNameTags)?.length >= 1" class="ModelNameTags">
+        <div class="ModelNameTags">
             <div style="line-height: 1.85;margin-top: -20px;margin-bottom: -5px;" :align="isMobile ? 'right' : ''">
                 <span v-for="_ in (isMobile ? 0 : 30)">&nbsp;</span>
 
