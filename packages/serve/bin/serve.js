@@ -2,7 +2,7 @@
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { preview } from 'vite'
+import { loadEnv, preview } from 'vite'
 
 import { createBypassCorsProxyPlugin } from '../server/bypassCorsProxyPlugin.js'
 import { createRuntimeImportPlugin } from '../server/runtimeImportPlugin.js'
@@ -34,15 +34,16 @@ function parseArgs(args) {
 }
 
 async function startServer(options) {
-  const runtimeImportPath = process.env.VITE_ON_PANDA_WEB_RUNTIME_IMPORT
-    ? path.resolve(process.cwd(), process.env.VITE_ON_PANDA_WEB_RUNTIME_IMPORT)
+  const env = loadEnv('production', process.cwd())
+  const runtimeImportPath = env.VITE_ON_PANDA_WEB_RUNTIME_IMPORT
+    ? path.resolve(process.cwd(), env.VITE_ON_PANDA_WEB_RUNTIME_IMPORT)
     : ''
   const server = await preview({
     root: packageDir,
     configFile: false,
     appType: 'spa',
     plugins: [
-      createBypassCorsProxyPlugin(process.env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH),
+      createBypassCorsProxyPlugin(env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH),
       createRuntimeImportPlugin(runtimeImportPath),
       createUsingServerProxyPlugin(),
       createWebConfigPlugin(options.webConfig),
