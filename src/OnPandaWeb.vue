@@ -130,7 +130,7 @@ function defaultDebugRun({ responseState, controlParameterState }) {
   const { operationCenter } = responseState
   controlParameterState.modelName.value = controlParameterState.modelNameTagsComputed.value['default-agent-tag'] || 'default-agent-tag'
   operationCenter.loadMessages(
-    [{ role: "user", content: "What's the weather in New York City? Build an animated weather card in the top-right corner." }],
+    [{ role: "user", content: "Build an animated weather card about my city in the bottom-right corner" }],
     [{ type: 'mcp', server_url: 'local-fetch://browser-agent-mcp', require_approval: 'always' }]
   )
   operationCenter.generateNew()
