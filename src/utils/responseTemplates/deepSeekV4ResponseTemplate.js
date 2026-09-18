@@ -671,7 +671,7 @@ function buildDeepSeekPrompt(message = {}, template) {
 
 export class DeepSeekV4ResponseTemplate {
     static match({ responseTemplateConfig } = {}) {
-        return /^(?:deepseek-ai\/)?DeepSeek-V4(?:-Flash(?:-|$)|$)/i.test(responseTemplateConfig?.name_or_path || '')
+        return /^(?:deepseek-ai\/)?DeepSeek-V4(?:-(?:Flash|Pro)(?:-|$)|$)/i.test(responseTemplateConfig?.name_or_path || '')
     }
 
     constructor({ apiConfig } = {}) {
@@ -810,10 +810,13 @@ export function testDeepSeekV4ResponseTemplate() {
         responseTemplateConfig: { name_or_path: 'deepseek-ai/DeepSeek-V4-Flash-FP8' },
     }), true, 'V4-Flash variant match')
     assertEqual(DeepSeekV4ResponseTemplate.match({
-        responseTemplateConfig: { name_or_path: 'deepseek-ai/DeepSeek-V4-Pro' },
-    }), false, 'V4-Pro mismatch')
+        responseTemplateConfig: { name_or_path: 'deepseek-ai/DeepSeek-V4-Pro-0813' },
+    }), true, 'V4-Pro variant match')
+    assertEqual(DeepSeekV4ResponseTemplate.match({
+        responseTemplateConfig: { name_or_path: 'deepseek-ai/DeepSeek-V4-Reasoner' },
+    }), false, 'V4-Reasoner mismatch')
     assertEqual(DeepSeekV4ResponseTemplate.match({
         responseTemplateConfig: { name_or_path: 'deepseek-ai/DeepSeek-V4.1-Flash' },
     }), false, 'V4.1 mismatch')
-    return partialMessageTestCount + 9
+    return partialMessageTestCount + 10
 }

@@ -247,6 +247,12 @@ async function createServer(options) {
         jsonResponse(res, 403, { error: 'Cross-origin request is not allowed' })
         return
       }
+      if (requestUrl.pathname === defaultRootUrl.slice(0, -1)) {
+        res.statusCode = 308
+        res.setHeader('location', `${defaultRootUrl}${requestUrl.search}`)
+        res.end()
+        return
+      }
       const route = routePath(requestUrl.pathname)
       if (route === 'web_config.json5' && ['GET', 'POST'].includes(req.method)) {
         if (req.method === 'POST') {
