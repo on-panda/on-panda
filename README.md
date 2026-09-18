@@ -2,11 +2,10 @@
 
 A web app for token visualization and control, model inspection, data annotation, and more.
 
-
 <div align="center">
 
 <a href="https://on-panda.github.io/img/fig1_UI-v4.png">
-  <img src="https://on-panda.github.io/img/fig1_UI-v4.png" alt="onPanda token-level correction interface" style="max-width:350px" loading="lazy">
+  <img src="https://on-panda.github.io/img/fig1_UI-v4.png" alt="onPanda token-level correction interface" style="width:350px; max-width:100%; height:auto" loading="lazy">
 </a>
 
 The token-level correction interface of onPanda
@@ -17,81 +16,65 @@ The token-level correction interface of onPanda
 
 ## Features
 
-- Visualize probabilities and candidate tokens for model responses.
-- Continue from a candidate, or double-click a token to edit it and continue generation.
-- Support text, images, audio, video, and tool calls.
-- Import and export `.panda.json` annotation data.
-- Connect to different LLM API protocols. API configurations and keys stay in browser local storage.
+onPanda is designed for geeks, power users, curious minds, and engineers. Its UI is built for deep exploration and efficient data annotation.
 
-## Quick Start
+- The core loop is simple: hover over a token → click an alternative or edit freely → continue generation. You can edit every part of model output exposed by onPanda, including reasoning and tool calls.
+- Edit prompts directly, branch tool calls, and use a tree structure to record branch history. This makes onPanda useful for model inspection and prompt engineering.
+- Support multiple modalities, including images, video, and audio; use tool calls and connect MCP servers to perform tasks in real environments.
+- Connect popular harnesses such as Claude Code, Codex, and OpenCode to execute tasks. Explore and compare their tool sets, system prompts, skills, and memory mechanisms.
+- onPanda includes browser-agent, an agent that runs in the user's browser without installation. It uses the browser as its harness and provides JavaScript execution, information retrieval, interface interaction, multimedia I/O, local file access, and persistent memory.
+- onPanda stands for on-Policy Alignment Data Annotator. Read the paper on onPanda's data annotation approach:
+  - [onPanda: Efficient Annotation of On-Policy Alignment Data for LLMs and Agents via Token-Level Correction](https://on-panda.github.io/research/)
 
-Requires Node.js 20+ and pnpm.
+**Try it online** (works on mobile): [https://onpanda.diyer22.com/](https://onpanda.diyer22.com/)
 
-```bash
-pnpm install && pnpm dev
-```
 
-Open the address shown in the terminal. By default, it is `http://localhost:5173`.
+## Self-hosting
 
-## Batch Annotation
-
-Run `npx @on-panda/annotate --dir .` to annotate panda JSON files in a directory. See the [annotation server documentation](packages/annotate/README.md) for usage, the HTTP API, and save/delete backup behavior.
-
-## Deploy the Web App
+Requires Node.js and npm.
 
 ```bash
-npx @on-panda/serve --port 8080 --web_config config.json5
+npx -y @on-panda/serve --port 8080 --web_config web_config.json5
 ```
 
-The optional JSON5 configuration is loaded by the standalone web app.
+The optional `--web_config` flag provides preset LLM API configurations to the onPanda UI.
 
-## Configure a Model API
-
-Paste a JSON5 configuration in **Custom API Config**, for example:
+Example `web_config.json5`:
 
 ```js
-[
-  {
-    endpoint_name: 'my-api',
-    tag_name: 'my-model',
-    client_config: {
-      base_url: 'https://example.com/v1',
-      api_key: 'YOUR_API_KEY',
+{
+  apiConfigs: [
+    {
+      endpoint_name: 'my-api',
+      tag_name: 'my-model',
+      client_config: {
+        base_url: 'https://vllm-test-api.diyer22.com/v1',
+        api_key: 'YOUR_API_KEY',
+      },
+      chat_config: {
+        model: 'your-model-name', // If omitted, onPanda fetches the model list from the endpoint's `/models` API.
+        top_logprobs: 20,
+      },
     },
-    chat_config: {
-      model: 'your-model-name',
-      top_logprobs: 20,
-    },
-  },
-]
+  ]
+}
 ```
 
-- If `chat_config.model` is omitted, onPanda fetches the model list from the endpoint's `/models` API.
-- `top_logprobs` controls the number of candidate tokens. Set it to `0` to disable probabilities and candidates.
-- Requests are sent directly from the browser to the model API, so the server must allow CORS. Do not commit API keys to the repository.
+You can also add an API configuration through **Custom API Config** in the onPanda UI. Custom configurations are stored in browser local storage.
 
-## Build and Customize
 
-```bash
-pnpm build:web   # Build the web application
-pnpm build:serve # Build the web assets included in @on-panda/serve
-pnpm build       # Build the component library
-pnpm build:core  # Build the core component library
-```
+## Resources
 
-Set a custom module to load during the build in `.env.local` at the repository root:
-
-```dotenv
-WEB_IMPORT_CUSTOM_CODE=src/assets/secret/custom.js
-```
-
-The web app, core component library, and root component library use `WEB_IMPORT_CUSTOM_CODE`, `CORE_IMPORT_CUSTOM_CODE`, and `MAIN_IMPORT_CUSTOM_CODE`, respectively. Without configuration, they use `src/utils/defaultCustom.js`.
+- For batch LLM data annotation, see the [project page](https://on-panda.github.io/research/) and [packages/annotate](packages/annotate/README.md).
+- onPanda's core components can be imported and reused by other projects; see [apps/integration-example](apps/integration-example/README.md).
+- [on-panda-python](https://github.com/on-panda/on-panda-python): Parse onPanda data into SFT data and token-level preference data.
+- [on-panda-docs](https://github.com/on-panda/on-panda-docs): onPanda developer documentation.
 
 ## License
 
 [MIT](LICENSE)
 
-
+<!--
 <br>
 <br>
 <div align="center">
@@ -99,4 +82,4 @@ The web app, core component library, and root component library use `WEB_IMPORT_
 Build with human efforts ❤️ <br>
 For humans to steer LLM 😎🕹️🤖
 
-</div>
+</div> -->
