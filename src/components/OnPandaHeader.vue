@@ -43,9 +43,15 @@
     </div>
 
     <details @toggle="_onUsageToggle">
-        <summary>
-            <small style="color: #888;">{{ t('header.usage') }}:</small>
+        <summary :class="{ 'usage-summary-new': !globalStore.isOldUser }">
+            <small style="color: #888;">
+                <span v-if="!globalStore.isOldUser" class="usage-summary-arrow" aria-hidden="true">👉 &nbsp;</span>
+                <span>{{ t('header.usage') }}</span>:
+            </small>
         </summary>
+        <br>
+        <MarkdownRender
+            :content="t('header.readIntroduction', { url: `https://on-panda.github.io/introduction/?lang=${encodeURIComponent(globalStore.currentLocale)}` })" />
         <br>
         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <video ref="_usageVideo" controls preload="metadata"
             @error.once="$event.currentTarget.src = 'https://on-panda.github.io/img/on-panda-demo-candidate-continue-generating-cn.mp4'"
@@ -79,3 +85,33 @@ function _onUsageToggle(event) {
     }
 }
 </script>
+
+<style scoped>
+.usage-summary-new {
+    font-weight: 700;
+    font-size: large;
+}
+
+.usage-summary-arrow {
+    display: inline-block;
+    margin-right: 0.25em;
+    animation: usage-summary-arrow-bounce 1s ease-in-out infinite;
+}
+
+@keyframes usage-summary-arrow-bounce {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(0.35em);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .usage-summary-arrow {
+        animation: none;
+    }
+}
+</style>

@@ -195,6 +195,7 @@ export default {
   },
   header: {
     usage: 'Usage',
+    readIntroduction: '**Please read the [introduction]({url}) first**',
     basicFeatures: 'Basic Features',
     advancedFeatures: 'Advanced Features',
     beginnerTips: 'Beginner\'s tips',

@@ -196,6 +196,7 @@ export default {
   },
   header: {
     usage: '使用说明',
+    readIntroduction: '**请先看[介绍]({url})**',
     basicFeatures: '基本功能',
     advancedFeatures: '高级功能',
     beginnerTips: '新手提示',
