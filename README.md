@@ -8,11 +8,9 @@ A web app for token visualization and control, model inspection, data annotation
   <img src="https://on-panda.github.io/img/onPanda-token-level-correction.gif" alt="onPanda token-level correction interface" style="width:500px; max-width:100%; height:auto">
 </a>
 
-onPanda's token-level correction interface
+<!-- onPanda's token-level correction interface -->
 
 </div>
-
-<!-- **onPanda** (**on**-**P**olicy **a**lig**n**ment **d**ata **a**nnotator) is a data annotation tool for LLM alignment data, including SFT and RL. By combining frontend engineering with GPT models, it helps annotators efficiently produce SFT responses with model assistance while creating on-policy, token-level preference data. -->
 
 - 👉 [**Try it online**](https://onpanda.diyer22.com/) (works on mobile)
 - 👉 [Learn more](https://x.com/diyerxx/status/2101020850405462041)

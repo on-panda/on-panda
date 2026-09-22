@@ -8,11 +8,9 @@
   <img src="https://on-panda.github.io/img/onPanda-token-level-correction.gif" alt="onPanda 的 token 级纠错界面" style="width:500px; max-width:100%; height:auto">
 </a>
 
-onPanda 的 token 级纠错界面
+<!-- onPanda 的 token 级纠错界面 -->
 
 </div>
-
-<!-- **onPanda**（**on**-**P**olicy **a**lig**n**ment **d**ata **a**nnotator）是一套面向 LLM 对齐数据（SFT 与 RL）的标注工具。它结合前端工程与 GPT 模型的特点，让标注者在模型辅助下高效生成 SFT 回复，同时产出在线策略的 token 级偏好数据。 -->
 
 - 👉 [**在线体验**](https://onpanda.diyer22.com/)（支持移动端）
 - 👉 [详细介绍](https://x.com/diyerxx/status/2101020850405462041)
