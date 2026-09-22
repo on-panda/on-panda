@@ -4,15 +4,19 @@ A web app for token visualization and control, model inspection, data annotation
 
 <div align="center">
 
-<a href="https://on-panda.github.io/img/fig1_UI-v4.png">
-  <img src="https://on-panda.github.io/img/fig1_UI-v4.png" alt="onPanda token-level correction interface" style="width:350px; max-width:100%; height:auto" loading="lazy">
+<a href="https://on-panda.github.io/img/onPanda-token-level-correction.gif">
+  <img src="https://on-panda.github.io/img/onPanda-token-level-correction.gif" alt="onPanda token-level correction interface" style="width:500px; max-width:100%; height:auto">
 </a>
 
-The token-level correction interface of onPanda
+onPanda's token-level correction interface
 
 </div>
 
 <!-- **onPanda** (**on**-**P**olicy **a**lig**n**ment **d**ata **a**nnotator) is a data annotation tool for LLM alignment data, including SFT and RL. By combining frontend engineering with GPT models, it helps annotators efficiently produce SFT responses with model assistance while creating on-policy, token-level preference data. -->
+
+- 👉 [**Try it online**](https://onpanda.diyer22.com/) (works on mobile)
+- 👉 [Learn more](https://x.com/diyerxx/status/2101020850405462041)
+
 
 ## Features
 
@@ -25,9 +29,6 @@ onPanda is designed for geeks, power users, curious minds, and engineers. Its UI
 - onPanda includes browser-agent, an agent that runs in the user's browser without installation. It uses the browser as its harness and provides JavaScript execution, information retrieval, interface interaction, multimedia I/O, local file access, and persistent memory.
 - onPanda stands for on-Policy Alignment Data Annotator. Read the paper on onPanda's data annotation approach:
   - [onPanda: Efficient Annotation of On-Policy Alignment Data for LLMs and Agents via Token-Level Correction](https://on-panda.github.io/research/)
-
-**Try it online** (works on mobile): [https://onpanda.diyer22.com/](https://onpanda.diyer22.com/)
-
 
 ## Self-hosting
 
