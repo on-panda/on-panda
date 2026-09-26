@@ -14,7 +14,7 @@ const PARAMETER_END = xmlMarker('parameter', true)
 
 export class Step3p5ResponseTemplate extends Qwen3p5ResponseTemplate {
     static match({ responseTemplateConfig } = {}) {
-        return /^(?:stepfun-ai\/)?Step-3\.[5-9]-Flash(-|$)/i.test(responseTemplateConfig?.name_or_path || '')
+        return /^(?:stepfun-ai\/)?(?:Step-3\.[5-9]-Flash|Step-5)(?:-|$)/i.test(responseTemplateConfig?.name_or_path || '')
     }
 
     constructor(options = {}) {
@@ -149,7 +149,16 @@ export function testStep3p5ResponseTemplate() {
         responseTemplateConfig: { name_or_path: 'stepfun-ai/Step-3.4-Flash' },
     }), false, 'Step-3.4 mismatch')
     assertEqual(Step3p5ResponseTemplate.match({
+        responseTemplateConfig: { name_or_path: 'Step-5' },
+    }), true, 'Step-5 match')
+    assertEqual(Step3p5ResponseTemplate.match({
+        responseTemplateConfig: { name_or_path: 'stepfun-ai/Step-5-Preview-BF16' },
+    }), true, 'Step-5 preview match')
+    assertEqual(Step3p5ResponseTemplate.match({
+        responseTemplateConfig: { name_or_path: 'Step-55' },
+    }), false, 'Step-55 mismatch')
+    assertEqual(Step3p5ResponseTemplate.match({
         responseTemplateConfig: { name_or_path: 'step3p7-mm-fp8-mtp3-it100' },
     }), false, 'internal checkpoint mismatch')
-    return partialMessageTestCount + 24
+    return partialMessageTestCount + 27
 }
