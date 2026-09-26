@@ -410,21 +410,6 @@ const defaultExampleNameToFunc = {
     }]
     // operationCenter.generateNew()
   },
-  "agent-annotate": () => {
-    const pandaJsonAgentAnnotateExample = {
-      dialogs: {
-        1: {
-          messages: [{ role: "user", content: "What is StepFun's latest main model?" }],
-          tool_configs: [{ type: 'mcp', server_url: 'local-fetch://browser-agent-mcp', require_approval: 'always' }],
-          annotate: { is_good: null },
-        },
-      },
-    }
-    switchDefaultToAgentTag()
-    operationCenter.pandaState = pandaState
-    pandaState.load(pandaJsonAgentAnnotateExample)
-    operationCenter.generateNew()
-  },
   "🐱 pet": () => {
     switchDefaultToAgentTag()
     var JsExampleMessages = [{ role: "user", content: "Create an interactive desktop pet placed in the bottom-right corner of the current page." }]
@@ -548,6 +533,21 @@ const defaultExampleNameToFunc = {
     operationCenter.pandaState = pandaState
     await sleep(100)
     operationCenter.continueGenerating()
+  },
+  "agent-annotate": () => {
+    const pandaJsonAgentAnnotateExample = {
+      dialogs: {
+        1: {
+          messages: [{ role: "user", content: "What is StepFun's latest main model?" }],
+          tool_configs: [{ type: 'mcp', server_url: 'local-fetch://browser-agent-mcp', require_approval: 'always' }],
+          annotate: { is_good: null },
+        },
+      },
+    }
+    switchDefaultToAgentTag()
+    operationCenter.pandaState = pandaState
+    pandaState.load(pandaJsonAgentAnnotateExample)
+    operationCenter.generateNew()
   },
 }
 
