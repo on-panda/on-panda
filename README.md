@@ -16,7 +16,7 @@ A web app for token visualization and control, model inspection, data annotation
 - 👉 [Learn more](https://x.com/diyerxx/status/2101020850405462041)
 
 
-## Features
+## ▮ Features
 
 onPanda is designed for geeks, power users, curious minds, and engineers. Its UI is built for deep exploration and efficient data annotation.
 
@@ -25,10 +25,21 @@ onPanda is designed for geeks, power users, curious minds, and engineers. Its UI
 - Support multiple modalities, including images, video, and audio; use tool calls and connect MCP servers to perform tasks in real environments.
 - Connect popular harnesses such as Claude Code, Codex, and OpenCode to execute tasks. Explore and compare their tool sets, system prompts, skills, and memory mechanisms.
 - onPanda includes browser-agent, an agent that runs in the user's browser without installation. It uses the browser as its harness and provides JavaScript execution, information retrieval, interface interaction, multimedia I/O, local file access, and persistent memory.
-- onPanda stands for on-Policy Alignment Data Annotator. Read the paper on onPanda's data annotation approach:
-  - [onPanda: Efficient Annotation of On-Policy Alignment Data for LLMs and Agents via Token-Level Correction](https://on-panda.github.io/research/)
+- onPanda stands for on-Policy Alignment Data Annotator. See details below.
 
-## Self-hosting
+<details><summary><strong>For data annotation</strong> (Click to expand)</summary>
+
+- Reduce median annotation time by **52%** vs. manual post-editing.
+- Collect **both SFT and preference** data in the same workflow.
+- Produce SFT data with high **on-policy** fidelity: ΔPPL <1% relative to the model’s resampling baseline.
+- Capture **token-level supervision** with precise correction locations and naturally paired positive and negative examples—a promising direction for future LLM alignment.
+- Annotate **agent trajectories**, with support for image, audio, and video inputs.
+- Read the paper on onPanda's data annotation approach:
+  - [onPanda: Efficient Annotation of On-Policy Alignment Data for LLMs and Agents via Token-Level Correction](https://on-panda.github.io/research/)
+    
+</details>
+
+## ▮ Self-hosting
 
 Requires Node.js and npm.
 
@@ -62,14 +73,14 @@ Example `web_config.json5`:
 You can also add an API configuration through **Custom API Config** in the onPanda UI. Custom configurations are stored in browser local storage.
 
 
-## Resources
+## ▮ Resources
 
 - For batch LLM data annotation, see the [project page](https://on-panda.github.io/research/) and [packages/annotate](packages/annotate/README.md).
 - onPanda's core components can be imported and reused by other projects; see [apps/integration-example](apps/integration-example/README.md).
 - [on-panda-python](https://github.com/on-panda/on-panda-python): Parse onPanda data into SFT data and token-level preference data.
 - [on-panda-docs](https://github.com/on-panda/on-panda-docs): onPanda developer documentation.
 
-## License
+## ▮ License
 
 [MIT](LICENSE)
 
