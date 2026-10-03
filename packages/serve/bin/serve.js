@@ -4,7 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadEnv, preview } from 'vite'
 
-import { createBypassCorsProxyPlugin } from '../server/bypassCorsProxyPlugin.js'
+import { createApiProxyPlugin } from '../server/apiProxyPlugin.js'
 import { createRuntimeImportPlugin } from '../server/runtimeImportPlugin.js'
 import { createUsingServerProxyPlugin } from '../server/usingServerProxyPlugin.js'
 import { createWebConfigPlugin } from '../server/webConfigPlugin.js'
@@ -43,7 +43,7 @@ async function startServer(options) {
     configFile: false,
     appType: 'spa',
     plugins: [
-      createBypassCorsProxyPlugin(env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH),
+      createApiProxyPlugin(env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH),
       createRuntimeImportPlugin(runtimeImportPath),
       createUsingServerProxyPlugin(),
       createWebConfigPlugin(options.webConfig),

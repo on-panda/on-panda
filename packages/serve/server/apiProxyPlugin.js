@@ -3,35 +3,34 @@ import { Readable } from 'node:stream'
 import { withSafeProxyMiddleware } from './safeProxyMiddleware.js'
 import { verifyUrlIsLlmApiCall, verifyUrlIsMcp } from './urlVerification.js'
 
-export function createBypassCorsProxyPlugin(browserAgentProxyPath = '') {
-  const corsMiddleware = withSafeProxyMiddleware('Bypass CORS proxy', createBypassCorsProxyMiddleware({
+export function createApiProxyPlugin(browserAgentProxyPath = '') {
+  const apiProxyMiddleware = withSafeProxyMiddleware('API proxy', createApiProxyMiddleware({
     verifyUrl: targetUrl => verifyUrlIsLlmApiCall(targetUrl) || verifyUrlIsMcp(targetUrl),
   }))
   // Browser-agent proxy: forwards arbitrary URLs as a fallback for cors-internet.
   const browserAgentMiddleware = browserAgentProxyPath
-    ? withSafeProxyMiddleware('Browser agent proxy', createBypassCorsProxyMiddleware())
+    ? withSafeProxyMiddleware('Browser agent proxy', createApiProxyMiddleware())
     : null
   const register = (server) => {
-    server.middlewares.use('/bypass-CORS', corsMiddleware)
+    server.middlewares.use('/api-proxy', apiProxyMiddleware)
+    // Legacy mount, so existing api configs pointing at '/bypass-CORS' keep working.
+    server.middlewares.use('/bypass-CORS', apiProxyMiddleware)
     if (browserAgentMiddleware) server.middlewares.use(browserAgentProxyPath, browserAgentMiddleware)
   }
 
   return {
-    name: 'bypass-cors-proxy-middleware',
+    name: 'api-proxy-middleware',
     configureServer: register,
     configurePreviewServer: register,
   }
 }
 
-function createBypassCorsProxyMiddleware({ verifyUrl } = {}) {
+function createApiProxyMiddleware({ verifyUrl } = {}) {
   return async (req, res) => {
     const abortController = new AbortController()
     try {
-      const rawPath = req.url || ''
-      const withoutPrefix = rawPath.startsWith('/bypass-CORS/')
-        ? rawPath.replace(/^\/bypass-CORS\//, '')
-        : rawPath.replace(/^\/+/, '')
-      const targetUrl = new URL(decodeURIComponent(withoutPrefix))
+      // Connect already trimmed the mount prefix off req.url, e.g. '/https://api.example.com/v1/completions'.
+      const targetUrl = new URL(decodeURIComponent(req.url.replace(/^\/+/, '')))
       if (verifyUrl && !verifyUrl(targetUrl)) {
         res.statusCode = 400
         res.end(`Not an allowed target URL: ${targetUrl}`)
@@ -95,7 +94,7 @@ function createBypassCorsProxyMiddleware({ verifyUrl } = {}) {
         if (abortController.signal.aborted) {
           return
         }
-        console.error('Bypass CORS proxy stream failed', err)
+        console.error('API proxy stream failed', err)
         if (!res.headersSent) {
           res.statusCode = 502
           res.setHeader('content-type', 'text/plain')
@@ -109,7 +108,7 @@ function createBypassCorsProxyMiddleware({ verifyUrl } = {}) {
       if (abortController.signal.aborted) {
         return
       }
-      console.error('Bypass CORS proxy failed', error)
+      console.error('API proxy failed', error)
       if (!res.headersSent) {
         res.statusCode = 500
         res.setHeader('content-type', 'text/plain')

@@ -3,7 +3,7 @@ import { deepCopy, hashObjectSHA256Base64 } from './commonUtils.js'
 export const TEST_TOOL_CONFIGS = [
     {
         type: 'mcp',
-        server_url: `${typeof window === 'undefined' ? '' : window.location.origin}/bypass-CORS/http://127.0.0.1:9300/mcp`,
+        server_url: `${typeof window === 'undefined' ? '' : window.location.origin}/api-proxy/http://127.0.0.1:9300/mcp`,
         require_approval: 'always',
     },
     {

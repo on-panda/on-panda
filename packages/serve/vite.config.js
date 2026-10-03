@@ -4,7 +4,7 @@ import { defineConfig, loadEnv } from 'vite'
 import { visualizer } from 'rollup-plugin-visualizer'
 import vue from '@vitejs/plugin-vue'
 
-import { createBypassCorsProxyPlugin } from './server/bypassCorsProxyPlugin.js'
+import { createApiProxyPlugin } from './server/apiProxyPlugin.js'
 import { createRuntimeImportPlugin } from './server/runtimeImportPlugin.js'
 import { createUsingServerProxyPlugin } from './server/usingServerProxyPlugin.js'
 import { createWebConfigPlugin } from './server/webConfigPlugin.js'
@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
     publicDir: path.join(repoDir, 'public'),
     plugins: [
       vue(),
-      createBypassCorsProxyPlugin(env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH),
+      createApiProxyPlugin(env.VITE_ON_PANDA_BROWSER_AGENT_PROXY_PATH),
       createRuntimeImportPlugin(resolvedRuntimeImport),
       createUsingServerProxyPlugin(),
       createWebConfigPlugin(),
