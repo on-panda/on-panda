@@ -301,6 +301,7 @@ const maskedKeyInApiConfig = computed(function maskKeyInApiConfig() {
                 <template v-for="(modelName_, tag) in modelNameTags">
                     <el-tag :type="modelName.includes(modelName_) ? 'primary' : 'info'"
                         @click="handleModelTagClick($event, modelName_)"
+                        @contextmenu.ctrl.prevent="handleModelTagClick($event, modelName_)"
                         @mousedown="handleModelTagMousedown($event, modelName_)" @selectstart.prevent @dblclick="() => {
                             modelName = modelName_
                             $emit('dblclickModelTag', modelName_)
