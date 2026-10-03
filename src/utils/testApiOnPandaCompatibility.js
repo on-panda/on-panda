@@ -1,16 +1,15 @@
-const DEFAULT_CHAT_COMPLETIONS_URL = 'https://api.inference.wandb.ai/v1/chat/completions'
-const DEFAULT_MODEL = 'Qwen/Qwen3.6-35B-A3B'
+const DEFAULT_BASE_URL = 'https://api.inference.wandb.ai/v1'
 const CLI_USAGE = `Usage: node testApiOnPandaCompatibility.js [options]
 
 Options:
-  --chatCompeletionsUrl <url>  Chat Completions endpoint
-  --apiKey <key>               API key (defaults to WANDB_API_KEY)
-  --model <model>              Model name
-  --extraParameters <json>     Extra request parameters as a JSON object
-  --help                       Show this help
+  --base_url <url>           API base URL (defaults to BASE_URL or ${DEFAULT_BASE_URL})
+  --api_key <key>            API key (defaults to WANDB_API_KEY)
+  --model <model>            Model name (defaults to MODEL; otherwise tests all models)
+  --extra_parameters <json>  Extra request parameters as a JSON object
+  --help                    Show this help
 
 Example:
-  WANDB_API_KEY=... node testApiOnPandaCompatibility.js --model deepseek-ai/DeepSeek-V3.1 --extraParameters '{"chat_template_kwargs":{"enable_thinking":false}}'`
+  node testApiOnPandaCompatibility.js --base_url ${DEFAULT_BASE_URL} --api_key $WANDB_API_KEY`
 
 const weatherTool = {
   type: 'function',
@@ -43,17 +42,7 @@ function getLogger(log) {
 }
 
 function parseCliArguments(argumentsList) {
-  const optionNames = {
-    chatCompeletionsUrl: 'chatCompeletionsUrl',
-    chatCompletionsUrl: 'chatCompeletionsUrl',
-    'chat-compeletions-url': 'chatCompeletionsUrl',
-    'chat-completions-url': 'chatCompeletionsUrl',
-    apiKey: 'apiKey',
-    'api-key': 'apiKey',
-    model: 'model',
-    extraParameters: 'extraParameters',
-    'extra-parameters': 'extraParameters'
-  }
+  const optionNames = ['base_url', 'api_key', 'model', 'extra_parameters']
   const options = {}
 
   for (let index = 0; index < argumentsList.length; index++) {
@@ -70,15 +59,14 @@ function parseCliArguments(argumentsList) {
     }
 
     const equalsIndex = argument.indexOf('=')
-    const rawName = equalsIndex === -1 ? argument.slice(2) : argument.slice(2, equalsIndex)
-    const optionName = optionNames[rawName]
-    if (!optionName) {
-      throw new Error(`Unknown CLI option: --${rawName}`)
+    const optionName = equalsIndex === -1 ? argument.slice(2) : argument.slice(2, equalsIndex)
+    if (!optionNames.includes(optionName)) {
+      throw new Error(`Unknown CLI option: --${optionName}`)
     }
 
     const value = equalsIndex === -1 ? argumentsList[++index] : argument.slice(equalsIndex + 1)
     if (value === undefined) {
-      throw new Error(`Missing value for CLI option: --${rawName}`)
+      throw new Error(`Missing value for CLI option: --${optionName}`)
     }
     options[optionName] = value
   }
@@ -94,17 +82,19 @@ function parseExtraParametersJson(value) {
   try {
     extraParameters = JSON.parse(value)
   } catch (error) {
-    throw new Error(`--extraParameters must be valid JSON: ${error.message}`)
+    throw new Error(`--extra_parameters must be valid JSON: ${error.message}`)
   }
   if (extraParameters === null || typeof extraParameters !== 'object' || Array.isArray(extraParameters)) {
-    throw new Error('--extraParameters must be a JSON object')
+    throw new Error('--extra_parameters must be a JSON object')
   }
   return extraParameters
 }
 
-async function requestChatCompletions({ chatCompeletionsUrl, apiKey, extraHeaders, body, label, log }) {
-  body = Object.fromEntries(Object.entries(body).filter(([, value]) => value !== null))
-  log(`[${label}] request:\n${pretty({ url: chatCompeletionsUrl, body })}`)
+async function requestJson({ url, method = 'POST', apiKey, extraHeaders, body, label, log }) {
+  if (body) {
+    body = Object.fromEntries(Object.entries(body).filter(([, value]) => value !== null))
+  }
+  log(`[${label}] request:\n${pretty({ url, method, body })}`)
 
   let response
   try {
@@ -119,8 +109,8 @@ async function requestChatCompletions({ chatCompeletionsUrl, apiKey, extraHeader
       }
       headers[extraHeaderName] = value
     }
-    response = await fetch(chatCompeletionsUrl, {
-      method: 'POST',
+    response = await fetch(url, {
+      method,
       headers,
       body: JSON.stringify(body)
     })
@@ -145,10 +135,10 @@ async function requestChatCompletions({ chatCompeletionsUrl, apiKey, extraHeader
   }
 }
 
-async function runCompatibilityTest({ label, body, check, keyInfo, chatCompeletionsUrl, apiKey, extraHeaders, log }) {
+async function runCompatibilityTest({ label, body, check, keyInfo, baseUrl, apiKey, extraHeaders, log }) {
   try {
-    const response = await requestChatCompletions({
-      chatCompeletionsUrl,
+    const response = await requestJson({
+      url: `${baseUrl}/chat/completions`,
       apiKey,
       extraHeaders,
       body,
@@ -164,7 +154,8 @@ async function runCompatibilityTest({ label, body, check, keyInfo, chatCompeleti
   }
 }
 
-async function testCors({ chatCompeletionsUrl, extraHeaders, log }) {
+async function testCors({ baseUrl, extraHeaders, log }) {
+  const url = `${baseUrl}/chat/completions`
   const isBrowser = typeof window !== 'undefined'
   const origin = isBrowser ? window.location.origin : 'http://localhost:5173'
   const requestOptions = { method: 'OPTIONS' }
@@ -181,12 +172,12 @@ async function testCors({ chatCompeletionsUrl, extraHeaders, log }) {
     }
   }
 
-  log(`[CORS] request:\n${pretty({ url: chatCompeletionsUrl, ...requestOptions })}`)
+  log(`[CORS] request:\n${pretty({ url, ...requestOptions })}`)
   let response
   try {
-    response = await fetch(chatCompeletionsUrl, requestOptions)
+    response = await fetch(url, requestOptions)
     const allowOrigin = response.headers.get('access-control-allow-origin')
-    const endpointOrigin = new URL(chatCompeletionsUrl, isBrowser ? window.location.href : `${origin}/`).origin
+    const endpointOrigin = new URL(url, isBrowser ? window.location.href : `${origin}/`).origin
     const sameOrigin = isBrowser && endpointOrigin === origin
     // Browser CORS responses may hide access-control-allow-origin from JavaScript.
     const score = isBrowser
@@ -209,7 +200,7 @@ async function testCors({ chatCompeletionsUrl, extraHeaders, log }) {
 }
 
 export async function testChatCompeletionsOnPandaCompatibility({
-  chatCompeletionsUrl,
+  baseUrl,
   apiKey,
   extraHeaders = {},
   model,
@@ -217,7 +208,39 @@ export async function testChatCompeletionsOnPandaCompatibility({
   resultRef = { value: {} },
   log
 } = {}) {
+  baseUrl = baseUrl.replace(/\/$/, '')
   const logger = getLogger(log)
+  if (!model) {
+    const response = await requestJson({
+      url: `${baseUrl}/models`,
+      method: 'GET',
+      apiKey,
+      extraHeaders,
+      label: 'models',
+      log: logger
+    })
+    var data = Array.isArray(response) ? response : response.data
+    const resultMetadata = resultRef.value
+    resultRef.value = []
+    for (const { id } of data) {
+      resultRef.value.push({ ...resultMetadata, model: id })
+      const modelResult = resultRef.value.at(-1)
+      await testChatCompeletionsOnPandaCompatibility({
+        baseUrl,
+        apiKey,
+        extraHeaders,
+        model: id,
+        extraParameters,
+        resultRef: { value: modelResult },
+        log: logger
+      })
+      modelResult.total_score = ['continue_final_messages', 'top_logprobs', 'tool_choice', 'prompt_logprobs', 'CORS']
+        .reduce((total, key) => total + modelResult[key].score, 0)
+    }
+    resultRef.value.sort((a, b) => a.total_score - b.total_score)
+    return resultRef.value
+  }
+
   // Compatibility checks parse JSON responses, so keep requests non-streaming.
   const commonParameters = { model, ...extraParameters, stream: false }
   delete commonParameters.stream_options
@@ -253,7 +276,7 @@ export async function testChatCompeletionsOnPandaCompatibility({
         reasoningContent: message.reasoning_content
       }
     },
-    chatCompeletionsUrl,
+    baseUrl,
     apiKey,
     extraHeaders,
     log: logger
@@ -266,7 +289,7 @@ export async function testChatCompeletionsOnPandaCompatibility({
     keyInfo: response => ({
       topLogprobsCount: response.choices[0].logprobs.content[0].top_logprobs.length
     }),
-    chatCompeletionsUrl,
+    baseUrl,
     apiKey,
     extraHeaders,
     log: logger
@@ -290,7 +313,7 @@ export async function testChatCompeletionsOnPandaCompatibility({
       return content?.includes('get_city_weather') && content?.includes('city_name') && content?.includes('unit')
     },
     keyInfo: response => ({ content: response.choices[0].message.content }),
-    chatCompeletionsUrl,
+    baseUrl,
     apiKey,
     extraHeaders,
     log: logger
@@ -317,13 +340,13 @@ export async function testChatCompeletionsOnPandaCompatibility({
       promptLogprobsCount: Array.isArray(response.prompt_logprobs) ? response.prompt_logprobs.length : null,
       hasPromptLogprobs: Boolean(response.prompt_logprobs)
     }),
-    chatCompeletionsUrl,
+    baseUrl,
     apiKey,
     extraHeaders,
     log: logger
   })
 
-  resultRef.value.CORS = await testCors({ chatCompeletionsUrl, extraHeaders, log: logger })
+  resultRef.value.CORS = await testCors({ baseUrl, extraHeaders, log: logger })
 
   return resultRef.value
 }
@@ -338,10 +361,10 @@ async function runCli(argumentsList) {
   }
 
   const result = await testChatCompeletionsOnPandaCompatibility({
-    chatCompeletionsUrl: cliOptions.chatCompeletionsUrl ?? process.env.CHAT_COMPLETIONS_URL ?? DEFAULT_CHAT_COMPLETIONS_URL,
-    apiKey: cliOptions.apiKey ?? process.env.WANDB_API_KEY,
-    model: cliOptions.model ?? process.env.MODEL ?? DEFAULT_MODEL,
-    extraParameters: parseExtraParametersJson(cliOptions.extraParameters)
+    baseUrl: cliOptions.base_url ?? process.env.BASE_URL ?? DEFAULT_BASE_URL,
+    apiKey: cliOptions.api_key ?? process.env.WANDB_API_KEY,
+    model: cliOptions.model ?? process.env.MODEL,
+    extraParameters: parseExtraParametersJson(cliOptions.extra_parameters)
   })
   console.log(pretty(result))
 }

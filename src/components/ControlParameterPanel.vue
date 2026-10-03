@@ -222,7 +222,7 @@ async function testOnPandaCompatibility() {
             extra_parameters: extraChatParameters.value,
         }
         await testChatCompeletionsOnPandaCompatibility({
-            chatCompeletionsUrl: `${testedApiConfig.client_config.base_url}/chat/completions`,
+            baseUrl: testedApiConfig.client_config.base_url,
             apiKey: testedApiConfig.client_config.api_key,
             extraHeaders: testedApiConfig.client_config.extra_headers,
             model: testedApiConfig.chat_config.model,
