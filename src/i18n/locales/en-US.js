@@ -118,7 +118,7 @@ export default {
     regenerate: 'Regenerate',
     modelTagClick: '1. Single-click the tag to switch model; double-click to switch and regenerate.\n2. If hold down the `Ctrl` key and click or use the middle mouse button, will open a new window and regenerate using the chosen model.',
     stream: 'Some API providers have incomplete support for streaming mode, which may cause issues with continuation or top_logprobs. If you encounter such problems, try turning off stream.',
-    testOnPandaCompatibility: 'Check the compatibility of the current API and model with the features required by onPanda:\n\tcontinue_final_message, top_logprobs, tool_choice, prompt_logprobs, and CORS.\nOpen F12 and check the Console logs for test requests.',
+    testOnPandaCompatibility: 'Check the compatibility of the current API and model with the features required by onPanda.\nSee the [API compatibility documentation](https://github.com/on-panda/on-panda-docs/blob/main/content/en/API_compatibility.md) for an explanation of each parameter.\nPress F12 to open developer tools and view test requests and logs in the Console.',
     refreshTokenProb: 'Refresh tokens\' probability. Or',
     dblclickToPasteAndRefresh: 'double-click to',
     pasteAndRefresh: 'Paste & Refresh',

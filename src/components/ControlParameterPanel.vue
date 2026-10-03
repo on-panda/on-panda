@@ -221,18 +221,15 @@ async function testOnPandaCompatibility() {
             model: testedApiConfig.chat_config.model,
             extra_parameters: extraChatParameters.value,
         }
-        const result = await testChatCompeletionsOnPandaCompatibility({
+        await testChatCompeletionsOnPandaCompatibility({
             chatCompeletionsUrl: `${testedApiConfig.client_config.base_url}/chat/completions`,
             apiKey: testedApiConfig.client_config.api_key,
             extraHeaders: testedApiConfig.client_config.extra_headers,
             model: testedApiConfig.chat_config.model,
             extraParameters: { ...testedApiConfig.chat_config, ...extraChatParameters.value },
+            resultRef: compatibilityTestResult,
             log: console.log.bind(console)
         })
-        compatibilityTestResult.value = {
-            ...compatibilityTestResult.value,
-            ...result
-        }
     } finally {
         compatibilityTestRunning.value = false
     }

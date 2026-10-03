@@ -155,12 +155,12 @@ async function runCompatibilityTest({ label, body, check, keyInfo, chatCompeleti
       label,
       log
     })
-    const compatibility_score = check(response) ? 1 : 0
-    log(`[${label}] key info:\n${pretty({ ...keyInfo(response), compatibility_score })}`)
-    return { compatibility_score }
+    const score = check(response) ? 1 : 0
+    log(`[${label}] key info:\n${pretty({ ...keyInfo(response), score })}`)
+    return { score }
   } catch (error) {
-    log(`[${label}] key info:\n${pretty({ compatibility_score: 0, error: String(error) })}`)
-    return { compatibility_score: 0 }
+    log(`[${label}] key info:\n${pretty({ score: 0, error: String(error) })}`)
+    return { score: 0 }
   }
 }
 
@@ -189,22 +189,22 @@ async function testCors({ chatCompeletionsUrl, extraHeaders, log }) {
     const endpointOrigin = new URL(chatCompeletionsUrl, isBrowser ? window.location.href : `${origin}/`).origin
     const sameOrigin = isBrowser && endpointOrigin === origin
     // Browser CORS responses may hide access-control-allow-origin from JavaScript.
-    const compatibility_score = isBrowser
+    const score = isBrowser
       ? response.ok ? 1 : 0
       : sameOrigin || allowOrigin === '*' || allowOrigin === origin ? 1 : 0
     log(`[CORS] response:\n${pretty({
       status: response.status,
       accessControlAllowOrigin: allowOrigin,
-      compatibility_score
+      score
     })}`)
-    return { compatibility_score }
+    return { score }
   } catch (error) {
     log(`[CORS] response:\n${pretty({ error: String(error) })}`)
     if (isBrowser) {
       log('[CORS] skipped: the browser could not distinguish CORS from a network failure')
-      return { compatibility_score: null }
+      return { score: null }
     }
-    return { compatibility_score: 0 }
+    return { score: 0 }
   }
 }
 
@@ -214,6 +214,7 @@ export async function testChatCompeletionsOnPandaCompatibility({
   extraHeaders = {},
   model,
   extraParameters = {},
+  resultRef = { value: {} },
   log
 } = {}) {
   const logger = getLogger(log)
@@ -235,7 +236,7 @@ export async function testChatCompeletionsOnPandaCompatibility({
     continue_final_message: true,
   }
 
-  const continue_final_messages = await runCompatibilityTest({
+  resultRef.value.continue_final_messages = await runCompatibilityTest({
     label: 'continue_final_message',
     body: { ...continueParameters, ...commonParameters, max_tokens: 1 },
     check: response => {
@@ -258,7 +259,7 @@ export async function testChatCompeletionsOnPandaCompatibility({
     log: logger
   })
   const topLogprobsBody = { ...continueParameters, ...commonParameters, logprobs: true, top_logprobs: 5 }
-  const top_logprobs = await runCompatibilityTest({
+  resultRef.value.top_logprobs = await runCompatibilityTest({
     label: 'top_logprobs',
     body: topLogprobsBody,
     check: response => topLogprobsBody.top_logprobs && response.choices[0].logprobs.content[0].top_logprobs.length >= topLogprobsBody.top_logprobs,
@@ -271,7 +272,7 @@ export async function testChatCompeletionsOnPandaCompatibility({
     log: logger
   })
 
-  const tool_choice = await runCompatibilityTest({
+  resultRef.value.tool_choice = await runCompatibilityTest({
     label: 'tool_choice',
     body: {
       tool_choice: 'none',
@@ -295,7 +296,7 @@ export async function testChatCompeletionsOnPandaCompatibility({
     log: logger
   })
 
-  const prompt_logprobs = await runCompatibilityTest({
+  resultRef.value.prompt_logprobs = await runCompatibilityTest({
     label: 'prompt_logprobs',
     body: {
       messages: [
@@ -322,9 +323,9 @@ export async function testChatCompeletionsOnPandaCompatibility({
     log: logger
   })
 
-  const CORS = await testCors({ chatCompeletionsUrl, extraHeaders, log: logger })
+  resultRef.value.CORS = await testCors({ chatCompeletionsUrl, extraHeaders, log: logger })
 
-  return { continue_final_messages, top_logprobs, tool_choice, prompt_logprobs, CORS }
+  return resultRef.value
 }
 
 export default testChatCompeletionsOnPandaCompatibility
