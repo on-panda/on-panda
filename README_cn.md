@@ -72,6 +72,7 @@ npx -y @on-panda/serve --port 8080 --web_config web_config.json5
 
 除了通过 `--web_config` 配置 LLM API，也可以在 onPanda 界面中点击“自定义 API 配置”添加。自定义配置保存在浏览器的 localStorage 中。
 
+主流的推理软件，如 vLLM、ollama 等，及部分 LLM 推理平台 API 都支持 onPanda 所需功能，见我们的 [兼容性文档](https://github.com/on-panda/on-panda-docs/blob/main/content/zh-cn/API_compatibility.md)。
 
 ## ▮ 资源
 

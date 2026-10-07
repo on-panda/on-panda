@@ -72,6 +72,7 @@ Example `web_config.json5`:
 
 You can also add an API configuration through **Custom API Config** in the onPanda UI. Custom configurations are stored in browser local storage.
 
+Mainstream inference software, such as vLLM, ollama, etc., and some LLM inference platform APIs support the features required by onPanda, see our [compatibility document](https://github.com/on-panda/on-panda-docs/blob/main/content/en/API_compatibility.md)
 
 ## ▮ Resources
 
