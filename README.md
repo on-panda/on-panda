@@ -12,8 +12,8 @@ A web app for token visualization and control, model inspection, data annotation
 
 </div>
 
-- 👉 [**Try it online**](https://onpanda.diyer22.com/) (works on mobile)
-- 👉 [**Introduction with video**](https://x.com/diyerxx/status/2101020850405462041)
+- 👉 [**Try it online**](https://onpanda.diyer22.com/) (mobile-friendly)
+- 👉 [**Introduction**](https://x.com/diyerxx/status/2101020850405462041) (with short video)
 
 
 ## ▮ Features
@@ -72,9 +72,9 @@ Example `web_config.json5`:
 }
 ```
 
-You can also add an API configuration through **Custom API Config** in the onPanda UI. Custom configurations are stored in the browser local storage.
+You can also add an API configuration through **Custom API Config** in the onPanda UI. Custom configurations are stored in the browser's local storage.
 
-Mainstream inference software, such as vLLM, ollama, etc., and some LLM inference platform APIs support the features required by onPanda. See our [compatibility document](https://github.com/on-panda/on-panda-docs/blob/main/content/en/API_compatibility.md)
+Mainstream inference software, such as vLLM, Ollama, etc., and some LLM inference platform APIs support the features required by onPanda. See our [compatibility document](https://github.com/on-panda/on-panda-docs/blob/main/content/en/API_compatibility.md).
 
 ## ▮ Resources
 

@@ -13,7 +13,7 @@
 </div>
 
 - 👉 [**在线体验**](https://onpanda.diyer22.com/)（支持移动端）
-- 👉 [**带视频的介绍**](https://x.com/diyerxx/status/2101020850405462041)
+- 👉 [**详细介绍**](https://x.com/diyerxx/status/2101020850405462041)（含视频讲解）
 
 
 ## ▮ 特色
