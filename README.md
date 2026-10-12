@@ -4,7 +4,7 @@ A web app for token visualization and control, model inspection, data annotation
 
 <div align="center">
 
-<a href="https://on-panda.github.io/img/onPanda-token-level-correction.gif">
+<a href="https://x.com/diyerxx/status/2101020850405462041">
   <img src="https://on-panda.github.io/img/onPanda-token-level-correction.gif" alt="onPanda token-level correction interface" style="width:500px; max-width:100%; height:auto">
 </a>
 
