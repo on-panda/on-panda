@@ -13,7 +13,7 @@ A web app for token visualization and control, model inspection, data annotation
 </div>
 
 - 👉 [**Try it online**](https://onpanda.diyer22.com/) (works on mobile)
-- 👉 [Learn more](https://x.com/diyerxx/status/2101020850405462041)
+- 👉 [**Introduction with video**](https://x.com/diyerxx/status/2101020850405462041)
 
 
 ## ▮ Features
@@ -41,7 +41,9 @@ onPanda is designed for geeks, power users, curious minds, and engineers. Its UI
 
 ## ▮ Self-hosting
 
-Requires Node.js and npm.
+onPanda is a web application, and most of its functions can be used directly by opening [https://onpanda.diyer22.com/](https://onpanda.diyer22.com/) without installation or configuration. 
+
+If you want to self-host, you need to install Node.js and npm, then run:
 
 ```bash
 npx -y @on-panda/serve --port 8080 --web_config web_config.json5
@@ -70,13 +72,13 @@ Example `web_config.json5`:
 }
 ```
 
-You can also add an API configuration through **Custom API Config** in the onPanda UI. Custom configurations are stored in browser local storage.
+You can also add an API configuration through **Custom API Config** in the onPanda UI. Custom configurations are stored in the browser local storage.
 
-Mainstream inference software, such as vLLM, ollama, etc., and some LLM inference platform APIs support the features required by onPanda, see our [compatibility document](https://github.com/on-panda/on-panda-docs/blob/main/content/en/API_compatibility.md)
+Mainstream inference software, such as vLLM, ollama, etc., and some LLM inference platform APIs support the features required by onPanda. See our [compatibility document](https://github.com/on-panda/on-panda-docs/blob/main/content/en/API_compatibility.md)
 
 ## ▮ Resources
 
-- For batch LLM data annotation, see the [project page](https://on-panda.github.io/research/) and [packages/annotate](packages/annotate/README.md).
+- For batch LLM data annotation or agent trajectory annotation, see the [research page](https://on-panda.github.io/research/) and [packages/annotate](packages/annotate/README.md).
 - onPanda's core components can be imported and reused by other projects; see [apps/integration-example](apps/integration-example/README.md).
 - [on-panda-python](https://github.com/on-panda/on-panda-python): Parse onPanda data into SFT data and token-level preference data.
 - [on-panda-docs](https://github.com/on-panda/on-panda-docs): onPanda developer documentation.

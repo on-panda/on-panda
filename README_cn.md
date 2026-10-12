@@ -13,7 +13,7 @@
 </div>
 
 - 👉 [**在线体验**](https://onpanda.diyer22.com/)（支持移动端）
-- 👉 [详细介绍](https://x.com/diyerxx/status/2101020850405462041)
+- 👉 [**带视频的介绍**](https://x.com/diyerxx/status/2101020850405462041)
 
 
 ## ▮ 特色
@@ -41,7 +41,9 @@ onPanda 面向极客、重度用户、好奇的探索者和工程师，界面为
 
 ## ▮ 自托管
 
-需要 Node.js 和 npm。
+onPanda 主体是一个网页应用，直接打开 [https://onpanda.diyer22.com/](https://onpanda.diyer22.com/) 即可直接使用大多数功能，无需本地安装和配置。
+
+若希望自托管，需要安装 Node.js 和 npm，并运行命令：
 
 ```bash
 npx -y @on-panda/serve --port 8080 --web_config web_config.json5
@@ -76,7 +78,7 @@ npx -y @on-panda/serve --port 8080 --web_config web_config.json5
 
 ## ▮ 资源
 
-- 批量标注 LLM 数据请参阅 [项目主页](https://on-panda.github.io/research/) 和 [packages/annotate](packages/annotate/README.md)。
+- 批量标注 LLM 数据或者 agent 轨迹请参阅 [研究页面](https://on-panda.github.io/research/) 和 [packages/annotate](packages/annotate/README.md)。
 - onPanda 的核心组件可以被其他项目导入和复用，见 [apps/integration-example](apps/integration-example/README.md)。
 - [on-panda-python](https://github.com/on-panda/on-panda-python)：将 onPanda 数据解析为 SFT 数据和 token-level 偏好数据。
 - [on-panda-docs](https://github.com/on-panda/on-panda-docs)：onPanda 开发文档。
