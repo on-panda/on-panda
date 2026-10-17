@@ -40,7 +40,7 @@
     <div v-else class="editorAndDetails">
       <div class="messagePrimaryActionRow">
         <el-input ref="messageContentInput" class="message-content messagePrimaryActionContent" v-model="messageDraft"
-          type="textarea" :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: 50 }"
+          type="textarea" :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: props.message.role === 'system' ? 2.5 : 50 }"
           @keydown.ctrl.enter="handlePrimaryAction" @paste="handlePaste" @focus="handleEditorFocus"
           @blur="handleEditorBlur" />
 

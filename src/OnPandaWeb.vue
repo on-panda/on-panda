@@ -179,9 +179,11 @@ onMounted(async () => {
     console.error('Failed to load custom.js:', error)
   }
 
+  var exampleName = new URLSearchParams(window.location.search).get('example')
   var onMountedRun = () => { }
 
-  if (tryLoadDuplicateWindow(responseState.pandaState)) { // duplicate window has higher priority
+  // Startup priority: duplicate window > URL example > debug > default.
+  if (tryLoadDuplicateWindow(responseState.pandaState)) {
     if (localStorage.getItem('modelNameForDuplicateWindow')) {
       modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
       localStorage.removeItem('modelNameForDuplicateWindow')
@@ -193,7 +195,14 @@ onMounted(async () => {
       modelName.value = modelNameTagsComputed.value['on-panda'] || 'on-panda'
       onMountedRun = operationCenter.generateNew
     }
-    if (globalStore.debug) {
+    if (exampleName !== null) {
+      exampleName = { 'browser-agent': '🤖 browser-agent', pet: '🐱 pet' }[exampleName] || exampleName
+      const { exampleNameToFunc } = onPandaExamplesRef.value
+      if (!Object.hasOwn(exampleNameToFunc, exampleName)) {
+        throw new Error(`Unknown example: ${JSON.stringify(exampleName)}`)
+      }
+      onMountedRun = exampleNameToFunc[exampleName]
+    } else if (globalStore.debug) {
       onMountedRun = globalStore.debugRun || defaultDebugRun
     }
   }
