@@ -169,6 +169,7 @@ export default {
   chatMessage: {
     emptyMessageIgnored: 'Empty message will be ignored',
     renderedMarkdown: 'rendered markdown:',
+    contentExamplesHint: 'Examples · click a prompt to test.',
     clear: 'Clear',
     delete: 'Delete',
     send: 'Send',

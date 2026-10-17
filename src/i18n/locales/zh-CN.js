@@ -170,6 +170,7 @@ export default {
   chatMessage: {
     emptyMessageIgnored: '空内容会被忽略',
     renderedMarkdown: '格式渲染:',
+    contentExamplesHint: '示例 · 点击对应 prompt 测试。',
     clear: '清空',
     delete: '删除该对话',
     send: '生成',

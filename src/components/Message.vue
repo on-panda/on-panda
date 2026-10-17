@@ -66,6 +66,14 @@
         v-if="props.message['description']" />
       <EditableStringAttribute :obj="props.message" attr="comment" :disabled="false" v-if="props.message['comment']"
         title="comment:&nbsp;&nbsp;&nbsp;" />
+      <fieldset v-if="props.message.sidecar?.content_examples?.length" class="contentExamples">
+        <legend>{{ t('chatMessage.contentExamplesHint') }}</legend>
+        <!-- Keep focus until click so blur formatting cannot move the example buttons. -->
+        <button v-for="(example, index) in props.message.sidecar.content_examples" :key="index" type="button"
+          class="contentExampleButton" :title="example" @mousedown.prevent @click="handleContentExample(example)">
+          {{ example }}
+        </button>
+      </fieldset>
     </div>
   </div>
 </template>
@@ -349,6 +357,13 @@ async function handleSend() {
     isEditorFocused.value = false
     emit('sendButton')
   }
+  localStorage.setItem('onPandaIsOldUser', 'true')
+}
+
+async function handleContentExample(example) {
+  contentAsText.value = example
+  messageDraft.value = messageAsText.value
+  await handleSend()
 }
 
 async function handleRunToolCalls() {
@@ -371,7 +386,6 @@ async function handlePrimaryAction() {
     return
   }
   await handleSend()
-  localStorage.setItem('onPandaIsOldUser', 'true')
 }
 
 
@@ -523,6 +537,42 @@ onBeforeUnmount(() => {
   font-size: 0.75em;
   border-radius: 7px;
   border: 1px solid #dcdfe6;
+}
+
+.contentExamples {
+  min-width: 0;
+  margin: 6px 0 0;
+  padding: 2px 8px 6px;
+  border: 1px solid #e4e7ed;
+  border-radius: 5px;
+}
+
+.contentExamples legend {
+  padding: 0 4px;
+  color: #606266;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.contentExampleButton {
+  display: block;
+  width: 100%;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: #888;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.contentExampleButton:hover,
+.contentExampleButton:focus-visible {
+  color: var(--el-color-primary);
 }
 
 .messageRenderContent {
