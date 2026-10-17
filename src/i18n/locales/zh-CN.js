@@ -87,7 +87,8 @@ export default {
     modelsRefreshed: '模型列表刷新完成',
     noPromptLogprobs: '当前模型不支持 prompt_logprobs，请更换其它模型',
     dropFilesHere: '拖放 *.panda*.json、本地文件或文件夹到这里！',
-    localFilesUploadTip: '只有单个 *.panda*.json 会载入数据，其他文件和文件夹会共享给 browserAgent',
+    localFilesUploadTip: '只有单个 *.panda*.json 会载入数据，其他文件和文件夹会共享给 browserAgent；默认不申请写权限，仅对文件夹、代码/配置文件、Markdown 和纯文本申请',
+    localFilesReadOnly: '有 {count} 个文件或文件夹未获得写权限，已按只读方式共享。',
     openAnnotatorPanel: '打开标注面板',
     waitingForModel: '请求，正在等待模型响应：',
     clickSendButton: '➡️ 请点击生成按钮'

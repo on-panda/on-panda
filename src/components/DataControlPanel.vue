@@ -210,6 +210,9 @@ const clickToDownload = async ({ keepTopLogprobs = false } = {}) => {
 
 
 async function getFileFromHandleOrEntry(handleOrEntry) {
+    if (handleOrEntry instanceof File) {
+        return handleOrEntry
+    }
     if (handleOrEntry.getFile) {
         return await handleOrEntry.getFile()
     }
@@ -222,35 +225,79 @@ async function getDroppedFileItem(item) {
         return {
             path: handle.name,
             handleOrEntry: handle,
-            file: handle.kind === 'file' ? await getFileFromHandleOrEntry(handle) : null,
+            isFile: handle.kind === 'file',
         }
     }
     const entry = item.webkitGetAsEntry()
     return {
         path: (entry.fullPath || entry.name).replace(/^\//, ''),
         handleOrEntry: entry,
-        file: entry.isFile ? await getFileFromHandleOrEntry(entry) : null,
+        isFile: entry.isFile,
     }
 }
 
 async function handleDropFiles(event) {
     isDragged.value = false
     const items = Array.from(event.dataTransfer.items || [])
+    const fallbackFiles = Array.from(event.dataTransfer.files || [])
+    // Capture all handles in the drop event before awaiting any of them.
     const droppedFilePromises = items
         .filter(item => item.kind === 'file' && (item.getAsFileSystemHandle || item.webkitGetAsEntry))
         .map(item => getDroppedFileItem(item))
     const droppedFiles = await Promise.all(droppedFilePromises)
     if (!droppedFiles.length) {
-        for (const file of Array.from(event.dataTransfer.files || [])) {
-            droppedFiles.push({ path: file.name, handleOrEntry: file, file })
+        for (const file of fallbackFiles) {
+            droppedFiles.push({ path: file.name, handleOrEntry: file, isFile: true })
         }
     }
 
-    if (droppedFiles.length === 1 && droppedFiles[0].file && isPandaJsonFile(droppedFiles[0].file)) {
-        await loadPandaJsonFile(droppedFiles[0].file)
+    if (droppedFiles.length === 1 && droppedFiles[0].isFile && isPandaJsonFile(droppedFiles[0].handleOrEntry)) {
+        await loadPandaJsonFile(await getFileFromHandleOrEntry(droppedFiles[0].handleOrEntry))
         return
     }
-    operationCenter.addUserLocalFiles(droppedFiles.map(({ path, handleOrEntry }) => ({ path, handleOrEntry })))
+
+    const editableFileExtensions = [
+        'js', 'jsx', 'mjs', 'cjs', 'ts', 'tsx', 'mts', 'cts', 'vue', 'svelte', 'astro',
+        'html', 'htm', 'css', 'scss', 'sass', 'less',
+        'py', 'pyi', 'ipynb', 'rb', 'php', 'go', 'rs', 'java', 'kt', 'kts', 'scala', 'dart',
+        'c', 'h', 'cc', 'hh', 'cpp', 'hpp', 'cxx', 'hxx', 'cs', 'fs', 'fsx', 'swift', 'm', 'mm',
+        'sh', 'bash', 'zsh', 'fish', 'ps1', 'psm1', 'bat', 'cmd', 'lua', 'pl', 'pm', 'r', 'jl',
+        'ex', 'exs', 'erl', 'hrl', 'hs', 'clj', 'cljs', 'cljc', 'lisp', 'el', 'ml', 'mli',
+        'sql', 'graphql', 'gql', 'proto', 'cmake', 'gradle', 'groovy', 'tf', 'tfvars',
+        'md', 'markdown', 'mdx', 'mdown', 'mkd', 'txt', 'text', 'rst', 'adoc', 'tex', 'bib', 'org',
+        'json', 'jsonc', 'json5', 'yaml', 'yml', 'toml', 'ini', 'cfg', 'conf', 'xml', 'csv', 'tsv',
+    ]
+    const editableFileNames = [
+        'dockerfile', 'containerfile', 'makefile', 'gnumakefile', 'justfile', 'jenkinsfile',
+        'gemfile', 'rakefile', 'pipfile', 'procfile', 'readme', 'license', 'licence', 'copying',
+        '.gitignore', '.gitattributes', '.gitmodules', '.dockerignore', '.editorconfig', '.env',
+        '.npmrc', '.yarnrc', '.prettierrc', '.eslintrc', '.babelrc', '.bashrc', '.zshrc', '.profile',
+    ]
+    // Only request write access for directories and recognized editable files.
+    // Start requests together while the drop's transient user activation is available.
+    await Promise.all(droppedFiles.map(async file => {
+        file.writePermission = 'not-requested'
+        if (file.isFile) {
+            const name = file.handleOrEntry.name.toLowerCase()
+            if (!editableFileExtensions.some(extension => name.endsWith(`.${extension}`)) && !editableFileNames.includes(name)) {
+                return
+            }
+        }
+        file.writePermission = 'unavailable'
+        if (typeof file.handleOrEntry.requestPermission !== 'function') {
+            return
+        }
+        try {
+            file.writePermission = await file.handleOrEntry.requestPermission({ mode: 'readwrite' })
+        } catch (error) {
+            console.warn(`Could not request write permission for ${file.path}:`, error)
+        }
+    }))
+    operationCenter.addUserLocalFiles(droppedFiles)
+    const readOnlyCount = droppedFiles.filter(file => file.writePermission !== 'granted' && file.writePermission !== 'not-requested').length
+    if (readOnlyCount) {
+        ElMessage.warning(t('userMessages.localFilesReadOnly', { count: readOnlyCount }))
+    }
 }
 
 const isDragged = ref(false)

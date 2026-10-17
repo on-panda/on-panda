@@ -527,7 +527,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
 
         addUserLocalFiles = (files = []) => {
             const userLocalFiles = toolManageState.browserAgentShared.userLocalFiles
-            const addedFiles = files.map(({ path, handleOrEntry }) => {
+            const addedFiles = files.map(({ path, handleOrEntry, writePermission }) => {
                 let key = path
                 let i = 1
                 while (key in userLocalFiles) {
@@ -535,7 +535,7 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                     i += 1
                 }
                 userLocalFiles[key] = handleOrEntry
-                return { key, handleOrEntry }
+                return { key, handleOrEntry, writePermission }
             })
             if (!addedFiles.length) {
                 return
@@ -545,7 +545,12 @@ export function ResponseStateClosure({ messages = null, apiConfig = null, toolMa
                 role: 'user',
                 content: `<|user_local_files_start|>
 User shares those files with you. Please load the "user-local-files" skill:
-${addedFiles.map(({ key, handleOrEntry }) => `- \`${key}\`: ${handleOrEntry.constructor.name}`).join('\n')}
+${addedFiles.map(({ key, handleOrEntry, writePermission }) => {
+                    const access = writePermission === undefined ? ''
+                        : writePermission === 'not-requested' ? ' (write permission not requested)'
+                            : writePermission === 'granted' ? ' (read/write)' : ' (read-only; write permission not granted)'
+                    return `- \`${key}\`: ${handleOrEntry.constructor.name}${access}`
+                }).join('\n')}
 <|user_local_files_end|>`,
             }
             this.pandaState.beforeOperation()

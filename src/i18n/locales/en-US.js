@@ -86,7 +86,8 @@ export default {
     modelsRefreshed: 'Model list refresh completed',
     noPromptLogprobs: 'The current model does not support prompt_logprobs. Please switch to another model.',
     dropFilesHere: 'Drop *.panda*.json, local files, or folders here!',
-    localFilesUploadTip: 'Only one *.panda*.json loads data; other files and folders are shared with browserAgent',
+    localFilesUploadTip: 'Only one *.panda*.json loads data; other files and folders are shared with browserAgent. Write access is requested only for folders and recognized code, configuration, Markdown, or plain-text files.',
+    localFilesReadOnly: '{count} files or folders were shared as read-only because write access was not granted.',
     openAnnotatorPanel: 'Open annotator panel',
     waitingForModel: 'request, waiting response from model:',
     clickSendButton: '➡️ Please click the send button.'
