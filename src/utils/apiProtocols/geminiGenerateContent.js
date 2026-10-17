@@ -159,29 +159,11 @@ function openaiMessageToGeminiContent(message) {
     }
 }
 
-function normalizeGeminiSchema(schema) {
-    if (Array.isArray(schema)) {
-        return schema.map(normalizeGeminiSchema)
-    }
-    if (!schema || typeof schema !== 'object') {
-        return schema
-    }
-    const nextSchema = {}
-    for (const [key, value] of Object.entries(schema)) {
-        if (key === 'type' && typeof value === 'string') {
-            nextSchema[key] = value.toUpperCase()
-        } else {
-            nextSchema[key] = normalizeGeminiSchema(value)
-        }
-    }
-    return nextSchema
-}
-
 function convertTool(tool) {
     return {
         name: tool.function.name,
         description: tool.function.description,
-        parameters: normalizeGeminiSchema(tool.function.parameters),
+        parametersJsonSchema: tool.function.parameters,
     }
 }
 
