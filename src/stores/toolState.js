@@ -341,7 +341,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [], apiConfig = nul
                     : toolConfigIndex,
                 eager: true,
             })
-            if (toolConfig.type === 'mcp' && entry.instructions) {
+            if (toolConfig.type === 'mcp' && entry.instructions && !sourceToolConfig.ignore_instructions) {
                 nextMcpSystemMessages.push({
                     role: 'system',
                     content: entry.instructions,

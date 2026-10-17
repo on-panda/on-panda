@@ -303,6 +303,7 @@ const browserAgentToolConfigs = [{
   type: 'mcp',
   server_label: 'exa-search',
   server_url: 'https://mcp.exa.ai/mcp',
+  ignore_instructions: true,
 }]
 
 
