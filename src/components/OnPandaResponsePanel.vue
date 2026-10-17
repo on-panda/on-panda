@@ -36,6 +36,9 @@ const operationCenter = responseState.operationCenter
 const finalMessage = responseState.finalMessage
 const finalMessageAsText = computed(() => messageToSeq(finalMessage.value, { includeFinishReason: false }))
 
+// The annotator panel is open, so token-level raw text stays on the left
+const isAnnotateMode = computed(() => Boolean(pandaState.dialogCache.value.annotate))
+
 const bitsTooltipHtml = 'bits = - &sum;<sub>i</sub> log<sub>2</sub>(p<sub>i</sub>)'
 
 const waitingInfoProps = computed(() => ({
@@ -233,8 +236,9 @@ watch(() => globalStore.cleanMode, async function watchCleanMode(cleanMode) {
                 &nbsp;&nbsp;&nbsp;
                 <hr v-if="!isMobile" style="color:#eee; margin-top: -5px; margin-bottom: 4px">
             </footer>
-            <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt active-text="raw"
-                inactive-text="MD" @change="scrollSwitch.scrollToPosition"
+            <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt
+                :active-text="isAnnotateMode ? 'raw' : 'MD'" :inactive-text="isAnnotateMode ? 'MD' : 'raw'"
+                @change="scrollSwitch.scrollToPosition"
                 style="margin-right: 8px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa; width:45px" />
         </div>
         <div class="replayStatisticsSubtitle" style="display: flex; justify-content: space-between;">
@@ -259,13 +263,13 @@ watch(() => globalStore.cleanMode, async function watchCleanMode(cleanMode) {
 
 
             </small>
-            <small style="color: #888;" v-if="!isMobile"> rendered markdown </small>
+            <small style="color: #888;" v-if="!isMobile">{{ isAnnotateMode ? 'rendered markdown' : 'raw' }}</small>
         </div>
 
         <div class="finalMessageTwoPanel" v-if="!globalStore.cleanMode"
             style="width: 100%;overflow:scroll;overflow-y:hidden; padding-bottom: 3px;" ref="scrollDiv">
             <div ref="finalMessageTwoPanelBodyRef" style="display: flex; justify-content: space-between;"
-                :style="{ 'width': isMobile ? '195%' : '100%' }">
+                :style="{ 'width': isMobile ? '195%' : '100%', 'flex-direction': isAnnotateMode ? 'row' : 'row-reverse' }">
                 <div ref="rawMessagePanelRef" class="final-message-half-panel" :style="rawMessagePanelStyle">
                     <div style="background-color: #eee;">
                         <WaitingInfo v-if="!tokens.length" v-bind="waitingInfoProps" />
