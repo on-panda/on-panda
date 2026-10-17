@@ -295,6 +295,17 @@ const templateToolConfigs = [
 ]
 
 
+const browserAgentToolConfigs = [{
+  type: 'mcp',
+  server_label: 'browser-agent',
+  server_url: 'local-fetch://browser-agent-mcp',
+}, {
+  type: 'mcp',
+  server_label: 'exa-search',
+  server_url: 'https://mcp.exa.ai/mcp',
+}]
+
+
 function switchDefaultToAgentTag() {
   const defaultModel = modelNameTagsComputed.value['on-panda'] || 'on-panda'
   if (modelName.value.indexOf(defaultModel) != -1) {
@@ -404,10 +415,7 @@ const defaultExampleNameToFunc = {
 - review 这个 repo 未 commit 的改动，有 BUG 请直接修改（需用户拖拽分享 repo）` }]
     }
     operationCenter.loadMessages(JsExampleMessages)
-    operationCenter.pandaState.currentDialogData.value.tool_configs = [{
-      type: 'mcp',
-      server_url: 'local-fetch://browser-agent-mcp',
-    }]
+    operationCenter.pandaState.currentDialogData.value.tool_configs = browserAgentToolConfigs
     // operationCenter.generateNew()
   },
   "🐱 pet": () => {
@@ -417,10 +425,7 @@ const defaultExampleNameToFunc = {
       JsExampleMessages = [{ role: "user", content: "创建一个可交互的桌面宠物，放在当前页面右下角。" }]
     }
     operationCenter.loadMessages(JsExampleMessages)
-    operationCenter.pandaState.currentDialogData.value.tool_configs = [{
-      type: 'mcp',
-      server_url: 'local-fetch://browser-agent-mcp',
-    }]
+    operationCenter.pandaState.currentDialogData.value.tool_configs = browserAgentToolConfigs
     operationCenter.generateNew()
   },
   "codex/cc": () => {
@@ -466,10 +471,7 @@ const defaultExampleNameToFunc = {
   // "svg": () => {
   //   var SvgExampleMessages = [{ role: "user", content: "Generate svg image and iterate 3 times, draw content: A panda is riding on a llama" }]
   //   operationCenter.loadMessages(SvgExampleMessages)
-  //   operationCenter.pandaState.currentDialogData.value.tool_configs = [{
-  //     type: 'mcp',
-  //     server_url: 'local-fetch://browser-agent-mcp',
-  //   }]
+  //   operationCenter.pandaState.currentDialogData.value.tool_configs = browserAgentToolConfigs
   //   operationCenter.generateNew()
   // },
   "tokenizer": () => {
@@ -539,7 +541,10 @@ const defaultExampleNameToFunc = {
       dialogs: {
         1: {
           messages: [{ role: "user", content: "What is StepFun's latest main model?" }],
-          tool_configs: [{ type: 'mcp', server_url: 'local-fetch://browser-agent-mcp', require_approval: 'always' }],
+          tool_configs: browserAgentToolConfigs.map(toolConfig => ({
+            ...toolConfig,
+            require_approval: 'always',
+          })),
           annotate: { is_good: null },
         },
       },
