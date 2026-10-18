@@ -17,7 +17,7 @@
     <OnPandaExamples :dialogWithControlState="dialogWithControlState" ref="onPandaExamplesRef" />
 
     <el-divider content-position="left" style="margin-bottom: 5px;">
-      <b>{{ t('common.dialog') }}:</b>
+      <b ref="dialogDividerRef">{{ t('common.dialog') }}:</b>
     </el-divider>
     <OnPandaDialogWithControl :dialogWithControlState="dialogWithControlState" />
 
@@ -106,6 +106,7 @@ const agenticLoopStatus = responseState.agenticLoopStatus
 const operationCenter = responseState.operationCenter
 
 const onPandaExamplesRef = ref(null)
+const dialogDividerRef = ref(null)
 
 if (globalStore.isOldUser) {
   operationCenter.loadMessages(defaultMessages, toolManageState.presetToolConfigsInput)
@@ -202,6 +203,7 @@ onMounted(async () => {
         throw new Error(`Unknown example: ${JSON.stringify(exampleName)}`)
       }
       onMountedRun = exampleNameToFunc[exampleName]
+      dialogDividerRef.value.scrollIntoView()
     } else if (globalStore.debug) {
       onMountedRun = globalStore.debugRun || defaultDebugRun
     }

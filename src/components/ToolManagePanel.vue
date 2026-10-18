@@ -138,7 +138,7 @@ function handleToolInfoVisibleChange(toolInfoKey, visible) {
                 </div>
             </div>
 
-            <div class="tool-manage-section">
+            <div v-if="candidateTools.length" class="tool-manage-section">
                 <div class="tool-manage-title">{{ t('toolManagePanel.candidate') }}</div>
                 <div class="tool-manage-tags">
                     <el-popover v-for="candidate in candidateTools" :key="candidate.key" :trigger="toolInfoTrigger"
@@ -154,8 +154,6 @@ function handleToolInfoVisibleChange(toolInfoKey, visible) {
                         </template>
                         <ToolInfo :title="getToolTagName(candidate.tool)" :tool="candidate.tool" />
                     </el-popover>
-                    <span v-if="!candidateTools.length" class="tool-manage-empty">{{ t('toolManagePanel.empty')
-                        }}</span>
                 </div>
             </div>
 
