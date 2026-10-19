@@ -39,6 +39,12 @@ const finalMessageAsText = computed(() => messageToSeq(finalMessage.value, { inc
 // The annotator panel is open, so token-level raw text stays on the left
 const isAnnotateMode = computed(() => Boolean(pandaState.dialogCache.value.annotate))
 
+// Two panels only help when tokens carry probabilities and candidates: chat completions with top_logprobs (0 drops logprobs in normalizeRequest)
+const isTwoPanelMode = computed(() => {
+    const { protocol = 'openai', endpoint = 'chat_completions' } = apiConfig.value.api_protocol || {}
+    return !globalStore.cleanMode && protocol === 'openai' && endpoint === 'chat_completions' && apiConfig.value.chat_config.top_logprobs > 0
+})
+
 const bitsTooltipHtml = 'bits = - &sum;<sub>i</sub> log<sub>2</sub>(p<sub>i</sub>)'
 
 const waitingInfoProps = computed(() => ({
@@ -159,21 +165,21 @@ function handleScrollDivFunction(e) {
 }
 
 onMounted(async () => {
-    if (!globalStore.cleanMode) {
+    if (isTwoPanelMode.value) {
         scrollDiv.value.addEventListener('scroll', handleScrollDivFunction);
         shortPanelAutoFollow.start()
     }
 })
 
 onBeforeUnmount(() => {
-    if (!globalStore.cleanMode) {
+    if (isTwoPanelMode.value) {
         scrollDiv.value.removeEventListener('scroll', handleScrollDivFunction);
         shortPanelAutoFollow.stop()
     }
 })
 
-watch(() => globalStore.cleanMode, async function watchCleanMode(cleanMode) {
-    if (cleanMode) {
+watch(isTwoPanelMode, async function watchTwoPanelMode(twoPanelMode) {
+    if (!twoPanelMode) {
         scrollDiv.value.removeEventListener('scroll', handleScrollDivFunction);
         shortPanelAutoFollow.stop()
         return
@@ -236,7 +242,7 @@ watch(() => globalStore.cleanMode, async function watchCleanMode(cleanMode) {
                 &nbsp;&nbsp;&nbsp;
                 <hr v-if="!isMobile" style="color:#eee; margin-top: -5px; margin-bottom: 4px">
             </footer>
-            <el-switch v-if="isMobile" v-model="scrollSwitch.isSwitched.value" inline-prompt
+            <el-switch v-if="isMobile && isTwoPanelMode" v-model="scrollSwitch.isSwitched.value" inline-prompt
                 :active-text="isAnnotateMode ? 'raw' : 'MD'" :inactive-text="isAnnotateMode ? 'MD' : 'raw'"
                 @change="scrollSwitch.scrollToPosition"
                 style="margin-right: 8px;--el-switch-on-color: #aaa; --el-switch-off-color: #aaa; width:45px" />
@@ -263,10 +269,10 @@ watch(() => globalStore.cleanMode, async function watchCleanMode(cleanMode) {
 
 
             </small>
-            <small style="color: #888;" v-if="!isMobile">{{ isAnnotateMode ? 'rendered markdown' : 'raw' }}</small>
+            <small style="color: #888;" v-if="!isMobile && isTwoPanelMode">{{ isAnnotateMode ? 'rendered markdown' : 'raw' }}</small>
         </div>
 
-        <div class="finalMessageTwoPanel" v-if="!globalStore.cleanMode"
+        <div class="finalMessageTwoPanel" v-if="isTwoPanelMode"
             style="width: 100%;overflow:scroll;overflow-y:hidden; padding-bottom: 3px;" ref="scrollDiv">
             <div ref="finalMessageTwoPanelBodyRef" style="display: flex; justify-content: space-between;"
                 :style="{ 'width': isMobile ? '195%' : '100%', 'flex-direction': isAnnotateMode ? 'row' : 'row-reverse' }">
@@ -282,7 +288,7 @@ watch(() => globalStore.cleanMode, async function watchCleanMode(cleanMode) {
                 </div>
             </div>
         </div>
-        <div v-if="globalStore.cleanMode">
+        <div v-if="!isTwoPanelMode">
             <MarkdownResponse :content="finalMessageAsText" :waiting-info-props="waitingInfoProps" />
         </div>
         <ToolCallControlPanel :responseState="responseState" />

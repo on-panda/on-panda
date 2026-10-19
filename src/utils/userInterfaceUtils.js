@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import { useEventListener } from '../utils/commonUtils.js'
 
 export const probToColor = (prob, transparency) => {
@@ -52,9 +52,10 @@ export function useScrollSwitchSync(scrollDiv) {
         isSwitched.value = scrollDiv.value.scrollLeft <= maxScrollLeft / 2;
     };
 
-    // 初始挂载时设置滚动位置
-    onMounted(() => {
-        scrollDiv.value.addEventListener('scroll', syncSwitchWithScroll, { passive: true });
+    // The container may be rendered conditionally, so bind whenever it (re)appears instead of only on mount
+    watch(scrollDiv, (element) => {
+        if (!element) return;
+        element.addEventListener('scroll', syncSwitchWithScroll, { passive: true });
         scrollToPosition();
     });
 
