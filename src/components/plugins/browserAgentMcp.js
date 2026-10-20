@@ -166,9 +166,10 @@ async function runBrowserJs(code = '', buildBrowserAgent) {
         text: `<|execution_info_start|>\nCode execution time: ${executionTimeMs} ms\n<|execution_info_end|>`,
     }]
     const hasLog = entries.some(entry => entry.kind === 'log')
+    const hasError = entries.some(entry => entry.kind === 'error')
     if (!hasLog) {
         content.push({ type: 'text', text: '<|no_js_log|>' })
-        if (executionTimeMs < FAST_EXECUTION_TIME_MS) {
+        if (!hasError && executionTimeMs < FAST_EXECUTION_TIME_MS) {
             content.push({
                 type: 'text',
                 text: `<|system_reminder_start|>
