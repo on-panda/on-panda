@@ -228,8 +228,8 @@ function isEventForCopy(event) {
 }
 
 function isEventForPatchReplacement(event) {
-    // if the event is triggered with the Ctrl key or right mouse button, replace the patch
-    return event.ctrlKey || event.button == 2;
+    // Replace the patch with Ctrl/Cmd or the right mouse button.
+    return event.ctrlKey || event.metaKey || event.button == 2;
 }
 
 function handleMouseDownPatchSpan(event, patch) {

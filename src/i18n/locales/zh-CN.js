@@ -118,7 +118,7 @@ export default {
     stopGenerating: '停止生成',
     stopAgenticLoop: '运行中，要停吗？',
     regenerate: '重新生成',
-    modelTagClick: '1. 单击标签切换模型；双击标签切换模型并重新生成。\n2. 如果按住 `Ctrl` 键并点击或者用鼠标中键点击，将打开新窗口并用对应模型重新生成',
+    modelTagClick: '1. 单击标签切换模型；双击标签切换模型并重新生成。\n2. 如果按住 `Ctrl/Cmd` 键并点击或者用鼠标中键点击，将打开新窗口并用对应模型重新生成',
     stream: '部分 API 供应商对流式（stream）模式的支持不够完善，可能导致续写或 top_logprobs 功能出现异常。遇到这类问题时，可以尝试关闭 stream。',
     testOnPandaCompatibility: '检查当前 API 及模型与 onPanda 所需特性的兼容性。\n各个参数的作用见 [API 兼容性文档](https://github.com/on-panda/on-panda-docs/blob/main/content/zh-cn/API_compatibility.md)。\n推荐打开 F12，在 Console 中查看测试请求及日志。',
     refreshTokenProb: '更新词组概率和候选',
@@ -233,7 +233,7 @@ export default {
 **进阶功能**
 - 选中改写：可以选中一段文本进行改写，改写后的文字会有蓝色背景标记
 - 候选词组：
-  - 在候选词组上点击鼠标 \`右键\` 或 \`Ctrl + 点击\`，将用候选词组替换当前词组
+  - 在候选词组上点击鼠标 \`右键\` 或 \`Ctrl/Cmd + 点击\`，将用候选词组替换当前词组
   - 在候选词组上点击鼠标 \`中键\` 或 \`Alt + 点击\`，会复制候选词组到剪贴板
 `,
   },

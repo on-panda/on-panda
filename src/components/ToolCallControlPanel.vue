@@ -401,7 +401,7 @@ async function handleRejectTriggerClick() {
                                     <el-input class="toolCallGuideInput" v-model="toolCallsRejectedGuidance"
                                         type="textarea" resize="none" :autosize="{ minRows: 1, maxRows: 16 }"
                                         :placeholder="t('toolCallControl.rejectGuidancePlaceholder')"
-                                        @keydown.ctrl.enter.prevent="handleGuideToolCalls"
+                                        @keydown.enter="if ($event.ctrlKey || $event.metaKey) { $event.preventDefault(); handleGuideToolCalls() }"
                                         @focus="handleGuideInputFocus" @blur="handleGuideInputBlur" />
                                     <div class="toolCallGuideActions">
                                         <button class="toolCallGuideActionButton toolCallGuideSubmitButton"

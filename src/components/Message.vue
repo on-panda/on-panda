@@ -41,7 +41,8 @@
       <div class="messagePrimaryActionRow">
         <el-input ref="messageContentInput" class="message-content messagePrimaryActionContent" v-model="messageDraft"
           type="textarea" :placeholder="t('chatMessage.emptyMessageIgnored')" :autosize="{ minRows: 2, maxRows: props.message.role === 'system' ? 2.5 : 50 }"
-          @keydown.ctrl.enter="handlePrimaryAction" @paste="handlePaste" @focus="handleEditorFocus"
+          @keydown.enter="if ($event.ctrlKey || $event.metaKey) { $event.preventDefault(); handlePrimaryAction() }"
+          @paste="handlePaste" @focus="handleEditorFocus"
           @blur="handleEditorBlur" />
 
         <button v-if="showPrimaryActionButton" @click="handlePrimaryAction" :disabled="isPrimaryActionDisabled"
