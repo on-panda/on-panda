@@ -39,11 +39,14 @@ const finalMessageAsText = computed(() => messageToSeq(finalMessage.value, { inc
 // The annotator panel is open, so token-level raw text stays on the left
 const isAnnotateMode = computed(() => Boolean(pandaState.dialogCache.value.annotate))
 
-// Two panels only help when tokens carry probabilities and candidates: chat completions with top_logprobs (0 drops logprobs in normalizeRequest)
-const isTwoPanelMode = computed(() => {
+const isChatCompletion = computed(() => {
     const { protocol = 'openai', endpoint = 'chat_completions' } = apiConfig.value.api_protocol || {}
-    return !globalStore.cleanMode && protocol === 'openai' && endpoint === 'chat_completions' && apiConfig.value.chat_config.top_logprobs > 0
+    return protocol === 'openai' && endpoint === 'chat_completions'
 })
+const showTokenProbControls = computed(() => isChatCompletion.value && apiConfig.value.chat_config.top_logprobs > 0)
+
+// Two panels only help when tokens carry probabilities and candidates.
+const isTwoPanelMode = computed(() => !globalStore.cleanMode && showTokenProbControls.value)
 
 const bitsTooltipHtml = 'bits = - &sum;<sub>i</sub> log<sub>2</sub>(p<sub>i</sub>)'
 
@@ -203,7 +206,7 @@ watch(isTwoPanelMode, async function watchTwoPanelMode(twoPanelMode) {
                     <el-button :icon="Close" size="small"
                         @click="responseState.rawPromptLogprobsTokens.value.length = 0" />
                 </el-tooltip>
-                <el-tooltip v-if="!agenticLoopStatus.running" :content="t('tooltips.continueGenerating')"
+                <el-tooltip v-if="isChatCompletion && !agenticLoopStatus.running" :content="t('tooltips.continueGenerating')"
                     placement="top">
                     <el-button :icon="DArrowRight" size="small" :disabled="!tokens?.length"
                         @click="operationCenter.continueGenerating()" />
@@ -217,7 +220,7 @@ watch(isTwoPanelMode, async function watchTwoPanelMode(twoPanelMode) {
                 <el-tooltip v-if="0" content="edit (TBD)" placement="top">
                     <el-button :icon="Edit" size="small" :disabled="true || !finalMessage.content" />
                 </el-tooltip>
-                <el-tooltip placement="top" effect="light">
+                <el-tooltip v-if="showTokenProbControls" placement="top" effect="light">
                     <template #content>
                         {{ t('tooltips.refreshTokenProb') }}, <br>
                         {{ t('tooltips.dblclickToPasteAndRefresh') }}
