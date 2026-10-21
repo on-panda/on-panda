@@ -51,9 +51,15 @@
                 v-if="pandaState.isDeleted.value">
                 <el-button default type="danger" :icon="Delete" size="small" @click="pandaState.eraseCurrentDialog()" />
             </el-tooltip>
-            <el-tooltip :content="t('tooltips.uploadFile') + '<br>' + t('userMessages.dropFilesHere')" raw-content
-                placement="bottom">
-                <el-button :icon="UploadFilled" size="small" @click="uploadFile"
+            <el-tooltip placement="bottom" effect="light">
+                <template #content>
+                    {{ t('tooltips.uploadFile') }} <br>
+                    {{ t('userMessages.dropFilesHere') }} <br>
+                    <el-button size="small" @click="uploadFile({ directory: true })">
+                        {{ t('tooltips.uploadFolder') }}
+                    </el-button>
+                </template>
+                <el-button :icon="UploadFilled" size="small" @click="uploadFile()"
                     :style="isDragged ? { backgroundColor: 'rgb(158, 218, 255)' } : {}" />
             </el-tooltip>
             <el-tooltip placement="bottom" effect="light">
@@ -99,7 +105,7 @@
 
         <el-dialog v-model="isDragged" style="width: 80%;">
             <el-upload v-show="isDragged" class="on-panda-dropzone" :drag="true" :auto-upload="false"
-                :on-change="handleDropJson" :multiple="false" @drop.capture.prevent.stop="handleDropFiles">
+                multiple @click.capture.prevent.stop="uploadFile()" @drop.capture.prevent.stop="handleDropFiles">
                 <el-icon class="el-icon--upload"><upload-filled /></el-icon>
                 <div class="el-upload__text">
                     {{ t('userMessages.dropFilesHere') }}
@@ -146,18 +152,39 @@ registerKeyActions({
 })
 
 
-async function uploadFile() {
-    isDragged.value = false;
+async function uploadFile({ directory = false } = {}) {
+    isDragged.value = false
+    if (directory && !window.showDirectoryPicker) {
+        ElMessage.warning(t('userMessages.directoryPickerUnavailable'))
+        return
+    }
+    if (directory || window.showOpenFilePicker) {
+        let handles
+        try {
+            handles = directory
+                ? [await window.showDirectoryPicker()]
+                : await window.showOpenFilePicker({ multiple: true })
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                return
+            }
+            throw error
+        }
+        await handleLocalFiles(handles.map(handle => ({
+            path: handle.name,
+            handleOrEntry: handle,
+            isFile: handle.kind === 'file',
+        })))
+        return
+    }
     const fileInput = document.createElement('input')
     fileInput.type = 'file'
-    fileInput.onchange = async () => {
-        const file = fileInput.files[0]
-        if (isPandaJsonFile(file)) {
-            await loadPandaJsonFile(file)
-        } else {
-            operationCenter.addUserLocalFiles([{ path: file.name, handleOrEntry: file }])
-        }
-    }
+    fileInput.multiple = true
+    fileInput.onchange = () => handleLocalFiles(Array.from(fileInput.files, file => ({
+        path: file.name,
+        handleOrEntry: file,
+        isFile: true,
+    })))
     fileInput.click()
 }
 
@@ -187,15 +214,6 @@ function loadPandaJsonFile(file) {
         isDragged.value = false;
     })
 }
-
-const handleDropJson = async (uploadFile) => {
-    const file = uploadFile.raw;
-    if (!isPandaJsonFile(file)) {
-        operationCenter.addUserLocalFiles([{ path: file.name, handleOrEntry: file }])
-        return;
-    }
-    await loadPandaJsonFile(file)
-};
 
 const clickToDownload = async ({ keepTopLogprobs = false } = {}) => {
     var name = null
@@ -251,8 +269,12 @@ async function handleDropFiles(event) {
         }
     }
 
-    if (droppedFiles.length === 1 && droppedFiles[0].isFile && isPandaJsonFile(droppedFiles[0].handleOrEntry)) {
-        await loadPandaJsonFile(await getFileFromHandleOrEntry(droppedFiles[0].handleOrEntry))
+    await handleLocalFiles(droppedFiles)
+}
+
+async function handleLocalFiles(files) {
+    if (files.length === 1 && files[0].isFile && isPandaJsonFile(files[0].handleOrEntry)) {
+        await loadPandaJsonFile(await getFileFromHandleOrEntry(files[0].handleOrEntry))
         return
     }
 
@@ -274,8 +296,8 @@ async function handleDropFiles(event) {
         '.npmrc', '.yarnrc', '.prettierrc', '.eslintrc', '.babelrc', '.bashrc', '.zshrc', '.profile',
     ]
     // Only request write access for directories and recognized editable files.
-    // Start requests together while the drop's transient user activation is available.
-    await Promise.all(droppedFiles.map(async file => {
+    // Start requests together while the user activation from dropping or picking files is available.
+    await Promise.all(files.map(async file => {
         file.writePermission = 'not-requested'
         if (file.isFile) {
             const name = file.handleOrEntry.name.toLowerCase()
@@ -293,8 +315,8 @@ async function handleDropFiles(event) {
             console.warn(`Could not request write permission for ${file.path}:`, error)
         }
     }))
-    operationCenter.addUserLocalFiles(droppedFiles)
-    const readOnlyCount = droppedFiles.filter(file => file.writePermission !== 'granted' && file.writePermission !== 'not-requested').length
+    operationCenter.addUserLocalFiles(files)
+    const readOnlyCount = files.filter(file => file.writePermission !== 'granted' && file.writePermission !== 'not-requested').length
     if (readOnlyCount) {
         ElMessage.warning(t('userMessages.localFilesReadOnly', { count: readOnlyCount }))
     }

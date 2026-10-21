@@ -88,6 +88,7 @@ export default {
     dropFilesHere: 'Drop *.panda*.json, local files, or folders here!',
     localFilesUploadTip: 'Only one *.panda*.json loads data; other files and folders are shared with browserAgent. Write access is requested only for folders and recognized code, configuration, Markdown, or plain-text files.',
     localFilesReadOnly: '{count} files or folders were shared as read-only because write access was not granted.',
+    directoryPickerUnavailable: 'This browser does not support picking folders directly. Please drag and drop the folder onto the page.',
     openAnnotatorPanel: 'Open annotator panel',
     waitingForModel: 'request, waiting response from model:',
     clickSendButton: '➡️ Please click the send button.'
@@ -109,7 +110,8 @@ export default {
     eraseDialog: 'Erase current dialog',
     clearAndReset: 'Clear and reset this data',
     restoreDialog: 'Restore current dialog',
-    uploadFile: 'Upload local file',
+    uploadFile: 'Upload local files (multiple supported)',
+    uploadFolder: 'Choose folder',
     downloadFile: 'Download panda.json file',
     downloadWithCandidates: 'Include candidates',
     cleanUI: 'Clean UI (reading mode)',

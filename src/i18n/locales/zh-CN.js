@@ -89,6 +89,7 @@ export default {
     dropFilesHere: '拖放 *.panda*.json、本地文件或文件夹到这里！',
     localFilesUploadTip: '只有单个 *.panda*.json 会载入数据，其他文件和文件夹会共享给 browserAgent；默认不申请写权限，仅对文件夹、代码/配置文件、Markdown 和纯文本申请',
     localFilesReadOnly: '有 {count} 个文件或文件夹未获得写权限，已按只读方式共享。',
+    directoryPickerUnavailable: '当前浏览器不支持直接选择文件夹，请将文件夹拖放到页面中。',
     openAnnotatorPanel: '打开标注面板',
     waitingForModel: '请求，正在等待模型响应：',
     clickSendButton: '➡️ 请点击生成按钮'
@@ -110,7 +111,8 @@ export default {
     eraseDialog: '彻底删除当前对话',
     clearAndReset: '清空并重置整条数据',
     restoreDialog: '恢复当前对话',
-    uploadFile: '上传本地文件',
+    uploadFile: '上传本地文件（可多选）',
+    uploadFolder: '选择文件夹',
     downloadFile: '下载为 panda.json 文件',
     downloadWithCandidates: '包含候选',
     cleanUI: '简洁界面（阅读模式）',
