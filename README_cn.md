@@ -1,8 +1,17 @@
-# 🐼 onPanda: Steer Your LLMs and Agents at the Token Level
+<a href="https://x.com/diyerxx/status/2101020850405462041"><img src="https://img.shields.io/static/v1?label=Intro&message=with%20video&color=blue"></a>
+<a href="https://onpanda.diyer22.com/"><img src="https://img.shields.io/static/v1?label=Online&message=Demo&color=orange"></a>
+<a href="https://arxiv.org/abs/2609.24983"><img src="https://img.shields.io/badge/arXiv-2609.24983-b31b1b.svg"></a>
+<a href="https://huggingface.co/datasets/diyer22/Panda-CVL-test"><img src="https://img.shields.io/static/v1?label=HuggingFace&message=data&color=yellow"></a>
+<a href="https://zhuanlan.zhihu.com/p/2096568586215207805"><img src="https://img.shields.io/badge/Blog-知乎-blue.svg"></a>
+<a href="README.md"><img src="https://img.shields.io/badge/Language-English-lightgrey.svg"></a>
 
-用于 token 可视化与控制、模型检查、数据标注等工作的 Web 应用。
 
 <div align="center">
+
+# onPanda: Steer Your LLMs and Agents at the Token Level
+
+**用于 token 可视化与控制、模型检查、数据标注、免安装 harness 等工作的 Web 应用。**
+
 
 <a href="https://x.com/diyerxx/status/2101020850405462041">
   <img src="https://on-panda.github.io/img/onPanda-token-level-correction.gif" alt="onPanda 的 token 级纠错界面" style="width:500px; max-width:100%; height:auto">
@@ -35,7 +44,9 @@ onPanda 面向极客、重度用户、好奇的探索者和工程师，界面为
 - 附带 **token-level correction** 数据，为后续训练提供了位置精确、正负样本天然配对的细粒度监督信号——有潜力成为 LLM 对齐新范式。
 - 支持标注 **Agent 轨迹**，并支持图像、音频和视频输入。
 - 欢迎阅读 onPanda 在数据标注方向的论文：
-  - [onPanda: Efficient Annotation of On-Policy Alignment Data for LLMs and Agents via Token-Level Correction](https://on-panda.github.io/research/)
+  - [onPanda: Efficient Annotation of On-Policy Alignment Data for LLMs and Agents via Token-Level Correction](https://arxiv.org/abs/2609.24983)
+- 欢迎阅读 onPanda 作为 Agent SFT 轨迹标注工具的博客：
+  - [onPanda：在真实环境中标注 Agent 轨迹，效率翻倍！同步产出 On-Policy SFT 与偏好数据](https://zhuanlan.zhihu.com/p/2096568586215207805)
     
 </details>
 

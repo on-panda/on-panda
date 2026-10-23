@@ -1,8 +1,17 @@
-# 🐼 onPanda: Steer Your LLMs and Agents at the Token Level
+<a href="https://x.com/diyerxx/status/2101020850405462041"><img src="https://img.shields.io/static/v1?label=Intro&message=with%20video&color=blue"></a>
+<a href="https://onpanda.diyer22.com/"><img src="https://img.shields.io/static/v1?label=Online&message=Demo&color=orange"></a>
+<a href="https://arxiv.org/abs/2609.24983"><img src="https://img.shields.io/badge/arXiv-2609.24983-b31b1b.svg"></a>
+<a href="https://huggingface.co/datasets/diyer22/Panda-CVL-test"><img src="https://img.shields.io/static/v1?label=HuggingFace&message=data&color=yellow"></a>
+<a href="https://on-panda.github.io/agent-trajectory-annotation/"><img src="https://img.shields.io/badge/Blog-Agent%20Annotation-blue.svg"></a>
+<a href="README_cn.md"><img src="https://img.shields.io/badge/Language-中文-lightgrey.svg"></a>
 
-A web app for token visualization and control, model inspection, data annotation, and more.
 
 <div align="center">
+
+# onPanda: Steer Your LLMs and Agents at the Token Level
+
+**For token visualization and control, model inspection, data annotation, and installation-free harness.**
+
 
 <a href="https://x.com/diyerxx/status/2101020850405462041">
   <img src="https://on-panda.github.io/img/onPanda-token-level-correction.gif" alt="onPanda token-level correction interface" style="width:500px; max-width:100%; height:auto">
@@ -35,7 +44,9 @@ onPanda is designed for geeks, power users, curious minds, and engineers. Its UI
 - Capture **token-level supervision** with precise correction locations and naturally paired positive and negative examples—a promising direction for future LLM alignment.
 - Annotate **agent trajectories**, with support for image, audio, and video inputs.
 - Read the paper on onPanda's data annotation approach:
-  - [onPanda: Efficient Annotation of On-Policy Alignment Data for LLMs and Agents via Token-Level Correction](https://on-panda.github.io/research/)
+  - [onPanda: Efficient Annotation of On-Policy Alignment Data for LLMs and Agents via Token-Level Correction](https://arxiv.org/abs/2609.24983)
+- Read the blog post on onPanda as an agent SFT trajectory annotation tool:
+  - [**Efficient Agent Trajectory Annotation with onPanda**](https://on-panda.github.io/agent-trajectory-annotation/): Dynamically connect to agent environments and annotate multi-turn SFT and preference data with tool_calls and reasoning online
     
 </details>
 
