@@ -9,7 +9,10 @@ export function createApiProxyPlugin(browserAgentProxyPath = '') {
   }))
   // Browser-agent proxy: forwards arbitrary URLs as a fallback for cors-internet.
   const browserAgentMiddleware = browserAgentProxyPath
-    ? withSafeProxyMiddleware('Browser agent proxy', createApiProxyMiddleware())
+    ? withSafeProxyMiddleware('Browser agent proxy', createApiProxyMiddleware({
+      omitRequestHeaders: ['cookie', 'referer'],
+      omitResponseHeaders: ['set-cookie'],
+    }))
     : null
   const register = (server) => {
     server.middlewares.use('/api-proxy', apiProxyMiddleware)
@@ -25,7 +28,7 @@ export function createApiProxyPlugin(browserAgentProxyPath = '') {
   }
 }
 
-function createApiProxyMiddleware({ verifyUrl } = {}) {
+function createApiProxyMiddleware({ verifyUrl, omitRequestHeaders = [], omitResponseHeaders = [] } = {}) {
   return async (req, res) => {
     const abortController = new AbortController()
     try {
@@ -48,7 +51,8 @@ function createApiProxyMiddleware({ verifyUrl } = {}) {
         }
       })
       Object.entries(req.headers).forEach(([key, value]) => {
-        if (!value || hopByHopHeaders.has(key.toLowerCase()) || key.toLowerCase() === 'accept-encoding') {
+        const lowerKey = key.toLowerCase()
+        if (!value || hopByHopHeaders.has(lowerKey) || lowerKey === 'accept-encoding' || omitRequestHeaders.includes(lowerKey)) {
           return
         }
         const values = Array.isArray(value) ? value : [value]
@@ -77,7 +81,7 @@ function createApiProxyMiddleware({ verifyUrl } = {}) {
       }
       upstreamResponse.headers.forEach((value, key) => {
         const lowerKey = key.toLowerCase()
-        if (hopByHopHeaders.has(lowerKey)) {
+        if (hopByHopHeaders.has(lowerKey) || omitResponseHeaders.includes(lowerKey)) {
           return
         }
         if (shouldNormalizeContentEncoding && ['content-encoding', 'content-length'].includes(lowerKey)) {
