@@ -223,7 +223,11 @@ function buildGenerationConfig(body) {
         generationConfig.responseLogprobs = true
         generationConfig.logprobs = body.top_logprobs
     }
-    generationConfig.thinkingConfig = body.thinkingConfig || generationConfig.thinkingConfig || DEFAULT_THINKING_CONFIG
+    // generateContent only offers on/off thought summaries (no verbosity level), so always opt in unless overridden.
+    generationConfig.thinkingConfig = {
+        includeThoughts: true,
+        ...(body.thinkingConfig || generationConfig.thinkingConfig || DEFAULT_THINKING_CONFIG),
+    }
     return generationConfig
 }
 
