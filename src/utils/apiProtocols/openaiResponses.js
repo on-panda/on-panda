@@ -1,7 +1,7 @@
 import { useGlobalStore } from '../../stores/globalStore.js'
 import { ObjctKeyToCamelCaseNaming, deepCopy, hashObjectSHA256Base64 } from '../commonUtils.js'
 import { buildResponseTemplate } from '../responseTemplates/index.js'
-import { mergeHeaders, parseSseJsonStream, retryWithSchedule, normalizeUsage } from './utils.js'
+import { mergeHeaders, parseSseJsonStream, retryWithSchedule, normalizeUsage, omitNullRequestFields } from './utils.js'
 
 function hashMessageOutput({ reasoning, content, tool_calls }) {
     return hashObjectSHA256Base64({ reasoning, content, tool_calls })
@@ -71,33 +71,30 @@ function convertTool(tool) {
 }
 
 async function buildOpenaiResponsesRequest(body) {
+    // Convert or drop onPanda's Chat Completions keys, and pass the other keys through as Responses parameters.
+    const { messages, tools, max_tokens, max_completion_tokens, reasoning_effort, stream_options, logprobs, top_logprobs, spaces_between_special_tokens, ...parameters } = body
     const requestBody = {
-        model: body.model,
-        stream: true,
         // Stateless mode: reasoning is replayed by encrypted_content instead of server-stored items.
         store: false,
         include: ['reasoning.encrypted_content'],
-        input: (await Promise.all(body.messages.map(messageToResponsesInput))).flat(),
+        ...parameters,
+        stream: true,
+        input: (await Promise.all(messages.map(messageToResponsesInput))).flat(),
     }
     // `reasoning: null` omits the parameter, for servers that reject or hang on it.
     if (body.reasoning !== null) {
         requestBody.reasoning = {
-            effort: body.reasoning_effort || 'xhigh',
+            effort: reasoning_effort || 'xhigh',
             summary: 'detailed',
             ...body.reasoning,
         }
     }
-    for (const key of ['temperature', 'top_p', 'tool_choice', 'parallel_tool_calls', 'text', 'service_tier']) {
-        if (body[key] != null) {
-            requestBody[key] = body[key]
-        }
-    }
-    const maxOutputTokens = body.max_tokens || body.max_completion_tokens
+    const maxOutputTokens = max_tokens || max_completion_tokens
     if (maxOutputTokens) {
         requestBody.max_output_tokens = maxOutputTokens
     }
-    if (body.tools?.length) {
-        requestBody.tools = body.tools.map(convertTool)
+    if (tools?.length) {
+        requestBody.tools = tools.map(convertTool)
     }
     return requestBody
 }
@@ -213,7 +210,7 @@ export async function createOpenaiResponsesStream({ requestBody, apiConfig, sign
             body = await hook(body)
         }
     }
-    body = await buildOpenaiResponsesRequest(body)
+    body = omitNullRequestFields(await buildOpenaiResponsesRequest(body))
 
     const config = ObjctKeyToCamelCaseNaming(apiConfig.client_config)
     const response = await retryWithSchedule(() => fetch(`${config.baseURL}/responses`, {

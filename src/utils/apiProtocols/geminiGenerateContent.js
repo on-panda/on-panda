@@ -7,6 +7,16 @@ import { mergeHeaders, parseSseJsonStream, retryWithSchedule, omitNullRequestFie
 const DEFAULT_THINKING_CONFIG = {
     thinkingLevel: 'HIGH',
 }
+const GENERATION_CONFIG_KEY_MAPPING = {
+    temperature: 'temperature',
+    top_p: 'topP',
+    top_k: 'topK',
+    candidate_count: 'candidateCount',
+    presence_penalty: 'presencePenalty',
+    frequency_penalty: 'frequencyPenalty',
+    response_mime_type: 'responseMimeType',
+    response_schema: 'responseSchema',
+}
 
 function contentPartToGemini(part) {
     if (part.type === 'text') {
@@ -197,17 +207,7 @@ function buildGenerationConfig(body) {
     const generationConfig = {
         ...(body.generationConfig || {}),
     }
-    const keyMapping = {
-        temperature: 'temperature',
-        top_p: 'topP',
-        top_k: 'topK',
-        candidate_count: 'candidateCount',
-        presence_penalty: 'presencePenalty',
-        frequency_penalty: 'frequencyPenalty',
-        response_mime_type: 'responseMimeType',
-        response_schema: 'responseSchema',
-    }
-    for (const [sourceKey, targetKey] of Object.entries(keyMapping)) {
+    for (const [sourceKey, targetKey] of Object.entries(GENERATION_CONFIG_KEY_MAPPING)) {
         if (body[sourceKey] != null) {
             generationConfig[targetKey] = body[sourceKey]
         }
@@ -237,7 +237,10 @@ function buildGeminiGenerateContentRequest(openaiRequestBody) {
     const messages = body.messages.slice(firstNonSystemIndex)
     assertNoMiddleSystemMessages(messages)
 
+    // Convert or drop onPanda's Chat Completions keys, and pass the other keys through as Gemini parameters.
+    const convertedKeys = ['model', 'messages', 'tools', 'tool_choice', 'stream', 'stream_options', 'logprobs', 'top_logprobs', 'max_tokens', 'max_completion_tokens', 'stop', 'spaces_between_special_tokens', 'thinkingConfig', ...Object.keys(GENERATION_CONFIG_KEY_MAPPING)]
     const requestBody = {
+        ...Object.fromEntries(Object.entries(body).filter(([key]) => !convertedKeys.includes(key))),
         contents: [],
         generationConfig: buildGenerationConfig(body),
     }
@@ -262,12 +265,6 @@ function buildGeminiGenerateContentRequest(openaiRequestBody) {
     const toolConfig = buildToolConfig(body)
     if (toolConfig) {
         requestBody.toolConfig = toolConfig
-    }
-    if (body.safetySettings) {
-        requestBody.safetySettings = body.safetySettings
-    }
-    if (body.cachedContent) {
-        requestBody.cachedContent = body.cachedContent
     }
     return requestBody
 }

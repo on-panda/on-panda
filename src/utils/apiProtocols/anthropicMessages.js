@@ -128,9 +128,10 @@ function convertTool(tool) {
     }
 }
 
+// Models that reject manual extended thinking and non-default temperature, top_p and top_k.
 function isClaudeAdaptiveThinkingModel(model) {
     const modelName = model.toLowerCase()
-    return /claude-(?:opus-(?:4[-.]8|5)|fable-5(?:[-.]1)?)/.test(modelName)
+    return /claude-(?:opus-(?:4[-.][78]|5)|sonnet-5|haiku-5|fable-5(?:[-.]1)?|mythos)/.test(modelName)
 }
 
 function buildAnthropicMessagesRequest(openaiRequestBody) {
@@ -139,10 +140,12 @@ function buildAnthropicMessagesRequest(openaiRequestBody) {
     const messages = body.messages.slice(firstNonSystemIndex)
     assertNoMiddleSystemMessages(messages)
 
-    const maxTokens = body.max_tokens || body.max_completion_tokens || 32 * 1024
+    // Convert or drop onPanda's Chat Completions keys, and pass the other keys through as Anthropic parameters.
+    const { max_completion_tokens, stop, tools, stream_options, logprobs, top_logprobs, spaces_between_special_tokens, ...parameters } = body
+    const maxTokens = body.max_tokens || max_completion_tokens || 32 * 1024
     const adaptiveThinking = isClaudeAdaptiveThinkingModel(body.model)
     const requestBody = {
-        model: body.model,
+        ...parameters,
         stream: true,
         max_tokens: maxTokens,
         messages: [],
@@ -176,21 +179,20 @@ function buildAnthropicMessagesRequest(openaiRequestBody) {
         // TODO: It may be better to automatically convert non-leading system/developer messages into a user message template.
         requestBody.system = systemMessages.map(message => message.content || '').join('\n\n')
     }
-    const parameterKeys = adaptiveThinking
-        ? ['stop_sequences', 'thinking', 'output_config']
-        : ['temperature', 'top_p', 'top_k', 'stop_sequences', 'thinking', 'output_config']
-    for (const key of parameterKeys) {
-        if (body[key] != null) {
-            requestBody[key] = body[key]
-        }
+    if (stop) {
+        requestBody.stop_sequences = Array.isArray(stop) ? stop : [stop]
     }
-    if (body.stop) {
-        requestBody.stop_sequences = Array.isArray(body.stop) ? body.stop : [body.stop]
+    if (typeof body.tool_choice === 'string') {
+        // Chat Completions tool_choice: "none", "auto" or "required". Objects are passed through as Anthropic tool_choice.
+        requestBody.tool_choice = { type: body.tool_choice === 'required' ? 'any' : body.tool_choice }
     }
-    if (body.tools?.length) {
-        requestBody.tools = body.tools.map(convertTool)
+    if (tools?.length) {
+        requestBody.tools = tools.map(convertTool)
     }
     if (adaptiveThinking) {
+        // Adaptive thinking models reject non-default temperature and top_p, which onPanda always sends.
+        delete requestBody.temperature
+        delete requestBody.top_p
         requestBody.thinking = {
             type: 'adaptive',
             display: requestBody.thinking?.display || 'summarized',
