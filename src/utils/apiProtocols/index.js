@@ -3,6 +3,7 @@ import { OpenAI, normalizeStream } from '../fetchOpenaiApi.js'  // TODO: git mv 
 import { buildResponseTemplate, buildViewTokens } from '../responseTemplates/index.js'
 import { createAnthropicMessagesStream } from './anthropicMessages.js'
 import { createGeminiGenerateContentStream } from './geminiGenerateContent.js'
+import { createOpenaiResponsesStream } from './openaiResponses.js'
 
 function createNonStreamChatCompletionStream({ response, requestBody, apiConfig } = {}) {
     const choice = response.choices[0]
@@ -94,6 +95,9 @@ export async function createChatCompletionsStream({ requestBody, apiConfig, sign
     }
     if (apiProtocol.protocol === 'gemini' && apiProtocol.endpoint === 'generateContent') {
         return createGeminiGenerateContentStream({ requestBody, apiConfig, signal })
+    }
+    if (apiProtocol.protocol === 'openai' && apiProtocol.endpoint === 'responses') {
+        return createOpenaiResponsesStream({ requestBody, apiConfig, signal })
     }
     for (const message of requestBody.messages || []) {
         delete message.sidecar

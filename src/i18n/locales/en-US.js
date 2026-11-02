@@ -58,7 +58,7 @@ export default {
       "tag_name": "custom",  // Quick model tag shown in the onPanda UI
       "low_priority": false,  // Whether low priority. Will be placed at the end of the model list, and the matching priority is also the lowest
       // "response_template": { "name_or_path": "Qwen/Qwen3.6-35B-A3B" },  // optional response template for continue generation with reasoning and tool_calls
-      // "api_protocol": { "protocol": "anthropic", "endpoint": "messages" },  // onPanda also supports Claude and Gemini API protocols
+      // "api_protocol": { "protocol": "anthropic", "endpoint": "messages" },  // onPanda also supports OpenAI Responses, Claude and Gemini API protocols
     },
     // { ... } another API config
 ]

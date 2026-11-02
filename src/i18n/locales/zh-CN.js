@@ -58,7 +58,7 @@ export default {
       "tag_name": "custom",  // 在 onPanda UI 上添加模型快捷标签
       "low_priority": false,  // 是否为低优先级。将排在模型列表中最后，被匹配的优先级也最低
       // "response_template": { "name_or_path": "Qwen/Qwen3.6-35B-A3B" },  // 可选的响应模板以支持带 reasoning 和 tool_calls 的续写功能
-      // "api_protocol": { "protocol": "anthropic", "endpoint": "messages" },  // onPanda 还支持 claude 和 gemni 的 API 协议
+      // "api_protocol": { "protocol": "anthropic", "endpoint": "messages" },  // onPanda 还支持 OpenAI Responses、claude 和 gemni 的 API 协议
     },
     // { ... } 另一个 API 配置
 ]
