@@ -1,16 +1,22 @@
 # @on-panda/annotate
+> A local server for annotating a directory of panda JSON files with onPanda.
 
-A local server for annotating a directory of panda JSON files with the onPanda dialog editor. The sidebar lists files and provides **Next**, **Delete**, and **Save** controls. Saving or deleting a file moves its previous contents into a backup directory.
+<a href="https://on-panda.github.io/img/on-panda-annotate-UI.png">
+  <img src="https://on-panda.github.io/img/on-panda-annotate-UI.png" alt="on-panda batch annotation UI" width="500" style="max-width:100%; height:auto">
+</a>
 
-## Usage
+The sidebar lists files and provides **Next**, **Delete**, and **Save** controls. Saving or deleting a file will move its previous contents into a backup directory.
 
+## Quick start
+**Fast annotation demo:**
 ```bash
-npx @on-panda/annotate --web_config config.json5 --dir .
+# Prepare panda JSON examples
+git clone https://github.com/on-panda/on-panda-example-data.git && cd on-panda-example-data
+# Launch @on-panda/annotate
+npx @on-panda/annotate --dir . # --web_config config.json5 
 ```
 
 Open `http://localhost:8000/on-panda-annotate/`. The server listens on `0.0.0.0`, so it is also accessible through the host's network address.
-
-The server has no user authentication. Because it listens on all interfaces and exposes write endpoints, run it only on a trusted network or behind an access-controlled reverse proxy.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -20,7 +26,7 @@ The server has no user authentication. Because it listens on all interfaces and 
 | `--project_name` | Name of `--dir` | Project name shown at the top of the sidebar and returned by `get_json_list`. |
 | `--help`, `-h` | | Print usage and exit. |
 
-Relative paths for both `--dir` and `--web_config` are resolved against the working directory where the command is run. For example, to use the current directory with the default UI configuration on another port:
+For example, to use the current directory with the default configuration on another port:
 
 ```bash
 # prepare and cd to the dir of panda_jsons
