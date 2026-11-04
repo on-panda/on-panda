@@ -148,6 +148,8 @@ async function buildAnthropicMessagesRequest(openaiRequestBody) {
     const maxTokens = body.max_tokens || max_completion_tokens || 32 * 1024
     const adaptiveThinking = isClaudeAdaptiveThinkingModel(body.model)
     const requestBody = {
+        // Opt in to automatic prompt caching, which other protocols do by default; its breakpoint follows the last block as messages grow.
+        cache_control: { type: 'ephemeral' },
         ...parameters,
         stream: true,
         max_tokens: maxTokens,

@@ -102,7 +102,8 @@ export async function* parseSseJsonStream(response, { onJsonParseError = null } 
 }
 
 export function normalizeUsage(usage = {}) {
-  const promptTokens = usage.prompt_tokens ?? usage.input_tokens
+  // Anthropic input_tokens excludes the cache reads and writes, which prompt_tokens includes like OpenAI.
+  const promptTokens = usage.prompt_tokens ?? usage.input_tokens + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0)
   const completionTokens = usage.completion_tokens ?? usage.output_tokens
   return {
     ...usage,
