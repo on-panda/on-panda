@@ -334,12 +334,13 @@ export const registerKeyActions = (keyActions) => {  // : { [key: string]: () =>
 
 export async function hashObjectSHA256Base64(obj, sortKeys = true) {
   // Fixed key order => SHA-256 => Base64
+  // Same as JSON.stringify, values it cannot serialize (e.g. undefined) are omitted in objects and are null in arrays.
   function canonicalize(obj) {
     if (Array.isArray(obj)) {
-      return '[' + obj.map(canonicalize).join(',') + ']'
+      return '[' + obj.map(value => canonicalize(value) ?? 'null').join(',') + ']'
     } else if (obj && typeof obj === 'object') {
-      const keys = Object.keys(obj).sort()
-      return '{' + keys.map(k => JSON.stringify(k) + ':' + canonicalize(obj[k])).join(',') + '}'
+      const items = Object.keys(obj).sort().map(k => [k, canonicalize(obj[k])]).filter(([, value]) => value !== undefined)
+      return '{' + items.map(([k, value]) => JSON.stringify(k) + ':' + value).join(',') + '}'
     } else {
       return JSON.stringify(obj)
     }

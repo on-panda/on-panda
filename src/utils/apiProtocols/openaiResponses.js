@@ -1,11 +1,7 @@
 import { useGlobalStore } from '../../stores/globalStore.js'
-import { ObjctKeyToCamelCaseNaming, deepCopy, hashObjectSHA256Base64 } from '../commonUtils.js'
+import { ObjctKeyToCamelCaseNaming, deepCopy } from '../commonUtils.js'
 import { buildResponseTemplate } from '../responseTemplates/index.js'
-import { mergeHeaders, parseSseJsonStream, retryWithSchedule, normalizeUsage, omitNullRequestFields } from './utils.js'
-
-function hashMessageOutput({ reasoning, content, tool_calls }) {
-    return hashObjectSHA256Base64({ reasoning, content, tool_calls })
-}
+import { hashMessageOutput, mergeHeaders, parseSseJsonStream, retryWithSchedule, normalizeUsage, omitNullRequestFields, sortToolMessages } from './utils.js'
 
 function messageContentToResponses(content) {
     if (typeof content === 'string') {
@@ -79,7 +75,7 @@ async function buildOpenaiResponsesRequest(body) {
         include: ['reasoning.encrypted_content'],
         ...parameters,
         stream: true,
-        input: (await Promise.all(messages.map(messageToResponsesInput))).flat(),
+        input: (await Promise.all(sortToolMessages(messages).map(messageToResponsesInput))).flat(),
     }
     // `reasoning: null` omits the parameter, for servers that reject or hang on it.
     if (body.reasoning !== null) {

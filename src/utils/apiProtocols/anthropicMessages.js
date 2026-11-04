@@ -1,6 +1,8 @@
 import { useGlobalStore } from '../../stores/globalStore.js'
 import { ObjctKeyToCamelCaseNaming, deepCopy } from '../commonUtils.js'
-import { mergeHeaders, parseSseJsonStream, retryWithSchedule, normalizeUsage, omitNullRequestFields } from './utils.js'
+import { parsePartialJsonObject } from '../partialJsonUtils.js'
+import { buildResponseTemplate } from '../responseTemplates/index.js'
+import { hashMessageOutput, mergeHeaders, parseSseJsonStream, retryWithSchedule, normalizeUsage, omitNullRequestFields } from './utils.js'
 
 const ANTHROPIC_VERSION = '2023-06-01'
 const TOOL_ID_CHAR_TO_TOKEN = {
@@ -70,17 +72,18 @@ function toolCallToAnthropicContent(toolCall) {
     }
 }
 
-function assistantMessageToAnthropicContent(message) {
-    const content = []
-    if (message.reasoning) {
-        const thinking = {
-            type: 'thinking',
-            thinking: message.reasoning,
-        }
-        if (message.sidecar?.anthropic?.thinking?.signature) {
-            thinking.signature = message.sidecar.anthropic.thinking.signature
-        }
-        content.push(thinking)
+async function assistantMessageToAnthropicContent(message) {
+    const anthropicSidecar = message.sidecar?.anthropic_messages
+    // A flat message cannot keep the interleaved blocks, so replay the original content unless the message was edited.
+    if (anthropicSidecar && anthropicSidecar.message_hash === await hashMessageOutput(message)) {
+        // Tool ids are encoded the same as the tool_use_id of tool results.
+        return anthropicSidecar.content.map(block => block.type === 'tool_use' ? { ...block, id: encodeAnthropicToolId(block.id) } : block)
+    }
+    // Signed thinking keeps its model context, even if the reasoning text was edited.
+    const content = (anthropicSidecar?.content || []).filter(block => block.signature || block.type === 'redacted_thinking')
+    if (!content.length && message.reasoning) {
+        // Reasoning from other sources has no signature, which compatible providers accept.
+        content.push({ type: 'thinking', thinking: message.reasoning })
     }
     if (message.content) {
         content.push({ type: 'text', text: message.content })
@@ -134,7 +137,7 @@ function isClaudeAdaptiveThinkingModel(model) {
     return /claude-(?:opus-(?:4[-.][78]|5)|sonnet-5|haiku-5|fable-5(?:[-.]1)?|mythos)/.test(modelName)
 }
 
-function buildAnthropicMessagesRequest(openaiRequestBody) {
+async function buildAnthropicMessagesRequest(openaiRequestBody) {
     const body = deepCopy(openaiRequestBody)
     const { systemMessages, firstNonSystemIndex } = collectSystemMessages(body.messages || [])
     const messages = body.messages.slice(firstNonSystemIndex)
@@ -150,11 +153,11 @@ function buildAnthropicMessagesRequest(openaiRequestBody) {
         max_tokens: maxTokens,
         messages: [],
     }
-    for (const message of messages.map(message => {
+    for (const message of await Promise.all(messages.map(async message => {
         if (message.role === 'assistant') {
             return {
                 role: 'assistant',
-                content: assistantMessageToAnthropicContent(message),
+                content: await assistantMessageToAnthropicContent(message),
             }
         }
         if (message.role === 'tool') {
@@ -167,7 +170,7 @@ function buildAnthropicMessagesRequest(openaiRequestBody) {
             role: message.role,
             content: messageContentToAnthropic(message.content),
         }
-    })) {
+    }))) {
         const lastMessage = requestBody.messages[requestBody.messages.length - 1]
         if (lastMessage?.role === message.role) {
             lastMessage.content = concatAnthropicContent(lastMessage.content, message.content)
@@ -219,26 +222,6 @@ function mapFinishReason(stopReason) {
     }[stopReason] || stopReason
 }
 
-function createChunk({ messageId, model, delta, finish_reason, usage } = {}) {
-    const chunk = {
-        id: messageId,
-        object: 'chat.completion.chunk',
-        created: Math.floor(Date.now() / 1000),
-        model,
-        choices: [{
-            index: 0,
-            delta,
-        }],
-    }
-    if (finish_reason) {
-        chunk.choices[0].finish_reason = finish_reason
-    }
-    if (usage) {
-        chunk.usage = normalizeUsage(usage)
-    }
-    return chunk
-}
-
 function createToolCallStartDelta(block, index) {
     return {
         tool_calls: [{
@@ -264,11 +247,35 @@ function createToolCallArgumentsDelta(index, argumentsText) {
     }
 }
 
-async function* anthropicMessagesStreamToChatCompletionsStream(stream) {
+async function* anthropicMessagesStreamToChatCompletionsStream(stream, { requestBody, apiConfig } = {}) {
     let messageId
     let model
     let toolCallCount = 0
     const toolCallIndexes = {}
+    // The original content blocks, to replay the interleaved thinking, redacted_thinking, text and tool_use.
+    const blocks = []
+    const partialJsons = {}
+    const choices = []
+    function createChunk({ delta, finish_reason, usage } = {}) {
+        const chunk = {
+            id: messageId,
+            object: 'chat.completion.chunk',
+            created: Math.floor(Date.now() / 1000),
+            model,
+            choices: [{
+                index: 0,
+                delta,
+            }],
+        }
+        if (finish_reason) {
+            chunk.choices[0].finish_reason = finish_reason
+        }
+        if (usage) {
+            chunk.usage = normalizeUsage(usage)
+        }
+        choices.push(chunk.choices[0])
+        return chunk
+    }
     for await (const event of stream) {
         if (event.type === 'error') {
             throw new Error(`Anthropic messages stream error: ${JSON.stringify(event.error || event)}`)
@@ -277,21 +284,22 @@ async function* anthropicMessagesStreamToChatCompletionsStream(stream) {
             messageId = event.message.id
             model = event.message.model
             yield createChunk({
-                messageId,
-                model,
                 delta: { role: event.message.role },
                 usage: event.message.usage,
             })
             continue
         }
         if (event.type === 'content_block_start') {
-            const block = event.content_block
+            const block = { ...event.content_block }
+            if (block.type === 'thinking' && blocks.some(previousBlock => previousBlock.type === 'thinking')) {
+                // Separate thinking blocks like paragraphs.
+                yield createChunk({ delta: { reasoning: '\n\n' } })
+            }
+            blocks[event.index] = block
             if (block.type === 'tool_use') {
                 toolCallIndexes[event.index] = toolCallCount
                 toolCallCount++
                 yield createChunk({
-                    messageId,
-                    model,
                     delta: createToolCallStartDelta(block, toolCallIndexes[event.index]),
                 })
             }
@@ -299,39 +307,52 @@ async function* anthropicMessagesStreamToChatCompletionsStream(stream) {
         }
         if (event.type === 'content_block_delta') {
             const delta = event.delta
+            const block = blocks[event.index]
             if (delta.type === 'thinking_delta') {
+                block.thinking += delta.thinking
                 yield createChunk({
-                    messageId,
-                    model,
                     delta: { reasoning: delta.thinking },
                 })
             } else if (delta.type === 'signature_delta') {
-                yield createChunk({
-                    messageId,
-                    model,
-                    delta: { sidecar: { anthropic: { thinking: { signature: delta.signature } } } },
-                })
+                block.signature = delta.signature
             } else if (delta.type === 'text_delta') {
+                block.text += delta.text
                 yield createChunk({
-                    messageId,
-                    model,
                     delta: { content: delta.text },
                 })
             } else if (delta.type === 'input_json_delta') {
+                partialJsons[event.index] = (partialJsons[event.index] || '') + delta.partial_json
                 yield createChunk({
-                    messageId,
-                    model,
                     delta: createToolCallArgumentsDelta(toolCallIndexes[event.index], delta.partial_json),
                 })
             }
             continue
         }
+        if (event.type === 'content_block_stop' && blocks[event.index].type === 'tool_use') {
+            // max_tokens may truncate the input JSON, so keep its complete entries the same as non-stream.
+            const { entries } = parsePartialJsonObject(partialJsons[event.index])
+            blocks[event.index].input = Object.fromEntries(entries.filter(entry => entry.complete).map(entry => [entry.name, entry.value]))
+            continue
+        }
         if (event.type === 'message_delta') {
+            const finish_reason = mapFinishReason(event.delta.stop_reason)
+            // Fingerprint the message exactly as onPanda parses it (some templates read finish_reason), to detect later edits.
+            const message = buildResponseTemplate({ apiConfig }).parse({
+                tokens: [...choices, { delta: { content: '' }, finish_reason }],
+                messages: requestBody.messages,
+                tools: requestBody.tools,
+            })
             yield createChunk({
-                messageId,
-                model,
-                delta: { content: "" },
-                finish_reason: mapFinishReason(event.delta.stop_reason),
+                delta: {
+                    content: '',
+                    sidecar: {
+                        anthropic_messages: {
+                            content: blocks,
+                            message_hash: await hashMessageOutput(message),
+                        },
+                    },
+                },
+                finish_reason,
                 usage: event.usage,
             })
         }
@@ -346,7 +367,7 @@ export async function createAnthropicMessagesStream({ requestBody, apiConfig, si
             body = await hook(body)
         }
     }
-    body = omitNullRequestFields(buildAnthropicMessagesRequest(body))
+    body = omitNullRequestFields(await buildAnthropicMessagesRequest(body))
 
     const config = ObjctKeyToCamelCaseNaming(apiConfig.client_config)
     const apiProtocol = apiConfig.api_protocol || {}
@@ -367,5 +388,5 @@ export async function createAnthropicMessagesStream({ requestBody, apiConfig, si
         signal,
     }), [5000, 30000])
 
-    return anthropicMessagesStreamToChatCompletionsStream(parseSseJsonStream(response))
+    return anthropicMessagesStreamToChatCompletionsStream(parseSseJsonStream(response), { requestBody, apiConfig })
 }

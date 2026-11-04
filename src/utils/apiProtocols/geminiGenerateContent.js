@@ -2,7 +2,7 @@ import { useGlobalStore } from '../../stores/globalStore.js'
 import { ObjctKeyToCamelCaseNaming, deepCopy } from '../commonUtils.js'
 import { normalizeStream } from '../fetchOpenaiApi.js'
 import { multimodalUrlToMimeType } from '../multimodalUtils.js'
-import { mergeHeaders, parseSseJsonStream, retryWithSchedule, omitNullRequestFields } from './utils.js'
+import { mergeHeaders, parseSseJsonStream, retryWithSchedule, omitNullRequestFields, sortToolMessages } from './utils.js'
 
 const DEFAULT_THINKING_CONFIG = {
     thinkingLevel: 'HIGH',
@@ -64,7 +64,7 @@ function parseToolCallArguments(toolCall) {
 }
 
 function sidecarThoughtSignature(message, key) {
-    return message.sidecar?.gemini?.thoughtSignatures?.[key]
+    return message.sidecar?.gemini_generate_content?.thoughtSignatures?.[key]
 }
 
 function addThoughtSignature(part, signature) {
@@ -92,7 +92,10 @@ function assistantMessageToGeminiParts(message) {
         }, sidecarThoughtSignature(message, 'reasoning.0')))
     }
     if (message.content) {
-        parts.push(...messageContentToGeminiParts(message.content))
+        const contentParts = messageContentToGeminiParts(message.content)
+        // The signature of a text-only answer restores its thoughts into the model context.
+        addThoughtSignature(contentParts.at(-1), sidecarThoughtSignature(message, 'content.0'))
+        parts.push(...contentParts)
     }
     parts.push(...(message.tool_calls || []).map(toolCall => toolCallToGeminiPart(toolCall, message)))
     return parts
@@ -249,7 +252,7 @@ function buildGeminiGenerateContentRequest(openaiRequestBody) {
             parts: systemMessages.flatMap(message => messageContentToGeminiParts(message.content || '')),
         }
     }
-    for (const content of messages.map(openaiMessageToGeminiContent)) {
+    for (const content of sortToolMessages(messages).map(openaiMessageToGeminiContent)) {
         const lastContent = requestBody.contents[requestBody.contents.length - 1]
         if (lastContent?.role === content.role) {
             lastContent.parts.push(...content.parts)
@@ -337,7 +340,7 @@ function createToolCallStartDelta(functionCall, index) {
 function createThoughtSignatureDelta(key, signature) {
     return {
         sidecar: {
-            gemini: {
+            gemini_generate_content: {
                 thoughtSignatures: {
                     [key]: signature,
                 },

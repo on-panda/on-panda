@@ -1,3 +1,33 @@
+import { hashObjectSHA256Base64 } from '../commonUtils.js'
+
+export function hashMessageOutput({ reasoning, content, tool_calls }) {
+  return hashObjectSHA256Base64({ reasoning, content, tool_calls })
+}
+
+// Sort each run of tool messages in the order of the tool calls of its preceding assistant messages,
+// since some models (e.g. GPT by Responses, Gemini) match tool results by position.
+// Tool call ids are only unique in one response, e.g. Gemini's "functions.<name>:<index>".
+export function sortToolMessages(messages) {
+  const runs = []
+  for (const message of messages) {
+    if (message.role === runs.at(-1)?.[0].role) {
+      runs.at(-1).push(message)
+    } else {
+      runs.push([message])
+    }
+  }
+  let order = new Map()
+  return runs.flatMap(run => {
+    if (run[0].role === 'assistant') {
+      // Consecutive assistant messages are one response
+      order = new Map(run.flatMap(message => message.tool_calls || []).map((toolCall, index) => [toolCall.id, index]))
+    } else if (run[0].role === 'tool') {
+      run.sort((a, b) => order.get(a.tool_call_id) - order.get(b.tool_call_id))
+    }
+    return run
+  })
+}
+
 export async function retryWithSchedule(fn, schedule) {
   const startTime = Date.now()
   let lastError
