@@ -79,6 +79,7 @@ function toolCallToGeminiPart(toolCall, message) {
         functionCall: {
             name: toolCall.function.name,
             args: parseToolCallArguments(toolCall),
+            id: toolCall.id,
         },
     }, sidecarThoughtSignature(message, `tool_calls.${toolCall.index}`))
 }
@@ -128,6 +129,8 @@ function toolMessageToGeminiParts(message) {
     return [{
         functionResponse: {
             name: message.name,
+            // Gemini 3+ matches function responses to function calls by id
+            id: message.tool_call_id,
             ...messageContentToFunctionResponse(message.content),
         },
     }]
@@ -327,7 +330,7 @@ function createToolCallStartDelta(functionCall, index) {
     return {
         tool_calls: [{
             index,
-            id: `functions.${functionCall.name}:${index}`,
+            id: functionCall.id || `functions.${functionCall.name}:${index}`,
             type: 'function',
             function: {
                 name: functionCall.name,
@@ -375,7 +378,6 @@ async function* geminiGenerateContentStreamToChatCompletionsStream(stream, { mod
     let roleSent = false
     let hasToolCalls = false
     let toolCallCount = 0
-    let reasoningPartCount = 0
     let pendingThoughtSignature = null
     let lastThoughtSignatureKey = null
     const logprobsState = { seen: 0 }
@@ -411,7 +413,8 @@ async function* geminiGenerateContentStreamToChatCompletionsStream(stream, { mod
                 continue
             }
             if (part.text) {
-                const key = part.thought ? `reasoning.${reasoningPartCount}` : 'content.0'
+                // Thought parts are replayed as one part, the same as text parts.
+                const key = part.thought ? 'reasoning.0' : 'content.0'
                 const thoughtSignature = part.thoughtSignature || pendingThoughtSignature
                 pendingThoughtSignature = null
                 lastThoughtSignatureKey = key
@@ -421,9 +424,6 @@ async function* geminiGenerateContentStreamToChatCompletionsStream(stream, { mod
                         model: event.modelVersion || model,
                         delta: createThoughtSignatureDelta(key, thoughtSignature),
                     })
-                }
-                if (part.thought) {
-                    reasoningPartCount += 1
                 }
                 yield createChunk({
                     messageId,
