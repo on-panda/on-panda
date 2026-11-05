@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, provide } from 'vue'
 import { duplicateWindow } from '../utils/commonUtils.js'
 import { useI18n } from 'vue-i18n'
 
@@ -18,6 +18,7 @@ const props = defineProps({
 
 const { responseState, controlParameterState, toolManageState } = props.dialogWithControlState
 
+provide('controlParameterState.modelName', controlParameterState.modelName)
 
 function duplicateWindowWithModelName(modelName) {
     localStorage.setItem('modelNameForDuplicateWindow', modelName)

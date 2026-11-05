@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, provide, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { ref, computed, provide, inject, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { DArrowRight, VideoPause, Edit, View, DocumentCopy, Refresh, Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -35,6 +35,7 @@ const apiConfig = responseState.apiConfig
 const operationCenter = responseState.operationCenter
 const finalMessage = responseState.finalMessage
 const finalMessageAsText = computed(() => messageToSeq(finalMessage.value, { includeFinishReason: false }))
+const modelName = inject('controlParameterState.modelName', null)  // null outside OnPandaDialogWithControl
 
 // The annotator panel is open, so token-level raw text stays on the left
 const isAnnotateMode = computed(() => Boolean(pandaState.dialogCache.value.annotate))
@@ -235,12 +236,12 @@ watch(isTwoPanelMode, async function watchTwoPanelMode(twoPanelMode) {
                 <el-tooltip placement="top-end" effect="light">
                     <template #content>
                         {{ t('tooltips.copyResponse') }}, <br>{{ t('tooltips.orDoubleClickTo') }} <br>
-                        <el-button size="small" @click="duplicateWindow(pandaState)">
+                        <el-button size="small" @click="duplicateWindow(pandaState, modelName)">
                             {{ t('tooltips.duplicateWindow') }}
                         </el-button>
                     </template>
                     <el-button :icon="DocumentCopy" size="small" :disabled="!finalMessage.content"
-                        @click="handleCopyButtonClick" @dblclick="duplicateWindow(pandaState)" />
+                        @click="handleCopyButtonClick" @dblclick="duplicateWindow(pandaState, modelName)" />
                 </el-tooltip>
                 &nbsp;&nbsp;&nbsp;
                 <hr v-if="!isMobile" style="color:#eee; margin-top: -5px; margin-bottom: 4px">

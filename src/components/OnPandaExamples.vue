@@ -1,7 +1,9 @@
 <template>
   <div style="line-height: 2" class="onPandaExamples">
     <template v-for="(func, name) in exampleNameToFunc">
-      <el-tag type="info" @click="func(props.dialogWithControlState)" style="cursor: pointer; margin-left: 5px;">
+      <el-tag type="info" @click="handleExampleClick($event, name, func)"
+        @contextmenu="if ($event.ctrlKey || $event.metaKey) { $event.preventDefault(); handleExampleClick($event, name, func) }"
+        @mousedown="$event.button === 1 && openExampleWindow(name)" style="cursor: pointer; margin-left: 5px;">
         {{ name }}
       </el-tag>
     </template>
@@ -575,6 +577,26 @@ const exampleNameToFunc = computed(() => {
     ...globalStore.customExampleNameToFunc
   }
 })
+
+function openExampleWindow(name) {
+  // Reuse the ?example= startup, initial model is passed like duplicate window
+  localStorage.setItem('modelNameForDuplicateWindow', modelName.value)
+  const url = new URL(window.location.href)
+  url.searchParams.set('example', name)
+  window.open(url)
+}
+
+function handleExampleClick(event, name, func) {
+  if (event.ctrlKey || event.metaKey) {
+    openExampleWindow(name)
+  } else {
+    // Clear ?example= so refresh or duplicate window won't replay the URL example
+    const url = new URL(window.location.href)
+    url.searchParams.delete('example')
+    history.replaceState(history.state, '', url)
+    func(props.dialogWithControlState)
+  }
+}
 
 defineExpose({
   exampleNameToFunc,

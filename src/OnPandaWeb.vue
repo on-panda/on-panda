@@ -184,7 +184,7 @@ onMounted(async () => {
   var onMountedRun = () => { }
 
   // Startup priority: duplicate window > URL example > debug > default.
-  if (tryLoadDuplicateWindow(responseState.pandaState)) {
+  if (tryLoadDuplicateWindow(responseState.pandaState, modelName)) {
     if (localStorage.getItem('modelNameForDuplicateWindow')) {
       modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
       localStorage.removeItem('modelNameForDuplicateWindow')
@@ -201,6 +201,10 @@ onMounted(async () => {
       const { exampleNameToFunc } = onPandaExamplesRef.value
       if (!Object.hasOwn(exampleNameToFunc, exampleName)) {
         throw new Error(`Unknown example: ${JSON.stringify(exampleName)}`)
+      }
+      if (localStorage.getItem('modelNameForDuplicateWindow')) {  // opened by Ctrl/Cmd/middle click on an example tag
+        modelName.value = localStorage.getItem('modelNameForDuplicateWindow')
+        localStorage.removeItem('modelNameForDuplicateWindow')
       }
       onMountedRun = exampleNameToFunc[exampleName]
       dialogDividerRef.value.scrollIntoView()

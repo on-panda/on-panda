@@ -245,19 +245,23 @@ export async function copyToClipboard(string) {
   }
 }
 
-export async function duplicateWindow(pandaState) {
-  // dump pandaState to loaclStorage
+export async function duplicateWindow(pandaState, modelName) {
+  // dump pandaState and modelName to loaclStorage
   // and open a new window with the same url
   const stateJson = await pandaState.dump({ beforeOperation: false, includeCache: true, keepTopLogprobs: true })
-  localStorage.setItem('pandaStateDumpedForDuplicateWindow', JSON.stringify({ pandaState: stateJson }))
+  localStorage.setItem('pandaStateDumpedForDuplicateWindow', JSON.stringify({ pandaState: stateJson, modelName }))
   window.open(window.location.href)
 }
 
-export function tryLoadDuplicateWindow(pandaState) {
-  // pop pandaState from loaclStorage, then load it
+export function tryLoadDuplicateWindow(pandaState, modelName) {
+  // pop pandaState and modelName from loaclStorage, then load them
   const stateJson = localStorage.getItem('pandaStateDumpedForDuplicateWindow')
   if (stateJson) {
-    pandaState.load(JSON.parse(stateJson).pandaState)
+    const dumped = JSON.parse(stateJson)
+    pandaState.load(dumped.pandaState)
+    if (dumped.modelName) {  // absent when dumped by a standalone OnPandaResponsePanel
+      modelName.value = dumped.modelName
+    }
     localStorage.removeItem('pandaStateDumpedForDuplicateWindow')
     return true
   }
