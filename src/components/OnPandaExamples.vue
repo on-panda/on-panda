@@ -144,7 +144,8 @@ const messagesTemplateExample = [
   {
     role: "assistant",
     reasoning: m('assistant_reasoning1'),
-    content: m('assistant_content1')
+    content: m('assistant_content1'),
+    finish_reason: "stop"
   },
   { role: "user", content: m('user_content2') },
   {
@@ -186,14 +187,15 @@ const messagesTemplateExample = [
         function: {
           name: m('function_name3'),
           arguments: JSON.stringify({
-            [m('argument_number')]: 3.14159,
-            [m('argument_integer')]: 42,
+            [m('argument_number')]: 2609.24983,
+            [m('argument_integer')]: 2609,
             [m('argument_boolean')]: true,
             [m('argument_null')]: null
           })
         }
       }
-    ]
+    ],
+    finish_reason: "tool_calls"
   },
   {
     role: "tool",
