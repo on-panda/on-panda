@@ -16,6 +16,7 @@ import { ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { sleep } from '../utils/commonUtils.js'
 import { useGlobalStore } from '../stores/globalStore.js'
+import { browserAgentToolConfigs } from '../stores/toolState.js'
 
 const globalStore = useGlobalStore()
 const { t } = useI18n()
@@ -297,18 +298,6 @@ const templateToolConfigs = [
     }
   }
 ]
-
-
-const browserAgentToolConfigs = [{
-  type: 'mcp',
-  server_label: 'browser-agent',
-  server_url: 'local-fetch://browser-agent-mcp',
-}, {
-  type: 'mcp',
-  server_label: 'exa-search',
-  server_url: 'https://mcp.exa.ai/mcp',
-  ignore_instructions: true,
-}]
 
 
 function switchDefaultToAgentTag() {

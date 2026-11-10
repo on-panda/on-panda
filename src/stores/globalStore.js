@@ -17,7 +17,7 @@ export const useGlobalStore = defineStore('onPandaGlobal', () => {
 
     const debugRun = ref(null) // debugRun(dialogWithControlState, exampleNameToFunc), takes priority over defaultDebugRun of debug mode
 
-    const hooks = ref({ beforeCreateChatCompletion: [] })
+    const hooks = ref({ beforeCreateChatCompletion: [], beforeConnectMcpServer: [] })
 
     const cleanMode = ref(false)
 

@@ -12,7 +12,7 @@ import { useGlobalStore } from './globalStore.js'
 import { PandaState } from './pandaState.js'
 import { WarningState } from './warningState.js'
 import { defaultApiConfig } from './controlParameterState.js'
-import { ToolManageStateClosure, ToolCallStateClosure, browserAgentMcpUrl } from './toolState.js'
+import { ToolManageStateClosure, ToolCallStateClosure, browserAgentToolConfigs } from './toolState.js'
 
 export const defaultMessages = [{ role: "system", content: "" }, { role: "user", content: "" }]
 
@@ -554,15 +554,14 @@ ${addedFiles.map(({ key, handleOrEntry, writePermission }) => {
 <|user_local_files_end|>`,
             }
             this.pandaState.beforeOperation()
-            // try to add tool config for browser agent mcp if not exist
+            // try to add tool configs of browser agent mode if not exist
             const dialogCache = this.pandaState.dialogCache.value
             if (!('tools' in dialogCache)) {
                 dialogCache.tool_configs = dialogCache.tool_configs || []
-                if (!dialogCache.tool_configs.some(toolConfig => toolConfig.server_url === browserAgentMcpUrl)) {
-                    dialogCache.tool_configs.push({
-                        type: 'mcp',
-                        server_url: browserAgentMcpUrl,
-                    })
+                for (const toolConfig of browserAgentToolConfigs) {
+                    if (!dialogCache.tool_configs.some(({ server_url }) => server_url === toolConfig.server_url)) {
+                        dialogCache.tool_configs.push(deepCopy(toolConfig))
+                    }
                 }
             }
             const nextMessages = this.getNextMessages()

@@ -1,6 +1,7 @@
 import { computed, getCurrentInstance, isRef, onMounted, ref, toValue, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { deepCopy } from '../utils/commonUtils.js'
+import { useGlobalStore } from './globalStore.js'
 import {
     buildDuplicatedToolNameError,
     buildMcpPlaceholderFromConfig,
@@ -17,7 +18,19 @@ import {
 
 export const browserAgentMcpUrl = 'local-fetch://browser-agent-mcp'
 
+export const browserAgentToolConfigs = [{
+    type: 'mcp',
+    server_label: 'browser-agent',
+    server_url: browserAgentMcpUrl,
+}, {
+    type: 'mcp',
+    server_label: 'exa-search',
+    server_url: 'https://mcp.exa.ai/mcp',
+    ignore_instructions: true,
+}]
+
 export function ToolManageStateClosure({ presetToolConfigs = [], apiConfig = null } = {}) {
+    const globalStore = useGlobalStore()
     // When constructed post-mount (e.g. from a computed during render), skip onMounted and treat as mounted.
     const instance = getCurrentInstance()
     const isMounted = ref(false)
@@ -200,7 +213,11 @@ export function ToolManageStateClosure({ presetToolConfigs = [], apiConfig = nul
                         import('@modelcontextprotocol/sdk/client/index.js'),
                         import('@modelcontextprotocol/sdk/client/streamableHttp.js'),
                     ])
-                    const serverUrl = new URL(toolConfig.server_url, window.location.origin)
+                    // Hooks may add deployment credentials; the result never flows back into tool_configs / saved data.
+                    let connection = { url: new URL(toolConfig.server_url, window.location.origin), headers: {} }
+                    for (const hook of globalStore.hooks.beforeConnectMcpServer) {
+                        connection = await hook(connection)
+                    }
                     function tryLocalFetch(resource, init) {
                         const requestUrl = String(resource)
                         const localFetch = Object.entries(localFetches).find(([prefix]) => requestUrl.startsWith(prefix))?.[1]
@@ -209,7 +226,7 @@ export function ToolManageStateClosure({ presetToolConfigs = [], apiConfig = nul
                         }
                         return fetch(resource, init)
                     }
-                    const transport = new StreamableHTTPClientTransport(serverUrl, { fetch: tryLocalFetch })
+                    const transport = new StreamableHTTPClientTransport(connection.url, { fetch: tryLocalFetch, requestInit: { headers: connection.headers } })
                     const client = new Client({
                         name: 'on-panda',
                         version: '0.1.0',
