@@ -125,6 +125,9 @@ async function* openaiResponsesStreamToChatCompletionsStream(stream, { requestBo
         if (event.type === 'error' || event.type === 'response.failed') {
             throw new Error(`OpenAI responses stream error: ${JSON.stringify(event.response?.error || event)}`)
         }
+        if (event.type === 'response.refusal.done') {
+            throw new Error(`OpenAI responses refusal: ${event.refusal}`)
+        }
         if (event.type === 'response.created') {
             response = event.response
             yield createChunk({ delta: { role: 'assistant' } })
@@ -172,6 +175,9 @@ async function* openaiResponsesStreamToChatCompletionsStream(stream, { requestBo
             const finish_reason = status === 'incomplete'
                 ? { max_output_tokens: 'length' }[incomplete_details.reason] || incomplete_details.reason
                 : toolCallIds.length ? 'tool_calls' : 'stop'
+            if (finish_reason === 'content_filter') {
+                throw new Error(`OpenAI responses content filtered: ${JSON.stringify(incomplete_details)}`)
+            }
             // Fingerprint the message exactly as onPanda parses it (some templates read finish_reason), to detect later edits.
             const message = buildResponseTemplate({ apiConfig }).parse({
                 tokens: [...choices, { delta: { content: '' }, finish_reason }],

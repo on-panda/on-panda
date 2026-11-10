@@ -7,6 +7,12 @@ import { createOpenaiResponsesStream } from './openaiResponses.js'
 
 function createNonStreamChatCompletionStream({ response, requestBody, apiConfig } = {}) {
     const choice = response.choices[0]
+    if (choice.finish_reason === 'content_filter') {
+        throw new Error(`Chat completions content filtered: ${JSON.stringify(choice)}`)
+    }
+    if (choice.message.refusal) {
+        throw new Error(`Chat completions refusal: ${choice.message.refusal}`)
+    }
     const message = { ...choice.message }
     if (typeof message.reasoning_content === 'string') {
         message.reasoning = message.reasoning || message.reasoning_content

@@ -337,6 +337,9 @@ async function* anthropicMessagesStreamToChatCompletionsStream(stream, { request
             continue
         }
         if (event.type === 'message_delta') {
+            if (event.delta.stop_reason === 'refusal') {
+                throw new Error(`Anthropic messages refusal: ${JSON.stringify(event.delta.stop_details)}`)
+            }
             const finish_reason = mapFinishReason(event.delta.stop_reason)
             // Fingerprint the message exactly as onPanda parses it (some templates read finish_reason), to detect later edits.
             const message = buildResponseTemplate({ apiConfig }).parse({

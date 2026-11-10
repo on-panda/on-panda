@@ -371,7 +371,24 @@ async function* repairFirstContinueChunk({ stream, requestBody } = {}) {
   }
 }
 
+async function* throwOnRefusal(stream) {
+  // `delta.refusal` streams the refusal text by tokens, so throw it as a whole at the end.
+  let refusal = ''
+  for await (const chunk of stream) {
+    const choice = chunk?.choices?.[0]
+    if (choice?.finish_reason === 'content_filter') {
+      throw new Error(`Chat completions content filtered: ${JSON.stringify(chunk)}`)
+    }
+    refusal += choice?.delta?.refusal || ''
+    yield chunk
+  }
+  if (refusal) {
+    throw new Error(`Chat completions refusal: ${refusal}`)
+  }
+}
+
 export async function* normalizeStream({ stream, requestBody, apiConfig } = {}) {
+  stream = throwOnRefusal(stream)
   stream = normalizeReasoningField(stream)
   stream = repairFirstContinueChunk({ stream, requestBody })
   stream = splitMultiTokensChunk(stream)

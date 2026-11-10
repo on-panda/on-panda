@@ -385,6 +385,9 @@ async function* geminiGenerateContentStreamToChatCompletionsStream(stream, { mod
         if (event.error) {
             throw new Error(`Gemini generateContent stream error: ${JSON.stringify(event.error)}`)
         }
+        if (event.promptFeedback?.blockReason) {
+            throw new Error(`Gemini generateContent prompt blocked: ${JSON.stringify(event.promptFeedback)}`)
+        }
         if (!roleSent) {
             roleSent = true
             yield createChunk({
@@ -458,6 +461,9 @@ async function* geminiGenerateContentStreamToChatCompletionsStream(stream, { mod
             }
         }
         if (candidate?.finishReason) {
+            if (mapFinishReason(candidate.finishReason) === 'content_filter') {
+                throw new Error(`Gemini generateContent response blocked: ${JSON.stringify(candidate)}`)
+            }
             yield createChunk({
                 messageId,
                 model: event.modelVersion || model,
