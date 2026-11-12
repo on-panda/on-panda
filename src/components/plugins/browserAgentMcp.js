@@ -108,7 +108,7 @@ Persistent memory is stored in localStorage. Treat localStorage as a virtual fil
     const memoryText = localStorage.getItem('browser-agent/memory/MEMORY.md') || ''
     if (!memoryText.trim()) {
         return `${overview}
-The current \`browser-agent/memory/MEMORY.md\` is empty.`
+The current \`browser-agent/memory/MEMORY.md\` is empty. If the user does not explicitly ask you to remember, there is no need to proactively use memory.`
     }
 
     const { text, truncationReason } = truncateBrowserAgentMemory(memoryText)
