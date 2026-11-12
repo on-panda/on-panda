@@ -46,8 +46,9 @@ const isChatCompletion = computed(() => {
 })
 const showTokenProbControls = computed(() => isChatCompletion.value && apiConfig.value.chat_config.top_logprobs > 0)
 
-// Two panels only help when tokens carry probabilities and candidates.
-const isTwoPanelMode = computed(() => !globalStore.cleanMode && showTokenProbControls.value)
+// Two panels help when tokens carry probabilities and candidates,
+// or when annotating chat completions, since raw chunks can still be edited and continued without logprobs.
+const isTwoPanelMode = computed(() => !globalStore.cleanMode && (showTokenProbControls.value || (isChatCompletion.value && isAnnotateMode.value)))
 
 const bitsTooltipHtml = 'bits = - &sum;<sub>i</sub> log<sub>2</sub>(p<sub>i</sub>)'
 
